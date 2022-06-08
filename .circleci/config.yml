@@ -43,6 +43,11 @@ workflows:
           context:
             - CLI_CTC
             - salesforce-cli
+  test-ts-update:
+    when:
+      equal: [test-ts-update, << pipeline.parameters.workflow >>]
+    jobs:
+      - release-management/test-ts-update
   dependabot-automerge:
     when:
       equal: [dependabot-automerge, << pipeline.parameters.workflow >>]
