@@ -32,8 +32,9 @@ workflows:
                 node_version: maintenance
       - release-management/release-package:
           github-release: true
-          post-job-steps:
-            - run: yarn ci-docs
+          # TODO: remove once we have docs to publish
+          # post-job-steps:
+          # - run: yarn ci-docs
           requires:
             - release-management/test-package
           filters:
