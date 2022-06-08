@@ -1,15 +1,20 @@
 version: 2.1
 orbs:
   release-management: salesforce/npm-release-management@4
+parameters:
+  workflow:
+    description: |
+      String that controls which workflow would run.
 
+      This parameter is used by automation to determine if a workflow will run
+      within a pipeline.
+    type: string
+    default: 'test-and-release'
 workflows:
   version: 2
   test-and-release:
     jobs:
-      - release-management/validate-pr:
-          filters:
-            branches:
-              ignore: v3
+      - release-management/validate-pr
       - release-management/test-package:
           matrix:
             parameters:
@@ -26,16 +31,23 @@ workflows:
               - os: windows
                 node_version: maintenance
       - release-management/release-package:
-          # TODO: add these back when we're ready to GA v3
-          # github-release: true
-          # post-job-steps:
-          #   - run: yarn ci-docs
-          tag: 'v3-beta'
+          github-release: true
+          post-job-steps:
+            - run: yarn ci-docs
           requires:
             - release-management/test-package
           filters:
             branches:
-              only: v3
+              only: main
           context:
             - CLI_CTC
             - salesforce-cli
+  dependabot-automerge:
+    when:
+      equal: [dependabot-automerge, << pipeline.parameters.workflow >>]
+    jobs:
+      - release-management/dependabot-automerge:
+          filters:
+            branches:
+              only: main
+          context: salesforce-cli
