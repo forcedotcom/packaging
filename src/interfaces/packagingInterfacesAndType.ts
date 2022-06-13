@@ -4,6 +4,7 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
+
 export interface IPackage {
   create(): Promise<void>;
   convert(): Promise<void>;
@@ -14,7 +15,7 @@ export interface IPackage {
   update(): Promise<void>;
 }
 
-export interface IPackage1Version {
+export interface IPackageVersion1GP {
   create(): Promise<void>;
   convert(): Promise<void>;
   delete(): Promise<void>;
@@ -24,7 +25,7 @@ export interface IPackage1Version {
   update(): Promise<void>;
 }
 
-export interface IPackage2Version {
+export interface IPackageVersion2GP {
   create(): Promise<void>;
   convert(): Promise<void>;
   delete(): Promise<void>;
@@ -37,4 +38,4 @@ export interface IPackage2Version {
 export type PackageOptions = Record<string, unknown>;
 
 export type PackageVersion2Options = Record<string, unknown>;
-export type PackageVersion1Options = Record<string, unknown>;
+export type PackageVersionOptions1GP = Record<string, unknown>;

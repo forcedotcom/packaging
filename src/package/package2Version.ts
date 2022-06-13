@@ -5,12 +5,12 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import { AsyncCreatable } from '@salesforce/kit';
-import { IPackage2Version, PackageVersion2Options } from '../interfaces';
+import { IPackageVersion2GP, PackageVersion2Options } from '../interfaces';
 
 /**
  * Package2Version class - Class to be used with 2nd generation package versions
  */
-export class Package2Version extends AsyncCreatable<PackageVersion2Options> implements IPackage2Version {
+export class PackageVersion2GP extends AsyncCreatable<PackageVersion2Options> implements IPackageVersion2GP {
   // @ts-ignore
   public constructor(private options: PackageVersion2Options) {
     super(options);
