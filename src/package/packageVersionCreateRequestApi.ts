@@ -10,7 +10,12 @@ import * as util from 'util';
 
 // Local
 import { Connection, Messages } from '@salesforce/core';
-import { PackagingSObjects } from '../interfaces/packagingSObjects';
+import {
+  Package2VersionCreateRequestError,
+  Package2VersionCreateRequestResult,
+  PackagingSObjects,
+} from '../interfaces';
+
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
 
@@ -31,39 +36,25 @@ type PackageVersionCreateRequestApiOptions = {
   connection?: Connection;
   status?: string;
 };
-export type Package2VersionCreateRequestQueryResult = {
-  Id: string;
-  Status: string;
-  Package2Id: string;
-  Package2VersionId: string;
-  SubscriberPackageVersionId: string | null;
-  Tag: string;
-  Branch: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Error: any[];
-  CreatedDate: string;
-  HasMetadataRemoved: boolean | null;
-  CreatedBy: string;
-};
+
 export class PackageVersionCreateRequestApi {
   public constructor(private options: PackageVersionCreateRequestApiOptions) {}
 
-  public list(options: PackageVersionCreateRequestApiOptions = {}) {
-    const whereCaluse = this._constructWhere();
-    return this._query(util.format(QUERY, whereCaluse));
+  public list(options: PackageVersionCreateRequestApiOptions = {}): Promise<Package2VersionCreateRequestResult[]> {
+    const whereClause = this._constructWhere();
+    return this._query(util.format(QUERY, whereClause));
   }
 
-  public async byId(package2VersionCreateRequestId): Promise<Array<Record<string, unknown>>> {
+  public async byId(package2VersionCreateRequestId): Promise<Package2VersionCreateRequestResult[]> {
     const results = await this._query(util.format(QUERY, `WHERE Id = '${package2VersionCreateRequestId}' `));
     if (results && results.length === 1 && results[0].Status === STATUS_ERROR) {
-      const queryErrors = await this._queryErrors(package2VersionCreateRequestId);
-      results[0].Error = queryErrors;
+      results[0].Error = await this._queryErrors(package2VersionCreateRequestId);
     }
 
     return results;
   }
 
-  private async _query(query: string): Promise<Package2VersionCreateRequestQueryResult[]> {
+  private async _query(query: string): Promise<Package2VersionCreateRequestResult[]> {
     type QueryRecord = PackagingSObjects.Package2VersionCreateRequest & {
       Package2Version: Pick<PackagingSObjects.Package2Version, 'HasMetadataRemoved' | 'SubscriberPackageVersionId'>;
     };
@@ -84,7 +75,7 @@ export class PackageVersionCreateRequestApi {
     }));
   }
 
-  private async _queryErrors(package2VersionCreateRequestId) {
+  private async _queryErrors(package2VersionCreateRequestId): Promise<Package2VersionCreateRequestError[]> {
     const errorResults = [];
 
     const queryResult = await this.options.connection.tooling.query(

@@ -167,3 +167,25 @@ We can’t find this package ID for this Dev Hub.
 # notFoundMessage
 
 The requested resource does not exist
+
+# errorMoreThanOnePackage2WithSeed
+
+Only one package in a Dev Hub is allowed per converted from first-generation package, but the following were found:
+%s
+
+# versionCreateFailedWithMultipleErrors
+
+Multiple errors occurred:
+
+# errorScriptsNotApplicableToUnlockedPackage
+
+We can’t create the package version. This parameter is available only for second-generation managed packages. Create the package version without the postinstallscript or uninstallscript parameters.,
+
+# errorAncestorNotApplicableToUnlockedPackage
+
+Can’t create package version. Specifying an ancestor is available only for second-generation managed packages. Remove the ancestorId or ancestorVersion from your sfdx-project.json file, and then create the package version again.,
+
+# itemDoesNotFitWithinMaxLength
+
+When calculating the number of items to be included in query "%s", when formatted, was too long.
+The item was (truncated): %s with a length of %s. The maximum length of items, when formatted is %s.

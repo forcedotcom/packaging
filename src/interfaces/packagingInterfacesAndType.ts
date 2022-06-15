@@ -5,6 +5,10 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
+import { Duration } from '@salesforce/kit';
+import { PackagingSObjects } from './packagingSObjects';
+import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
+
 export interface IPackage {
   create(): Promise<void>;
   convert(): Promise<void>;
@@ -39,3 +43,30 @@ export type PackageOptions = Record<string, unknown>;
 
 export type PackageVersion2Options = Record<string, unknown>;
 export type PackageVersionOptions1GP = Record<string, unknown>;
+
+export type Package2VersionCreateRequestResult = {
+  Id: string;
+  Status: Package2VersionStatus;
+  Package2Id: string;
+  Package2VersionId: string;
+  SubscriberPackageVersionId: string | null;
+  Tag: string;
+  Branch: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Error: any[];
+  CreatedDate: string;
+  HasMetadataRemoved: boolean | null;
+  CreatedBy: string;
+};
+
+export type Package2VersionCreateRequestError = {
+  Message: string;
+};
+
+export type Package2VersionCreateEventData = {
+  id: string;
+  packageUpdated?: boolean;
+  package2VersionCreateRequestResult: Package2VersionCreateRequestResult;
+  message?: string;
+  timeRemaining?: Duration;
+};

@@ -56,6 +56,13 @@ export namespace PackagingSObjects {
     HasMetadataRemoved: boolean;
   };
 
+  export enum Package2VersionStatus {
+    queued = 'Queued',
+    inProgress = 'InProgress',
+    success = 'Success',
+    error = 'Error',
+  }
+
   export type Package2VersionCreateRequest = {
     Id: string;
     IsDeleted: boolean;
@@ -68,7 +75,7 @@ export namespace PackagingSObjects {
     Package2VersionId: string;
     Tag: string;
     Branch: string;
-    Status: string;
+    Status: Package2VersionStatus;
     Instance: string;
     IsPasswordProtected: boolean;
     InstallKey: string;
