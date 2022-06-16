@@ -16,5 +16,5 @@ const QUERY =
   'ORDER BY NamespacePrefix, Name';
 
 export async function listPackages(connection: Connection): Promise<QueryResult<PackagingSObjects.Package2>> {
-  return await connection.tooling.query<PackagingSObjects.Package2>(QUERY);
+  return connection.tooling.query<PackagingSObjects.Package2>(QUERY);
 }
