@@ -70,3 +70,39 @@ export type Package2VersionCreateEventData = {
   message?: string;
   timeRemaining?: Duration;
 };
+
+export type PackageVersionListResult = {
+  Id: string;
+  Package2Id: string;
+  SubscriberPackageVersionId: string;
+  Name: string;
+  Package2: {
+    [key: string]: unknown;
+    Name: string;
+    NamespacePrefix: string;
+    IsOrgDependent?: boolean;
+  };
+  Description: string;
+  Tag: string;
+  Branch: string;
+  MajorVersion: string;
+  MinorVersion: string;
+  PatchVersion: string;
+  BuildNumber: string;
+  IsReleased: boolean;
+  CreatedDate: string;
+  LastModifiedDate: string;
+  IsPasswordProtected: boolean;
+  AncestorId: string;
+  ValidationSkipped: boolean;
+  CreatedById: string;
+  CodeCoverage?: {
+    [key: string]: unknown;
+    ApexCodeCoveragePercentage: number;
+  };
+  HasPassedCodeCoverageCheck?: boolean;
+  ConvertedFromVersionId?: string;
+  ReleaseVersion?: string;
+  BuildDurationInSeconds?: number;
+  HasMetadataRemoved?: boolean;
+};
