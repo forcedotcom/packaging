@@ -19,6 +19,7 @@ describe('package version list', () => {
   before(async () => {
     session = await TestSession.create({
       project: {},
+      authStrategy: 'NONE',
     });
   });
 
