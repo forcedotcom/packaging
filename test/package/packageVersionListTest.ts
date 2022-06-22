@@ -5,8 +5,8 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import { expect } from 'chai';
-import { TestSession } from '@salesforce/cli-plugins-testkit';
 import { SfProject } from '@salesforce/core';
+import { instantiateContext, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import {
   _assembleQueryParts,
   _constructWhere,
@@ -15,16 +15,14 @@ import {
 } from '../../src/package/packageVersionList';
 
 describe('package version list', () => {
-  let session: TestSession;
-  before(async () => {
-    session = await TestSession.create({
-      project: {},
-      authStrategy: 'NONE',
-    });
+  const $$ = instantiateContext();
+
+  beforeEach(() => {
+    stubContext($$);
   });
 
-  after(async () => {
-    await session?.clean();
+  afterEach(() => {
+    restoreContext($$);
   });
 
   describe('_getLastDays', function () {
@@ -58,6 +56,7 @@ describe('package version list', () => {
     };
 
     it('should create where clause contain proper values', async function () {
+      $$.inProject(true);
       const sfProject = await SfProject.resolve();
       sfProject.getSfProjectJson().set('packageDirectories', packageDirectories);
       sfProject.getSfProjectJson().set('packageAliases', packageAliases);
