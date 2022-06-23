@@ -347,7 +347,7 @@ export async function getContainerOptions(package2Ids: string[], connection: Con
   if (!package2Ids || package2Ids.length === 0) {
     return new Map<string, string>();
   }
-  const query = 'SELECT Id, ContainerOptions FROM Package2 WHERE Id IN (%IDS%)';
+  const query = "SELECT Id, ContainerOptions FROM Package2 WHERE Id IN ('%IDS%')";
 
   const records = await queryWithInConditionChunking<Pick<PackagingSObjects.Package2, 'Id' | 'ContainerOptions'>>(
     query,
@@ -776,7 +776,7 @@ export function convertCamelCaseStringToSentence(stringIn: string): string {
  * @returns an array of alias for the given id.
  */
 export function getPackageAliasesFromId(packageId: string, project: SfProject): string[] {
-  const packageAliases = project.getSfProjectJson().getContents().packageAliases || {};
+  const packageAliases = project?.getSfProjectJson().getContents().packageAliases || {};
   // check for a matching alias
   return Object.entries(packageAliases)
     .filter((alias) => alias[1] === packageId)
