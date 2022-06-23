@@ -140,7 +140,7 @@ export async function createPackage(
     project.getSfProjectJson().set('packageDirectories', packageDirectory);
     project.getSfProjectJson().set('packageAliases', packageAliases);
 
-    await project.getSfProjectJson().write(project.getSfProjectJson().getContents());
+    await project.getSfProjectJson().write();
   }
 
   return { Id: record.Id };
