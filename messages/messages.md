@@ -189,3 +189,7 @@ Can’t create package version. Specifying an ancestor is available only for sec
 
 When calculating the number of items to be included in query "%s", when formatted, was too long.
 The item was (truncated): %s with a length of %s. The maximum length of items, when formatted is %s.
+
+# unableToFindPackageWithId
+
+Unable to find Package with Id: "%s"

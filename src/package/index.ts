@@ -8,3 +8,4 @@ export * from './package';
 export * from './packageVersion2GP';
 export * from './packageList';
 export { listPackageVersions } from './packageVersionList';
+export { createPackage } from './packageCreate';

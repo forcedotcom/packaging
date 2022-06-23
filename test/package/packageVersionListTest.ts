@@ -51,6 +51,7 @@ describe('package version list', () => {
         versionNumber: '53.0.0.NEXT',
       },
     ];
+
     const packageAliases = {
       DreamhouseLWC: '0Ho3h000000xxxxCAG',
     };

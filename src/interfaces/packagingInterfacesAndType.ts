@@ -106,3 +106,15 @@ export type PackageVersionListResult = {
   BuildDurationInSeconds?: number;
   HasMetadataRemoved?: boolean;
 };
+
+export type PackageType = 'Managed' | 'Unlocked';
+
+export type PackageCreateOptions = {
+  name: string;
+  description: string;
+  noNamespace: boolean;
+  orgDependent: boolean;
+  packageType: PackageType;
+  errorNotificationUsername: string;
+  path: string;
+};

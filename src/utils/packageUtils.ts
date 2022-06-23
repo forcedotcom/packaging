@@ -743,10 +743,10 @@ export function getConfigPackageDirectories(project: SfProject): PackageDir[] {
   return project.getPackageDirectories();
 }
 export function getConfigPackageDirectory(
-  packageDirs: NamedPackageDir[],
+  packageDirs: NamedPackageDir[] | PackageDir[],
   lookupProperty: string,
   lookupValue: unknown
-): NamedPackageDir | undefined {
+): NamedPackageDir | PackageDir | undefined {
   return packageDirs?.find((pkgDir) => pkgDir[lookupProperty] === lookupValue);
 }
 /**

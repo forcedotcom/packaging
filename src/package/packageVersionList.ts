@@ -7,13 +7,13 @@
 
 import * as _ from 'lodash';
 import { Connection, Logger, Messages, SfProject } from '@salesforce/core';
-
-Messages.importMessagesDirectory(__dirname);
-const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
 import { QueryResult } from 'jsforce';
 import { isNumber } from '@salesforce/ts-types';
 import { BY_LABEL, getPackageIdFromAlias, validateId } from '../utils';
 import { PackageVersionListResult } from '../interfaces';
+
+Messages.importMessagesDirectory(__dirname);
+const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
 
 // Stripping CodeCoverage, HasPassedCodeCoverageCheck as they are causing a perf issue in 47.0+ W-6997762
 const DEFAULT_SELECT =

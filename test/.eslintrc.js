@@ -22,4 +22,5 @@ module.exports = {
     // Easily return a promise in a mocked method.
     '@typescript-eslint/require-await': 'off',
   },
+  ignorePatterns: ['package/resources/**/*'],
 };
