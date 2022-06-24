@@ -8,6 +8,7 @@
 import { assert, expect } from 'chai';
 import { Connection, SfProject } from '@salesforce/core';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
+import { SaveError } from 'jsforce';
 import {
   applyErrorAction,
   getPackageAliasesFromId,
@@ -21,6 +22,7 @@ import {
   isErrorPackageNotAvailable,
   isErrorFromSPVQueryRestriction,
   validateVersionNumber,
+  combineSaveErrors,
 } from '../../src/utils';
 import { PackagingSObjects } from '../../src/interfaces';
 
@@ -334,5 +336,21 @@ describe('packageUtils', () => {
   });
   describe('validatePatchVersion', () => {
     it.skip('should return the correct value', () => {});
+  });
+  describe('combineSaveErrors', () => {
+    it('should combine crud operations errors', () => {
+      const errors = [
+        { message: 'error 1', errorCode: 'errorCode 1', fields: ['field1', 'field2'] },
+        { message: 'error 2', errorCode: 'errorCode 2', fields: [] },
+        { message: 'error 3', errorCode: 'errorCode 3' },
+      ] as SaveError[];
+      const result = combineSaveErrors('fooObject', 'upsert', errors);
+      const messageLines = result.message.split('\n');
+      expect(messageLines).to.be.length(4);
+      expect(messageLines[0]).to.be.equal('An error occurred during CRUD operation upsert on entity fooObject.');
+      expect(messageLines[1]).to.be.equal('Error: errorCode 1 Message: error 1 Fields: [field1, field2]');
+      expect(messageLines[2]).to.be.equal('Error: errorCode 2 Message: error 2 ');
+      expect(messageLines[3]).to.be.equal('Error: errorCode 3 Message: error 3 ');
+    });
   });
 });

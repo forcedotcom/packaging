@@ -40,6 +40,7 @@ type PackageVersionCreateRequestApiOptions = {
 export class PackageVersionCreateRequestApi {
   public constructor(private options: PackageVersionCreateRequestApiOptions) {}
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public list(options: PackageVersionCreateRequestApiOptions = {}): Promise<Package2VersionCreateRequestResult[]> {
     const whereClause = this._constructWhere();
     return this._query(util.format(QUERY, whereClause));

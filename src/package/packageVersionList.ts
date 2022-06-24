@@ -5,12 +5,11 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import * as _ from 'lodash';
-import { Connection, Logger, Messages, SfProject } from '@salesforce/core';
+import { Logger, Messages, SfProject } from '@salesforce/core';
 import { QueryResult } from 'jsforce';
 import { isNumber } from '@salesforce/ts-types';
 import { BY_LABEL, getPackageIdFromAlias, validateId } from '../utils';
-import { PackageVersionListResult } from '../interfaces';
+import { PackageVersionListResult, PackageVersionQueryOptions } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
@@ -33,31 +32,13 @@ export const DEFAULT_ORDER_BY_FIELDS = 'Package2Id, Branch, MajorVersion, MinorV
 
 const logger = Logger.childFromRoot('packageVersionList');
 
-export async function listPackageVersions(options: {
-  project: SfProject;
-  orderBy: string;
-  modifiedLastDays: number;
-  createdLastDays: number;
-  packages: string[];
-  connection: Connection;
-  verbose: boolean;
-  concise: boolean;
-  isReleased: boolean;
-}): Promise<QueryResult<PackageVersionListResult>> {
+export async function listPackageVersions(
+  options: PackageVersionQueryOptions
+): Promise<QueryResult<PackageVersionListResult>> {
   return options.connection.tooling.query<PackageVersionListResult>(_constructQuery(options));
 }
 
-export function _constructQuery(options: {
-  project: SfProject;
-  orderBy: string;
-  modifiedLastDays: number;
-  createdLastDays: number;
-  packages: string[];
-  connection: Connection;
-  verbose: boolean;
-  concise: boolean;
-  isReleased: boolean;
-}): string {
+export function _constructQuery(options: PackageVersionQueryOptions): string {
   // construct custom WHERE clause, if applicable
   const where = _constructWhere(options.packages, options.createdLastDays, options.modifiedLastDays, options.project);
   if (options.isReleased) {
@@ -89,10 +70,10 @@ export function _constructWhere(
   // filter on given package ids
   if (idsOrAliases?.length > 0) {
     // remove dups
-    idsOrAliases = _.uniq(idsOrAliases);
+    const aliasesOrIds = [...new Set(idsOrAliases)];
 
     // resolve any aliases
-    const packageIds = idsOrAliases.map((idOrAlias) => getPackageIdFromAlias(idOrAlias, project));
+    const packageIds = aliasesOrIds.map((idOrAlias) => getPackageIdFromAlias(idOrAlias, project));
 
     // validate ids
     packageIds.forEach((packageId) => {
@@ -120,7 +101,7 @@ export function _constructWhere(
   return where;
 }
 
-export function _getLastDays(paramName: string, lastDays: number) {
+export function _getLastDays(paramName: string, lastDays: number): number {
   if (isNaN(lastDays)) {
     return 0;
   }

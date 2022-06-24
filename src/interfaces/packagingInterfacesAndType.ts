@@ -6,6 +6,7 @@
  */
 
 import { Duration } from '@salesforce/kit';
+import { Connection, SfProject } from '@salesforce/core';
 import { PackagingSObjects } from './packagingSObjects';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
@@ -117,4 +118,16 @@ export type PackageCreateOptions = {
   packageType: PackageType;
   errorNotificationUsername: string;
   path: string;
+};
+
+export type PackageVersionQueryOptions = {
+  project: SfProject;
+  orderBy: string;
+  modifiedLastDays: number;
+  createdLastDays: number;
+  packages: string[];
+  connection: Connection;
+  verbose: boolean;
+  concise: boolean;
+  isReleased: boolean;
 };

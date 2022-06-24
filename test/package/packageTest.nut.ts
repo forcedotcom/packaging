@@ -12,9 +12,10 @@ import { TestSession, execCmd } from '@salesforce/cli-plugins-testkit';
 import { Duration, sleep } from '@salesforce/kit';
 import { ProjectJson } from '@salesforce/core/lib/sfProject';
 import { ConfigAggregator, Org, SfProject } from '@salesforce/core';
-import { genUniqueString } from '../utils/genUniqueString';
+import { uniqid } from '@salesforce/core/lib/testSetup';
 import { PackageCreateOptions } from '../../src/interfaces';
 import { createPackage } from '../../src/package';
+import { deletePackage } from '../../lib/package';
 
 let session: TestSession;
 
@@ -55,16 +56,16 @@ const SUB_ORG_ALIAS = 'pk2TargetOrg';
 const WAIT_INTERVAL_MS = 8000;
 const INSTALLATION_KEY = '123456';
 
-let pkgId = ''; // 0Ho
-let pkgCreateVersionRequestId = ''; // 08c
-let subscriberPkgVersionId = ''; // 04t
-let installReqId = '';
-let uninstallReqId = ''; // 06y
-
 describe('Integration tests for #salesforce/packaging library', function () {
-  // packaging can be slower sometimes
-  this.timeout(1000 * 60 * 15);
-
+  let pkgId = ''; // 0Ho
+  let pkgCreateVersionRequestId = ''; // 08c
+  let subscriberPkgVersionId = ''; // 04t
+  let installReqId = '';
+  let uninstallReqId = ''; // 06y
+  let pkgName = '';
+  let configAggregator: ConfigAggregator;
+  let devHubOrg: Org;
+  let project: SfProject;
   before('pkgSetup', async () => {
     process.env.TESTKIT_EXECUTABLE_PATH = 'sfdx';
     // will auth the hub
@@ -77,6 +78,10 @@ describe('Integration tests for #salesforce/packaging library', function () {
         // `sfdx force:org:create -d 1 -a ${SUB_ORG_ALIAS} -f config/project-scratch-def.json`,
       ],
     });
+    pkgName = uniqid({ template: 'dancingbears-', length: 16 });
+    configAggregator = await ConfigAggregator.create();
+    devHubOrg = await Org.create({ aliasOrUsername: configAggregator.getPropertyValue<string>('target-dev-hub') });
+    project = await SfProject.resolve();
   });
 
   after(async () => {
@@ -86,7 +91,6 @@ describe('Integration tests for #salesforce/packaging library', function () {
 
   describe('create package/version', () => {
     it('force:package:create', async () => {
-      const pkgName = genUniqueString('dancingbears-');
       const options: PackageCreateOptions = {
         name: pkgName,
         packageType: 'Unlocked',
@@ -96,11 +100,7 @@ describe('Integration tests for #salesforce/packaging library', function () {
         orgDependent: false,
         errorNotificationUsername: undefined,
       };
-      const configAggregator = await ConfigAggregator.create();
-      const org = await Org.create({ aliasOrUsername: configAggregator.getPropertyValue<string>('target-dev-hub') });
-      const project = await SfProject.resolve();
-      await project.resolveProjectConfig();
-      const result = await createPackage(org, org.getConnection(), project, options);
+      const result = await createPackage(devHubOrg, devHubOrg.getConnection(), project, options);
       // const result = execCmd<{ Id: string }>(
       //   `force:package:create --name ${pkgName} --packagetype Unlocked --path force-app --description "Don't ease, don't ease, don't ease me in." --json`,
       //   { ensureExitCode: 0 }
@@ -348,8 +348,11 @@ describe('Integration tests for #salesforce/packaging library', function () {
       execCmd(`force:package:version:delete -p ${subscriberPkgVersionId} -n --json`, { ensureExitCode: 0 });
     });
 
-    it('deletes the package', () => {
-      execCmd(`force:package:delete -p ${pkgId} -n --json`, { ensureExitCode: 0 });
+    it('deletes the package', async () => {
+      // execCmd(`force:package:delete -p ${pkgId} -n --json`, { ensureExitCode: 0 });
+      const result = await deletePackage(pkgId, project, devHubOrg.getConnection(), false);
+      expect(result.success).to.be.true;
+      expect(result.id).to.be.equal(pkgId);
     });
   });
 });

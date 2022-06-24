@@ -4,7 +4,7 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-
+import * as os from 'os';
 import {
   Connection,
   Lifecycle,
@@ -21,6 +21,7 @@ import {
 import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
 import { Tokens } from '@salesforce/core/lib/messages';
 import { Many } from '@salesforce/ts-types';
+import { SaveError } from 'jsforce';
 import { Package2VersionCreateEventData, PackagingSObjects, Package2VersionCreateRequestResult } from '../interfaces';
 import { PackageVersionCreateRequestApi } from '../package/packageVersionCreateRequestApi';
 import { BuildNumberToken, VersionNumber } from './versionNumber';
@@ -782,6 +783,7 @@ export function getPackageAliasesFromId(packageId: string, project: SfProject): 
     .filter((alias) => alias[1] === packageId)
     .map((alias) => alias[0]);
 }
+// probably used by convert.
 export async function findOrCreatePackage2(seedPackage: string, connection: Connection): Promise<string> {
   const query = `SELECT Id FROM Package2 WHERE ConvertedFromPackageId = '${seedPackage}'`;
   const queryResult = await connection.tooling.query<PackagingSObjects.Package2>(query);
@@ -814,7 +816,7 @@ export async function findOrCreatePackage2(seedPackage: string, connection: Conn
 
   const createResult = await connection.tooling.create('Package2', request);
   if (!createResult.success) {
-    throw new Error(createResult.errors.map((e) => e.message).join('\n'));
+    throw combineSaveErrors('Package2', 'create', createResult.errors);
   }
   return createResult.id;
 }
@@ -966,11 +968,24 @@ export function getSoqlWhereClauseMaxLength() {
   return SOQL_WHERE_CLAUSE_MAX_LENGTH;
 }
 
-export function formatDate(date: Date) {
+export function formatDate(date: Date): string {
   const pad = (num) => {
     return num < 10 ? `0${num}` : num;
   };
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(
     date.getMinutes()
   )}`;
+}
+
+export function combineSaveErrors(sObject: string, crudOperation: string, errors: SaveError[]): SfError {
+  const errorMessages = errors.map((error) => {
+    const fieldsString = error.fields?.length > 0 ? `Fields: [${error.fields.join(', ')}]` : '';
+    return `Error: ${error.errorCode} Message: ${error.message} ${fieldsString}`;
+  });
+  const sfError = messages.createError('errorDuringSObjectCRUDOperation', [
+    crudOperation,
+    sObject,
+    errorMessages.join(os.EOL),
+  ]);
+  return sfError;
 }

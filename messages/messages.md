@@ -193,3 +193,8 @@ The item was (truncated): %s with a length of %s. The maximum length of items, w
 # unableToFindPackageWithId
 
 Unable to find Package with Id: "%s"
+
+# errorDuringSObjectCRUDOperation
+
+An error occurred during CRUD operation %s on entity %s.
+%s

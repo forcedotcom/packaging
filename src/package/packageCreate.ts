@@ -7,9 +7,9 @@
 
 import { Connection, Messages, NamedPackageDir, Org, PackageDir, SfError, SfProject } from '@salesforce/core';
 import { isString } from '@salesforce/ts-types';
-import { SaveError } from 'jsforce';
 import * as pkgUtils from '../utils/packageUtils';
 import { PackageCreateOptions, PackagingSObjects } from '../interfaces';
+import { combineSaveErrors } from '../utils/packageUtils';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
@@ -19,7 +19,6 @@ type Package2Request = Pick<
   'Name' | 'Description' | 'NamespacePrefix' | 'ContainerOptions' | 'IsOrgDependent' | 'PackageErrorUsername'
 >;
 
-// TODO: consider refactoring this to take as input a Package2Request instance instead of passing in the options - this defers to the caller
 export function _createPackage2RequestFromContext(project: SfProject, options: PackageCreateOptions): Package2Request {
   const namespace = options.noNamespace ? '' : project.getSfProjectJson().getContents().namespace || '';
   return {
@@ -101,7 +100,6 @@ export function _generatePackageAliasEntry(
   return packageAliases;
 }
 
-// TODO: consider refactoring this to take as input a Package2Request instance instead of passing in the options - this defers to the caller
 export async function createPackage(
   org: Org,
   connection: Connection,
@@ -123,8 +121,7 @@ export async function createPackage(
     });
 
   if (!createResult.success) {
-    // TODO: should probably handle these errors differently - SaveError has much more info to share
-    throw new Error((createResult.errors as SaveError[]).map((err) => err.message).join('\n'));
+    throw combineSaveErrors('Package2', 'create', createResult.errors);
   }
   packageId = createResult.id;
   const queryResult = await connection.tooling.query(`SELECT Id FROM Package2 WHERE Id='${packageId}'`);
@@ -137,10 +134,11 @@ export async function createPackage(
   if (!process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE) {
     const packageDirectory = _generatePackageDirEntry(project, options);
     const packageAliases = _generatePackageAliasEntry(project, options, record.Id);
-    project.getSfProjectJson().set('packageDirectories', packageDirectory);
-    project.getSfProjectJson().set('packageAliases', packageAliases);
+    const projectJson = project.getSfProjectJson();
+    projectJson.set('packageDirectories', packageDirectory);
+    projectJson.set('packageAliases', packageAliases);
 
-    await project.getSfProjectJson().write();
+    await projectJson.write();
   }
 
   return { Id: record.Id };
