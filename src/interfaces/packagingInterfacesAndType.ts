@@ -7,6 +7,7 @@
 
 import { Duration } from '@salesforce/kit';
 import { Connection, SfProject } from '@salesforce/core';
+import { SaveResult } from 'jsforce';
 import { PackagingSObjects } from './packagingSObjects';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
@@ -131,3 +132,5 @@ export type PackageVersionQueryOptions = {
   concise: boolean;
   isReleased: boolean;
 };
+
+export type PackageSaveResult = SaveResult;

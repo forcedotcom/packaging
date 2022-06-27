@@ -6,16 +6,16 @@
  */
 
 import { Connection, SfProject } from '@salesforce/core';
-import { SaveResult } from 'jsforce';
 import * as pkgUtils from '../utils/packageUtils';
 import { combineSaveErrors } from '../utils';
+import { PackageSaveResult } from '../interfaces';
 
 export async function deletePackage(
   idOrAlias: string,
   project: SfProject,
   connection: Connection,
   undelete: boolean
-): Promise<SaveResult> {
+): Promise<PackageSaveResult> {
   const packageId = pkgUtils.getPackageIdFromAlias(idOrAlias, project);
   pkgUtils.validateId(pkgUtils.BY_LABEL.PACKAGE_ID, packageId);
 
