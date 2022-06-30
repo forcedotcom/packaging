@@ -24,6 +24,7 @@ import { Many } from '@salesforce/ts-types';
 import { SaveError } from 'jsforce';
 import { Package2VersionCreateEventData, PackagingSObjects, Package2VersionCreateRequestResult } from '../interfaces';
 import { PackageVersionCreateRequestApi } from '../package/packageVersionCreateRequestApi';
+import * as pvcr from '../package/packageVersionCreateRequest';
 import { BuildNumberToken, VersionNumber } from './versionNumber';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
@@ -825,7 +826,6 @@ export function _getPackageVersionCreateRequestApi(connection: Connection): Pack
 }
 
 export async function pollForStatusWithInterval(
-  context,
   id: string,
   retries: number,
   packageId: string,
@@ -837,8 +837,7 @@ export async function pollForStatusWithInterval(
   let remainingRetries = retries;
   const pollingClient = await PollingClient.create({
     poll: async (): Promise<StatusResult> => {
-      const pvcrApi = new PackageVersionCreateRequestApi({ connection });
-      const results: Package2VersionCreateRequestResult[] = await pvcrApi.byId(id);
+      const results: Package2VersionCreateRequestResult[] = await pvcr.byId(id, connection);
 
       if (_isStatusEqualTo(results, [Package2VersionStatus.success, Package2VersionStatus.error])) {
         // complete

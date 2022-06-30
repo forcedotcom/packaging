@@ -134,3 +134,12 @@ export type PackageVersionQueryOptions = {
 };
 
 export type PackageSaveResult = SaveResult;
+
+export type PackageVersionCreateRequestOptions = {
+  path: string;
+  preserve: boolean;
+  definitionfile?: string;
+  codecoverage?: boolean;
+  branch?: string;
+  skipancestorcheck?: boolean;
+};
