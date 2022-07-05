@@ -16,7 +16,7 @@ import * as pkgUtils from '../utils/packageUtils';
 import { PackagingSObjects } from '../interfaces';
 import { consts } from '../constants';
 import * as srcDevUtil from '../utils/srcDevUtils';
-import * as pcvr from './packageVersionCreateRequest';
+import { byId } from './packageVersionCreateRequest';
 type ConvertPackageOptions = {
   installationKey: string;
   installationKeyBypass: boolean;
@@ -60,7 +60,7 @@ export async function convertPackage(
       new Duration(pkgUtils.POLL_INTERVAL_SECONDS, Duration.Unit.SECONDS)
     );
   } else {
-    results = await pcvr.byId(packageId, connection);
+    results = await byId(packageId, connection);
   }
 
   return util.isArray(results) ? results[0] : results;

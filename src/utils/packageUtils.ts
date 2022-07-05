@@ -22,8 +22,12 @@ import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
 import { Tokens } from '@salesforce/core/lib/messages';
 import { Many } from '@salesforce/ts-types';
 import { SaveError } from 'jsforce';
-import { Package2VersionCreateEventData, PackagingSObjects, Package2VersionCreateRequestResult } from '../interfaces';
-import { PackageVersionCreateRequestApi } from '../package/packageVersionCreateRequestApi';
+import {
+  Package2VersionCreateEventData,
+  PackagingSObjects,
+  Package2VersionCreateRequestResult,
+  PackageVersionCreateOptions,
+} from '../interfaces';
 import * as pvcr from '../package/packageVersionCreateRequest';
 import { BuildNumberToken, VersionNumber } from './versionNumber';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
@@ -821,9 +825,6 @@ export async function findOrCreatePackage2(seedPackage: string, connection: Conn
   }
   return createResult.id;
 }
-export function _getPackageVersionCreateRequestApi(connection: Connection): PackageVersionCreateRequestApi {
-  return new PackageVersionCreateRequestApi({ connection });
-}
 
 export async function pollForStatusWithInterval(
   id: string,
@@ -987,4 +988,61 @@ export function combineSaveErrors(sObject: string, crudOperation: string, errors
     errorMessages.join(os.EOL),
   ]);
   return sfError;
+}
+
+export function resolveCanonicalPackageProperty(options: PackageVersionCreateOptions) {
+  let canonicalPackageProperty: 'id' | 'package';
+
+  if (!options.package) {
+    const packageValProp = this.getPackageValuePropertyFromDirectory(options.path, options);
+    options.package = packageValProp.packageValue;
+    canonicalPackageProperty = packageValProp.packageProperty;
+  } else if (!options.path) {
+    canonicalPackageProperty = this.getPackagePropertyFromPackage(this.project.getPackageDirectories(), options);
+    options.path = this.getConfigPackageDirectoriesValue(
+      this.project.getPackageDirectories(),
+      'path',
+      canonicalPackageProperty,
+      options.package,
+      'package',
+      options
+    );
+  } else {
+    canonicalPackageProperty = this.getPackagePropertyFromPackage(this.project.getPackageDirectories(), options);
+    this.getConfigPackageDirectoriesValue(
+      this.project.getPackageDirectories(),
+      canonicalPackageProperty,
+      'path',
+      options.path,
+      'path',
+      options
+    );
+
+    const expectedPackageId = this.getConfigPackageDirectoriesValue(
+      this.packageDirs,
+      canonicalPackageProperty,
+      'path',
+      options.path,
+      'path',
+      options
+    );
+
+    // This will throw an error if the package id flag value doesn't match
+    // any of the :id values in the package dirs.
+    this.getConfigPackageDirectoriesValue(
+      this.project.getPackageDirectories(),
+      'path',
+      canonicalPackageProperty,
+      options.package,
+      'package',
+      options
+    );
+
+    // This will throw an error if the package id flag value doesn't match
+    // the correct corresponding directory with that packageId.
+    if (options.package !== expectedPackageId) {
+      throw messages.createError('errorDirectoryIdMismatch', ['--path', options.path, '--package', options.package]);
+    }
+  }
+  return canonicalPackageProperty;
 }

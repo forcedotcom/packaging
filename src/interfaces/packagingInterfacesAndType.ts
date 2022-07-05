@@ -8,6 +8,7 @@
 import { Duration } from '@salesforce/kit';
 import { Connection, SfProject } from '@salesforce/core';
 import { SaveResult } from 'jsforce';
+import { ProfileApi } from '../package/profileApi';
 import { PackagingSObjects } from './packagingSObjects';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
@@ -142,4 +143,51 @@ export type PackageVersionCreateRequestOptions = {
   codecoverage?: boolean;
   branch?: string;
   skipancestorcheck?: boolean;
+};
+
+export type MDFolderForArtifactOptions = {
+  packageName?: string;
+  sourceDir?: string;
+  outputDir?: string;
+  manifest?: string;
+  sourcePaths?: string[];
+  metadataPaths?: string[];
+  deploydir?: string;
+};
+
+export type PackageVersionOptions = {
+  connection: Connection;
+  project: SfProject;
+};
+
+export type PackageVersionCreateOptions = PackageVersionOptions & {
+  branch: string;
+  buildinstance: string;
+  codecoverage: boolean;
+  definitionfile: string;
+  installationkey: string;
+  installationkeybypass: boolean;
+  package: string;
+  path: string;
+  postinstallscript: string;
+  postinstallurl: string;
+  preserve: boolean;
+  releasenotesurl: string;
+  skipancestorcheck: boolean;
+  skipvalidation: boolean;
+  sourceorg: string;
+  tag: string;
+  uninstallscript: string;
+  validateschema: boolean;
+  versiondescription: string;
+  versionname: string;
+  versionnumber: string;
+  wait: Duration;
+  profileApi?: ProfileApi;
+};
+
+export type PackageVersionCreateRequestQueryOptions = {
+  createdlastdays?: number;
+  connection?: Connection;
+  status?: string;
 };

@@ -10,6 +10,7 @@ import { Connection, Messages } from '@salesforce/core';
 import {
   Package2VersionCreateRequestError,
   Package2VersionCreateRequestResult,
+  PackageVersionCreateRequestQueryOptions,
   PackagingSObjects,
 } from '../interfaces';
 import * as packageUtils from '../utils/packageUtils';
@@ -27,12 +28,6 @@ const QUERY =
   'ORDER BY CreatedDate';
 const ERROR_QUERY = "SELECT Message FROM Package2VersionCreateRequestError WHERE ParentRequest.Id = '%s'";
 const STATUSES = ['Queued', 'InProgress', 'Success', 'Error'];
-
-type PackageVersionCreateRequestQueryOptions = {
-  createdlastdays?: number;
-  connection?: Connection;
-  status?: string;
-};
 
 export async function list(
   options: PackageVersionCreateRequestQueryOptions = {}
