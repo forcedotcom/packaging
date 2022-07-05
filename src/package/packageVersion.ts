@@ -34,7 +34,7 @@ import * as pkgUtils from '../utils/packageUtils';
 import { consts } from '../constants';
 import { copyDir, zipDir } from '../utils';
 import { BuildNumberToken, VersionNumber } from '../utils/versionNumber';
-import { Package2VersionCreateRequestResult } from '../interfaces';
+import { Package2VersionCreateRequestResult, PackagingSObjects } from '../interfaces';
 import { ProfileApi } from './profileApi';
 import { PackageVersionCreateRequestApi } from './packageVersionCreateRequestApi';
 
@@ -57,42 +57,36 @@ export type MDFolderForArtifactOptions = {
   deploydir?: string;
 };
 
-// type Dependency = NamedPackageDir & {
-//   subscriberPackageVersionId?: string;
-//   branch?: string;
-//   packageId?: string;
-// };
-
-type PackageVersionCreateCommandOptions = {
+export type PackageVersionOptions = {
   connection: Connection;
   project: SfProject;
-  flags: {
-    branch: string;
-    buildinstance: string;
-    codecoverage: boolean;
-    definitionfile: string;
-    installationkey: string;
-    installationkeybypass: boolean;
-    json: boolean;
-    loglevel: string;
-    package: string;
-    path: string;
-    postinstallscript: string;
-    postinstallurl: string;
-    preserve: boolean;
-    releasenotesurl: string;
-    skipancestorcheck: boolean;
-    skipvalidation: boolean;
-    sourceorg: string;
-    tag: string;
-    uninstallscript: string;
-    validateschema: boolean;
-    versiondescription: string;
-    versionname: string;
-    versionnumber: string;
-    wait: Duration;
-  };
 };
+
+type PackageVersionCreateOptions = {
+  branch: string;
+  buildinstance: string;
+  codecoverage: boolean;
+  definitionfile: string;
+  installationkey: string;
+  installationkeybypass: boolean;
+  package: string;
+  path: string;
+  postinstallscript: string;
+  postinstallurl: string;
+  preserve: boolean;
+  releasenotesurl: string;
+  skipancestorcheck: boolean;
+  skipvalidation: boolean;
+  sourceorg: string;
+  tag: string;
+  uninstallscript: string;
+  validateschema: boolean;
+  versiondescription: string;
+  versionname: string;
+  versionnumber: string;
+  wait: Duration;
+};
+
 type PackageDescriptorJson = Partial<NamedPackageDir> &
   Partial<{
     id: string;
@@ -121,35 +115,31 @@ type PackageVersionCreateRequest = {
   SkipValidation: boolean;
 };
 
-export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCreateCommandOptions> {
+export class PackageVersion extends AsyncCreatable<PackageVersionOptions> {
   private pollInterval: Duration;
-  private maxRetries: number;
   private apiVersionFromPackageXml: string;
   private packageVersionCreateRequestApi: PackageVersionCreateRequestApi;
   private packageDirs: NamedPackageDir[] = [];
   private profileApi: ProfileApi;
-  private project: SfProject;
-  private connection: Connection;
+  private readonly project: SfProject;
+  private readonly connection: Connection;
 
-  private constructor(private options: PackageVersionCreateCommandOptions) {
+  protected constructor(private options: PackageVersionOptions) {
     super(options);
-    this.pollInterval = Duration.seconds(pkgUtils.POLL_INTERVAL_SECONDS);
-    this.maxRetries = 0;
     this.connection = this.options.connection;
     this.project = this.options.project;
   }
 
-  public execute(context) {
-    return this._execute(context).catch((err: Error) => {
-      // TODO
-      // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
+  public createPackageVersion(
+    context: PackageVersionCreateOptions
+  ): Promise<Partial<Package2VersionCreateRequestResult>> {
+    return this._createPackageVersion(context).catch((err: Error) => {
+      // TODO: until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
       err = pkgUtils.massageErrorMessage(err);
       throw pkgUtils.applyErrorAction(err);
     });
   }
-  public async createPackageVersion(): Promise<void> {
-    return;
-  }
+
   public rejectWithInstallKeyError() {
     // This command also requires either the installationkey flag or installationkeybypass flag
     const errorString = messages.getMessage('errorMissingFlagsInstallationKey', [
@@ -368,7 +358,7 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
 
   private async _createRequestObject(
     packageId: string,
-    context,
+    options: PackageVersionCreateOptions,
     preserveFiles: boolean,
     packageVersTmpRoot: string,
     packageVersBlobZipFile: string
@@ -377,13 +367,13 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
     const requestObject = {
       Package2Id: packageId,
       VersionInfo: zipFileBase64,
-      Tag: this.options.flags.tag,
-      Branch: this.options.flags.branch,
-      InstallKey: this.options.flags.installationkey,
-      Instance: this.options.flags.buildinstance,
-      SourceOrg: this.options.flags.sourceorg,
-      CalculateCodeCoverage: this.options.flags.codecoverage,
-      SkipValidation: this.options.flags.skipvalidation,
+      Tag: options.tag,
+      Branch: options.branch,
+      InstallKey: options.installationkey,
+      Instance: options.buildinstance,
+      SourceOrg: options.sourceorg,
+      CalculateCodeCoverage: options.codecoverage,
+      SkipValidation: options.skipvalidation,
     };
 
     if (preserveFiles) {
@@ -412,19 +402,20 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
   /**
    * Convert the list of command line options to a JSON object that can be used to create an Package2VersionCreateRequest entity.
    *
-   * @param context
+   * @param options
    * @param packageId
+   * @param versionNumberString
    * @returns {{Package2Id: (*|p|boolean), Package2VersionMetadata: *, Tag: *, Branch: number}}
    * @private
    */
   private async _createPackageVersionCreateRequestFromOptions(
-    context,
+    options: PackageVersionCreateOptions,
     packageId: string,
     versionNumberString: string
   ): Promise<PackageVersionCreateRequest> {
-    const artDir = this.options.flags.path;
+    const artDir = options.path;
     const preserveFiles = !util.isNullOrUndefined(
-      this.options.flags.preserve || process.env.SFDX_PACKAGE2_VERSION_CREATE_PRESERVE
+      options.preserve || process.env.SFDX_PACKAGE2_VERSION_CREATE_PRESERVE
     );
     const uniqueHash = uniqid({ template: `${packageId}-%s` });
     const packageVersTmpRoot = path.join(os.tmpdir(), `${uniqueHash}`);
@@ -451,7 +442,7 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
     await this._generateMDFolderForArtifact(mdOptions);
     const packageDescriptorJson = this._getPackageDescriptorJsonFromPackageId(
       packageId,
-      this.options.flags
+      options
     ) as PackageDescriptorJson;
 
     if (packageDescriptorJson.package) {
@@ -459,9 +450,7 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
       packageDescriptorJson.id = packageId;
     }
 
-    const definitionFile = this.options.flags.definitionfile
-      ? this.options.flags.definitionfile
-      : packageDescriptorJson.definitionFile;
+    const definitionFile = options.definitionfile ? options.definitionfile : packageDescriptorJson.definitionFile;
     if (definitionFile) {
       // package2-descriptor.json sent to the server should contain only the features, snapshot & orgPreferences
       // defined in the definition file.
@@ -503,31 +492,30 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
     const [hasUnpackagedMetadata, unpackagedPromise] = await this._resolveUnpackagedMetadata(
       packageDescriptorJson,
       unpackagedMetadataFolder,
-      clientSideInfo
+      clientSideInfo,
+      options.codecoverage
     );
 
-    this.resolveApexTestPermissions(packageDescriptorJson);
+    this.resolveApexTestPermissions(packageDescriptorJson, options);
 
     // All dependencies for the packaging dir should be resolved to an 04t id to be passed to the server.
     // (see _retrieveSubscriberPackageVersionId for details)
     const dependencies = packageDescriptorJson.dependencies;
 
     // branch can be set via flag or descriptor; flag takes precedence
-    this.options.flags.branch = this.options.flags.branch ? this.options.flags.branch : packageDescriptorJson.branch;
+    options.branch = options.branch ? options.branch : packageDescriptorJson.branch;
 
-    const operations = !dependencies
-      ? []
-      : dependencies.map((dependency) =>
-          this._retrieveSubscriberPackageVersionId(dependency, this.options.flags.branch)
-        );
-
-    const resultValues = await Promise.all(operations);
+    const resultValues = await Promise.all(
+      dependencies
+        ? []
+        : dependencies.map((dependency) => this._retrieveSubscriberPackageVersionId(dependency, options.branch))
+    );
     const ancestorId = await pkgUtils.getAncestorId(
       packageDescriptorJson as PackageDir,
       this.connection,
       this.project,
       versionNumberString,
-      this.options.flags.skipancestorcheck
+      options.skipancestorcheck
     );
     // If dependencies exist, the resultValues array will contain the dependencies populated with a resolved
     // subscriber pkg version id.
@@ -536,10 +524,10 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
     }
 
     this._cleanPackageDescriptorJson(packageDescriptorJson);
-    this._setPackageDescriptorJsonValues(packageDescriptorJson, context);
+    this._setPackageDescriptorJsonValues(packageDescriptorJson, options);
 
-    fs.mkdirSync(packageVersTmpRoot, { recursive: true });
-    fs.mkdirSync(packageVersBlobDirectory, { recursive: true });
+    await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
+    await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
 
     if (Object.prototype.hasOwnProperty.call(packageDescriptorJson, 'ancestorVersion')) {
       delete packageDescriptorJson.ancestorVersion;
@@ -635,7 +623,7 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
     // Zip the Version Info and package.zip files into another zip
     zipDir(packageVersBlobDirectory, packageVersBlobZipFile);
 
-    return this._createRequestObject(packageId, context, preserveFiles, packageVersTmpRoot, packageVersBlobZipFile);
+    return this._createRequestObject(packageId, options, preserveFiles, packageVersTmpRoot, packageVersBlobZipFile);
   }
 
   private resolveApexTestPermissions(
@@ -653,11 +641,12 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
         subscriberPackageVersionId: string;
         packageId: string;
         versionName: string;
-      }>
+      }>,
+    options: PackageVersionCreateOptions
   ) {
     // Process permissionSet and permissionSetLicenses that should be enabled when running Apex tests
     // This only applies if code coverage is enabled
-    if (this.options.flags.codecoverage) {
+    if (options.codecoverage) {
       // Assuming no permission sets are named 0, 0n, null, undefined, false, NaN, and the empty string
       if (packageDescriptorJson.apexTestAccess && packageDescriptorJson.apexTestAccess.permissionSets) {
         let permSets = packageDescriptorJson.apexTestAccess.permissionSets;
@@ -682,16 +671,13 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
   private async _resolveUnpackagedMetadata(
     packageDescriptorJson: PackageDescriptorJson,
     unpackagedMetadataFolder: string,
-    clientSideInfo: Map<string, string>
+    clientSideInfo: Map<string, string>,
+    codeCoverage: boolean
   ) {
     let unpackagedPromise = null;
     let hasUnpackagedMetadata = false;
     // Add the Unpackaged Metadata, if any, to the output directory, only when code coverage is specified
-    if (
-      packageDescriptorJson.unpackagedMetadata &&
-      packageDescriptorJson.unpackagedMetadata.path &&
-      this.options.flags.codecoverage
-    ) {
+    if (codeCoverage && packageDescriptorJson.unpackagedMetadata && packageDescriptorJson.unpackagedMetadata.path) {
       hasUnpackagedMetadata = true;
       const unpackagedPath = path.join(process.cwd(), packageDescriptorJson.unpackagedMetadata.path);
       try {
@@ -712,9 +698,10 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
     return [hasUnpackagedMetadata, unpackagedPromise];
   }
 
-  private _getPackagePropertyFromPackage(packageDirs, packageValue: string) {
-    let foundByPackage = packageDirs.find((x) => x['package'] === packageValue);
-    let foundById = packageDirs.find((x) => x['id'] === packageValue);
+  // TODO: return type?
+  private _getPackagePropertyFromPackage(packageDirs, options: PackageVersionCreateOptions) {
+    let foundByPackage = packageDirs.find((x) => x['package'] === options.package);
+    let foundById = packageDirs.find((x) => x['id'] === options.package);
 
     if (foundByPackage && foundById) {
       throw messages.createError('errorPackageAndIdCollision', []);
@@ -723,11 +710,11 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
     // didn't find anything? let's see if we can reverse look up
     if (!foundByPackage && !foundById) {
       // is it an alias?
-      const pkgId = pkgUtils.getPackageIdFromAlias(packageValue, this.project);
+      const pkgId = pkgUtils.getPackageIdFromAlias(options.package, this.project);
 
-      if (pkgId === packageValue) {
+      if (pkgId === options.package) {
         // not an alias, or not a valid one, try to reverse lookup an alias in case this is an id
-        const aliases = pkgUtils.getPackageAliasesFromId(packageValue, this.project);
+        const aliases = pkgUtils.getPackageAliasesFromId(options.package, this.project);
 
         // if we found an alias, try to look that up in the config.
         foundByPackage = aliases.some((alias) => packageDirs.find((x) => x['package'] === alias));
@@ -742,8 +729,8 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
           foundByPackage = aliases.some((alias) => {
             const pd = packageDirs.find((x) => x['package'] === alias);
             if (pd) {
-              // if so, set this.options.flags.package to be this alias instead of the alternate
-              this.options.flags.package = alias;
+              // if so, set this.options.package.flags.package to be this alias instead of the alternate
+              options.package = alias;
             }
             return pd;
           });
@@ -758,20 +745,22 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
     return foundByPackage ? 'package' : 'id';
   }
 
-  private _getPackageValuePropertyFromDirectory(directoryFlag: string) {
+  private _getPackageValuePropertyFromDirectory(directoryFlag: string, options: PackageVersionCreateOptions) {
     const packageValue = this._getConfigPackageDirectoriesValue(
-      this.packageDirs,
+      this.project.getPackageDirectories(),
       'package',
       'path',
-      this.options.flags.path,
-      directoryFlag
+      options.path,
+      directoryFlag,
+      options
     );
     const packageIdValue = this._getConfigPackageDirectoriesValue(
-      this.packageDirs,
+      this.project.getPackageDirectories(),
       'id',
       'path',
-      this.options.flags.path,
-      directoryFlag
+      options.path,
+      directoryFlag,
+      options
     );
 
     let packagePropVal: { packageProperty: 'id' | 'package'; packageValue: string };
@@ -806,13 +795,15 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
    * @param knownProperty The JSON property in the packageDirectories that is already known
    * @param knownValue The value that corresponds to the knownProperty in the packageDirectories JSON
    * @param knownFlag The flag details e.g. short/long name, etc. Only used for the error message
+   * @param options
    */
   private _getConfigPackageDirectoriesValue(
     packageDirs,
     propertyToLookup: string,
     knownProperty: string,
     knownValue: string,
-    knownFlag: string
+    knownFlag: string,
+    options: PackageVersionCreateOptions
   ) {
     let value;
     let packageDir = packageDirs.find((x) => x[knownProperty] === knownValue);
@@ -821,7 +812,8 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
       const dirWithoutTrailingSlash = knownValue.slice(0, -1);
       packageDir = packageDirs.find((x) => x[knownProperty] === dirWithoutTrailingSlash);
       if (packageDir) {
-        this.options.flags.path = dirWithoutTrailingSlash;
+        // TODO: how to deal with this side effect?
+        options.path = dirWithoutTrailingSlash;
       }
     }
     // didn't find it with the package property, try a reverse lookup with alias and id
@@ -847,171 +839,175 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
   }
 
   // eslint-disable-next-line complexity
-  private async _execute(context): Promise<Partial<Package2VersionCreateRequestResult>> {
+  private async _createPackageVersion(
+    options: PackageVersionCreateOptions
+  ): Promise<Partial<Package2VersionCreateRequestResult>> {
     this.packageVersionCreateRequestApi = new PackageVersionCreateRequestApi({ connection: this.connection });
-    // logger.setLevel(this.options.flags.loglevel);
 
-    // if (!this.options.flags.json && this.options.flags.skipvalidation === true) {
-    //   CliUx.ux.warn(messages.getMessage('skipValidationWarning', []));
-    // }
-    if (this.options.flags.wait) {
-      if (this.options.flags.skipvalidation === true) {
-        this.pollInterval = Duration.seconds(POLL_INTERVAL_WITHOUT_VALIDATION_SECONDS);
+    let pollInterval = Duration.seconds(pkgUtils.POLL_INTERVAL_SECONDS);
+    let maxRetries = 0;
+
+    if (options.wait.milliseconds > 0) {
+      if (options.skipvalidation === true) {
+        pollInterval = Duration.seconds(POLL_INTERVAL_WITHOUT_VALIDATION_SECONDS);
       }
-      this.maxRetries = (60 / this.pollInterval.seconds) * this.options.flags.wait.seconds;
+      maxRetries = (60 / pollInterval.seconds) * options.wait.seconds;
     }
-
-    // This command requires either the ID flag or path flag. The
-    // other needed value can be looked up from sfdx-project.json. As
-    // this concept is not supported by the framework, manually check if
-    // we have at least one of the flags
-    // const pathFlag = context.command.flags.find((x) => x.name === 'path');
-    // const packageFlag = context.command.flags.find((x) => x.name === 'package');
-    // if (!this.options.flags.package && !this.options.flags.path) {
-    //   const errorString = messages.getMessage('errorMissingFlags', [
-    //     `--${packageFlag.name} (-${packageFlag.char})`,
-    //     `--${pathFlag.name} (-${pathFlag.char})`,
-    //   ]);
-    //   const error = new Error(errorString);
-    //   error['name'] = 'requiredFlagMissing';
-    //   return Promise.reject(error);
-    // }
-
-    // This command does not allow --codecoverage and --skipvalidation at the same time
-    // if (this.options.flags.skipvalidation && this.options.flags.codecoverage) {
-    //   const codeCovFlag = context.command.flags.find((x) => x.name === 'codecoverage');
-    //   const skipValFlag = context.command.flags.find((x) => x.name === 'skipvalidation');
-    //
-    //   const errorString = messages.getMessage('errorCannotSupplyCodeCoverageAndSkipValidation', [
-    //     `--${codeCovFlag.name} (-${codeCovFlag.char})`,
-    //     `--${skipValFlag.name}`,
-    //     `--${codeCovFlag.name} (-${codeCovFlag.char})`,
-    //     `--${skipValFlag.name}`,
-    //   ]);
-    //   const error = new Error(errorString);
-    //   error['name'] = 'requiredFlagMissing';
-    //   return Promise.reject(error);
-    // }
-
-    // This command also requires either the installationkey flag or installationkeybypass flag
-    // if (!this.options.flags.installationkey && !this.options.flags.installationkeybypass) {
-    //   const installationKeyFlag = context.command.flags.find((x) => x.name === 'installationkey');
-    //   const installationKeyBypassFlag = context.command.flags.find((x) => x.name === 'installationkeybypass');
-    //   const errorString = messages.getMessage('errorMissingFlagsInstallationKey', [
-    //     `--${installationKeyFlag.name} (-${installationKeyFlag.char})`,
-    //     `--${installationKeyBypassFlag.name} (-${installationKeyBypassFlag.char})`,
-    //   ]);
-    //   const error = new Error(errorString);
-    //   error['name'] = 'requiredFlagMissing';
-    //   return Promise.reject(error);
-    // }
 
     // For the first rollout of validating sfdx-project.json data against schema, make it optional and defaulted
     // to false. Validation only occurs if the hidden -j (--validateschema) flag has been specified.
-    if (this.options.flags.validateschema) {
+    if (options.validateschema) {
       await this.project.getSfProjectJson().schemaValidate();
     }
 
-    let canonicalPackageProperty: 'id' | 'package';
-
-    // Retrieve the content of the sfdx-project.json config file
-    const configContent = this.project.getSfProjectJson().getContents();
-
-    // Look up the missing value or confirm a match
-    this.packageDirs = configContent.packageDirectories as NamedPackageDir[];
-
     // Check for empty packageDirectories
-    if (!this.packageDirs) {
+    if (this.project.getSfProjectJson().getContents().packageDirectories?.length === 0) {
       throw messages.createError('errorEmptyPackageDirs');
     }
 
-    if (!this.options.flags.package) {
-      const packageValProp = this._getPackageValuePropertyFromDirectory(this.options.flags.path);
-      this.options.flags.package = packageValProp.packageValue;
-      canonicalPackageProperty = packageValProp.packageProperty;
-    } else if (!this.options.flags.path) {
-      canonicalPackageProperty = this._getPackagePropertyFromPackage(this.packageDirs, this.options.flags.package);
-      this.options.flags.path = this._getConfigPackageDirectoriesValue(
-        this.packageDirs,
-        'path',
-        canonicalPackageProperty,
-        this.options.flags.package,
-        'package'
-      );
-    } else {
-      canonicalPackageProperty = this._getPackagePropertyFromPackage(this.packageDirs, this.options.flags.package);
-      this._getConfigPackageDirectoriesValue(
-        this.packageDirs,
-        canonicalPackageProperty,
-        'path',
-        this.options.flags.path,
-        'path'
-      );
-      const expectedPackageId = this._getConfigPackageDirectoriesValue(
-        this.packageDirs,
-        canonicalPackageProperty,
-        'path',
-        this.options.flags.path,
-        'path'
-      );
+    const canonicalPackageProperty = this.resolveCanonicalPackageProperty(options);
 
-      // This will thrown an error if the package id flag value doesn't match
-      // any of the :id values in the package dirs.
-      this._getConfigPackageDirectoriesValue(
-        this.packageDirs,
-        'path',
-        canonicalPackageProperty,
-        this.options.flags.package,
-        'package'
-      );
-
-      // This will thrown an error if the package id flag value doesn't match
-      // the correct corresponding directory with that packageId.
-      if (this.options.flags.package !== expectedPackageId) {
-        throw messages.createError('errorDirectoryIdMismatch', [
-          '--path',
-          this.options.flags.path,
-          '--package',
-          this.options.flags.package,
-        ]);
-      }
-    }
-
-    const resolvedPackageId = pkgUtils.getPackageIdFromAlias(this.options.flags.package, this.project);
+    const resolvedPackageId = pkgUtils.getPackageIdFromAlias(options.package, this.project);
 
     // At this point, the packageIdFromAlias should have been resolved to an Id.  Now, we
     // need to validate that the Id is correct.
     pkgUtils.validateId(pkgUtils.BY_LABEL.PACKAGE_ID, resolvedPackageId);
 
-    await this._validateFlagsForPackageType(resolvedPackageId);
+    await this._validateFlagsForPackageType(resolvedPackageId, options);
 
+    const versionNumberString = await this.validateVersionNumber(canonicalPackageProperty, resolvedPackageId, options);
+
+    try {
+      fs.statSync(path.join(process.cwd(), options.path));
+    } catch (err) {
+      throw new Error(`Directory '${options.path}' does not exist`);
+    }
+
+    this.resolveUserLicenses(canonicalPackageProperty, options);
+
+    await this.resolveOrgDependentPollingTime(resolvedPackageId, options, pollInterval, maxRetries);
+
+    const request = await this._createPackageVersionCreateRequestFromOptions(
+      options,
+      resolvedPackageId,
+      versionNumberString
+    );
+    const createResult = await this.connection.tooling.create('Package2VersionCreateRequest', request);
+    if (!createResult.success) {
+      const errStr =
+        createResult.errors && createResult.errors.length ? createResult.errors.join(', ') : createResult.errors;
+      throw new Error(`Failed to create request${createResult.id ? ` [${createResult.id}]` : ''}: ${errStr}`);
+    }
+    let result;
+    if (options.wait && options.wait.milliseconds > 0) {
+      pollInterval = pollInterval ?? Duration.seconds(options.wait.seconds / maxRetries);
+      if (pollInterval) {
+        result = await pkgUtils.pollForStatusWithInterval(
+          createResult.id,
+          maxRetries,
+          resolvedPackageId,
+          options.branch,
+          this.project,
+          this.connection,
+          pollInterval
+        );
+      }
+    } else {
+      result = await this.packageVersionCreateRequestApi.byId(createResult.id);
+    }
+    return result;
+  }
+
+  // TODO: should be in pkg utils
+  private resolveCanonicalPackageProperty(options: PackageVersionCreateOptions) {
+    let canonicalPackageProperty: 'id' | 'package';
+
+    if (!options.package) {
+      const packageValProp = this._getPackageValuePropertyFromDirectory(options.path, options);
+      options.package = packageValProp.packageValue;
+      canonicalPackageProperty = packageValProp.packageProperty;
+    } else if (!options.path) {
+      canonicalPackageProperty = this._getPackagePropertyFromPackage(this.project.getPackageDirectories(), options);
+      options.path = this._getConfigPackageDirectoriesValue(
+        this.project.getPackageDirectories(),
+        'path',
+        canonicalPackageProperty,
+        options.package,
+        'package',
+        options
+      );
+    } else {
+      canonicalPackageProperty = this._getPackagePropertyFromPackage(this.project.getPackageDirectories(), options);
+      this._getConfigPackageDirectoriesValue(
+        this.project.getPackageDirectories(),
+        canonicalPackageProperty,
+        'path',
+        options.path,
+        'path',
+        options
+      );
+
+      const expectedPackageId = this._getConfigPackageDirectoriesValue(
+        this.packageDirs,
+        canonicalPackageProperty,
+        'path',
+        options.path,
+        'path',
+        options
+      );
+
+      // This will throw an error if the package id flag value doesn't match
+      // any of the :id values in the package dirs.
+      this._getConfigPackageDirectoriesValue(
+        this.project.getPackageDirectories(),
+        'path',
+        canonicalPackageProperty,
+        options.package,
+        'package',
+        options
+      );
+
+      // This will throw an error if the package id flag value doesn't match
+      // the correct corresponding directory with that packageId.
+      if (options.package !== expectedPackageId) {
+        throw messages.createError('errorDirectoryIdMismatch', ['--path', options.path, '--package', options.package]);
+      }
+    }
+    return canonicalPackageProperty;
+  }
+
+  // TODO: should be in pkg utils
+  private async validateVersionNumber(
+    canonicalPackageProperty: 'id' | 'package',
+    resolvedPackageId: string,
+    options: PackageVersionCreateOptions
+  ) {
     // validate the versionNumber flag value if specified, otherwise the descriptor value
-    const versionNumberString = this.options.flags.versionnumber
-      ? this.options.flags.versionnumber
+    const versionNumberString = options.versionnumber
+      ? options.versionnumber
       : (this._getConfigPackageDirectoriesValue(
           this.packageDirs,
           'versionNumber',
           canonicalPackageProperty,
-          this.options.flags.package,
-          'package'
+          options.package,
+          'package',
+          options
         ) as string);
 
     pkgUtils.validateVersionNumber(versionNumberString, BuildNumberToken.NEXT_BUILD_NUMBER_TOKEN, null);
     await pkgUtils.validatePatchVersion(this.connection, versionNumberString, resolvedPackageId);
+    return versionNumberString;
+  }
 
-    try {
-      fs.statSync(path.join(process.cwd(), this.options.flags.path));
-    } catch (err) {
-      throw new Error(`Directory '${this.options.flags.path}' does not exist`);
-    }
-
+  private resolveUserLicenses(canonicalPackageProperty: 'id' | 'package', options: PackageVersionCreateOptions) {
     // Check for an includeProfileUserLiceneses flag in the packageDirectory
     const includeProfileUserLicenses = this._getConfigPackageDirectoriesValue(
       this.packageDirs,
       'includeProfileUserLicenses',
       canonicalPackageProperty,
-      this.options.flags.package,
-      'package'
+      options.package,
+      'package',
+      options
     );
     if (
       includeProfileUserLicenses !== undefined &&
@@ -1026,62 +1022,43 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
       includeProfileUserLicenses as boolean,
       shouldGenerateProfileInformation
     );
-
-    // If we are polling check to see if the package is Org-Dependent, if so, update the poll time
-    if (this.options.flags.wait) {
-      const query = `SELECT IsOrgDependent FROM Package2 WHERE Id = '${resolvedPackageId}'`;
-      this.connection.tooling.query(query).then((pkgQueryResult) => {
-        const subRecords = pkgQueryResult.records;
-        if (subRecords && subRecords.length === 1 && subRecords[0].IsOrgDependent) {
-          this.pollInterval = Duration.seconds(POLL_INTERVAL_WITHOUT_VALIDATION_SECONDS);
-          this.maxRetries = (60 / this.pollInterval.seconds) * this.options.flags.wait.seconds;
-        }
-      });
-    }
-
-    const request = await this._createPackageVersionCreateRequestFromOptions(
-      context,
-      resolvedPackageId,
-      versionNumberString
-    );
-    const createResult = await this.connection.tooling.create('Package2VersionCreateRequest', request);
-    if (!createResult.success) {
-      const errStr =
-        createResult.errors && createResult.errors.length ? createResult.errors.join(', ') : createResult.errors;
-      throw new Error(`Failed to create request${createResult.id ? ` [${createResult.id}]` : ''}: ${errStr}`);
-    }
-    let result;
-    if (this.options.flags.wait && this.options.flags.wait.milliseconds > 0) {
-      const pollInterval = this.pollInterval ?? Duration.seconds(this.options.flags.wait.seconds / this.maxRetries);
-      if (this.pollInterval) {
-        result = await pkgUtils.pollForStatusWithInterval(
-          createResult.id,
-          this.maxRetries,
-          resolvedPackageId,
-          this.options.flags.branch,
-          this.project,
-          this.connection,
-          pollInterval
-        );
-      }
-    } else {
-      result = await this.packageVersionCreateRequestApi.byId(createResult.id);
-    }
-    return result;
   }
 
-  private async _validateFlagsForPackageType(packageId: string) {
+  private async resolveOrgDependentPollingTime(
+    resolvedPackageId: string,
+    options: PackageVersionCreateOptions,
+    pollInterval: Duration,
+    maxRetries: number
+  ) {
+    // If we are polling check to see if the package is Org-Dependent, if so, update the poll time
+    if (options.wait) {
+      const query = `SELECT IsOrgDependent FROM Package2 WHERE Id = '${resolvedPackageId}'`;
+      try {
+        const pkgQueryResult = await this.connection.singleRecordQuery<PackagingSObjects.Package2>(query, {
+          tooling: true,
+        });
+        if (pkgQueryResult.IsOrgDependent) {
+          pollInterval = Duration.seconds(POLL_INTERVAL_WITHOUT_VALIDATION_SECONDS);
+          maxRetries = (60 / this.pollInterval.seconds) * options.wait.seconds;
+        }
+      } catch {
+        // do nothing
+      }
+    }
+  }
+
+  private async _validateFlagsForPackageType(packageId: string, options: PackageVersionCreateOptions): Promise<void> {
     const packageType = await pkgUtils.getPackage2Type(packageId, this.connection);
 
     if (packageType === 'Unlocked') {
-      if (this.options.flags.postinstallscript || this.options.flags.uninstallscript) {
+      if (options.postinstallscript || options.uninstallscript) {
         // migrate coreMessages to messages
         throw messages.createError('version_create.errorScriptsNotApplicableToUnlockedPackage');
       }
 
       // Don't allow ancestor in unlocked packages
 
-      const packageDescriptorJson = this._getPackageDescriptorJsonFromPackageId(packageId, this.options.flags);
+      const packageDescriptorJson = this._getPackageDescriptorJsonFromPackageId(packageId, options);
 
       const ancestorId = packageDescriptorJson.ancestorId;
       const ancestorVersion = packageDescriptorJson.ancestorVersion;
@@ -1095,7 +1072,7 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
   /**
    * Cleans invalid attribute(s) from the packageDescriptorJSON
    */
-  private _cleanPackageDescriptorJson(packageDescriptorJson: PackageDescriptorJson) {
+  private _cleanPackageDescriptorJson(packageDescriptorJson: PackageDescriptorJson): void {
     if (typeof packageDescriptorJson.default !== 'undefined') {
       delete packageDescriptorJson.default; // for client-side use only, not needed
     }
@@ -1115,15 +1092,18 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
   /**
    * Sets default or override values for packageDescriptorJSON attribs
    */
-  private _setPackageDescriptorJsonValues(packageDescriptorJson: PackageDescriptorJson, context) {
-    if (this.options.flags.versionname) {
-      packageDescriptorJson.versionName = this.options.flags.versionname;
+  private _setPackageDescriptorJsonValues(
+    packageDescriptorJson: PackageDescriptorJson,
+    options: PackageVersionCreateOptions
+  ): void {
+    if (options.versionname) {
+      packageDescriptorJson.versionName = options.versionname;
     }
-    if (this.options.flags.versiondescription) {
-      packageDescriptorJson.versionDescription = this.options.flags.versiondescription;
+    if (options.versiondescription) {
+      packageDescriptorJson.versionDescription = options.versiondescription;
     }
-    if (this.options.flags.versionnumber) {
-      packageDescriptorJson.versionNumber = this.options.flags.versionnumber;
+    if (options.versionnumber) {
+      packageDescriptorJson.versionNumber = options.versionnumber;
     }
 
     // default versionName to versionNumber if unset, stripping .NEXT if present
@@ -1136,28 +1116,28 @@ export class PackageVersionCreateCommand extends AsyncCreatable<PackageVersionCr
               versionNumber.indexOf(pkgUtils.VERSION_NUMBER_SEP + BuildNumberToken.NEXT_BUILD_NUMBER_TOKEN)
             )
           : versionNumber;
-      logger.warn(context, messages.getMessage('defaultVersionName', [packageDescriptorJson.versionName]));
+      logger.warn(options, messages.getMessage('defaultVersionName', [packageDescriptorJson.versionName]));
     }
 
-    if (this.options.flags.releasenotesurl) {
-      packageDescriptorJson.releaseNotesUrl = this.options.flags.releasenotesurl;
+    if (options.releasenotesurl) {
+      packageDescriptorJson.releaseNotesUrl = options.releasenotesurl;
     }
     if (packageDescriptorJson.releaseNotesUrl && !pkgUtils.validUrl(packageDescriptorJson.releaseNotesUrl)) {
       throw new Error(messages.getMessage('malformedUrl', ['releaseNotesUrl', packageDescriptorJson.releaseNotesUrl]));
     }
 
-    if (this.options.flags.postinstallurl) {
-      packageDescriptorJson.postInstallUrl = this.options.flags.postinstallurl;
+    if (options.postinstallurl) {
+      packageDescriptorJson.postInstallUrl = options.postinstallurl;
     }
     if (packageDescriptorJson.postInstallUrl && !pkgUtils.validUrl(packageDescriptorJson.postInstallUrl)) {
       throw new Error(messages.getMessage('malformedUrl', ['postInstallUrl', packageDescriptorJson.postInstallUrl]));
     }
 
-    if (this.options.flags.postinstallscript) {
-      packageDescriptorJson.postInstallScript = this.options.flags.postinstallscript;
+    if (options.postinstallscript) {
+      packageDescriptorJson.postInstallScript = options.postinstallscript;
     }
-    if (this.options.flags.uninstallscript) {
-      packageDescriptorJson.uninstallScript = this.options.flags.uninstallscript;
+    if (options.uninstallscript) {
+      packageDescriptorJson.uninstallScript = options.uninstallscript;
     }
   }
 }
