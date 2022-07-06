@@ -648,10 +648,10 @@
     mv "~2"
     safe-json-stringify "~1"
 
-"@salesforce/cli-plugins-testkit@^2.3.0":
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/@salesforce/cli-plugins-testkit/-/cli-plugins-testkit-2.3.0.tgz#fabc0d60e3d63c158405153d45917464da349482"
-  integrity sha512-96vZC+fpJdcnZGLfj7U1PKKgFxa01+ZcSIxydB5qZFu5XYmWjg3C3ah3nlSlIo7RRcM3qhthmeZWRERLsz04zA==
+"@salesforce/cli-plugins-testkit@^2.3.4":
+  version "2.3.4"
+  resolved "https://registry.yarnpkg.com/@salesforce/cli-plugins-testkit/-/cli-plugins-testkit-2.3.4.tgz#e99bf294fb54bc9957405a2a1ce25e0ec27faaf2"
+  integrity sha512-Q8iAo9GVsJoAlkanMZNwGuAi341T3US9IMipS3pNO/ntm9TPMfQNyYOWy8AYvyQ/ftMDtyq5QCATejpwYVcPDQ==
   dependencies:
     "@salesforce/core" "^3.20.1"
     "@salesforce/kit" "^1.5.42"
@@ -687,10 +687,10 @@
     mkdirp "1.0.4"
     ts-retry-promise "^0.6.0"
 
-"@salesforce/core@^3.21.0":
-  version "3.21.0"
-  resolved "https://registry.npmjs.org/@salesforce/core/-/core-3.21.0.tgz"
-  integrity sha512-ueXbn4SufbVHl6tPAWh19wClHiupFnIPFN2yqAWVFLKvgf7G3SSz4ue2iY3SADbDNX/D0z2tYBwGW5pCNZ0rtQ==
+"@salesforce/core@^3.23.4":
+  version "3.23.4"
+  resolved "https://registry.yarnpkg.com/@salesforce/core/-/core-3.23.4.tgz#89c348c5573f30dd3d23a266de928464f534c7bc"
+  integrity sha512-gJB2NbWjxcN0SqOy3GLyzwUytYR1bmXZvUi7r8j0Eeu2L7qJFoYBgtkXBfIk7F/urFqYd4VRlXCeJj6ZQEWImw==
   dependencies:
     "@salesforce/bunyan" "^2.0.0"
     "@salesforce/kit" "^1.5.41"
@@ -707,7 +707,7 @@
     form-data "^4.0.0"
     graceful-fs "^4.2.9"
     js2xmlparser "^4.0.1"
-    jsforce "2.0.0-beta.10"
+    jsforce "2.0.0-beta.14"
     jsonwebtoken "8.5.1"
     mkdirp "1.0.4"
     ts-retry-promise "^0.6.0"
@@ -3648,6 +3648,32 @@ jsforce@2.0.0-beta.10:
   version "2.0.0-beta.10"
   resolved "https://registry.npmjs.org/jsforce/-/jsforce-2.0.0-beta.10.tgz"
   integrity sha512-AFigJHQocj8t36Eu+9XffoKoC2FO4/uMDMg08TfTXgvIp53lzvnQJoQrhEnwnKReof4tO2d+7j+d1QyiOa2yGg==
+  dependencies:
+    "@babel/runtime" "^7.12.5"
+    "@babel/runtime-corejs3" "^7.12.5"
+    "@types/node" "^12.19.9"
+    abort-controller "^3.0.0"
+    base64url "^3.0.1"
+    commander "^4.0.1"
+    core-js "^3.6.4"
+    csv-parse "^4.8.2"
+    csv-stringify "^5.3.4"
+    faye "^1.4.0"
+    form-data "^4.0.0"
+    fs-extra "^8.1.0"
+    https-proxy-agent "^5.0.0"
+    inquirer "^7.0.0"
+    multistream "^3.1.0"
+    node-fetch "^2.6.1"
+    open "^7.0.0"
+    regenerator-runtime "^0.13.3"
+    strip-ansi "^6.0.0"
+    xml2js "^0.4.22"
+
+jsforce@2.0.0-beta.14:
+  version "2.0.0-beta.14"
+  resolved "https://registry.yarnpkg.com/jsforce/-/jsforce-2.0.0-beta.14.tgz#237753bdabb7e80447b5b266eaefc4abf8b6c951"
+  integrity sha512-j66PaKroshB4VZbfKBAx9+lJy8etFfGG1hGFsI7ufwxvacXxLTAxZwOEZPkYPMigiHrPlEMtIwh5NqwBsIn9HA==
   dependencies:
     "@babel/runtime" "^7.12.5"
     "@babel/runtime-corejs3" "^7.12.5"
