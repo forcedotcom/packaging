@@ -241,4 +241,16 @@ export namespace PackagingSObjects {
     SubscriberPackageVersionId: string;
     MinPackageVersionId: string;
   };
+
+  export type MetadataPackageVersion = {
+    Id: string;
+    MetadataPackageId: string;
+    Name: string;
+    ReleaseState: 'Beta' | 'Released';
+    MajorVersion: number;
+    MinorVersion: number;
+    PatchVersion: number;
+    BuildNumber: number;
+    IsDeprecated: boolean;
+  };
 }

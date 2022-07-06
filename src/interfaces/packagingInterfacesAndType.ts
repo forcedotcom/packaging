@@ -106,3 +106,12 @@ export type PackageVersionListResult = {
   BuildDurationInSeconds?: number;
   HasMetadataRemoved?: boolean;
 };
+
+export type Package1Display = {
+  MetadataPackageVersionId: string;
+  MetadataPackageId: string;
+  Name: string;
+  Version: string;
+  ReleaseState: string;
+  BuildNumber: number;
+};

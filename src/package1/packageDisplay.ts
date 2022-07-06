@@ -6,25 +6,17 @@
  */
 
 import { Connection } from '@salesforce/core';
-
-export type Package1Display = {
-  MetadataPackageVersionId: string;
-  MetadataPackageId: string;
-  Name: string;
-  Version: string;
-  ReleaseState: string;
-  BuildNumber: number;
-};
+import { Package1Display, PackagingSObjects } from '../interfaces';
 
 /**
  * Executes server-side logic for the package1:display command
  *
  * @param connection
- * @param id: MetadataPackageVersion
+ * @param id: id of the MetadataPackageVersion sObject
  */
 export async function package1Display(connection: Connection, id: string): Promise<Package1Display[]> {
   const query = `SELECT Id,MetadataPackageId,Name,ReleaseState,MajorVersion,MinorVersion,PatchVersion,BuildNumber FROM MetadataPackageVersion WHERE id = '${id}'`;
-  const results = (await connection.tooling.query(query)).records;
+  const results = (await connection.tooling.query<PackagingSObjects.MetadataPackageVersion>(query)).records;
   return results.map((result) => {
     return {
       MetadataPackageVersionId: result.Id,
