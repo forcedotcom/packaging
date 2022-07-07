@@ -347,10 +347,10 @@ describe('packageUtils', () => {
       const result = combineSaveErrors('fooObject', 'upsert', errors);
       const messageLines = result.message.split('\n');
       expect(messageLines).to.be.length(4);
-      expect(messageLines[0]).to.be.equal('An error occurred during CRUD operation upsert on entity fooObject.');
-      expect(messageLines[1]).to.be.equal('Error: errorCode 1 Message: error 1 Fields: [field1, field2]');
-      expect(messageLines[2]).to.be.equal('Error: errorCode 2 Message: error 2 ');
-      expect(messageLines[3]).to.be.equal('Error: errorCode 3 Message: error 3 ');
+      expect(messageLines[0]).to.be.include('An error occurred during CRUD operation upsert on entity fooObject.');
+      expect(messageLines[1]).to.be.include('Error: errorCode 1 Message: error 1 Fields: [field1, field2]');
+      expect(messageLines[2]).to.be.include('Error: errorCode 2 Message: error 2 ');
+      expect(messageLines[3]).to.be.include('Error: errorCode 3 Message: error 3 ');
     });
   });
 });
