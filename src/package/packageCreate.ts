@@ -5,11 +5,10 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { Connection, Messages, NamedPackageDir, Org, PackageDir, SfError, SfProject } from '@salesforce/core';
+import { Connection, Messages, NamedPackageDir, PackageDir, SfError, SfProject } from '@salesforce/core';
 import { isString } from '@salesforce/ts-types';
 import * as pkgUtils from '../utils/packageUtils';
 import { PackageCreateOptions, PackagingSObjects } from '../interfaces';
-import { combineSaveErrors } from '../utils/packageUtils';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
@@ -101,7 +100,6 @@ export function _generatePackageAliasEntry(
 }
 
 export async function createPackage(
-  org: Org,
   connection: Connection,
   project: SfProject,
   options: PackageCreateOptions
@@ -121,7 +119,7 @@ export async function createPackage(
     });
 
   if (!createResult.success) {
-    throw combineSaveErrors('Package2', 'create', createResult.errors);
+    throw pkgUtils.combineSaveErrors('Package2', 'create', createResult.errors);
   }
   packageId = createResult.id;
   const queryResult = await connection.tooling.query(`SELECT Id FROM Package2 WHERE Id='${packageId}'`);

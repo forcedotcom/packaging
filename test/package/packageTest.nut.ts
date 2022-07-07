@@ -100,7 +100,7 @@ describe('Integration tests for #salesforce/packaging library', function () {
         orgDependent: false,
         errorNotificationUsername: undefined,
       };
-      const result = await createPackage(devHubOrg, devHubOrg.getConnection(), project, options);
+      const result = await createPackage(devHubOrg.getConnection(), project, options);
       // const result = execCmd<{ Id: string }>(
       //   `force:package:create --name ${pkgName} --packagetype Unlocked --path force-app --description "Don't ease, don't ease, don't ease me in." --json`,
       //   { ensureExitCode: 0 }
