@@ -7,4 +7,7 @@
 export * from './package';
 export * from './packageVersion2GP';
 export * from './packageList';
+export * from './packageVersionCreateRequest';
 export { listPackageVersions } from './packageVersionList';
+export { createPackage } from './packageCreate';
+export { deletePackage } from './packageDelete';

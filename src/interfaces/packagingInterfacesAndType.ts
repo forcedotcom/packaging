@@ -6,6 +6,9 @@
  */
 
 import { Duration } from '@salesforce/kit';
+import { Connection, SfProject } from '@salesforce/core';
+import { SaveResult } from 'jsforce';
+import { ProfileApi } from '../package/profileApi';
 import { PackagingSObjects } from './packagingSObjects';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
@@ -105,4 +108,86 @@ export type PackageVersionListResult = {
   ReleaseVersion?: string;
   BuildDurationInSeconds?: number;
   HasMetadataRemoved?: boolean;
+};
+
+export type PackageType = 'Managed' | 'Unlocked';
+
+export type PackageCreateOptions = {
+  name: string;
+  description: string;
+  noNamespace: boolean;
+  orgDependent: boolean;
+  packageType: PackageType;
+  errorNotificationUsername: string;
+  path: string;
+};
+
+export type PackageVersionQueryOptions = {
+  project: SfProject;
+  orderBy: string;
+  modifiedLastDays: number;
+  createdLastDays: number;
+  packages: string[];
+  connection: Connection;
+  verbose: boolean;
+  concise: boolean;
+  isReleased: boolean;
+};
+
+export type PackageSaveResult = SaveResult;
+
+export type PackageVersionCreateRequestOptions = {
+  path: string;
+  preserve: boolean;
+  definitionfile?: string;
+  codecoverage?: boolean;
+  branch?: string;
+  skipancestorcheck?: boolean;
+};
+
+export type MDFolderForArtifactOptions = {
+  packageName?: string;
+  sourceDir?: string;
+  outputDir?: string;
+  manifest?: string;
+  sourcePaths?: string[];
+  metadataPaths?: string[];
+  deploydir?: string;
+};
+
+export type PackageVersionOptions = {
+  connection: Connection;
+  project: SfProject;
+};
+
+export type PackageVersionCreateOptions = PackageVersionOptions & {
+  branch: string;
+  buildinstance: string;
+  codecoverage: boolean;
+  definitionfile: string;
+  installationkey: string;
+  installationkeybypass: boolean;
+  package: string;
+  path: string;
+  postinstallscript: string;
+  postinstallurl: string;
+  preserve: boolean;
+  releasenotesurl: string;
+  skipancestorcheck: boolean;
+  skipvalidation: boolean;
+  sourceorg: string;
+  tag: string;
+  uninstallscript: string;
+  validateschema: boolean;
+  versiondescription: string;
+  versionname: string;
+  versionnumber: string;
+  wait: Duration;
+  profileApi?: ProfileApi;
+};
+
+export type PackageVersionCreateRequestQueryOptions = {
+  createdlastdays?: number;
+  connection?: Connection;
+  status?: string;
 };

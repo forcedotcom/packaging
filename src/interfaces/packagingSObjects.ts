@@ -4,6 +4,8 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
+import { PackageType } from './packagingInterfacesAndType';
+
 export namespace PackagingSObjects {
   export type Package2 = {
     Id: string;
@@ -17,7 +19,7 @@ export namespace PackagingSObjects {
     Name: string;
     Description: string;
     NamespacePrefix: string;
-    ContainerOptions: string;
+    ContainerOptions: PackageType;
     IsDeprecated: boolean;
     IsOrgDependent: boolean;
     ConvertedFromPackageId: string;

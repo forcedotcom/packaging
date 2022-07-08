@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/packaging",
-  "version": "0.0.5",
+  "version": "0.0.4",
   "description": "packing libraries to Salesforce packaging platform",
   "main": "lib/exported",
   "types": "lib/exported.d.ts",
@@ -35,9 +35,10 @@
     "!lib/**/*.map"
   ],
   "dependencies": {
-    "@salesforce/core": "^3.21.0",
+    "@salesforce/core": "^3.23.4",
     "@salesforce/kit": "^1.5.42",
     "@salesforce/schemas": "^1.2.0",
+    "@salesforce/source-deploy-retrieve": "^6.2.0",
     "@salesforce/ts-types": "^1.5.20",
     "@types/graceful-fs": "^4.1.5",
     "@types/mkdirp": "^1.0.2",
@@ -48,9 +49,11 @@
     "debug": "^4.3.4",
     "graceful-fs": "^4.2.10",
     "js2xmlparser": "^4.0.2",
-    "jsforce": "2.0.0-beta.10",
+    "jsforce": "beta",
     "mkdirp": "1.0.4",
-    "ts-retry-promise": "^0.6.1"
+    "ts-retry-promise": "^0.6.1",
+    "xml2js": "^0.4.23",
+    "xmldom-sfdx-encoding": "^0.1.30"
   },
   "devDependencies": {
     "@salesforce/cli-plugins-testkit": "^2.3.0",

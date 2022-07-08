@@ -50,4 +50,10 @@ export class VersionNumber {
       return `${this.major || '0'}.${this.minor || '0'}.${this.patch || '0'}.${this.build ? `${this.build}` : '0'}`;
     }
   }
+
+  public isbuildKeyword(): boolean {
+    return Object.values(BuildNumberToken)
+      .map((v) => v.toString())
+      .includes(this.build.toLowerCase());
+  }
 }

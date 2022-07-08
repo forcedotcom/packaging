@@ -4,7 +4,7 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-
+import * as os from 'os';
 import {
   Connection,
   Lifecycle,
@@ -21,8 +21,14 @@ import {
 import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
 import { Tokens } from '@salesforce/core/lib/messages';
 import { Many } from '@salesforce/ts-types';
-import { Package2VersionCreateEventData, PackagingSObjects, Package2VersionCreateRequestResult } from '../interfaces';
-import { PackageVersionCreateRequestApi } from '../package/packageVersionCreateRequestApi';
+import { SaveError } from 'jsforce';
+import {
+  Package2VersionCreateEventData,
+  PackagingSObjects,
+  Package2VersionCreateRequestResult,
+  PackageVersionCreateOptions,
+} from '../interfaces';
+import * as pvcr from '../package/packageVersionCreateRequest';
 import { BuildNumberToken, VersionNumber } from './versionNumber';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
@@ -743,10 +749,10 @@ export function getConfigPackageDirectories(project: SfProject): PackageDir[] {
   return project.getPackageDirectories();
 }
 export function getConfigPackageDirectory(
-  packageDirs: NamedPackageDir[],
+  packageDirs: NamedPackageDir[] | PackageDir[],
   lookupProperty: string,
   lookupValue: unknown
-): NamedPackageDir | undefined {
+): NamedPackageDir | PackageDir | undefined {
   return packageDirs?.find((pkgDir) => pkgDir[lookupProperty] === lookupValue);
 }
 /**
@@ -782,6 +788,7 @@ export function getPackageAliasesFromId(packageId: string, project: SfProject): 
     .filter((alias) => alias[1] === packageId)
     .map((alias) => alias[0]);
 }
+// probably used by convert.
 export async function findOrCreatePackage2(seedPackage: string, connection: Connection): Promise<string> {
   const query = `SELECT Id FROM Package2 WHERE ConvertedFromPackageId = '${seedPackage}'`;
   const queryResult = await connection.tooling.query<PackagingSObjects.Package2>(query);
@@ -814,16 +821,12 @@ export async function findOrCreatePackage2(seedPackage: string, connection: Conn
 
   const createResult = await connection.tooling.create('Package2', request);
   if (!createResult.success) {
-    throw new Error(createResult.errors.map((e) => e.message).join('\n'));
+    throw combineSaveErrors('Package2', 'create', createResult.errors);
   }
   return createResult.id;
 }
-export function _getPackageVersionCreateRequestApi(connection: Connection): PackageVersionCreateRequestApi {
-  return new PackageVersionCreateRequestApi({ connection });
-}
 
 export async function pollForStatusWithInterval(
-  context,
   id: string,
   retries: number,
   packageId: string,
@@ -835,8 +838,7 @@ export async function pollForStatusWithInterval(
   let remainingRetries = retries;
   const pollingClient = await PollingClient.create({
     poll: async (): Promise<StatusResult> => {
-      const pvcrApi = new PackageVersionCreateRequestApi({ connection });
-      const results: Package2VersionCreateRequestResult[] = await pvcrApi.byId(id);
+      const results: Package2VersionCreateRequestResult[] = await pvcr.byId(id, connection);
 
       if (_isStatusEqualTo(results, [Package2VersionStatus.success, Package2VersionStatus.error])) {
         // complete
@@ -966,11 +968,81 @@ export function getSoqlWhereClauseMaxLength() {
   return SOQL_WHERE_CLAUSE_MAX_LENGTH;
 }
 
-export function formatDate(date: Date) {
+export function formatDate(date: Date): string {
   const pad = (num) => {
     return num < 10 ? `0${num}` : num;
   };
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(
     date.getMinutes()
   )}`;
+}
+
+export function combineSaveErrors(sObject: string, crudOperation: string, errors: SaveError[]): SfError {
+  const errorMessages = errors.map((error) => {
+    const fieldsString = error.fields?.length > 0 ? `Fields: [${error.fields.join(', ')}]` : '';
+    return `Error: ${error.errorCode} Message: ${error.message} ${fieldsString}`;
+  });
+  const sfError = messages.createError('errorDuringSObjectCRUDOperation', [
+    crudOperation,
+    sObject,
+    errorMessages.join(os.EOL),
+  ]);
+  return sfError;
+}
+
+export function resolveCanonicalPackageProperty(options: PackageVersionCreateOptions) {
+  let canonicalPackageProperty: 'id' | 'package';
+
+  if (!options.package) {
+    const packageValProp = this.getPackageValuePropertyFromDirectory(options.path, options);
+    options.package = packageValProp.packageValue;
+    canonicalPackageProperty = packageValProp.packageProperty;
+  } else if (!options.path) {
+    canonicalPackageProperty = this.getPackagePropertyFromPackage(this.project.getPackageDirectories(), options);
+    options.path = this.getConfigPackageDirectoriesValue(
+      this.project.getPackageDirectories(),
+      'path',
+      canonicalPackageProperty,
+      options.package,
+      'package',
+      options
+    );
+  } else {
+    canonicalPackageProperty = this.getPackagePropertyFromPackage(this.project.getPackageDirectories(), options);
+    this.getConfigPackageDirectoriesValue(
+      this.project.getPackageDirectories(),
+      canonicalPackageProperty,
+      'path',
+      options.path,
+      'path',
+      options
+    );
+
+    const expectedPackageId = this.getConfigPackageDirectoriesValue(
+      this.packageDirs,
+      canonicalPackageProperty,
+      'path',
+      options.path,
+      'path',
+      options
+    );
+
+    // This will throw an error if the package id flag value doesn't match
+    // any of the :id values in the package dirs.
+    this.getConfigPackageDirectoriesValue(
+      this.project.getPackageDirectories(),
+      'path',
+      canonicalPackageProperty,
+      options.package,
+      'package',
+      options
+    );
+
+    // This will throw an error if the package id flag value doesn't match
+    // the correct corresponding directory with that packageId.
+    if (options.package !== expectedPackageId) {
+      throw messages.createError('errorDirectoryIdMismatch', ['--path', options.path, '--package', options.package]);
+    }
+  }
+  return canonicalPackageProperty;
 }

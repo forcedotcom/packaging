@@ -189,3 +189,20 @@ Can’t create package version. Specifying an ancestor is available only for sec
 
 When calculating the number of items to be included in query "%s", when formatted, was too long.
 The item was (truncated): %s with a length of %s. The maximum length of items, when formatted is %s.
+
+# unableToFindPackageWithId
+
+Unable to find Package with Id: "%s"
+
+# errorDuringSObjectCRUDOperation
+
+An error occurred during CRUD operation %s on entity %s.
+%s
+
+# errorNoMatchingPackageDirectory
+
+The %s value [%s], doesn’t match the %s value in any packageDirectories specified in sfdx-project.json.
+
+# errorDirectoryIdMismatch
+
+The %s value, [%s], and %s value, [%s], were both found in sfdx-project.json but don’t match. If you supply both values, they must match the path and package values in one of the packageDirectories.,
