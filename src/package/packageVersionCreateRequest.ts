@@ -18,7 +18,6 @@ import * as packageUtils from '../utils/packageUtils';
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const STATUS_ERROR = 'Error';
 const QUERY =
   'SELECT Id, Status, Package2Id, Package2VersionId, Package2Version.SubscriberPackageVersionId, Tag, Branch, ' +

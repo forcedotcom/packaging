@@ -105,7 +105,6 @@ export class ProfileApi {
    * @param manifest
    * @param excludedDirectories Directories to not include profiles from
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public generateProfiles(
     destPath: string,
     manifest: {

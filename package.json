@@ -49,7 +49,7 @@
     "debug": "^4.3.4",
     "graceful-fs": "^4.2.10",
     "js2xmlparser": "^4.0.2",
-    "jsforce": "2.0.0-beta.14",
+    "jsforce": "beta",
     "mkdirp": "1.0.4",
     "ts-retry-promise": "^0.6.1",
     "xml2js": "^0.4.23",

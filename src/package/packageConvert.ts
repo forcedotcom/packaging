@@ -12,8 +12,9 @@ import * as fs from 'fs';
 import { Connection, Org, SfProject } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import { uniqid } from '@salesforce/core/lib/testSetup';
+import { Many } from '@salesforce/ts-types';
 import * as pkgUtils from '../utils/packageUtils';
-import { PackagingSObjects } from '../interfaces';
+import { PackagingSObjects, Package2VersionCreateRequestResult } from '../interfaces';
 import { consts } from '../constants';
 import * as srcDevUtil from '../utils/srcDevUtils';
 import { byId } from './packageVersionCreateRequest';
@@ -30,7 +31,7 @@ export async function convertPackage(
   connection: Connection,
   project: SfProject,
   options: ConvertPackageOptions
-): Promise<void> {
+): Promise<Package2VersionCreateRequestResult> {
   let maxRetries = 0;
   const branch = 'main';
   if (options.wait) {
@@ -48,7 +49,7 @@ export async function convertPackage(
     throw new Error(`Failed to create request${createResult.id ? ` [${createResult.id}]` : ''}: ${errStr}`);
   }
 
-  let results;
+  let results: Many<Package2VersionCreateRequestResult>;
   if (options.wait) {
     results = await pkgUtils.pollForStatusWithInterval(
       createResult.id,
@@ -74,11 +75,14 @@ export async function convertPackage(
  * @returns {{Package2Id: string, Package2VersionMetadata: *, Tag: *, Branch: number}}
  * @private
  */
-async function createPackageVersionCreateRequest(context, packageId: string) {
-  const uniqueId: string = uniqid({ template: `${packageId}-%s` });
-  const packageVersTmpRoot: string = path.join(os.tmpdir(), uniqueId);
-  const packageVersBlobDirectory: string = path.join(packageVersTmpRoot, 'package-version-info');
-  const packageVersBlobZipFile: string = path.join(packageVersTmpRoot, consts.PACKAGE_VERSION_INFO_FILE_ZIP);
+async function createPackageVersionCreateRequest(
+  context,
+  packageId: string
+): Promise<PackagingSObjects.Package2VersionCreateRequest> {
+  const uniqueId = uniqid({ template: `${packageId}-%s` });
+  const packageVersTmpRoot = path.join(os.tmpdir(), uniqueId);
+  const packageVersBlobDirectory = path.join(packageVersTmpRoot, 'package-version-info');
+  const packageVersBlobZipFile = path.join(packageVersTmpRoot, consts.PACKAGE_VERSION_INFO_FILE_ZIP);
 
   const packageDescriptorJson = {
     id: packageId,
