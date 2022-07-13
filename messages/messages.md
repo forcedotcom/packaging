@@ -210,3 +210,31 @@ The %s value, [%s], and %s value, [%s], were both found in sfdx-project.json but
 # tempFileLocation
 
 The temp files are located at: %s.
+
+# failedToCreatePVCRequest
+
+Failed to create request %s: %s
+
+# versionNumberNotFoundInDevHub
+
+No version number was found in Dev Hub for package id %s and branch %s and version number %s that resolved to build number %s.
+
+# noReleaseVersionFound
+
+No released version was found in Dev Hub for package id %s and version number %s.
+
+# noReleaseVersionFoundForBranch
+
+No version number was found in Dev Hub for package id $s and branch %s and version number %s.
+
+# packagingDirNotFoundInConfigFile
+
+Config file %s does not contain a packaging directory for %s.
+
+# unpackagedMDDirectoryDoesNotExist
+
+Un-packaged metadata directory %s was specified but does not exist.
+
+# directoryDoesNotExist
+
+Directory %s does not exist.

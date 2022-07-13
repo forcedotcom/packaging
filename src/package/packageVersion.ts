@@ -6,7 +6,14 @@
  */
 
 import { Connection, Messages, SfProject } from '@salesforce/core';
-import { Package2VersionCreateRequestResult, PackageVersionCreateOptions, PackageVersionOptions } from '../interfaces';
+import {
+  Package2VersionCreateRequestResult,
+  PackageSaveResult,
+  PackageVersionCreateOptions,
+  PackageVersionOptions,
+} from '../interfaces';
+import * as pkgUtils from '../utils/packageUtils';
+import { combineSaveErrors } from '../utils';
 import { PackageVersionCreate } from './packageVersionCreate';
 
 Messages.importMessagesDirectory(__dirname);
@@ -24,10 +31,65 @@ export class PackageVersion {
     this.project = this.options.project;
   }
 
-  public async createPackageVersion(
-    options: PackageVersionCreateOptions
-  ): Promise<Partial<Package2VersionCreateRequestResult>> {
+  /**
+   * Creates a new package version.
+   *
+   * @param options
+   */
+  public async create(options: PackageVersionCreateOptions): Promise<Partial<Package2VersionCreateRequestResult>> {
     const pvc = new PackageVersionCreate({ ...options, ...this.options });
     return pvc.createPackageVersion();
+  }
+
+  /**
+   * Deletes a package version.
+   *
+   * @param idOrAlias
+   * @param undelete
+   */
+  public async delete(idOrAlias: string, undelete = false): Promise<PackageSaveResult> {
+    const packageVersionId = pkgUtils.getPackageIdFromAlias(idOrAlias, this.project);
+
+    // ID can be an 04t or 05i
+    pkgUtils.validateId(
+      [pkgUtils.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, pkgUtils.BY_LABEL.PACKAGE_VERSION_ID],
+      packageVersionId
+    );
+
+    // lookup the 05i ID, if needed
+    const packageId = await pkgUtils.getPackageVersionId(packageVersionId, this.connection);
+
+    // setup the request
+    const request: { Id: string; IsDeprecated: boolean } = {
+      Id: packageId,
+      IsDeprecated: !undelete,
+    };
+
+    const updateResult = await this.connection.tooling.update('Package2Version', request);
+    if (!updateResult.success) {
+      throw combineSaveErrors('Package2', 'update', updateResult.errors);
+    }
+    updateResult.id = await pkgUtils.getSubscriberPackageVersionId(packageVersionId, this.connection);
+    return updateResult;
+  }
+
+  public convert(): Promise<void> {
+    return Promise.resolve(undefined);
+  }
+
+  public install(): Promise<void> {
+    return Promise.resolve(undefined);
+  }
+
+  public list(): Promise<void> {
+    return Promise.resolve(undefined);
+  }
+
+  public uninstall(): Promise<void> {
+    return Promise.resolve(undefined);
+  }
+
+  public update(): Promise<void> {
+    return Promise.resolve(undefined);
   }
 }

@@ -16,8 +16,8 @@ import { uniqid } from '@salesforce/core/lib/testSetup';
 import { getString } from '@salesforce/ts-types';
 import { PackageCreateOptions } from '../../src/interfaces';
 import { createPackage } from '../../src/package';
-import { deletePackage } from '../../lib/package';
-import { PackageVersion } from '../../lib/package/packageVersion';
+import { deletePackage } from '../../src/package';
+import { PackageVersion } from '../../src/package';
 
 let session: TestSession;
 
@@ -123,8 +123,8 @@ describe('Integration tests for #salesforce/packaging library', function () {
     });
 
     it('force:package:version:create', async () => {
-      const pvc = new PackageVersion({ project, connection: devHubOrg.getConnection() });
-      const result = await pvc.createPackageVersion({
+      const pv = new PackageVersion({ project, connection: devHubOrg.getConnection() });
+      const result = await pv.create({
         package: pkgId,
         tag: TAG,
         branch: BRANCH,
@@ -366,12 +366,14 @@ describe('Integration tests for #salesforce/packaging library', function () {
   });
 
   describe('delete package/version from the devhub', () => {
-    it('deletes the package version', () => {
-      execCmd(`force:package:version:delete -p ${subscriberPkgVersionId} -n --json`, { ensureExitCode: 0 });
+    it('deletes the package version', async () => {
+      const pv = new PackageVersion({ project, connection: devHubOrg.getConnection() });
+      const result = await pv.delete(subscriberPkgVersionId);
+      expect(result.success).to.be.true;
+      expect(result.id).to.equal(subscriberPkgVersionId);
     });
 
     it('deletes the package', async () => {
-      // execCmd(`force:package:delete -p ${pkgId} -n --json`, { ensureExitCode: 0 });
       const result = await deletePackage(pkgId, project, devHubOrg.getConnection(), false);
       expect(result.success).to.be.true;
       expect(result.id).to.be.equal(pkgId);

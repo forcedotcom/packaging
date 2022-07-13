@@ -102,12 +102,11 @@ export class PackageVersionCreate {
 
   public rejectWithInstallKeyError() {
     // This command also requires either the installationkey flag or installationkeybypass flag
-    const errorString = messages.getMessage('errorMissingFlagsInstallationKey', [
+    const error = messages.createError('errorMissingFlagsInstallationKey', [
       '--installationkey',
       '--installationkeybypass',
     ]);
-    const error = new Error(errorString);
-    error['name'] = 'requiredFlagMissing';
+    (error as Error).name = 'requiredFlagMissing';
     return Promise.reject(error);
   }
 
@@ -149,7 +148,6 @@ export class PackageVersionCreate {
     // If valid 04t package, just return it to be used straight away.
     if (dependency.subscriberPackageVersionId) {
       pkgUtils.validateId(pkgUtils.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, dependency.subscriberPackageVersionId);
-
       return Promise.resolve();
     }
 
@@ -162,7 +160,6 @@ export class PackageVersionCreate {
     // If valid 04t package, just return it to be used straight away.
     if (pkgUtils.validateIdNoThrow(pkgUtils.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, packageIdFromAlias)) {
       dependency.subscriberPackageVersionId = packageIdFromAlias;
-
       return Promise.resolve();
     }
 
@@ -228,14 +225,15 @@ export class PackageVersionCreate {
         ? 'AND IsReleased = true'
         : `AND Branch = ${branchString}`;
     const query = `SELECT SubscriberPackageVersionId FROM Package2Version WHERE Package2Id = '${dependency.packageId}' AND MajorVersion = ${versionNumber[0]} AND MinorVersion = ${versionNumber[1]} AND PatchVersion = ${versionNumber[2]} AND BuildNumber = ${resolvedBuildNumber} ${branchOrReleasedCondition}`;
-    const pkgVerQueryResult = await this.connection.tooling.query(query);
+    const pkgVerQueryResult = await this.connection.tooling.query<PackagingSObjects.Package2Version>(query);
     const subRecords = pkgVerQueryResult.records;
     if (!subRecords || subRecords.length !== 1) {
-      throw new Error(
-        `No version number was found in Dev Hub for package id ${
-          dependency.packageId
-        } and branch ${branchString} and version number ${versionNumber.toString()} that resolved to build number ${resolvedBuildNumber}`
-      );
+      throw messages.createError('versionNumberNotFoundInDevHub', [
+        dependency.packageId,
+        branchString,
+        versionNumber.toString(),
+        resolvedBuildNumber,
+      ]);
     }
 
     dependency.subscriberPackageVersionId = pkgVerQueryResult.records[0].SubscriberPackageVersionId;
@@ -292,13 +290,9 @@ export class PackageVersionCreate {
     const records = results.records;
     if (!records || records.length === 0 || records[0].expr0 == null) {
       if (versionNumber.build === BuildNumberToken.RELEASED_BUILD_NUMBER_TOKEN) {
-        throw new Error(
-          `No released version was found in Dev Hub for package id ${packageId} and version number ${versionNumber.toString()}`
-        );
+        throw messages.createError('noReleaseVersionFound', [packageId, versionNumber.toString()]);
       } else {
-        throw new Error(
-          `No version number was found in Dev Hub for package id ${packageId} and branch ${branch} and version number ${versionNumber.toString()}`
-        );
+        throw messages.createError('noReleaseVersionFoundForBranch', [packageId, branch, versionNumber.toString()]);
       }
     }
     return `${results.records[0].expr0}`;
@@ -341,7 +335,7 @@ export class PackageVersionCreate {
     });
 
     if (!packageDescriptorJson) {
-      throw new Error(`${consts.WORKSPACE_CONFIG_FILENAME} does not contain a packaging directory for ${artDir}`);
+      throw messages.createError('packagingDirNotFoundInConfigFile', [consts.WORKSPACE_CONFIG_FILENAME, artDir]);
     }
 
     return packageDescriptorJson;
@@ -618,9 +612,9 @@ export class PackageVersionCreate {
       try {
         fs.statSync(unpackagedPath);
       } catch (err) {
-        throw new Error(
-          `Unpackaged metadata directory '${packageDescriptorJson.unpackagedMetadata.path}' was specified but does not exist`
-        );
+        throw messages.createError('unpackagedMDDirectoryDoesNotExist', [
+          packageDescriptorJson.unpackagedMetadata.path,
+        ]);
       }
       fs.mkdirSync(unpackagedMetadataFolder, { recursive: true });
       await this.generateMDFolderForArtifact({
@@ -779,7 +773,6 @@ export class PackageVersionCreate {
     return value;
   }
 
-  // eslint-disable-next-line complexity
   private async packageVersionCreate(
     options: PackageVersionCreateOptions
   ): Promise<Partial<Package2VersionCreateRequestResult>> {
@@ -800,7 +793,7 @@ export class PackageVersionCreate {
     }
 
     // Check for empty packageDirectories
-    if (this.project.getSfProjectJson().getContents().packageDirectories?.length === 0) {
+    if (this.project.getPackageDirectories()?.length === 0) {
       throw messages.createError('errorEmptyPackageDirs');
     }
 
@@ -819,7 +812,7 @@ export class PackageVersionCreate {
     try {
       fs.statSync(path.join(process.cwd(), options.path));
     } catch (err) {
-      throw new Error(`Directory '${options.path}' does not exist`);
+      throw messages.createError('directoryDoesNotExist', [options.path]);
     }
 
     options.profileApi = await this.resolveUserLicenses(canonicalPackageProperty, options);
@@ -840,7 +833,10 @@ export class PackageVersionCreate {
     if (!createResult.success) {
       const errStr =
         createResult.errors && createResult.errors.length ? createResult.errors.join(', ') : createResult.errors;
-      throw new Error(`Failed to create request${createResult.id ? ` [${createResult.id}]` : ''}: ${errStr}`);
+      throw messages.createError('failedToCreatePVCRequest', [
+        createResult.id ? ` [${createResult.id}]` : '',
+        errStr.toString(),
+      ]);
     }
     let result: Package2VersionCreateRequestResult;
     if (options.wait && options.wait.milliseconds > 0) {
@@ -862,7 +858,6 @@ export class PackageVersionCreate {
     return result;
   }
 
-  // TODO: should be in pkg utils
   private resolveCanonicalPackageProperty(options: PackageVersionCreateOptions): 'package' | 'id' {
     let canonicalPackageProperty: 'id' | 'package';
 
@@ -1066,14 +1061,14 @@ export class PackageVersionCreate {
       packageDescriptorJson.releaseNotesUrl = options.releasenotesurl;
     }
     if (packageDescriptorJson.releaseNotesUrl && !pkgUtils.validUrl(packageDescriptorJson.releaseNotesUrl)) {
-      throw new Error(messages.getMessage('malformedUrl', ['releaseNotesUrl', packageDescriptorJson.releaseNotesUrl]));
+      throw messages.createError('malformedUrl', ['releaseNotesUrl', packageDescriptorJson.releaseNotesUrl]);
     }
 
     if (options.postinstallurl) {
       packageDescriptorJson.postInstallUrl = options.postinstallurl;
     }
     if (packageDescriptorJson.postInstallUrl && !pkgUtils.validUrl(packageDescriptorJson.postInstallUrl)) {
-      throw new Error(messages.getMessage('malformedUrl', ['postInstallUrl', packageDescriptorJson.postInstallUrl]));
+      throw messages.createError('malformedUrl', ['postInstallUrl', packageDescriptorJson.postInstallUrl]);
     }
 
     if (options.postinstallscript) {

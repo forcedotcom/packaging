@@ -24,12 +24,10 @@ describe('srcDevUtils', () => {
     fs.writeFileSync(path.join(tmpSrcDir, 'file2.txt'), 'file contents');
     fs.writeFileSync(path.join(tmpSrcDir, 'not-empty-dir', 'sub-dir', 'file4.txt'), 'file contents');
     fs.writeFileSync(path.join(tmpSrcDir, 'not-empty-dir', 'file3.txt'), 'file contents');
-    // eslint-disable-next-line no-console
-    console.log(`tmpDir: ${tmpZipDir}`);
   });
   afterEach(() => {
-    // fs.rmSync(tmpZipDir, { recursive: true });
-    // fs.rmSync(tmpSrcDir, { recursive: true });
+    fs.rmSync(tmpZipDir, { recursive: true });
+    fs.rmSync(tmpSrcDir, { recursive: true });
   });
 
   it('should be defined', async () => {

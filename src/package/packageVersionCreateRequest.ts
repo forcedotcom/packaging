@@ -89,7 +89,7 @@ function _constructWhere(options?: PackageVersionCreateRequestQueryOptions): str
   // filter on created date, days ago: 0 for today, etc
   if (!util.isNullOrUndefined(this.options.createdlastdays)) {
     if (options.createdlastdays < 0) {
-      throw new Error(messages.getMessage('invalidDaysNumber', ['createdlastdays', options.createdlastdays]));
+      throw messages.createError('invalidDaysNumber', ['createdlastdays', options.createdlastdays]);
     }
     where.push(`CreatedDate = LAST_N_DAYS:${this.options.createdlastdays}`);
   }
@@ -102,7 +102,7 @@ function _constructWhere(options?: PackageVersionCreateRequestQueryOptions): str
       STATUSES.forEach((status) => {
         args.push(status);
       });
-      throw new Error(messages.getMessage('invalidStatus', args));
+      throw messages.createError('invalidStatus', args);
     }
 
     where.push(`Status = '${foundStatus}'`);

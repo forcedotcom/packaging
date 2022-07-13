@@ -9,7 +9,7 @@ import * as path from 'path';
 import * as util from 'util';
 import * as os from 'os';
 import * as fs from 'fs';
-import { Connection, Org, SfProject } from '@salesforce/core';
+import { Connection, Messages, Org, SfProject } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import { uniqid } from '@salesforce/core/lib/testSetup';
 import { Many } from '@salesforce/ts-types';
@@ -18,6 +18,10 @@ import { PackagingSObjects, Package2VersionCreateRequestResult } from '../interf
 import { consts } from '../constants';
 import * as srcDevUtil from '../utils/srcDevUtils';
 import { byId } from './packageVersionCreateRequest';
+
+Messages.importMessagesDirectory(__dirname);
+const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
+
 type ConvertPackageOptions = {
   installationKey: string;
   installationKeyBypass: boolean;
@@ -46,7 +50,10 @@ export async function convertPackage(
   if (!createResult.success) {
     const errStr =
       createResult.errors && createResult.errors.length ? createResult.errors.join(', ') : createResult.errors;
-    throw new Error(`Failed to create request${createResult.id ? ` [${createResult.id}]` : ''}: ${errStr}`);
+    throw messages.createError('failedToCreatePVCRequest', [
+      createResult.id ? ` [${createResult.id}]` : '',
+      errStr.toString(),
+    ]);
   }
 
   let results: Many<Package2VersionCreateRequestResult>;

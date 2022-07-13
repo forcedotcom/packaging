@@ -718,7 +718,7 @@ export async function getAncestorIdHighestRelease(
       }
     } else if (explicitUseHighestRelease) {
       // there is no eligible ancestor version
-      throw new Error(messages.getMessage('errorNoMatchingAncestor', [versionNumberString, packageId] as Tokens));
+      throw messages.createError('errorNoMatchingAncestor', [versionNumberString, packageId]);
     }
   }
   return result;
@@ -795,7 +795,7 @@ export async function findOrCreatePackage2(seedPackage: string, connection: Conn
   const records = queryResult.records;
   if (records && records.length > 1) {
     const ids = records.map((r) => r.Id);
-    throw new Error(messages.getMessage('errorMoreThanOnePackage2WithSeed', [ids.join(', ')]));
+    throw messages.createError('errorMoreThanOnePackage2WithSeed', [ids.join(', ')]);
   }
 
   if (records && records.length === 1) {
@@ -808,7 +808,7 @@ export async function findOrCreatePackage2(seedPackage: string, connection: Conn
   const subscriberResult = await connection.tooling.query<PackagingSObjects.SubscriberPackage>(subQuery);
   const subscriberRecords = subscriberResult.records;
   if (!subscriberRecords || subscriberRecords.length <= 0) {
-    throw new Error(messages.getMessage('errorNoSubscriberPackageRecord', [seedPackage]));
+    throw messages.createError('errorNoSubscriberPackageRecord', [seedPackage]);
   }
 
   const request = {
