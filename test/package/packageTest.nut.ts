@@ -158,6 +158,8 @@ describe('Integration tests for #salesforce/packaging library', function () {
             return pollResult;
           }
         } else if (retries > 0) {
+          // eslint-disable-next-line no-console
+          console.log(`JSON Parse Error\n${JSON.stringify(pollResultRaw, undefined, 2)}`);
           retries--;
         } else {
           throw new Error('JsonParseError');
