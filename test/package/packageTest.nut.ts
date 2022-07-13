@@ -16,6 +16,7 @@ import { uniqid } from '@salesforce/core/lib/testSetup';
 import { PackageCreateOptions } from '../../src/interfaces';
 import { createPackage } from '../../src/package';
 import { deletePackage } from '../../lib/package';
+import { PackageVersion } from '../../lib/package/packageVersion';
 
 let session: TestSession;
 
@@ -78,7 +79,7 @@ describe('Integration tests for #salesforce/packaging library', function () {
         // `sfdx force:org:create -d 1 -a ${SUB_ORG_ALIAS} -f config/project-scratch-def.json`,
       ],
     });
-    pkgName = uniqid({ template: 'dancingbears-', length: 16 });
+    pkgName = uniqid({ template: 'pnh-dancingbears-', length: 16 });
     configAggregator = await ConfigAggregator.create();
     devHubOrg = await Org.create({ aliasOrUsername: configAggregator.getPropertyValue<string>('target-dev-hub') });
     project = await SfProject.resolve();
@@ -120,23 +121,40 @@ describe('Integration tests for #salesforce/packaging library', function () {
       });
     });
 
-    it.skip('force:package:version:create', () => {
-      const result = execCmd<{ Id: string }>(
-        `force:package:version:create --package ${pkgId} --installationkey ${INSTALLATION_KEY} --tag "${TAG}" --branch ${BRANCH} --json --installationkeybypass --definitionfile config/project-scratch-def.json --versiondescription "This is a test" --validateschema`,
-        {
-          ensureExitCode: 0,
-        }
-      ).jsonOutput.result;
-      pkgCreateVersionRequestId = result.Id;
-      expect(pkgCreateVersionRequestId).to.match(new RegExp(PKG2_VERSION_CREATE_REQUEST_ID_PREFIX));
+    it('force:package:version:create', async () => {
+      try {
+        const pvc = new PackageVersion({ project, connection: devHubOrg.getConnection() });
+        const result = await pvc.createPackageVersion({
+          package: pkgId,
+          tag: TAG,
+          branch: BRANCH,
+          installationkey: INSTALLATION_KEY,
+          installationkeybypass: true,
+          definitionfile: path.join(session.project.dir, 'config', 'project-scratch-def.json'),
+          versiondescription: 'This is a test',
+          validateschema: true,
+        });
+        // const result = execCmd<{ Id: string }>(
+        //   `force:package:version:create --package ${pkgId} --installationkey ${INSTALLATION_KEY} --tag "${TAG}" --branch ${BRANCH} --json --installationkeybypass --definitionfile config/project-scratch-def.json --versiondescription "This is a test" --validateschema`,
+        //   {
+        //     ensureExitCode: 0,
+        //   }
+        // ).jsonOutput.result;
+        pkgCreateVersionRequestId = result.Id;
+        expect(pkgCreateVersionRequestId).to.match(new RegExp(PKG2_VERSION_CREATE_REQUEST_ID_PREFIX));
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.log(err);
+      }
     });
 
-    it.skip('runs force:package:version:create:report until it succeeds', async () => {
+    it('runs force:package:version:create:report until it succeeds', async () => {
       let duration = 0;
       async function pollForPackageCompletion(remainingRetries): Promise<PackageVersionCreateResponse> {
-        const pollResult = execCmd<[PackageVersionCreateResponse]>(
+        const pollResultRaw = execCmd<[PackageVersionCreateResponse]>(
           `force:package:version:create:report --packagecreaterequestid ${pkgCreateVersionRequestId} --json`
-        ).jsonOutput.result[0];
+        );
+        const pollResult = pollResultRaw.jsonOutput.result[0];
         expect(pollResult).to.include.keys(VERSION_CREATE_RESPONSE_KEYS);
         // it's done! or timed out.
         if (!VERSION_CREATE_STATUSES_INPROGRESS.includes(pollResult.Status) || remainingRetries <= 0) {
@@ -162,7 +180,7 @@ describe('Integration tests for #salesforce/packaging library', function () {
       }
     });
 
-    it.skip('verifies packageversionrequest is in hubforce via package:version:create:list', () => {
+    it('verifies packageversionrequest is in hubforce via package:version:create:list', () => {
       const result = execCmd<[{ Status: string; Id: string }]>('force:package:version:create:list --json').jsonOutput
         .result;
 
@@ -174,7 +192,7 @@ describe('Integration tests for #salesforce/packaging library', function () {
       ).to.have.length(1);
     });
 
-    it.skip('force:package:version:report', async () => {
+    it('force:package:version:report', async () => {
       const result = execCmd<{
         Status: string;
         Package2Id: string;
@@ -344,7 +362,7 @@ describe('Integration tests for #salesforce/packaging library', function () {
   });
 
   describe('delete package/version from the devhub', () => {
-    it.skip('deletes the package version', () => {
+    it('deletes the package version', () => {
       execCmd(`force:package:version:delete -p ${subscriberPkgVersionId} -n --json`, { ensureExitCode: 0 });
     });
 

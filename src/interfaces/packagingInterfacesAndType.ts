@@ -160,34 +160,42 @@ export type PackageVersionOptions = {
   project: SfProject;
 };
 
-export type PackageVersionCreateOptions = PackageVersionOptions & {
-  branch: string;
-  buildinstance: string;
-  codecoverage: boolean;
-  definitionfile: string;
-  installationkey: string;
-  installationkeybypass: boolean;
-  package: string;
-  path: string;
-  postinstallscript: string;
-  postinstallurl: string;
-  preserve: boolean;
-  releasenotesurl: string;
-  skipancestorcheck: boolean;
-  skipvalidation: boolean;
-  sourceorg: string;
-  tag: string;
-  uninstallscript: string;
-  validateschema: boolean;
-  versiondescription: string;
-  versionname: string;
-  versionnumber: string;
-  wait: Duration;
-  profileApi?: ProfileApi;
-};
+export type PackageVersionCreateOptions = Partial<
+  PackageVersionOptions & {
+    branch: string;
+    buildinstance: string;
+    codecoverage: boolean;
+    definitionfile: string;
+    installationkey: string;
+    installationkeybypass: boolean;
+    package: string;
+    path: string;
+    postinstallscript: string;
+    postinstallurl: string;
+    preserve: boolean;
+    releasenotesurl: string;
+    skipancestorcheck: boolean;
+    skipvalidation: boolean;
+    sourceorg: string;
+    tag: string;
+    uninstallscript: string;
+    validateschema: boolean;
+    versiondescription: string;
+    versionname: string;
+    versionnumber: string;
+    wait: Duration;
+    profileApi: ProfileApi;
+  }
+>;
 
 export type PackageVersionCreateRequestQueryOptions = {
   createdlastdays?: number;
   connection?: Connection;
   status?: string;
+};
+
+export type ProfileApiOptions = {
+  project: SfProject;
+  includeUserLicenses: boolean;
+  generateProfileInformation: boolean;
 };

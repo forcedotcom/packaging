@@ -19,7 +19,7 @@ export class PackageVersion {
   // @ts-ignore
   private readonly connection: Connection;
 
-  protected constructor(private options: PackageVersionOptions) {
+  public constructor(private options: PackageVersionOptions) {
     this.connection = this.options.connection;
     this.project = this.options.project;
   }
@@ -27,7 +27,7 @@ export class PackageVersion {
   public async createPackageVersion(
     options: PackageVersionCreateOptions
   ): Promise<Partial<Package2VersionCreateRequestResult>> {
-    const pvc = new PackageVersionCreate(options);
-    return pvc.createPackageVersion(options);
+    const pvc = new PackageVersionCreate({ ...options, ...this.options });
+    return pvc.createPackageVersion();
   }
 }

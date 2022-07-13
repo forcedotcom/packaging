@@ -206,3 +206,7 @@ The %s value [%s], doesn’t match the %s value in any packageDirectories specif
 # errorDirectoryIdMismatch
 
 The %s value, [%s], and %s value, [%s], were both found in sfdx-project.json but don’t match. If you supply both values, they must match the path and package values in one of the packageDirectories.,
+
+# tempFileLocation
+
+The temp files are located at: %s.
