@@ -13,6 +13,7 @@ import { Duration, sleep } from '@salesforce/kit';
 import { ProjectJson } from '@salesforce/core/lib/sfProject';
 import { ConfigAggregator, Org, SfProject } from '@salesforce/core';
 import { uniqid } from '@salesforce/core/lib/testSetup';
+import { getString } from '@salesforce/ts-types';
 import { PackageCreateOptions } from '../../src/interfaces';
 import { createPackage } from '../../src/package';
 import { deletePackage } from '../../lib/package';
@@ -142,17 +143,24 @@ describe('Integration tests for #salesforce/packaging library', function () {
 
     it('runs force:package:version:create:report until it succeeds', async () => {
       let duration = 0;
+      let retries = 10;
       async function pollForPackageCompletion(remainingRetries): Promise<PackageVersionCreateResponse> {
         const pollResultRaw = execCmd<[PackageVersionCreateResponse]>(
           `force:package:version:create:report --packagecreaterequestid ${pkgCreateVersionRequestId} --json`
         );
-        // eslint-disable-next-line no-console
-        console.log(`pvcr results\n${JSON.stringify(pollResultRaw, undefined, 2)}`);
-        const pollResult = pollResultRaw.jsonOutput.result[0];
-        expect(pollResult).to.include.keys(VERSION_CREATE_RESPONSE_KEYS);
-        // it's done! or timed out.
-        if (!VERSION_CREATE_STATUSES_INPROGRESS.includes(pollResult.Status) || remainingRetries <= 0) {
-          return pollResult;
+        if (!(getString(pollResultRaw, 'jsonOutput.jsonError.name') === 'JsonParseError')) {
+          // eslint-disable-next-line no-console
+          console.log(`pvcr results\n${JSON.stringify(pollResultRaw, undefined, 2)}`);
+          const pollResult = pollResultRaw.jsonOutput.result[0];
+          expect(pollResult).to.include.keys(VERSION_CREATE_RESPONSE_KEYS);
+          // it's done! or timed out.
+          if (!VERSION_CREATE_STATUSES_INPROGRESS.includes(pollResult.Status) || remainingRetries <= 0) {
+            return pollResult;
+          }
+        } else if (retries > 0) {
+          retries--;
+        } else {
+          throw new Error('JsonParseError');
         }
         // still going...
         duration += WAIT_INTERVAL_MS;

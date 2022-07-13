@@ -557,8 +557,6 @@ export class PackageVersionCreate {
         settingsZipFile
       );
     }
-    // eslint-disable-next-line no-console
-    console.log(childProcess.execSync('tree .', { cwd: packageVersBlobDirectory }).toString());
     // Zip the Version Info and package.zip files into another zip
     await zipDir(packageVersBlobDirectory, packageVersBlobZipFile);
 
