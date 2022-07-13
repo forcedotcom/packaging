@@ -35,7 +35,7 @@
     "!lib/**/*.map"
   ],
   "dependencies": {
-    "@salesforce/core": "^3.23.7-test-02",
+    "@salesforce/core": "^3.23.7",
     "@salesforce/kit": "^1.5.42",
     "@salesforce/schemas": "^1.2.0",
     "@salesforce/source-deploy-retrieve": "^6.2.0",
@@ -49,7 +49,7 @@
     "globby": "^11",
     "graceful-fs": "^4.2.10",
     "js2xmlparser": "^4.0.2",
-    "jsforce": "beta",
+    "jsforce": "2.0.0-beta.14",
     "jszip": "^3.10.0",
     "mkdirp": "1.0.4",
     "ts-retry-promise": "^0.6.1",
