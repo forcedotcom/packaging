@@ -134,12 +134,6 @@ describe('Integration tests for #salesforce/packaging library', function () {
           versiondescription: 'This is a test',
           validateschema: true,
         });
-        // const result = execCmd<{ Id: string }>(
-        //   `force:package:version:create --package ${pkgId} --installationkey ${INSTALLATION_KEY} --tag "${TAG}" --branch ${BRANCH} --json --installationkeybypass --definitionfile config/project-scratch-def.json --versiondescription "This is a test" --validateschema`,
-        //   {
-        //     ensureExitCode: 0,
-        //   }
-        // ).jsonOutput.result;
         pkgCreateVersionRequestId = result.Id;
         expect(pkgCreateVersionRequestId).to.match(new RegExp(PKG2_VERSION_CREATE_REQUEST_ID_PREFIX));
       } catch (err) {
@@ -154,6 +148,8 @@ describe('Integration tests for #salesforce/packaging library', function () {
         const pollResultRaw = execCmd<[PackageVersionCreateResponse]>(
           `force:package:version:create:report --packagecreaterequestid ${pkgCreateVersionRequestId} --json`
         );
+        // eslint-disable-next-line no-console
+        console.log(`pvcr results\n${JSON.stringify(pollResultRaw, undefined, 2)}`);
         const pollResult = pollResultRaw.jsonOutput.result[0];
         expect(pollResult).to.include.keys(VERSION_CREATE_RESPONSE_KEYS);
         // it's done! or timed out.
