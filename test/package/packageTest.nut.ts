@@ -122,24 +122,22 @@ describe('Integration tests for #salesforce/packaging library', function () {
     });
 
     it('force:package:version:create', async () => {
-      try {
-        const pvc = new PackageVersion({ project, connection: devHubOrg.getConnection() });
-        const result = await pvc.createPackageVersion({
-          package: pkgId,
-          tag: TAG,
-          branch: BRANCH,
-          installationkey: INSTALLATION_KEY,
-          installationkeybypass: true,
-          definitionfile: path.join(session.project.dir, 'config', 'project-scratch-def.json'),
-          versiondescription: 'This is a test',
-          validateschema: true,
-        });
-        pkgCreateVersionRequestId = result.Id;
-        expect(pkgCreateVersionRequestId).to.match(new RegExp(PKG2_VERSION_CREATE_REQUEST_ID_PREFIX));
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.log(err);
-      }
+      const pvc = new PackageVersion({ project, connection: devHubOrg.getConnection() });
+      const result = await pvc.createPackageVersion({
+        package: pkgId,
+        tag: TAG,
+        branch: BRANCH,
+        installationkey: INSTALLATION_KEY,
+        installationkeybypass: true,
+        definitionfile: path.join(session.project.dir, 'config', 'project-scratch-def.json'),
+        versiondescription: 'This is a test',
+        validateschema: true,
+      });
+      expect(result.Id).to.match(
+        new RegExp(PKG2_VERSION_CREATE_REQUEST_ID_PREFIX),
+        `\n${JSON.stringify(result, undefined, 2)}`
+      );
+      pkgCreateVersionRequestId = result.Id;
     });
 
     it('runs force:package:version:create:report until it succeeds', async () => {
