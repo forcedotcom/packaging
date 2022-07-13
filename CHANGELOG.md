@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.6](https://github.com/forcedotcom/packaging/compare/v0.0.5...v0.0.6) (2022-07-08)
+
+### Bug Fixes
+
+- add pkg create and delete apis ([dedc609](https://github.com/forcedotcom/packaging/commit/dedc609398da3aa2e23e9108b54a535a95e75bf8))
+- add pkg create and delete apis ([a1e37e2](https://github.com/forcedotcom/packaging/commit/a1e37e28e7886c451364413d0a47f3bfbda2b822))
+- bump version top 0.0.6 ([8d800f9](https://github.com/forcedotcom/packaging/commit/8d800f9264333362cfd0dae03c92d60f314aa098))
+
 ### [0.0.5](https://github.com/forcedotcom/packaging/compare/v0.0.4...v0.0.5) (2022-07-06)
 
 ### [0.0.4](https://github.com/forcedotcom/packaging/compare/v0.0.3...v0.0.4) (2022-06-23)
