@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.7](https://github.com/forcedotcom/packaging/compare/v0.0.6...v0.0.7) (2022-07-14)
+
+### Bug Fixes
+
+- add package version create/delete to library ([7713d4d](https://github.com/forcedotcom/packaging/commit/7713d4dc7d25f2a381a6972e57f24c9fbdcbae05))
+
 ### [0.0.6](https://github.com/forcedotcom/packaging/compare/v0.0.5...v0.0.6) (2022-07-08)
 
 ### Bug Fixes
