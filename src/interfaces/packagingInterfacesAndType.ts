@@ -8,7 +8,7 @@
 import { Duration } from '@salesforce/kit';
 import { Connection, SfProject } from '@salesforce/core';
 import { SaveResult } from 'jsforce';
-import { ProfileApi } from '../package/profileApi';
+import { PackageProfileApi } from '../package/packageProfileApi';
 import { PackagingSObjects } from './packagingSObjects';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
@@ -47,7 +47,7 @@ export type PackageOptions = Record<string, unknown>;
 export type PackageVersion2Options = Record<string, unknown>;
 export type PackageVersionOptions1GP = Record<string, unknown>;
 
-export type Package2VersionCreateRequestResult = {
+export type PackageVersionCreateRequestResult = {
   Id: string;
   Status: Package2VersionStatus;
   Package2Id: string;
@@ -62,14 +62,14 @@ export type Package2VersionCreateRequestResult = {
   CreatedBy: string;
 };
 
-export type Package2VersionCreateRequestError = {
+export type PackageVersionCreateRequestError = {
   Message: string;
 };
 
-export type Package2VersionCreateEventData = {
+export type PackageVersionCreateEventData = {
   id: string;
   packageUpdated?: boolean;
-  package2VersionCreateRequestResult: Package2VersionCreateRequestResult;
+  packageVersionCreateRequestResult: PackageVersionCreateRequestResult;
   message?: string;
   timeRemaining?: Duration;
 };
@@ -184,7 +184,7 @@ export type PackageVersionCreateOptions = Partial<
     versionname: string;
     versionnumber: string;
     wait: Duration;
-    profileApi: ProfileApi;
+    profileApi: PackageProfileApi;
   }
 >;
 

@@ -14,7 +14,7 @@ import { Duration } from '@salesforce/kit';
 import { uniqid } from '@salesforce/core/lib/testSetup';
 import { Many } from '@salesforce/ts-types';
 import * as pkgUtils from '../utils/packageUtils';
-import { PackagingSObjects, Package2VersionCreateRequestResult } from '../interfaces';
+import { PackagingSObjects, PackageVersionCreateRequestResult } from '../interfaces';
 import { consts } from '../constants';
 import * as srcDevUtil from '../utils/srcDevUtils';
 import { byId } from './packageVersionCreateRequest';
@@ -35,14 +35,14 @@ export async function convertPackage(
   connection: Connection,
   project: SfProject,
   options: ConvertPackageOptions
-): Promise<Package2VersionCreateRequestResult> {
+): Promise<PackageVersionCreateRequestResult> {
   let maxRetries = 0;
   const branch = 'main';
   if (options.wait) {
     maxRetries = (60 / pkgUtils.POLL_INTERVAL_SECONDS) * options.wait.seconds;
   }
 
-  const packageId = await pkgUtils.findOrCreatePackage2(pkg, connection);
+  const packageId = await pkgUtils.findOrCreatePackage(pkg, connection);
 
   const request = await createPackageVersionCreateRequest(context, packageId);
 
@@ -56,7 +56,7 @@ export async function convertPackage(
     ]);
   }
 
-  let results: Many<Package2VersionCreateRequestResult>;
+  let results: Many<PackageVersionCreateRequestResult>;
   if (options.wait) {
     results = await pkgUtils.pollForStatusWithInterval(
       createResult.id,

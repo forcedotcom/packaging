@@ -8,8 +8,8 @@
 import * as util from 'util';
 import { Connection, Messages } from '@salesforce/core';
 import {
-  Package2VersionCreateRequestError,
-  Package2VersionCreateRequestResult,
+  PackageVersionCreateRequestError,
+  PackageVersionCreateRequestResult,
   PackageVersionCreateRequestQueryOptions,
   PackagingSObjects,
 } from '../interfaces';
@@ -30,23 +30,23 @@ const STATUSES = ['Queued', 'InProgress', 'Success', 'Error'];
 
 export async function list(
   options: PackageVersionCreateRequestQueryOptions = {}
-): Promise<Package2VersionCreateRequestResult[]> {
+): Promise<PackageVersionCreateRequestResult[]> {
   const whereClause = _constructWhere();
   return _query(util.format(QUERY, whereClause), options.connection);
 }
 
 export async function byId(
-  package2VersionCreateRequestId,
+  packageVersionCreateRequestId,
   connection: Connection
-): Promise<Package2VersionCreateRequestResult[]> {
-  const results = await _query(util.format(QUERY, `WHERE Id = '${package2VersionCreateRequestId}' `), connection);
+): Promise<PackageVersionCreateRequestResult[]> {
+  const results = await _query(util.format(QUERY, `WHERE Id = '${packageVersionCreateRequestId}' `), connection);
   if (results && results.length === 1 && results[0].Status === STATUS_ERROR) {
-    results[0].Error = await _queryErrors(package2VersionCreateRequestId, connection);
+    results[0].Error = await _queryErrors(packageVersionCreateRequestId, connection);
   }
 
   return results;
 }
-async function _query(query: string, connection: Connection): Promise<Package2VersionCreateRequestResult[]> {
+async function _query(query: string, connection: Connection): Promise<PackageVersionCreateRequestResult[]> {
   type QueryRecord = PackagingSObjects.Package2VersionCreateRequest & {
     Package2Version: Pick<PackagingSObjects.Package2Version, 'HasMetadataRemoved' | 'SubscriberPackageVersionId'>;
   };
@@ -68,12 +68,12 @@ async function _query(query: string, connection: Connection): Promise<Package2Ve
 }
 
 async function _queryErrors(
-  package2VersionCreateRequestId,
+  packageVersionCreateRequestId,
   connection: Connection
-): Promise<Package2VersionCreateRequestError[]> {
+): Promise<PackageVersionCreateRequestError[]> {
   const errorResults = [];
 
-  const queryResult = connection.tooling.query(util.format(ERROR_QUERY, package2VersionCreateRequestId));
+  const queryResult = connection.tooling.query(util.format(ERROR_QUERY, packageVersionCreateRequestId));
   if (queryResult.records) {
     queryResult.records.forEach((record) => {
       errorResults.push(record.Message);

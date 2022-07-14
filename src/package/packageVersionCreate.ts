@@ -30,11 +30,11 @@ import { copyDir, zipDir } from '../utils';
 import { BuildNumberToken, VersionNumber } from '../utils/versionNumber';
 import {
   MDFolderForArtifactOptions,
-  Package2VersionCreateRequestResult,
+  PackageVersionCreateRequestResult,
   PackageVersionCreateOptions,
   PackagingSObjects,
 } from '../interfaces';
-import { ProfileApi } from './profileApi';
+import { PackageProfileApi } from './packageProfileApi';
 import { list, byId } from './packageVersionCreateRequest';
 
 Messages.importMessagesDirectory(__dirname);
@@ -84,7 +84,7 @@ export class PackageVersionCreate {
     this.project = this.options.project;
   }
 
-  public createPackageVersion(): Promise<Partial<Package2VersionCreateRequestResult>> {
+  public createPackageVersion(): Promise<Partial<PackageVersionCreateRequestResult>> {
     return this.packageVersionCreate(this.options).catch((err: Error) => {
       // TODO: until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
       err = pkgUtils.massageErrorMessage(err);
@@ -92,22 +92,12 @@ export class PackageVersionCreate {
     });
   }
 
-  public async listRequest(createdlastdays?: number, status?: string): Promise<Package2VersionCreateRequestResult[]> {
-    return await list({ createdlastdays, status, connection: this.connection });
+  public async listRequest(createdlastdays?: number, status?: string): Promise<PackageVersionCreateRequestResult[]> {
+    return list({ createdlastdays, status, connection: this.connection });
   }
 
-  public async listRequestById(id: string, connection: Connection): Promise<Package2VersionCreateRequestResult[]> {
-    return await byId(id, connection);
-  }
-
-  public rejectWithInstallKeyError() {
-    // This command also requires either the installationkey flag or installationkeybypass flag
-    const error = messages.createError('errorMissingFlagsInstallationKey', [
-      '--installationkey',
-      '--installationkeybypass',
-    ]);
-    (error as Error).name = 'requiredFlagMissing';
-    return Promise.reject(error);
+  public async listRequestById(id: string, connection: Connection): Promise<PackageVersionCreateRequestResult[]> {
+    return byId(id, connection);
   }
 
   // convert source to mdapi format and copy to tmp dir packaging up
@@ -775,7 +765,7 @@ export class PackageVersionCreate {
 
   private async packageVersionCreate(
     options: PackageVersionCreateOptions
-  ): Promise<Partial<Package2VersionCreateRequestResult>> {
+  ): Promise<Partial<PackageVersionCreateRequestResult>> {
     let pollInterval = Duration.seconds(pkgUtils.POLL_INTERVAL_SECONDS);
     let maxRetries = 0;
 
@@ -838,7 +828,7 @@ export class PackageVersionCreate {
         errStr.toString(),
       ]);
     }
-    let result: Package2VersionCreateRequestResult;
+    let result: PackageVersionCreateRequestResult;
     if (options.wait && options.wait.milliseconds > 0) {
       pollInterval = pollInterval ?? Duration.seconds(options.wait.seconds / maxRetries);
       if (pollInterval) {
@@ -941,7 +931,7 @@ export class PackageVersionCreate {
   private async resolveUserLicenses(
     canonicalPackageProperty: 'id' | 'package',
     options: PackageVersionCreateOptions
-  ): Promise<ProfileApi> {
+  ): Promise<PackageProfileApi> {
     // Check for an includeProfileUserLiceneses flag in the packageDirectory
     const includeProfileUserLicenses = this.getConfigPackageDirectoriesValue(
       this.project.getPackageDirectories(),
@@ -959,7 +949,7 @@ export class PackageVersionCreate {
       throw messages.createError('errorProfileUserLicensesInvalidValue', [includeProfileUserLicenses] as string[]);
     }
     const shouldGenerateProfileInformation = logger.shouldLog(LoggerLevel.INFO) || logger.shouldLog(LoggerLevel.DEBUG);
-    return ProfileApi.create({
+    return PackageProfileApi.create({
       project: this.project,
       includeUserLicenses: includeProfileUserLicenses as boolean,
       generateProfileInformation: shouldGenerateProfileInformation,
@@ -993,7 +983,7 @@ export class PackageVersionCreate {
   }
 
   private async validateFlagsForPackageType(packageId: string, options: PackageVersionCreateOptions): Promise<void> {
-    const packageType = await pkgUtils.getPackage2Type(packageId, this.connection);
+    const packageType = await pkgUtils.getPackageType(packageId, this.connection);
 
     if (packageType === 'Unlocked') {
       if (options.postinstallscript || options.uninstallscript) {

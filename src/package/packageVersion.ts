@@ -7,7 +7,7 @@
 
 import { Connection, Messages, SfProject } from '@salesforce/core';
 import {
-  Package2VersionCreateRequestResult,
+  PackageVersionCreateRequestResult,
   PackageSaveResult,
   PackageVersionCreateOptions,
   PackageVersionOptions,
@@ -36,7 +36,7 @@ export class PackageVersion {
    *
    * @param options
    */
-  public async create(options: PackageVersionCreateOptions): Promise<Partial<Package2VersionCreateRequestResult>> {
+  public async create(options: PackageVersionCreateOptions): Promise<Partial<PackageVersionCreateRequestResult>> {
     const pvc = new PackageVersionCreate({ ...options, ...this.options });
     return pvc.createPackageVersion();
   }

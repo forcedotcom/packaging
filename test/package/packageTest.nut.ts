@@ -149,8 +149,6 @@ describe('Integration tests for #salesforce/packaging library', function () {
           `force:package:version:create:report --packagecreaterequestid ${pkgCreateVersionRequestId} --json`
         );
         if (!(getString(pollResultRaw, 'jsonOutput.jsonError.name') === 'JsonParseError')) {
-          // eslint-disable-next-line no-console
-          console.log(`pvcr results\n${JSON.stringify(pollResultRaw, undefined, 2)}`);
           const pollResult = pollResultRaw.jsonOutput.result[0];
           expect(pollResult).to.include.keys(VERSION_CREATE_RESPONSE_KEYS);
           // it's done! or timed out.

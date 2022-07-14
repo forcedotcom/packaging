@@ -13,8 +13,6 @@ import { ConfigAggregator, Messages, SfProject } from '@salesforce/core';
 import { AsyncCreatable } from '@salesforce/kit';
 import { ProfileApiOptions } from '../interfaces';
 
-// Local
-
 Messages.importMessagesDirectory(__dirname);
 // TODO: need to transfer these messages
 const profileApiMessages = Messages.loadMessages('@salesforce/packaging', 'messages');
@@ -24,7 +22,7 @@ const profileApiMessages = Messages.loadMessages('@salesforce/packaging', 'messa
  * All profiles found in the workspaces are extracted out and then re-written to only include metadata in the profile
  * that is relevant to the source in the package directory being packaged.
  */
-export class ProfileApi extends AsyncCreatable<ProfileApiOptions> {
+export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
   public readonly profiles: ProfileInformation[] = [];
   public apiVersion: string;
   public nodeEntities: { name: string[]; childElement: string[]; parentElement: string[] };

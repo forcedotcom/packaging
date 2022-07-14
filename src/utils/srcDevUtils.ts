@@ -44,7 +44,7 @@ export async function zipDir(dir: string, zipfile: string, options = {}): Promis
   });
   await pipeline(zipStream, fs.createWriteStream(zipfile));
   const stat = fs.statSync(zipfile);
-  logger.debug(`${stat.size} bytes written to ${zipfile} using ${getElapsedTime(timer)}ms`);
+  logger.debug(`${stat.size} bytes written to ${zipfile} in ${getElapsedTime(timer)}ms`);
   return;
 }
 
