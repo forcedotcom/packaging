@@ -18,7 +18,7 @@ type Package2Request = Pick<
   'Name' | 'Description' | 'NamespacePrefix' | 'ContainerOptions' | 'IsOrgDependent' | 'PackageErrorUsername'
 >;
 
-export function _createPackage2RequestFromContext(project: SfProject, options: PackageCreateOptions): Package2Request {
+export function _createPackageRequestFromContext(project: SfProject, options: PackageCreateOptions): Package2Request {
   const namespace = options.noNamespace ? '' : project.getSfProjectJson().getContents().namespace || '';
   return {
     Name: options.name,
@@ -107,7 +107,7 @@ export async function createPackage(
   // strip trailing slash from path param
   options.path = options.path.replace(/\/$/, '');
 
-  const request = _createPackage2RequestFromContext(project, options);
+  const request = _createPackageRequestFromContext(project, options);
   let packageId: string = null;
 
   const createResult = await connection.tooling
