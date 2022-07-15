@@ -61,7 +61,7 @@ export type IdRegistry = {
   [key: string]: IdRegistryValue;
 };
 
-export const INSTALL_URL_BASE = 'https://login.salesforce.com/packaging/installPackage.apexp?p0=';
+export const INSTALL_URL_BASE = new SfdcUrl('https://login.salesforce.com/packaging/installPackage.apexp?p0=');
 
 // https://developer.salesforce.com/docs/atlas.en-us.salesforce_app_limits_cheatsheet.meta/salesforce_app_limits_cheatsheet/salesforce_app_limits_platform_soslsoql.htm
 export const SOQL_WHERE_CLAUSE_MAX_LENGTH = 4000;
