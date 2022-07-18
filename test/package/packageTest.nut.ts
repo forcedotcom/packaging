@@ -152,6 +152,8 @@ describe('Integration tests for #salesforce/packaging library', function () {
         expect(results.Status).to.equal(PackagingSObjects.Package2VersionStatus.queued);
       });
       Lifecycle.getInstance().on('in-progress', async (results: PackageVersionCreateReportProgress) => {
+        // eslint-disable-next-line no-console
+        console.log(`in-progress: ${JSON.stringify(results, undefined, 2)}`);
         expect(PackageVersionCreateRequestResultInProgressStatuses).to.include(results.Status);
       });
       Lifecycle.getInstance().on('success', async (results: PackageVersionCreateReportProgress) => {
@@ -159,7 +161,7 @@ describe('Integration tests for #salesforce/packaging library', function () {
       });
       const result = await pv.waitForCreateVersion(
         pkgCreateVersionRequestId,
-        Duration.minutes(5),
+        Duration.minutes(10),
         Duration.seconds(30)
       );
       expect(result).to.include.keys(VERSION_CREATE_RESPONSE_KEYS);
