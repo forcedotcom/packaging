@@ -17,14 +17,12 @@ import { Package1Display, PackagingSObjects } from '../interfaces';
 export async function package1Display(connection: Connection, id: string): Promise<Package1Display[]> {
   const query = `SELECT Id,MetadataPackageId,Name,ReleaseState,MajorVersion,MinorVersion,PatchVersion,BuildNumber FROM MetadataPackageVersion WHERE id = '${id}'`;
   const results = (await connection.tooling.query<PackagingSObjects.MetadataPackageVersion>(query)).records;
-  return results.map((result) => {
-    return {
-      MetadataPackageVersionId: result.Id,
-      MetadataPackageId: result.MetadataPackageId,
-      Name: result.Name,
-      ReleaseState: result.ReleaseState,
-      Version: `${result.MajorVersion}.${result.MinorVersion}.${result.PatchVersion}`,
-      BuildNumber: result.BuildNumber,
-    };
-  });
+  return results.map((result) => ({
+    MetadataPackageVersionId: result.Id,
+    MetadataPackageId: result.MetadataPackageId,
+    Name: result.Name,
+    ReleaseState: result.ReleaseState,
+    Version: `${result.MajorVersion}.${result.MinorVersion}.${result.PatchVersion}`,
+    BuildNumber: result.BuildNumber,
+  }));
 }

@@ -4,7 +4,7 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-
+import * as os from 'os';
 import {
   Connection,
   Lifecycle,
@@ -21,8 +21,14 @@ import {
 import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
 import { Tokens } from '@salesforce/core/lib/messages';
 import { Many } from '@salesforce/ts-types';
-import { Package2VersionCreateEventData, PackagingSObjects, Package2VersionCreateRequestResult } from '../interfaces';
-import { PackageVersionCreateRequestApi } from '../package/packageVersionCreateRequestApi';
+import { SaveError } from 'jsforce';
+import {
+  PackageVersionCreateEventData,
+  PackagingSObjects,
+  PackageVersionCreateRequestResult,
+  PackageVersionCreateOptions,
+} from '../interfaces';
+import * as pvcr from '../package/packageVersionCreateRequest';
 import { BuildNumberToken, VersionNumber } from './versionNumber';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
@@ -270,33 +276,33 @@ export async function getPackageVersionId(versionId: string, connection: Connect
 /**
  * Given 0Ho the package type type (Managed, Unlocked, Locked(deprecated?))
  *
- * @param package2Id the 0Ho
+ * @param packageId the 0Ho
  * @param connection For tooling query
  * @throws Error with message when package2 cannot be found
  */
-export async function getPackage2Type(package2Id: string, connection: Connection): Promise<string> {
-  const query = `SELECT ContainerOptions FROM Package2 WHERE id ='${package2Id}'`;
+export async function getPackageType(packageId: string, connection: Connection): Promise<string> {
+  const query = `SELECT ContainerOptions FROM Package2 WHERE id ='${packageId}'`;
 
   const queryResult = await connection.tooling.query<Pick<PackagingSObjects.Package2, 'ContainerOptions'>>(query);
   if (!queryResult || queryResult.records === null || queryResult.records.length === 0) {
-    throw messages.createError('errorInvalidPackageId', [package2Id]);
+    throw messages.createError('errorInvalidPackageId', [packageId]);
   }
   return queryResult.records[0].ContainerOptions;
 }
 /**
  * Given 04t the package type type (Managed, Unlocked, Locked(deprecated?))
  *
- * @param package2VersionId the 04t
+ * @param packageVersionId the 04t
  * @param connection For tooling query
  * @param installKey For tooling query, if an installation key is applicable to the package version it must be passed in the queries
  * @throws Error with message when package2 cannot be found
  */
-export async function getPackage2TypeBy04t(
-  package2VersionId: string,
+export async function getPackageTypeBy04t(
+  packageVersionId: string,
   connection: Connection,
   installKey: string
 ): Promise<string> {
-  let query = `SELECT Package2ContainerOptions FROM SubscriberPackageVersion WHERE id ='${package2VersionId}'`;
+  let query = `SELECT Package2ContainerOptions FROM SubscriberPackageVersion WHERE id ='${packageVersionId}'`;
 
   if (installKey) {
     const escapedInstallationKey = installKey.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
@@ -307,7 +313,7 @@ export async function getPackage2TypeBy04t(
     Pick<PackagingSObjects.SubscriberPackageVersion, 'Package2ContainerOptions'>
   >(query);
   if (!queryResult || queryResult.records === null || queryResult.records.length === 0) {
-    throw messages.createError('errorInvalidPackageId', [package2VersionId]);
+    throw messages.createError('errorInvalidPackageId', [packageVersionId]);
   }
   return queryResult.records[0].Package2ContainerOptions;
 }
@@ -339,19 +345,19 @@ export async function getSubscriberPackageVersionId(versionId: string, connectio
  * Get the ContainerOptions for the specified Package2 (0Ho) IDs.
  *
  * @return Map of 0Ho id to container option api value
- * @param package2Ids The list of package IDs
+ * @param packageIds The list of package IDs
  * @param connection For tooling query
  */
 // eslint-disable-next-line @typescript-eslint/require-await
-export async function getContainerOptions(package2Ids: string[], connection: Connection): Promise<Map<string, string>> {
-  if (!package2Ids || package2Ids.length === 0) {
+export async function getContainerOptions(packageIds: string[], connection: Connection): Promise<Map<string, string>> {
+  if (!packageIds || packageIds.length === 0) {
     return new Map<string, string>();
   }
   const query = "SELECT Id, ContainerOptions FROM Package2 WHERE Id IN ('%IDS%')";
 
   const records = await queryWithInConditionChunking<Pick<PackagingSObjects.Package2, 'Id' | 'ContainerOptions'>>(
     query,
-    package2Ids,
+    packageIds,
     '%IDS%',
     connection
   );
@@ -515,7 +521,7 @@ export async function getAncestorId(
       packageDescriptorJson['id'] ?? getPackageIdFromAlias(packageDescriptorJson.package, project);
 
     // No need to proceed if Unlocked
-    const packageType = await getPackage2Type(packageId, connection);
+    const packageType = await getPackageType(packageId, connection);
     if (packageType === 'Unlocked') {
       return '';
     }
@@ -641,7 +647,7 @@ export function validateAncestorId(
       return '';
     } else {
       // the explicitUseNoAncestor && skipAncestorCheck case is handled above
-      throw messages.createError('errorAncestorNoneNotAllowed', [getPackage2VersionNumber(highestReleasedVersion)]);
+      throw messages.createError('errorAncestorNoneNotAllowed', [getPackageVersionNumber(highestReleasedVersion)]);
     }
   }
   if (!isPatch && !skipAncestorCheck) {
@@ -649,7 +655,7 @@ export function validateAncestorId(
       if (highestReleasedVersion.Id !== ancestorId) {
         throw messages.createError('errorAncestorNotHighest', [
           origSpecifiedAncestor,
-          getPackage2VersionNumber(highestReleasedVersion),
+          getPackageVersionNumber(highestReleasedVersion),
         ] as Tokens);
       }
     } else {
@@ -712,7 +718,7 @@ export async function getAncestorIdHighestRelease(
       }
     } else if (explicitUseHighestRelease) {
       // there is no eligible ancestor version
-      throw new Error(messages.getMessage('errorNoMatchingAncestor', [versionNumberString, packageId] as Tokens));
+      throw messages.createError('errorNoMatchingAncestor', [versionNumberString, packageId]);
     }
   }
   return result;
@@ -729,7 +735,7 @@ export function concatVersion(
   return [major, minor, patch, build].map((part) => (part ? `${part}` : '0')).join('.');
 }
 
-export function getPackage2VersionNumber(package2VersionObj: PackagingSObjects.Package2Version): string {
+export function getPackageVersionNumber(package2VersionObj: PackagingSObjects.Package2Version): string {
   const version = concatVersion(
     package2VersionObj.MajorVersion,
     package2VersionObj.MinorVersion,
@@ -743,10 +749,10 @@ export function getConfigPackageDirectories(project: SfProject): PackageDir[] {
   return project.getPackageDirectories();
 }
 export function getConfigPackageDirectory(
-  packageDirs: NamedPackageDir[],
+  packageDirs: NamedPackageDir[] | PackageDir[],
   lookupProperty: string,
   lookupValue: unknown
-): NamedPackageDir | undefined {
+): NamedPackageDir | PackageDir | undefined {
   return packageDirs?.find((pkgDir) => pkgDir[lookupProperty] === lookupValue);
 }
 /**
@@ -782,13 +788,14 @@ export function getPackageAliasesFromId(packageId: string, project: SfProject): 
     .filter((alias) => alias[1] === packageId)
     .map((alias) => alias[0]);
 }
-export async function findOrCreatePackage2(seedPackage: string, connection: Connection): Promise<string> {
+// probably used by convert.
+export async function findOrCreatePackage(seedPackage: string, connection: Connection): Promise<string> {
   const query = `SELECT Id FROM Package2 WHERE ConvertedFromPackageId = '${seedPackage}'`;
   const queryResult = await connection.tooling.query<PackagingSObjects.Package2>(query);
   const records = queryResult.records;
   if (records && records.length > 1) {
     const ids = records.map((r) => r.Id);
-    throw new Error(messages.getMessage('errorMoreThanOnePackage2WithSeed', [ids.join(', ')]));
+    throw messages.createError('errorMoreThanOnePackage2WithSeed', [ids.join(', ')]);
   }
 
   if (records && records.length === 1) {
@@ -801,7 +808,7 @@ export async function findOrCreatePackage2(seedPackage: string, connection: Conn
   const subscriberResult = await connection.tooling.query<PackagingSObjects.SubscriberPackage>(subQuery);
   const subscriberRecords = subscriberResult.records;
   if (!subscriberRecords || subscriberRecords.length <= 0) {
-    throw new Error(messages.getMessage('errorNoSubscriberPackageRecord', [seedPackage]));
+    throw messages.createError('errorNoSubscriberPackageRecord', [seedPackage]);
   }
 
   const request = {
@@ -814,16 +821,12 @@ export async function findOrCreatePackage2(seedPackage: string, connection: Conn
 
   const createResult = await connection.tooling.create('Package2', request);
   if (!createResult.success) {
-    throw new Error(createResult.errors.map((e) => e.message).join('\n'));
+    throw combineSaveErrors('Package2', 'create', createResult.errors);
   }
   return createResult.id;
 }
-export function _getPackageVersionCreateRequestApi(connection: Connection): PackageVersionCreateRequestApi {
-  return new PackageVersionCreateRequestApi({ connection });
-}
 
 export async function pollForStatusWithInterval(
-  context,
   id: string,
   retries: number,
   packageId: string,
@@ -831,12 +834,11 @@ export async function pollForStatusWithInterval(
   withProject: SfProject,
   connection: Connection,
   interval: Duration
-): Promise<Package2VersionCreateRequestResult> {
+): Promise<PackageVersionCreateRequestResult> {
   let remainingRetries = retries;
   const pollingClient = await PollingClient.create({
     poll: async (): Promise<StatusResult> => {
-      const pvcrApi = new PackageVersionCreateRequestApi({ connection });
-      const results: Package2VersionCreateRequestResult[] = await pvcrApi.byId(id);
+      const results: PackageVersionCreateRequestResult[] = await pvcr.byId(id, connection);
 
       if (_isStatusEqualTo(results, [Package2VersionStatus.success, Package2VersionStatus.error])) {
         // complete
@@ -846,7 +848,7 @@ export async function pollForStatusWithInterval(
           if (withProject && !process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE) {
             projectUpdated = true;
             const query = `SELECT MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version WHERE Id = '${results[0].Package2VersionId}'`;
-            const package2VersionVersionString: string = await connection.tooling
+            const packageVersionVersionString: string = await connection.tooling
               .query<PackagingSObjects.Package2Version>(query)
               .then((pkgQueryResult) => {
                 const record = pkgQueryResult.records[0];
@@ -856,7 +858,7 @@ export async function pollForStatusWithInterval(
               connection,
               withProject,
               results[0].SubscriberPackageVersionId,
-              package2VersionVersionString,
+              packageVersionVersionString,
               branch,
               packageId
             );
@@ -865,7 +867,7 @@ export async function pollForStatusWithInterval(
           }
           Lifecycle.getInstance().emit(Package2VersionStatus.success, {
             id,
-            package2VersionCreateRequestResult: results[0],
+            packageVersionCreateRequestResult: results[0],
             projectUpdated,
           });
           return { completed: true, payload: results[0] };
@@ -889,10 +891,10 @@ export async function pollForStatusWithInterval(
         const remainingTime = Duration.milliseconds(interval.milliseconds * remainingRetries);
         Lifecycle.getInstance().emit(Package2VersionStatus.inProgress, {
           id,
-          package2VersionCreateRequestResult: results[0],
+          packageVersionCreateRequestResult: results[0],
           message: '',
           remainingTime,
-        } as Package2VersionCreateEventData);
+        } as PackageVersionCreateEventData);
         logger.info(
           `Request in progress. Sleeping ${interval} seconds. Will wait a total of ${
             remainingTime.seconds
@@ -906,7 +908,7 @@ export async function pollForStatusWithInterval(
     timeout: Duration.milliseconds(interval.milliseconds * retries * 1000),
   });
 
-  return pollingClient.subscribe<Package2VersionCreateRequestResult>();
+  return pollingClient.subscribe<PackageVersionCreateRequestResult>();
 }
 
 /**
@@ -957,7 +959,7 @@ async function _generatePackageAliasEntry(
  * @param statuses array of statuses to look for
  * @returns {boolean} if one of the values in status is found.
  */
-function _isStatusEqualTo(results: Package2VersionCreateRequestResult[], statuses?: Package2VersionStatus[]): boolean {
+function _isStatusEqualTo(results: PackageVersionCreateRequestResult[], statuses?: Package2VersionStatus[]): boolean {
   return results?.length <= 0 ? false : statuses?.some((status) => results[0].Status === status);
 }
 
@@ -966,11 +968,81 @@ export function getSoqlWhereClauseMaxLength() {
   return SOQL_WHERE_CLAUSE_MAX_LENGTH;
 }
 
-export function formatDate(date: Date) {
+export function formatDate(date: Date): string {
   const pad = (num) => {
     return num < 10 ? `0${num}` : num;
   };
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(
     date.getMinutes()
   )}`;
+}
+
+export function combineSaveErrors(sObject: string, crudOperation: string, errors: SaveError[]): SfError {
+  const errorMessages = errors.map((error) => {
+    const fieldsString = error.fields?.length > 0 ? `Fields: [${error.fields.join(', ')}]` : '';
+    return `Error: ${error.errorCode} Message: ${error.message} ${fieldsString}`;
+  });
+  const sfError = messages.createError('errorDuringSObjectCRUDOperation', [
+    crudOperation,
+    sObject,
+    errorMessages.join(os.EOL),
+  ]);
+  return sfError;
+}
+
+export function resolveCanonicalPackageProperty(options: PackageVersionCreateOptions) {
+  let canonicalPackageProperty: 'id' | 'package';
+
+  if (!options.package) {
+    const packageValProp = this.getPackageValuePropertyFromDirectory(options.path, options);
+    options.package = packageValProp.packageValue;
+    canonicalPackageProperty = packageValProp.packageProperty;
+  } else if (!options.path) {
+    canonicalPackageProperty = this.getPackagePropertyFromPackage(this.project.getPackageDirectories(), options);
+    options.path = this.getConfigPackageDirectoriesValue(
+      this.project.getPackageDirectories(),
+      'path',
+      canonicalPackageProperty,
+      options.package,
+      'package',
+      options
+    );
+  } else {
+    canonicalPackageProperty = this.getPackagePropertyFromPackage(this.project.getPackageDirectories(), options);
+    this.getConfigPackageDirectoriesValue(
+      this.project.getPackageDirectories(),
+      canonicalPackageProperty,
+      'path',
+      options.path,
+      'path',
+      options
+    );
+
+    const expectedPackageId = this.getConfigPackageDirectoriesValue(
+      this.packageDirs,
+      canonicalPackageProperty,
+      'path',
+      options.path,
+      'path',
+      options
+    );
+
+    // This will throw an error if the package id flag value doesn't match
+    // any of the :id values in the package dirs.
+    this.getConfigPackageDirectoriesValue(
+      this.project.getPackageDirectories(),
+      'path',
+      canonicalPackageProperty,
+      options.package,
+      'package',
+      options
+    );
+
+    // This will throw an error if the package id flag value doesn't match
+    // the correct corresponding directory with that packageId.
+    if (options.package !== expectedPackageId) {
+      throw messages.createError('errorDirectoryIdMismatch', ['--path', options.path, '--package', options.package]);
+    }
+  }
+  return canonicalPackageProperty;
 }
