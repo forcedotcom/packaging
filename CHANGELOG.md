@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.8](https://github.com/forcedotcom/packaging/compare/v0.0.7...v0.0.8) (2022-07-18)
+
+### Features
+
+- add package1VersionDisplayGet method ([0de1b9e](https://github.com/forcedotcom/packaging/commit/0de1b9e730dc1dc18c68f4efa7bbc2e2b0b43807))
+
 ### [0.0.7](https://github.com/forcedotcom/packaging/compare/v0.0.6...v0.0.7) (2022-07-14)
 
 ### Bug Fixes
