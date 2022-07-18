@@ -1,11 +1,10 @@
 /*
- * Copyright (c) 2020, salesforce.com, inc.
+ * Copyright (c) 2022, salesforce.com, inc.
  * All rights reserved.
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import * as util from 'util';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
@@ -19,12 +18,7 @@ import {
   ScratchOrgInfo,
   SfProject,
 } from '@salesforce/core';
-import {
-  ComponentSet,
-  ComponentSetBuilder,
-  ConvertResult,
-  MetadataConverter,
-} from '@salesforce/source-deploy-retrieve';
+import { ComponentSetBuilder, ConvertResult, MetadataConverter } from '@salesforce/source-deploy-retrieve';
 import { uniqid } from '@salesforce/core/lib/testSetup';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import * as xml2js from 'xml2js';
@@ -36,11 +30,11 @@ import { copyDir, zipDir } from '../utils';
 import { BuildNumberToken, VersionNumber } from '../utils/versionNumber';
 import {
   MDFolderForArtifactOptions,
-  Package2VersionCreateRequestResult,
+  PackageVersionCreateRequestResult,
   PackageVersionCreateOptions,
   PackagingSObjects,
 } from '../interfaces';
-import { ProfileApi } from './profileApi';
+import { PackageProfileApi } from './packageProfileApi';
 import { list, byId } from './packageVersionCreateRequest';
 
 Messages.importMessagesDirectory(__dirname);
@@ -82,7 +76,6 @@ type PackageVersionCreateRequest = {
 
 export class PackageVersionCreate {
   private apiVersionFromPackageXml: string;
-  private packageDirs: NamedPackageDir[] = [];
   private readonly project: SfProject;
   private readonly connection: Connection;
 
@@ -91,52 +84,31 @@ export class PackageVersionCreate {
     this.project = this.options.project;
   }
 
-  public createPackageVersion(
-    options: PackageVersionCreateOptions
-  ): Promise<Partial<Package2VersionCreateRequestResult>> {
-    return this.packageVersionCreate(options).catch((err: Error) => {
+  public createPackageVersion(): Promise<Partial<PackageVersionCreateRequestResult>> {
+    return this.packageVersionCreate(this.options).catch((err: Error) => {
       // TODO: until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
       err = pkgUtils.massageErrorMessage(err);
       throw pkgUtils.applyErrorAction(err);
     });
   }
 
-  public async listRequest(createdlastdays?: number, status?: string): Promise<Package2VersionCreateRequestResult[]> {
+  public async listRequest(createdlastdays?: number, status?: string): Promise<PackageVersionCreateRequestResult[]> {
     return list({ createdlastdays, status, connection: this.connection });
   }
 
-  public async listRequestById(id: string, connection: Connection): Promise<Package2VersionCreateRequestResult[]> {
+  public async listRequestById(id: string, connection: Connection): Promise<PackageVersionCreateRequestResult[]> {
     return byId(id, connection);
-  }
-
-  public rejectWithInstallKeyError() {
-    // This command also requires either the installationkey flag or installationkeybypass flag
-    const errorString = messages.getMessage('errorMissingFlagsInstallationKey', [
-      '--installationkey',
-      '--installationkeybypass',
-    ]);
-    const error = new Error(errorString);
-    error['name'] = 'requiredFlagMissing';
-    return Promise.reject(error);
   }
 
   // convert source to mdapi format and copy to tmp dir packaging up
   private async generateMDFolderForArtifact(options: MDFolderForArtifactOptions): Promise<ConvertResult> {
+    const sourcepath = options.sourcePaths ?? [options.sourceDir];
     const componentSet = await ComponentSetBuilder.build({
       sourceapiversion: this.project.getSfProjectJson().get('sourceApiVersion') as string,
-      sourcepath: options.sourcePaths,
-      manifest: {
-        manifestPath: options.manifest,
-        directoryPaths: this.project.getPackageDirectories().map((dir) => dir.path),
-      },
-      metadata: {
-        metadataEntries: options.metadataPaths,
-        directoryPaths: this.project.getPackageDirectories().map((dir) => dir.path),
-      },
+      sourcepath,
     });
-
     const packageName = options.packageName;
-    const outputDirectory = path.resolve(options.outputDir);
+    const outputDirectory = path.resolve(options.deploydir);
     const converter = new MetadataConverter();
     const convertResult = await converter.convert(componentSet, 'metadata', {
       type: 'directory',
@@ -166,7 +138,6 @@ export class PackageVersionCreate {
     // If valid 04t package, just return it to be used straight away.
     if (dependency.subscriberPackageVersionId) {
       pkgUtils.validateId(pkgUtils.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, dependency.subscriberPackageVersionId);
-
       return Promise.resolve();
     }
 
@@ -179,7 +150,6 @@ export class PackageVersionCreate {
     // If valid 04t package, just return it to be used straight away.
     if (pkgUtils.validateIdNoThrow(pkgUtils.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, packageIdFromAlias)) {
       dependency.subscriberPackageVersionId = packageIdFromAlias;
-
       return Promise.resolve();
     }
 
@@ -245,14 +215,15 @@ export class PackageVersionCreate {
         ? 'AND IsReleased = true'
         : `AND Branch = ${branchString}`;
     const query = `SELECT SubscriberPackageVersionId FROM Package2Version WHERE Package2Id = '${dependency.packageId}' AND MajorVersion = ${versionNumber[0]} AND MinorVersion = ${versionNumber[1]} AND PatchVersion = ${versionNumber[2]} AND BuildNumber = ${resolvedBuildNumber} ${branchOrReleasedCondition}`;
-    const pkgVerQueryResult = await this.connection.tooling.query(query);
+    const pkgVerQueryResult = await this.connection.tooling.query<PackagingSObjects.Package2Version>(query);
     const subRecords = pkgVerQueryResult.records;
     if (!subRecords || subRecords.length !== 1) {
-      throw new Error(
-        `No version number was found in Dev Hub for package id ${
-          dependency.packageId
-        } and branch ${branchString} and version number ${versionNumber.toString()} that resolved to build number ${resolvedBuildNumber}`
-      );
+      throw messages.createError('versionNumberNotFoundInDevHub', [
+        dependency.packageId,
+        branchString,
+        versionNumber.toString(),
+        resolvedBuildNumber,
+      ]);
     }
 
     dependency.subscriberPackageVersionId = pkgVerQueryResult.records[0].SubscriberPackageVersionId;
@@ -309,13 +280,9 @@ export class PackageVersionCreate {
     const records = results.records;
     if (!records || records.length === 0 || records[0].expr0 == null) {
       if (versionNumber.build === BuildNumberToken.RELEASED_BUILD_NUMBER_TOKEN) {
-        throw new Error(
-          `No released version was found in Dev Hub for package id ${packageId} and version number ${versionNumber.toString()}`
-        );
+        throw messages.createError('noReleaseVersionFound', [packageId, versionNumber.toString()]);
       } else {
-        throw new Error(
-          `No version number was found in Dev Hub for package id ${packageId} and branch ${branch} and version number ${versionNumber.toString()}`
-        );
+        throw messages.createError('noReleaseVersionFoundForBranch', [packageId, branch, versionNumber.toString()]);
       }
     }
     return `${results.records[0].expr0}`;
@@ -337,28 +304,28 @@ export class PackageVersionCreate {
       InstallKey: options.installationkey,
       Instance: options.buildinstance,
       SourceOrg: options.sourceorg,
-      CalculateCodeCoverage: options.codecoverage,
-      SkipValidation: options.skipvalidation,
+      CalculateCodeCoverage: options.codecoverage || false,
+      SkipValidation: options.skipvalidation || false,
     };
 
     if (preserveFiles) {
       logger.info(messages.getMessage('tempFileLocation', [packageVersTmpRoot]));
       return requestObject;
     } else {
-      return fs.promises.unlink(packageVersTmpRoot).then(() => requestObject);
+      return fs.promises.rm(packageVersTmpRoot, { recursive: true, force: true }).then(() => requestObject);
     }
   }
 
-  private getPackageDescriptorJsonFromPackageId(packageId: string, flags: { path: string }) {
-    const artDir = flags.path;
+  private getPackageDescriptorJsonFromPackageId(packageId: string, options: PackageVersionCreateOptions) {
+    const artDir = options.path;
 
-    const packageDescriptorJson = this.packageDirs.find((packageDir) => {
+    const packageDescriptorJson = this.project.getPackageDirectories().find((packageDir) => {
       const packageDirPackageId = pkgUtils.getPackageIdFromAlias(packageDir.package, this.project);
       return !!packageDirPackageId && packageDirPackageId === packageId ? packageDir : null;
     });
 
     if (!packageDescriptorJson) {
-      throw new Error(`${consts.WORKSPACE_CONFIG_FILENAME} does not contain a packaging directory for ${artDir}`);
+      throw messages.createError('packagingDirNotFoundInConfigFile', [consts.WORKSPACE_CONFIG_FILENAME, artDir]);
     }
 
     return packageDescriptorJson;
@@ -379,9 +346,7 @@ export class PackageVersionCreate {
     versionNumberString: string
   ): Promise<PackageVersionCreateRequest> {
     const artDir = options.path;
-    const preserveFiles = !util.isNullOrUndefined(
-      options.preserve || process.env.SFDX_PACKAGE2_VERSION_CREATE_PRESERVE
-    );
+    const preserveFiles = !!(options.preserve || process.env.SFDX_PACKAGE2_VERSION_CREATE_PRESERVE);
     const uniqueHash = uniqid({ template: `${packageId}-%s` });
     const packageVersTmpRoot = path.join(os.tmpdir(), `${uniqueHash}`);
     const packageVersMetadataFolder = path.join(packageVersTmpRoot, 'md-files');
@@ -396,13 +361,13 @@ export class PackageVersionCreate {
 
     const mdOptions = {
       deploydir: packageVersMetadataFolder,
-      sourcedir: sourceBaseDir,
+      sourceDir: sourceBaseDir,
     };
 
     // Stores any additional client side info that might be needed later on in the process
     const clientSideInfo = new Map<string, string>();
-
-    const settingsGenerator = new SettingsGenerator();
+    await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
+    const settingsGenerator = new SettingsGenerator({ asDirectory: true });
     // Copy all of the metadata from the workspace to a tmp folder
     await this.generateMDFolderForArtifact(mdOptions);
     const packageDescriptorJson = this.getPackageDescriptorJsonFromPackageId(
@@ -440,7 +405,6 @@ export class PackageVersionCreate {
 
       // Load any settings from the definition
       await settingsGenerator.extract(definitionFileJson);
-
       if (settingsGenerator.hasSettings() && definitionFileJson.orgPreferences) {
         // this is not allowed, exit with an error
         return Promise.reject(messages.createError('signupDuplicateSettingsSpecified'));
@@ -453,8 +417,7 @@ export class PackageVersionCreate {
         }
       });
     }
-    // @ts-ignore
-    const [hasUnpackagedMetadata, unpackagedPromise] = await this.resolveUnpackagedMetadata(
+    const hasUnpackagedMetadata = await this.resolveUnpackagedMetadata(
       packageDescriptorJson,
       unpackagedMetadataFolder,
       clientSideInfo,
@@ -471,7 +434,7 @@ export class PackageVersionCreate {
     options.branch = options.branch ? options.branch : packageDescriptorJson.branch;
 
     const resultValues = await Promise.all(
-      dependencies
+      !dependencies
         ? []
         : dependencies.map((dependency) => this.retrieveSubscriberPackageVersionId(dependency, options.branch))
     );
@@ -494,7 +457,7 @@ export class PackageVersionCreate {
     await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
     await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
 
-    if (Object.prototype.hasOwnProperty.call(packageDescriptorJson, 'ancestorVersion')) {
+    if (Reflect.has(packageDescriptorJson, 'ancestorVersion')) {
       delete packageDescriptorJson.ancestorVersion;
     }
     packageDescriptorJson.ancestorId = ancestorId;
@@ -502,7 +465,7 @@ export class PackageVersionCreate {
     await fs.promises.writeFile(
       path.join(packageVersBlobDirectory, DESCRIPTOR_FILE),
       // TODO: need to make sure packageDescriptorJson contains the right values for the descriptor
-      JSON.stringify(packageDescriptorJson, undefined, 2),
+      JSON.stringify(packageDescriptorJson),
       'utf-8'
     );
     // As part of the source convert process, the package.xml has been written into the tmp metadata directory.
@@ -510,7 +473,7 @@ export class PackageVersionCreate {
     // metadata exclusions. If necessary, read the existing package.xml and then re-write it.
     const currentPackageXml = await fs.promises.readFile(path.join(packageVersMetadataFolder, 'package.xml'), 'utf8');
     // convert to json
-    const packageJson = xml2js.parseStringAsync(currentPackageXml);
+    const packageJson = await xml2js.parseStringPromise(currentPackageXml);
     fs.mkdirSync(packageVersMetadataFolder, { recursive: true });
     fs.mkdirSync(packageVersProfileFolder, { recursive: true });
 
@@ -563,7 +526,7 @@ export class PackageVersionCreate {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     await fs.promises.writeFile(path.join(packageVersMetadataFolder, 'package.xml'), xml, 'utf-8');
     // Zip the packageVersMetadataFolder folder and put the zip in {packageVersBlobDirectory}/package.zip
-    zipDir(packageVersMetadataFolder, metadataZipFile);
+    await zipDir(packageVersMetadataFolder, metadataZipFile);
     if (hasUnpackagedMetadata) {
       // Zip the unpackagedMetadataFolder folder and put the zip in {packageVersBlobDirectory}/{unpackagedMetadataZipFile}
       await zipDir(unpackagedMetadataFolder, unpackagedMetadataZipFile);
@@ -571,22 +534,14 @@ export class PackageVersionCreate {
     // Zip up the expanded settings (if present)
     if (settingsGenerator.hasSettings()) {
       await settingsGenerator.createDeploy();
-      const settingsRoot: string = settingsGenerator.getShapeDirName();
-      // The SettingsGenerator now generates md files in source format, not mdapi format,
-      // so we need to convert to mdapi format here.
-      const compSet = ComponentSet.fromSource(settingsRoot);
-      compSet.apiVersion = this.apiVersionFromPackageXml;
-      compSet.sourceApiVersion = this.apiVersionFromPackageXml;
-      const mdConverter = new MetadataConverter();
-      const convertResult = await mdConverter.convert(compSet, 'metadata', {
-        type: 'directory',
-        outputDirectory: path.join(settingsRoot, 'pkgMdSettings'),
-        genUniqueDir: false,
-      });
-      zipDir(convertResult.packagePath, settingsZipFile);
+      await settingsGenerator.createDeployPackageContents(this.apiVersionFromPackageXml);
+      await zipDir(
+        `${settingsGenerator.getDestinationPath()}${path.sep}${settingsGenerator.getShapeDirName()}`,
+        settingsZipFile
+      );
     }
     // Zip the Version Info and package.zip files into another zip
-    zipDir(packageVersBlobDirectory, packageVersBlobZipFile);
+    await zipDir(packageVersBlobDirectory, packageVersBlobZipFile);
 
     return this.createRequestObject(packageId, options, preserveFiles, packageVersTmpRoot, packageVersBlobZipFile);
   }
@@ -638,8 +593,7 @@ export class PackageVersionCreate {
     unpackagedMetadataFolder: string,
     clientSideInfo: Map<string, string>,
     codeCoverage: boolean
-  ) {
-    let unpackagedPromise = null;
+  ): Promise<boolean> {
     let hasUnpackagedMetadata = false;
     // Add the Unpackaged Metadata, if any, to the output directory, only when code coverage is specified
     if (codeCoverage && packageDescriptorJson.unpackagedMetadata && packageDescriptorJson.unpackagedMetadata.path) {
@@ -648,19 +602,19 @@ export class PackageVersionCreate {
       try {
         fs.statSync(unpackagedPath);
       } catch (err) {
-        throw new Error(
-          `Unpackaged metadata directory '${packageDescriptorJson.unpackagedMetadata.path}' was specified but does not exist`
-        );
+        throw messages.createError('unpackagedMDDirectoryDoesNotExist', [
+          packageDescriptorJson.unpackagedMetadata.path,
+        ]);
       }
       fs.mkdirSync(unpackagedMetadataFolder, { recursive: true });
-      unpackagedPromise = this.generateMDFolderForArtifact({
+      await this.generateMDFolderForArtifact({
         deploydir: unpackagedMetadataFolder,
         sourceDir: unpackagedPath,
       });
       // Set which package is the "unpackaged" package
       clientSideInfo.set('UnpackagedMetadataPath', packageDescriptorJson.unpackagedMetadata.path);
     }
-    return [hasUnpackagedMetadata, unpackagedPromise];
+    return hasUnpackagedMetadata;
   }
 
   private getPackagePropertyFromPackage(
@@ -809,14 +763,13 @@ export class PackageVersionCreate {
     return value;
   }
 
-  // eslint-disable-next-line complexity
   private async packageVersionCreate(
     options: PackageVersionCreateOptions
-  ): Promise<Partial<Package2VersionCreateRequestResult>> {
+  ): Promise<Partial<PackageVersionCreateRequestResult>> {
     let pollInterval = Duration.seconds(pkgUtils.POLL_INTERVAL_SECONDS);
     let maxRetries = 0;
 
-    if (options.wait.milliseconds > 0) {
+    if (options.wait?.milliseconds > 0) {
       if (options.skipvalidation === true) {
         pollInterval = Duration.seconds(POLL_INTERVAL_WITHOUT_VALIDATION_SECONDS);
       }
@@ -830,7 +783,7 @@ export class PackageVersionCreate {
     }
 
     // Check for empty packageDirectories
-    if (this.project.getSfProjectJson().getContents().packageDirectories?.length === 0) {
+    if (this.project.getPackageDirectories()?.length === 0) {
       throw messages.createError('errorEmptyPackageDirs');
     }
 
@@ -849,10 +802,10 @@ export class PackageVersionCreate {
     try {
       fs.statSync(path.join(process.cwd(), options.path));
     } catch (err) {
-      throw new Error(`Directory '${options.path}' does not exist`);
+      throw messages.createError('directoryDoesNotExist', [options.path]);
     }
 
-    options.profileApi = this.resolveUserLicenses(canonicalPackageProperty, options);
+    options.profileApi = await this.resolveUserLicenses(canonicalPackageProperty, options);
 
     [pollInterval, maxRetries] = await this.resolveOrgDependentPollingTime(
       resolvedPackageId,
@@ -870,9 +823,12 @@ export class PackageVersionCreate {
     if (!createResult.success) {
       const errStr =
         createResult.errors && createResult.errors.length ? createResult.errors.join(', ') : createResult.errors;
-      throw new Error(`Failed to create request${createResult.id ? ` [${createResult.id}]` : ''}: ${errStr}`);
+      throw messages.createError('failedToCreatePVCRequest', [
+        createResult.id ? ` [${createResult.id}]` : '',
+        errStr.toString(),
+      ]);
     }
-    let result;
+    let result: PackageVersionCreateRequestResult;
     if (options.wait && options.wait.milliseconds > 0) {
       pollInterval = pollInterval ?? Duration.seconds(options.wait.seconds / maxRetries);
       if (pollInterval) {
@@ -887,12 +843,11 @@ export class PackageVersionCreate {
         );
       }
     } else {
-      result = await this.listRequestById(createResult.id, this.connection);
+      result = (await this.listRequestById(createResult.id, this.connection))[0];
     }
     return result;
   }
 
-  // TODO: should be in pkg utils
   private resolveCanonicalPackageProperty(options: PackageVersionCreateOptions): 'package' | 'id' {
     let canonicalPackageProperty: 'id' | 'package';
 
@@ -922,7 +877,7 @@ export class PackageVersionCreate {
       );
 
       const expectedPackageId = this.getConfigPackageDirectoriesValue(
-        this.packageDirs,
+        this.project.getPackageDirectories(),
         canonicalPackageProperty,
         'path',
         options.path,
@@ -960,7 +915,7 @@ export class PackageVersionCreate {
     const versionNumberString = options.versionnumber
       ? options.versionnumber
       : (this.getConfigPackageDirectoriesValue(
-          this.packageDirs,
+          this.project.getPackageDirectories(),
           'versionNumber',
           canonicalPackageProperty,
           options.package,
@@ -973,13 +928,13 @@ export class PackageVersionCreate {
     return versionNumberString;
   }
 
-  private resolveUserLicenses(
+  private async resolveUserLicenses(
     canonicalPackageProperty: 'id' | 'package',
     options: PackageVersionCreateOptions
-  ): ProfileApi {
+  ): Promise<PackageProfileApi> {
     // Check for an includeProfileUserLiceneses flag in the packageDirectory
     const includeProfileUserLicenses = this.getConfigPackageDirectoriesValue(
-      this.packageDirs,
+      this.project.getPackageDirectories(),
       'includeProfileUserLicenses',
       canonicalPackageProperty,
       options.package,
@@ -994,7 +949,11 @@ export class PackageVersionCreate {
       throw messages.createError('errorProfileUserLicensesInvalidValue', [includeProfileUserLicenses] as string[]);
     }
     const shouldGenerateProfileInformation = logger.shouldLog(LoggerLevel.INFO) || logger.shouldLog(LoggerLevel.DEBUG);
-    return new ProfileApi(this.project, includeProfileUserLicenses as boolean, shouldGenerateProfileInformation);
+    return PackageProfileApi.create({
+      project: this.project,
+      includeUserLicenses: includeProfileUserLicenses as boolean,
+      generateProfileInformation: shouldGenerateProfileInformation,
+    });
   }
 
   private async resolveOrgDependentPollingTime(
@@ -1024,7 +983,7 @@ export class PackageVersionCreate {
   }
 
   private async validateFlagsForPackageType(packageId: string, options: PackageVersionCreateOptions): Promise<void> {
-    const packageType = await pkgUtils.getPackage2Type(packageId, this.connection);
+    const packageType = await pkgUtils.getPackageType(packageId, this.connection);
 
     if (packageType === 'Unlocked') {
       if (options.postinstallscript || options.uninstallscript) {
@@ -1048,21 +1007,14 @@ export class PackageVersionCreate {
   /**
    * Cleans invalid attribute(s) from the packageDescriptorJSON
    */
-  private cleanPackageDescriptorJson(packageDescriptorJson: PackageDescriptorJson): void {
-    if (typeof packageDescriptorJson.default !== 'undefined') {
-      delete packageDescriptorJson.default; // for client-side use only, not needed
-    }
-    if (typeof packageDescriptorJson.includeProfileUserLicenses !== 'undefined') {
-      delete packageDescriptorJson.includeProfileUserLicenses; // for client-side use only, not needed
-    }
-
-    if (typeof packageDescriptorJson.unpackagedMetadata !== 'undefined') {
-      delete packageDescriptorJson.unpackagedMetadata; // for client-side use only, not needed
-    }
-
-    if (typeof packageDescriptorJson.branch !== 'undefined') {
-      delete packageDescriptorJson.branch; // for client-side use only, not needed
-    }
+  private cleanPackageDescriptorJson(packageDescriptorJson: PackageDescriptorJson): PackageDescriptorJson {
+    delete packageDescriptorJson.default; // for client-side use only, not needed
+    delete packageDescriptorJson.includeProfileUserLicenses; // for client-side use only, not needed
+    delete packageDescriptorJson.unpackagedMetadata; // for client-side use only, not needed
+    delete packageDescriptorJson.branch; // for client-side use only, not needed
+    delete packageDescriptorJson.fullPath; // for client-side use only, not needed
+    delete packageDescriptorJson.name; // for client-side use only, not needed
+    return packageDescriptorJson;
   }
 
   /**
@@ -1099,14 +1051,14 @@ export class PackageVersionCreate {
       packageDescriptorJson.releaseNotesUrl = options.releasenotesurl;
     }
     if (packageDescriptorJson.releaseNotesUrl && !pkgUtils.validUrl(packageDescriptorJson.releaseNotesUrl)) {
-      throw new Error(messages.getMessage('malformedUrl', ['releaseNotesUrl', packageDescriptorJson.releaseNotesUrl]));
+      throw messages.createError('malformedUrl', ['releaseNotesUrl', packageDescriptorJson.releaseNotesUrl]);
     }
 
     if (options.postinstallurl) {
       packageDescriptorJson.postInstallUrl = options.postinstallurl;
     }
     if (packageDescriptorJson.postInstallUrl && !pkgUtils.validUrl(packageDescriptorJson.postInstallUrl)) {
-      throw new Error(messages.getMessage('malformedUrl', ['postInstallUrl', packageDescriptorJson.postInstallUrl]));
+      throw messages.createError('malformedUrl', ['postInstallUrl', packageDescriptorJson.postInstallUrl]);
     }
 
     if (options.postinstallscript) {

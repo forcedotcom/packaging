@@ -10,8 +10,8 @@ import * as fs from 'fs';
 import * as glob from 'glob';
 import { DOMParser, XMLSerializer } from 'xmldom-sfdx-encoding';
 import { ConfigAggregator, Messages, SfProject } from '@salesforce/core';
-
-// Local
+import { AsyncCreatable } from '@salesforce/kit';
+import { ProfileApiOptions } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
 // TODO: need to transfer these messages
@@ -22,20 +22,24 @@ const profileApiMessages = Messages.loadMessages('@salesforce/packaging', 'messa
  * All profiles found in the workspaces are extracted out and then re-written to only include metadata in the profile
  * that is relevant to the source in the package directory being packaged.
  */
-export class ProfileApi {
+export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
   public readonly profiles: ProfileInformation[] = [];
   public apiVersion: string;
   public nodeEntities: { name: string[]; childElement: string[]; parentElement: string[] };
   public otherProfileSettings: { name: string[]; childElement: string[]; parentElement: string[] };
   public config: ConfigAggregator;
-  public constructor(
-    public project: SfProject,
-    public includeUserLicenses: boolean,
-    public generateProfileInformation = false
-  ) {
-    (async () => {
-      this.config = await ConfigAggregator.create();
-    })();
+  public project: SfProject;
+  public includeUserLicenses: boolean;
+  public generateProfileInformation = false;
+  public constructor(private options: ProfileApiOptions) {
+    super(options);
+  }
+
+  public async init() {
+    this.project = this.options.project;
+    this.includeUserLicenses = this.options.includeUserLicenses;
+    this.generateProfileInformation = this.options.generateProfileInformation;
+    this.config = await ConfigAggregator.create();
     this.apiVersion = this.config.getPropertyValue('apiVersion');
 
     // nodeEntities is used to determine which elements in the profile are relevant to the source being packaged.

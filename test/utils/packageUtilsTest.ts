@@ -14,7 +14,7 @@ import {
   getPackageAliasesFromId,
   getPackageIdFromAlias,
   getConfigPackageDirectory,
-  getPackage2VersionNumber,
+  getPackageVersionNumber,
   validateAncestorId,
   getInClauseItemsCount,
   queryWithInConditionChunking,
@@ -207,7 +207,7 @@ describe('packageUtils', () => {
         MinorVersion: 2,
         PatchVersion: 3,
       } as PackagingSObjects.Package2Version;
-      const result = getPackage2VersionNumber(version);
+      const result = getPackageVersionNumber(version);
       expect(result).to.be.equal('1.2.3');
     });
   });

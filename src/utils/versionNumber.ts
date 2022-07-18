@@ -23,26 +23,24 @@ export class VersionNumber {
 
   public static from(versionString: string): VersionNumber {
     if (!versionString) {
-      throw new Error(messages.getMessage('errorMissingVersionNumber'));
+      throw messages.createError('errorMissingVersionNumber');
     }
     const version = versionString.split('.');
     if (version?.length === 4) {
       const [major, minor, patch, build] = version;
       const asNumbers = [major, minor, patch, build].map((v) => parseInt(v, 10));
       if (asNumbers.slice(0, 3).some((v) => isNaN(v))) {
-        throw new Error(messages.getMessage('errorInvalidMajorMinorPatchNumber', [versionString]));
+        throw messages.createError('errorInvalidMajorMinorPatchNumber', [versionString]);
       }
       if (isNaN(asNumbers[3]) && !(Object.values(BuildNumberToken) as string[]).includes(build)) {
-        throw new Error(
-          messages.getMessage('errorInvalidBuildNumberToken', [
-            versionString,
-            Object.values(BuildNumberToken).join(', '),
-          ])
-        );
+        throw messages.createError('errorInvalidBuildNumberToken', [
+          versionString,
+          Object.values(BuildNumberToken).join(', '),
+        ]);
       }
       return new VersionNumber(major, minor, patch, build);
     }
-    throw new Error(messages.getMessage('errorInvalidVersionNumber', [versionString]));
+    throw messages.createError('errorInvalidVersionNumber', [versionString]);
   }
 
   public toString(): string {
