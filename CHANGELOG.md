@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.9](https://github.com/forcedotcom/packaging/compare/v0.0.8...v0.0.9) (2022-07-19)
+
+### Features
+
+- add package1Display method for use with package1:version:display command ([ef3df30](https://github.com/forcedotcom/packaging/commit/ef3df309147bafb16367c957981a04470c6ad7df))
+
 ### [0.0.8](https://github.com/forcedotcom/packaging/compare/v0.0.7...v0.0.8) (2022-07-18)
 
 ### Features
