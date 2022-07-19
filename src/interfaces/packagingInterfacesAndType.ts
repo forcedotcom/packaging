@@ -110,6 +110,15 @@ export type PackageVersionListResult = {
   HasMetadataRemoved?: boolean;
 };
 
+export type Package1Display = {
+  MetadataPackageVersionId: string;
+  MetadataPackageId: string;
+  Name: string;
+  Version: string;
+  ReleaseState: string;
+  BuildNumber: number;
+};
+
 export type PackageType = 'Managed' | 'Unlocked';
 
 export type PackageCreateOptions = {

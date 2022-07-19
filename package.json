@@ -43,13 +43,15 @@
     "debug": "^4.3.4",
     "globby": "^11",
     "js2xmlparser": "^4.0.2",
-    "jsforce": "2.0.0-beta.14",
+    "jsforce": "beta",
+    "mkdirp": "1.0.4",
+    "ts-retry-promise": "^0.6.1",
     "jszip": "^3.10.0",
     "xml2js": "^0.4.23",
     "xmldom-sfdx-encoding": "^0.1.30"
   },
   "devDependencies": {
-    "@salesforce/cli-plugins-testkit": "^2.3.0",
+    "@salesforce/cli-plugins-testkit": "^2.3.4",
     "@salesforce/dev-config": "^3.0.1",
     "@salesforce/dev-scripts": "^2.0.2",
     "@salesforce/prettier-config": "^0.0.2",
