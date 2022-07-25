@@ -200,23 +200,26 @@ describe('Integration tests for #salesforce/packaging library', function () {
       );
 
       // TODO: PVC command writes new version to sfdx-project.json
-      // const projectFile = (await readJSON(path.join(session.project.dir, 'sfdx-project.json'))) as ProjectJson;
+      const projectFile = (await readJSON(path.join(session.project.dir, 'sfdx-project.json'))) as ProjectJson;
+
+      // eslint-disable-next-line no-console
+      console.log(`projectFile: ${JSON.stringify(projectFile, undefined, 2)}`);
 
       // expect(result.Description).to.equal(
       //   projectFile.packageDirectories[0].versionDescription,
       //   `'force:package:version:report' Description mismatch: expected '${projectFile.packageDirectories[0].versionDescription}', got '${result.Description}'`
       // );
 
-      // expect(result.Name).to.equal(
-      //   projectFile.packageDirectories[0].versionName,
-      //   `'force:package:version:report' Name mismatch: expected '${projectFile.packageDirectories[0].versionName}', got '${result.Name}'`
-      // );
-      //
-      // const version = projectFile.packageDirectories[0].versionNumber.replace('NEXT', '1');
-      // expect(result.Version).to.equal(
-      //   version,
-      //   `'force:package:version:report' Version mismatch: expected '${version}', got '${result.Version}'`
-      // );
+      expect(result.Name).to.equal(
+        projectFile.packageDirectories[0].versionName,
+        `'force:package:version:report' Name mismatch: expected '${projectFile.packageDirectories[0].versionName}', got '${result.Name}'`
+      );
+
+      const version = projectFile.packageDirectories[0].versionNumber.replace('NEXT', '1');
+      expect(result.Version).to.equal(
+        version,
+        `'force:package:version:report' Version mismatch: expected '${version}', got '${result.Version}'`
+      );
 
       expect(result.IsReleased, 'Expected IsReleased to be false').to.be.false;
     });
