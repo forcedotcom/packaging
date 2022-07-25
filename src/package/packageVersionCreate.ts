@@ -766,16 +766,6 @@ export class PackageVersionCreate {
   private async packageVersionCreate(
     options: PackageVersionCreateOptions
   ): Promise<Partial<PackageVersionCreateRequestResult>> {
-    let pollInterval = Duration.seconds(pkgUtils.POLL_INTERVAL_SECONDS);
-    let maxRetries = 0;
-
-    if (options.wait?.milliseconds > 0) {
-      if (options.skipvalidation === true) {
-        pollInterval = Duration.seconds(POLL_INTERVAL_WITHOUT_VALIDATION_SECONDS);
-      }
-      maxRetries = (60 / pollInterval.seconds) * options.wait.seconds;
-    }
-
     // For the first rollout of validating sfdx-project.json data against schema, make it optional and defaulted
     // to false. Validation only occurs if the hidden -j (--validateschema) flag has been specified.
     if (options.validateschema) {
@@ -807,13 +797,6 @@ export class PackageVersionCreate {
 
     options.profileApi = await this.resolveUserLicenses(canonicalPackageProperty, options);
 
-    [pollInterval, maxRetries] = await this.resolveOrgDependentPollingTime(
-      resolvedPackageId,
-      options,
-      pollInterval,
-      maxRetries
-    );
-
     const request = await this.createPackageVersionCreateRequestFromOptions(
       options,
       resolvedPackageId,
@@ -828,24 +811,23 @@ export class PackageVersionCreate {
         errStr.toString(),
       ]);
     }
-    let result: PackageVersionCreateRequestResult;
-    if (options.wait && options.wait.milliseconds > 0) {
-      pollInterval = pollInterval ?? Duration.seconds(options.wait.seconds / maxRetries);
-      if (pollInterval) {
-        result = await pkgUtils.pollForStatusWithInterval(
-          createResult.id,
-          maxRetries,
-          resolvedPackageId,
-          options.branch,
-          this.project,
-          this.connection,
-          pollInterval
-        );
+    let pollInterval = Duration.seconds(pkgUtils.POLL_INTERVAL_SECONDS);
+    let maxRetries = 0;
+
+    if (options.wait?.milliseconds > 0) {
+      if (options.skipvalidation === true) {
+        pollInterval = Duration.seconds(POLL_INTERVAL_WITHOUT_VALIDATION_SECONDS);
       }
-    } else {
-      result = (await this.listRequestById(createResult.id, this.connection))[0];
+      maxRetries = (60 / pollInterval.seconds) * options.wait.seconds;
     }
-    return result;
+    [pollInterval, maxRetries] = await this.resolveOrgDependentPollingTime(
+      resolvedPackageId,
+      options,
+      pollInterval,
+      maxRetries
+    );
+
+    return (await this.listRequestById(createResult.id, this.connection))[0];
   }
 
   private resolveCanonicalPackageProperty(options: PackageVersionCreateOptions): 'package' | 'id' {

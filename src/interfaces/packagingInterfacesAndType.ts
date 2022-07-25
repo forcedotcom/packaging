@@ -44,7 +44,6 @@ export interface IPackageVersion2GP {
 
 export type PackageOptions = Record<string, unknown>;
 
-export type PackageVersion2Options = Record<string, unknown>;
 export type PackageVersionOptions1GP = Record<string, unknown>;
 
 export type PackageVersionCreateRequestResult = {
@@ -61,6 +60,10 @@ export type PackageVersionCreateRequestResult = {
   HasMetadataRemoved: boolean | null;
   CreatedBy: string;
 };
+
+export const PackageVersionCreateRequestResultInProgressStatuses = Object.values(Package2VersionStatus).filter(
+  (status) => !['Queued', 'Success', 'Error'].includes(status)
+);
 
 export type PackageVersionCreateRequestError = {
   Message: string;
@@ -193,6 +196,7 @@ export type PackageVersionCreateOptions = Partial<
     versionname: string;
     versionnumber: string;
     wait: Duration;
+    pollInterval: Duration;
     profileApi: PackageProfileApi;
   }
 >;
@@ -207,4 +211,15 @@ export type ProfileApiOptions = {
   project: SfProject;
   includeUserLicenses: boolean;
   generateProfileInformation: boolean;
+};
+
+export type PackageVersionReportResult = Partial<PackagingSObjects.Package2Version> & {
+  Package2: Partial<PackagingSObjects.Package2>;
+  SubscriberPackageVersion?: Pick<PackagingSObjects.SubscriberPackageVersion, 'Dependencies'>;
+  Version: string;
+  AncestorVersion?: string;
+};
+
+export type PackageVersionCreateReportProgress = PackageVersionCreateRequestResult & {
+  remainingWaitTime: Duration;
 };

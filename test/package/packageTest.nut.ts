@@ -11,24 +11,19 @@ import { readJSON } from 'fs-extra';
 import { TestSession, execCmd } from '@salesforce/cli-plugins-testkit';
 import { Duration, sleep } from '@salesforce/kit';
 import { ProjectJson } from '@salesforce/core/lib/sfProject';
-import { ConfigAggregator, Org, SfProject } from '@salesforce/core';
+import { ConfigAggregator, Lifecycle, Org, SfProject } from '@salesforce/core';
 import { uniqid } from '@salesforce/core/lib/testSetup';
-import { getString } from '@salesforce/ts-types';
-import { PackageCreateOptions } from '../../src/interfaces';
+import {
+  PackageCreateOptions,
+  PackageVersionCreateReportProgress,
+  PackageVersionCreateRequestResultInProgressStatuses,
+} from '../../src/interfaces';
 import { createPackage } from '../../src/package';
 import { deletePackage } from '../../src/package';
 import { PackageVersion } from '../../src/package';
+import { PackagingSObjects } from '../../src/interfaces';
 
 let session: TestSession;
-
-const VERSION_CREATE_STATUSES_INPROGRESS = [
-  'Queued',
-  'Initializing',
-  'VerifyingFeaturesAndSettings',
-  'VerifyingDependencies',
-  'VerifyingMetadata',
-  'FinalizingPackageVersion',
-];
 
 const VERSION_CREATE_RESPONSE_KEYS = [
   'Id',
@@ -53,7 +48,6 @@ const PKG2_ID_PREFIX = '0Ho';
 const SUBSCRIBER_PKG_VERSION_UNINSTALL_ID_PREFIX = '06y';
 const PKG2_VERSION_CREATE_REQUEST_ID_PREFIX = '08c';
 
-const LIST_ORG_GET_WAIT_MAX_TRIES = process.env.PACKAGE2_LIST_ORG_GET_WAIT_MAX_TRIES || 100;
 const SUB_ORG_ALIAS = 'pk2TargetOrg';
 const WAIT_INTERVAL_MS = 8000;
 const INSTALLATION_KEY = '123456';
@@ -92,7 +86,7 @@ describe('Integration tests for #salesforce/packaging library', function () {
   });
 
   describe('create package/version', () => {
-    it('force:package:create', async () => {
+    it('package create', async () => {
       const options: PackageCreateOptions = {
         name: pkgName,
         packageType: 'Unlocked',
@@ -122,7 +116,7 @@ describe('Integration tests for #salesforce/packaging library', function () {
       });
     });
 
-    it('force:package:version:create', async () => {
+    it('package version create', async () => {
       const pv = new PackageVersion({ project, connection: devHubOrg.getConnection() });
       const result = await pv.create({
         package: pkgId,
@@ -141,44 +135,41 @@ describe('Integration tests for #salesforce/packaging library', function () {
       pkgCreateVersionRequestId = result.Id;
     });
 
-    it('runs force:package:version:create:report until it succeeds', async () => {
-      let duration = 0;
-      let retries = 10;
-      async function pollForPackageCompletion(remainingRetries): Promise<PackageVersionCreateResponse> {
-        const pollResultRaw = execCmd<[PackageVersionCreateResponse]>(
-          `force:package:version:create:report --packagecreaterequestid ${pkgCreateVersionRequestId} --json`
-        );
-        if (!(getString(pollResultRaw, 'jsonOutput.jsonError.name') === 'JsonParseError')) {
-          const pollResult = pollResultRaw.jsonOutput.result[0];
-          expect(pollResult).to.include.keys(VERSION_CREATE_RESPONSE_KEYS);
-          // it's done! or timed out.
-          if (!VERSION_CREATE_STATUSES_INPROGRESS.includes(pollResult.Status) || remainingRetries <= 0) {
-            return pollResult;
-          }
-        } else if (retries > 0) {
-          // eslint-disable-next-line no-console
-          console.log(`JSON Parse Error\n${JSON.stringify(pollResultRaw, undefined, 2)}`);
-          retries--;
-        } else {
-          throw new Error('JsonParseError');
-        }
-        // still going...
-        duration += WAIT_INTERVAL_MS;
-        return sleep(WAIT_INTERVAL_MS * 2, Duration.Unit.MILLISECONDS).then(() =>
-          pollForPackageCompletion(remainingRetries - 1)
-        );
+    it('get package version create report', async () => {
+      const pv = new PackageVersion({ project, connection: devHubOrg.getConnection() });
+      const result = await pv.getCreateVersionReport(pkgCreateVersionRequestId);
+      expect(result).to.include.keys(VERSION_CREATE_RESPONSE_KEYS);
+
+      if (result.Status === 'Error') {
+        throw new Error(`pv.getCreateVersionReport failed with status Error: ${result.Error.join(';')}`);
       }
-      const result = await pollForPackageCompletion(LIST_ORG_GET_WAIT_MAX_TRIES);
+    });
+
+    it('wait for package version create to finish', async () => {
+      const pv = new PackageVersion({ project, connection: devHubOrg.getConnection() });
+      // "enqueued", "in-progress", "success", "error" and "timed-out"
+      Lifecycle.getInstance().on('enqueued', async (results: PackageVersionCreateReportProgress) => {
+        expect(results.Status).to.equal(PackagingSObjects.Package2VersionStatus.queued);
+      });
+      Lifecycle.getInstance().on('in-progress', async (results: PackageVersionCreateReportProgress) => {
+        // eslint-disable-next-line no-console
+        console.log(`in-progress: ${JSON.stringify(results, undefined, 2)}`);
+        expect(PackageVersionCreateRequestResultInProgressStatuses).to.include(results.Status);
+      });
+      Lifecycle.getInstance().on('success', async (results: PackageVersionCreateReportProgress) => {
+        expect(results.Status).to.equal(PackagingSObjects.Package2VersionStatus.success);
+      });
+      const result = await pv.waitForCreateVersion(
+        pkgCreateVersionRequestId,
+        Duration.minutes(10),
+        Duration.seconds(30)
+      );
       expect(result).to.include.keys(VERSION_CREATE_RESPONSE_KEYS);
 
       subscriberPkgVersionId = result.SubscriberPackageVersionId;
-      if (VERSION_CREATE_STATUSES_INPROGRESS.includes(result.Status)) {
-        throw new Error(
-          `Timed out while creating package version of '${pkgCreateVersionRequestId}', waited ${duration / 1000}s`
-        );
-      }
+
       if (result.Status === 'Error') {
-        throw new Error(`package:version:create failed with status Error: ${result.Error.join(';')}`);
+        throw new Error(`pv.waitForCreateVersion failed with status Error: ${result.Error.join(';')}`);
       }
     });
 
@@ -195,26 +186,24 @@ describe('Integration tests for #salesforce/packaging library', function () {
     });
 
     it('force:package:version:report', async () => {
-      const result = execCmd<{
-        Status: string;
-        Package2Id: string;
-        SubscriberPackageVersionId: string;
-        Description: string;
-        Name: string;
-        Version: string;
-        IsReleased: boolean;
-      }>(`force:package:version:report --json --package ${subscriberPkgVersionId}`).jsonOutput.result;
+      const pv = new PackageVersion({ project, connection: devHubOrg.getConnection() });
+      const result = await pv.report(subscriberPkgVersionId);
 
       expect(result).to.not.have.property('Id');
       expect(result.Package2Id).to.equal(
         pkgId,
-        `'force:package:version:report' Package Id mismatch: expected '${pkgId}', got '${result.Package2Id}'`
+        `Package Version Report Package Id mismatch: expected '${pkgId}', got '${result.Package2Id}'`
       );
       expect(result.SubscriberPackageVersionId).to.equal(
         subscriberPkgVersionId,
-        `'force:package:version:report' Subscriber Package Version Id mismatch: expected '${subscriberPkgVersionId}', got '${result.SubscriberPackageVersionId}'`
+        `Package Version Report Subscriber Package Version Id mismatch: expected '${subscriberPkgVersionId}', got '${result.SubscriberPackageVersionId}'`
       );
+
+      // TODO: PVC command writes new version to sfdx-project.json
       const projectFile = (await readJSON(path.join(session.project.dir, 'sfdx-project.json'))) as ProjectJson;
+
+      // eslint-disable-next-line no-console
+      console.log(`projectFile: ${JSON.stringify(projectFile, undefined, 2)}`);
 
       // expect(result.Description).to.equal(
       //   projectFile.packageDirectories[0].versionDescription,
@@ -378,9 +367,3 @@ describe('Integration tests for #salesforce/packaging library', function () {
     });
   });
 });
-
-interface PackageVersionCreateResponse {
-  Status: string;
-  SubscriberPackageVersionId: string;
-  Error?: string[];
-}
