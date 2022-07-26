@@ -12,6 +12,7 @@ import { Package1Display, PackagingSObjects } from '../interfaces';
  * Lists package versions available in dev org. If package ID is supplied, only list versions of that package,
  *  otherwise, list all package versions
  *
+ * @param connection: sfdx-core Connection to the org
  * @param metadataPackageId: optional, if present ID of package to list versions for (starts with 033)
  * @returns Array of package version results
  */
