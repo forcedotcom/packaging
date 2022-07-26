@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.10](https://github.com/forcedotcom/packaging/compare/v0.0.9...v0.0.10) (2022-07-26)
+
+### Bug Fixes
+
+- add pv report and pvc report ([d5b69be](https://github.com/forcedotcom/packaging/commit/d5b69be112915e8ee885ef88a8e65ffa2e3d8a0f))
+
 ### [0.0.9](https://github.com/forcedotcom/packaging/compare/v0.0.8...v0.0.9) (2022-07-19)
 
 ### Features

@@ -63,6 +63,11 @@ export namespace PackagingSObjects {
     inProgress = 'InProgress',
     success = 'Success',
     error = 'Error',
+    initializing = 'Initializing',
+    verifyingFeaturesAndSettings = 'VerifyingFeaturesAndSettings',
+    verifyingDependencies = 'VerifyingDependencies',
+    verifyingMetadata = 'VerifyingMetadata',
+    finalizingPackageVersion = 'FinalizingPackageVersion',
   }
 
   export type Package2VersionCreateRequest = {
@@ -105,6 +110,25 @@ export namespace PackagingSObjects {
     Description: string;
     IsPackageValid: boolean;
   };
+  export type SubscriberPackageDestinationProfile = {
+    description: string;
+    displayName: string;
+    name: string;
+    noAccess: boolean;
+    profileId: string;
+    type: string;
+  };
+  export type SubscriberPackageSourceProfile = {
+    label: string;
+    value: string;
+  };
+  export type SubscriberPackageProfiles = {
+    destinationProfiles: SubscriberPackageDestinationProfile[];
+    sourceProfiles: SubscriberPackageSourceProfile[];
+  };
+  export type SubscriberPackageDependencies = {
+    ids: string[];
+  };
 
   export type SubscriberPackageVersion = {
     Id: string;
@@ -132,8 +156,8 @@ export namespace PackagingSObjects {
     PostInstallUrl: string;
     RemoteSiteSettings: unknown;
     CspTrustedSites: unknown;
-    Profiles: unknown;
-    Dependencies: unknown;
+    Profiles: SubscriberPackageProfiles;
+    Dependencies: SubscriberPackageDependencies;
     InstallValidationStatus: string;
   };
 
