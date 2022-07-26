@@ -23,8 +23,8 @@ export async function package1VersionList(
     metadataPackageId ? `WHERE MetadataPackageId = '${metadataPackageId}'` : ''
   } ORDER BY MetadataPackageId, MajorVersion, MinorVersion, PatchVersion, BuildNumber`;
 
-  const queryResult = await connection.tooling.query(query);
-  return queryResult.records?.map((record: PackagingSObjects.MetadataPackageVersion) => ({
+  const queryResult = await connection.tooling.query<PackagingSObjects.MetadataPackageVersion>(query);
+  return queryResult.records?.map((record) => ({
     MetadataPackageVersionId: record.Id,
     MetadataPackageId: record.MetadataPackageId,
     Name: record.Name,
