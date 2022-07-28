@@ -1,5 +1,5 @@
 {
   "test": {
-    "testsPath": "test/**/*Test.ts"
+    "testsPath": "test/**/*est.ts"
   }
 }

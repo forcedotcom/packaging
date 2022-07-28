@@ -238,3 +238,12 @@ Un-packaged metadata directory %s was specified but does not exist.
 # directoryDoesNotExist
 
 Directory %s does not exist.
+
+# package1VersionCreateCommandUploadFailureDefault
+
+Package version creation failed with unknown error
+
+# package1VersionCreateCommandUploadFailure
+
+Package upload failed.
+%s
