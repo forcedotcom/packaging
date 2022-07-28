@@ -141,7 +141,7 @@ describe('Package1 Version Create and Display', () => {
       await package1VersionCreate(conn, options, { frequency: Duration.seconds(1), timeout: Duration.minutes(3) });
       assert.fail('the above should throw an error from polling');
     } catch (e) {
-      expect((e as Error).message).to.equal('Package upload failed. \nmessage 1\nmessage 2');
+      expect((e as Error).message).to.equal('Package upload failed.\nmessage 1\nmessage 2');
     }
   });
 
