@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.12](https://github.com/forcedotcom/packaging/compare/v0.0.11...v0.0.12) (2022-07-29)
+
+### Features
+
+- add package1VersionCreate command, refactor tests, allow .test.ts ([aa34e8c](https://github.com/forcedotcom/packaging/commit/aa34e8cfe4ad865bb299baa6db51b2af22454a86))
+
 ### [0.0.11](https://github.com/forcedotcom/packaging/compare/v0.0.10...v0.0.11) (2022-07-27)
 
 ### Bug Fixes
