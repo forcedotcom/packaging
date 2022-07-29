@@ -35,4 +35,6 @@ export const consts = {
   // tokens to be replaced on source:push
   INSTANCE_URL_TOKEN: '__SFDX_INSTANCE_URL__',
   PACKAGE2_DESCRIPTOR_FILE: 'package2-descriptor.json',
+  PACKAGE_INSTALL_POLL_FREQUENCY: 5000, // 5000ms
+  PACKAGE_INSTALL_POLL_TIMEOUT: 0,
 };

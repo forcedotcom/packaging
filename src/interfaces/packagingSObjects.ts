@@ -130,6 +130,23 @@ export namespace PackagingSObjects {
     ids: string[];
   };
 
+  export type SubscriberPackageRemoteSiteSetting = {
+    secure: boolean;
+    url: string;
+  };
+
+  export type SubscriberPackageRemoteSiteSettings = {
+    settings: SubscriberPackageRemoteSiteSetting[];
+  };
+
+  export type SubscriberPackageCspTrustedSite = {
+    endpointUrl: string;
+  };
+
+  export type SubscriberPackageCspTrustedSites = {
+    settings: SubscriberPackageCspTrustedSite[];
+  };
+
   export type SubscriberPackageVersion = {
     Id: string;
     SubscriberPackageId: string;
@@ -154,8 +171,8 @@ export namespace PackagingSObjects {
     AppExchangeLogoUrl: string;
     ReleaseNotesUrl: string;
     PostInstallUrl: string;
-    RemoteSiteSettings: unknown;
-    CspTrustedSites: unknown;
+    RemoteSiteSettings: SubscriberPackageRemoteSiteSettings;
+    CspTrustedSites: SubscriberPackageCspTrustedSites;
     Profiles: SubscriberPackageProfiles;
     Dependencies: SubscriberPackageDependencies;
     InstallValidationStatus: string;
@@ -185,6 +202,23 @@ export namespace PackagingSObjects {
     Status: string;
   };
 
+  export type SubscriberPackageInstallError = {
+    message: string;
+  };
+
+  export type SubscriberPackageInstallErrors = {
+    errors: SubscriberPackageInstallError[];
+  };
+
+  export type SubscriberPackageProfileMapping = {
+    source: string;
+    target: string;
+  };
+
+  export type SubscriberPackageProfileMappings = {
+    profileMappings: SubscriberPackageProfileMapping[];
+  };
+
   export type PackageInstallRequest = {
     Id: string;
     IsDeleted: boolean;
@@ -194,18 +228,31 @@ export namespace PackagingSObjects {
     LastModifiedById: string;
     SystemModstamp: number;
     SubscriberPackageVersionKey: string;
-    NameConflictResolution: string;
-    SecurityType: string;
+    NameConflictResolution: 'Block' | 'RenameMetadata';
+    SecurityType: 'Custom' | 'Full' | 'None';
     PackageInstallSource: string;
-    ProfileMappings: unknown;
+    ProfileMappings: SubscriberPackageProfileMappings;
     Password: string;
     EnableRss: boolean;
-    UpgradeType: string;
-    ApexCompileType: string;
-    Status: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Errors: any[];
+    UpgradeType: 'delete-only' | 'deprecate-only' | 'mixed';
+    ApexCompileType: 'all' | 'package';
+    Status: 'Error' | 'InProgress' | 'Success' | 'Unknown';
+    Errors: SubscriberPackageInstallErrors;
   };
+
+  export type PackageInstallCreateRequest = Partial<
+    Pick<
+      PackagingSObjects.PackageInstallRequest,
+      | 'ApexCompileType'
+      | 'EnableRss'
+      | 'NameConflictResolution'
+      | 'PackageInstallSource'
+      | 'Password'
+      | 'SecurityType'
+      | 'UpgradeType'
+    >
+  > &
+    Pick<PackagingSObjects.PackageInstallRequest, 'SubscriberPackageVersionKey'>;
 
   export type PackageUploadRequest = {
     Id: string;

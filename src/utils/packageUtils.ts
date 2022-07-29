@@ -300,7 +300,7 @@ export async function getPackageType(packageId: string, connection: Connection):
 export async function getPackageTypeBy04t(
   packageVersionId: string,
   connection: Connection,
-  installKey: string
+  installKey?: string
 ): Promise<string> {
   let query = `SELECT Package2ContainerOptions FROM SubscriberPackageVersion WHERE id ='${packageVersionId}'`;
 

@@ -7,17 +7,22 @@
 
 import { Duration } from '@salesforce/kit';
 import { Connection, SfProject } from '@salesforce/core';
-import { SaveResult } from 'jsforce';
+import { QueryResult, SaveResult } from 'jsforce';
 import { PackageProfileApi } from '../package/packageProfileApi';
+import { PackageInstallOptions } from '../package/packageInstall';
 import { PackagingSObjects } from './packagingSObjects';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
+import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 
 export interface IPackage {
   create(): Promise<void>;
   convert(): Promise<void>;
   delete(): Promise<void>;
-  install(): Promise<void>;
-  list(): Promise<void>;
+  install(
+    pkgInstallRequest: PackageInstallRequest,
+    options: PackageInstallOptions
+  ): Promise<PackagingSObjects.PackageInstallRequest>;
+  list(): Promise<QueryResult<PackagingSObjects.Package2>>;
   uninstall(): Promise<void>;
   update(): Promise<void>;
 }
@@ -42,7 +47,9 @@ export interface IPackageVersion2GP {
   update(): Promise<void>;
 }
 
-export type PackageOptions = Record<string, unknown>;
+export type PackageOptions = {
+  connection: Connection;
+};
 
 export type PackageVersionOptions1GP = Record<string, unknown>;
 
