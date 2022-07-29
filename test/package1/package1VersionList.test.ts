@@ -52,7 +52,6 @@ const listResult = [
 ];
 
 describe('Package1 Version List', () => {
-  // const $$ = testSetup();
   const testOrg = new MockTestOrgData();
   let conn: Connection;
   let queryStub: sinon.SinonStub;

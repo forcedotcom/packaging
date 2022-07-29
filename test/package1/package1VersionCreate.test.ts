@@ -53,7 +53,7 @@ describe('Package1 Version Create', () => {
       .onFirstCall()
       .returns({
         // @ts-ignore - to avoid stubbing every property of sobject
-        create: () => ({ id: '0HD4p000000blUvGXX' }),
+        create: () => ({ id: '0HD4p000000blUvGXX', success: true, errors: [] }),
       });
   });
 
@@ -65,12 +65,10 @@ describe('Package1 Version Create', () => {
     sobjectStub
       .onSecondCall()
       .returns({
-        // @ts-ignore
         retrieve: async () => queuedResult,
       })
       .onThirdCall()
       .returns({
-        // @ts-ignore
         retrieve: async () => successResult,
       });
     Lifecycle.getInstance().on(
@@ -91,7 +89,6 @@ describe('Package1 Version Create', () => {
 
   it('should send the create request, and handle errors appropriately', async () => {
     sobjectStub.onSecondCall().returns({
-      // @ts-ignore
       retrieve: async () => ({
         Status: 'ERROR',
         Errors: { errors: [new Error('message 1'), new Error('message 2')] },
@@ -108,7 +105,6 @@ describe('Package1 Version Create', () => {
 
   it('should send the create request, and handle errors appropriately (0 error messages)', async () => {
     sobjectStub.onSecondCall().returns({
-      // @ts-ignore
       retrieve: async () => ({
         Status: 'ERROR',
         Errors: [],
@@ -131,7 +127,6 @@ describe('Package1 Version Create', () => {
 
   it('should send the create request, retrieve the request and return', async () => {
     sobjectStub.onSecondCall().returns({
-      // @ts-ignore
       retrieve: async () => queuedResult,
     });
 

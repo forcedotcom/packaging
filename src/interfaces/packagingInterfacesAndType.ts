@@ -224,15 +224,17 @@ export type PackageVersionCreateReportProgress = PackageVersionCreateRequestResu
   remainingWaitTime: Duration;
 };
 
-export type Package1VersionCreateRequest = Pick<
-  PackagingSObjects.PackageUploadRequest,
-  | 'MetadataPackageId'
-  | 'VersionName'
-  | 'Description'
-  | 'MajorVersion'
-  | 'MinorVersion'
-  | 'IsReleaseVersion'
-  | 'ReleaseNotesUrl'
-  | 'PostInstallUrl'
-  | 'Password'
->;
+export type Package1VersionCreateRequest = Pick<PackagingSObjects.PackageUploadRequest, 'VersionName'> &
+  Partial<
+    Pick<
+      PackagingSObjects.PackageUploadRequest,
+      | 'MetadataPackageId'
+      | 'Description'
+      | 'MajorVersion'
+      | 'MinorVersion'
+      | 'IsReleaseVersion'
+      | 'ReleaseNotesUrl'
+      | 'PostInstallUrl'
+      | 'Password'
+    >
+  >;
