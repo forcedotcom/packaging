@@ -223,3 +223,18 @@ export type PackageVersionReportResult = Partial<PackagingSObjects.Package2Versi
 export type PackageVersionCreateReportProgress = PackageVersionCreateRequestResult & {
   remainingWaitTime: Duration;
 };
+
+export type Package1VersionCreateRequest = Pick<PackagingSObjects.PackageUploadRequest, 'VersionName'> &
+  Partial<
+    Pick<
+      PackagingSObjects.PackageUploadRequest,
+      | 'MetadataPackageId'
+      | 'Description'
+      | 'MajorVersion'
+      | 'MinorVersion'
+      | 'IsReleaseVersion'
+      | 'ReleaseNotesUrl'
+      | 'PostInstallUrl'
+      | 'Password'
+    >
+  >;
