@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) 2020, salesforce.com, inc.
+ * All rights reserved.
+ * Licensed under the BSD 3-Clause license.
+ * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
+ */
+import * as os from 'os';
+import { Connection, Lifecycle, Messages, PollingClient, SfError, StatusResult } from '@salesforce/core';
+import { Duration } from '@salesforce/kit';
+import { PackagingSObjects } from '../interfaces';
+
+Messages.importMessagesDirectory(__dirname);
+const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
+
+type UninstallResult = PackagingSObjects.SubscriberPackageVersionUninstallRequest;
+
+async function poll(id: string, conn: Connection): Promise<StatusResult> {
+  const uninstallRequest = await conn.tooling.sobject('SubscriberPackageVersionUninstallRequest').retrieve(id);
+
+  switch (uninstallRequest.Status) {
+    case 'Success': {
+      return { completed: true, payload: uninstallRequest };
+    }
+    case 'InProgress':
+    case 'Queued': {
+      Lifecycle.getInstance().emit('packageUninstall', {
+        ...uninstallRequest,
+      });
+      return { completed: false, payload: uninstallRequest };
+    }
+    default: {
+      const err = messages.getMessage('defaultErrorMessage', [id, uninstallRequest.Id]);
+      const errorQueryResult = await conn.tooling.query(
+        `"SELECT Message FROM PackageVersionUninstallRequestError WHERE ParentRequest.Id = '${id}' ORDER BY Message"`
+      );
+
+      const errors = [];
+      if (errorQueryResult.records) {
+        errors.push('\n=== Errors\n');
+        errorQueryResult?.records?.forEach((record) => {
+          errors.push(`(${errors.length + 1}) ${record.Message}${os.EOL}`);
+        });
+      }
+
+      throw new SfError(`${err}${errors.join(os.EOL)}`, 'UNINSTALL_ERROR', [
+        messages.getMessage('uninstallErrorAction'),
+      ]);
+    }
+  }
+}
+
+export async function uninstallPackage(
+  id: string,
+  conn: Connection,
+  wait: Duration = Duration.seconds(0)
+): Promise<UninstallResult> {
+  const uninstallRequest = await conn.tooling.sobject('SubscriberPackageVersionUninstallRequest').create({
+    SubscriberPackageVersionId: id,
+  });
+
+  if (wait.seconds === 0) {
+    return (await conn.tooling
+      .sobject('SubscriberPackageVersionUninstallRequest')
+      .retrieve(uninstallRequest.id)) as UninstallResult;
+  } else {
+    const pollingClient = await PollingClient.create({
+      poll: () => poll(uninstallRequest.id, conn),
+      frequency: Duration.seconds(5),
+      timeout: wait,
+    });
+    return pollingClient.subscribe();
+  }
+}
