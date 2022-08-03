@@ -281,7 +281,7 @@ describe('Integration tests for #salesforce/packaging library', function () {
 
   // can enable once we can install a package in a scratch org
   describe.skip('uninstall the package', () => {
-    it('force:package:uninstall', async () => {
+    it('uninstallPackage', async () => {
       const conn = (await Org.create({ aliasOrUsername: SUB_ORG_ALIAS })).getConnection();
       const result = await uninstallPackage(subscriberPkgVersionId, conn);
 
@@ -294,7 +294,7 @@ describe('Integration tests for #salesforce/packaging library', function () {
       expect(result).to.have.property('SubscriberPackageVersionId', subscriberPkgVersionId);
     });
 
-    it.skip('runs force:package:uninstall:report to wait for results', async () => {
+    it('runs force:package:uninstall:report to wait for results', async () => {
       const MAX_TRIES = 40;
 
       const waitForUninstallRequestAndValidate = async (
@@ -334,7 +334,7 @@ describe('Integration tests for #salesforce/packaging library', function () {
       ]);
     });
 
-    it.skip('gets an error trying to uninstall again (and waiting for the result)', () => {
+    it('gets an error trying to uninstall again (and waiting for the result)', () => {
       execCmd<{ Status: string; Id: string }>(
         `force:package:uninstall:report --targetusername ${SUB_ORG_ALIAS} --requestid ${uninstallReqId} --wait 20`,
         { ensureExitCode: 1 }
