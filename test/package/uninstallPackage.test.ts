@@ -4,6 +4,7 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
+import * as os from 'os';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { Duration } from '@salesforce/kit';
 import { expect } from 'chai';
@@ -88,14 +89,9 @@ describe('Package Uninstall', () => {
       await uninstallPackage(packageId, conn, Duration.minutes(3));
       assert.fail('the above should throw an error from polling');
     } catch (e) {
-      expect((e as Error).message).to
-        .equal(`Can't uninstall the package 04t4p000002BaHYAA0 during uninstall request 06y23000000002MXXX.
-=== Errors
-
-(1) this is a server-side error message
-
-(2) this is a second error message
-`);
+      expect((e as Error).message).to.equal(
+        `Can't uninstall the package 04t4p000002BaHYAA0 during uninstall request 06y23000000002MXXX.${os.EOL}=== Errors${os.EOL}${os.EOL}(1) this is a server-side error message${os.EOL}${os.EOL}(2) this is a second error message${os.EOL}`
+      );
       expect((e as SfError).actions).to.deep.equal(['Verify installed package ID and resolve errors, then try again.']);
     }
   }).timeout(10000);

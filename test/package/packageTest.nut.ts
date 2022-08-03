@@ -279,13 +279,13 @@ describe('Integration tests for #salesforce/packaging library', function () {
     });
   });
 
-  describe.skip('uninstall the package', () => {
+  describe('uninstall the package', () => {
     it('force:package:uninstall', () => {
       const result = execCmd<{
         Status: string;
         Id: string;
         SubscriberPackageVersionId: string;
-      }>(`force:package:uninstall --targetusername ${SUB_ORG_ALIAS} --package ${subscriberPkgVersionId} --json`)
+      }>(`force:package:beta:uninstall --targetusername ${SUB_ORG_ALIAS} --package ${subscriberPkgVersionId} --json`)
         .jsonOutput.result;
 
       expect(result).to.include.keys(['Status', 'Id', 'SubscriberPackageVersionId']);
@@ -297,7 +297,7 @@ describe('Integration tests for #salesforce/packaging library', function () {
       expect(result).to.have.property('SubscriberPackageVersionId', subscriberPkgVersionId);
     });
 
-    it('runs force:package:uninstall:report to wait for results', async () => {
+    it.skip('runs force:package:uninstall:report to wait for results', async () => {
       const MAX_TRIES = 40;
 
       const waitForUninstallRequestAndValidate = async (
@@ -337,7 +337,7 @@ describe('Integration tests for #salesforce/packaging library', function () {
       ]);
     });
 
-    it('gets an error trying to uninstall again (and waiting for the result)', () => {
+    it.skip('gets an error trying to uninstall again (and waiting for the result)', () => {
       execCmd<{ Status: string; Id: string }>(
         `force:package:uninstall:report --targetusername ${SUB_ORG_ALIAS} --requestid ${uninstallReqId} --wait 20`,
         { ensureExitCode: 1 }

@@ -37,7 +37,7 @@ async function poll(id: string, conn: Connection): Promise<StatusResult> {
       const errors = [];
       if (errorQueryResult.records.length) {
         errors.push('\n=== Errors\n');
-        errorQueryResult?.records?.forEach((record) => {
+        errorQueryResult.records.forEach((record) => {
           errors.push(`(${errors.length}) ${record.Message}${os.EOL}`);
         });
       }
