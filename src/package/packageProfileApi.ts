@@ -8,7 +8,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import * as glob from 'glob';
-import { DOMParser, XMLSerializer } from 'xmldom-sfdx-encoding';
+import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 import { ConfigAggregator, Messages, SfProject } from '@salesforce/core';
 import { AsyncCreatable } from '@salesforce/kit';
 import { ProfileApiOptions } from '../interfaces';
@@ -178,7 +178,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
         const userLicenses = profileDom.getElementsByTagName('userLicense');
         if (userLicenses) {
           hasNodes = true;
-          for (const userLicense of userLicenses) {
+          for (const userLicense of Array.from(userLicenses)) {
             profileNode.appendChild(userLicense.cloneNode(true));
           }
         }
@@ -190,7 +190,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
       if (hasNodes) {
         const serializer = new XMLSerializer();
         serializer.serializeToString(newDom);
-        fs.writeFileSync(destFilePath, serializer.serializeToString(newDom) as string, 'utf-8');
+        fs.writeFileSync(destFilePath, serializer.serializeToString(newDom), 'utf-8');
       } else {
         // remove from manifest
         // eslint-disable-next-line @typescript-eslint/no-shadow
@@ -206,7 +206,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
         try {
           fs.unlinkSync(destFilePath);
         } catch (err) {
-          // It is normal for the file to not exist if the profile is in the worskpace but not in the directory being packaged.
+          // It is normal for the file to not exist if the profile is in the workspace but not in the directory being packaged.
           if (err.code !== 'ENOENT') {
             throw err;
           }
