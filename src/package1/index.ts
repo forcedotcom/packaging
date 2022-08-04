@@ -7,3 +7,5 @@
 export * from './packageVersion1GP';
 export * from './packageDisplay';
 export * from './package1VersionCreateGet';
+export * from './package1VersionCreate';
+export * from './package1VersionList';

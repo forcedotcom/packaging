@@ -4,18 +4,29 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import { MockTestOrgData, testSetup } from '@salesforce/core/lib/testSetup';
+import { Connection } from '@salesforce/core';
+import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { expect } from 'chai';
 import { package1Display } from '../../lib/package1';
 
 describe('Package1 Display', () => {
-  const $$ = testSetup();
   const testOrg = new MockTestOrgData();
+  const $$ = instantiateContext();
+  let conn: Connection;
+  let queryStub: sinon.SinonStub;
+
+  beforeEach(async () => {
+    stubContext($$);
+    await $$.stubAuths(testOrg);
+    conn = await testOrg.getConnection();
+    queryStub = $$.SANDBOX.stub(conn.tooling, 'query');
+  });
+
+  afterEach(() => {
+    restoreContext($$);
+  });
 
   it('should query and collate data correctly', async () => {
-    await $$.stubAuths(testOrg);
-    const conn = await testOrg.getConnection();
-    const queryStub = $$.SANDBOX.stub(conn.tooling, 'query');
     queryStub.resolves({
       done: true,
       totalSize: 1,
@@ -46,9 +57,6 @@ describe('Package1 Display', () => {
   });
 
   it('should query and collate data correctly - no results', async () => {
-    await $$.stubAuths(testOrg);
-    const conn = await testOrg.getConnection();
-    const queryStub = $$.SANDBOX.stub(conn.tooling, 'query');
     queryStub.resolves({
       done: true,
       totalSize: 0,
