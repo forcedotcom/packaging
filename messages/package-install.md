@@ -12,4 +12,17 @@ Waiting for the package install request to complete. Status = %s
 
 # packageInstallRequestError
 
-Failed to create PackageInstallRequest for: %s \nDue to: %s
+Failed to create PackageInstallRequest for: %s
+Due to: %s
+
+# publishWaitProgress
+
+Waiting for the Subscriber Package Version ID to be published to the target org.%s
+
+# subscriberPackageVersionNotPublished
+
+The subscriber package version is not fully available.
+
+# subscriberPackageVersionNotPublished.actions
+
+If this is a recently created package version, try again in a few minutes or contact the package publisher.

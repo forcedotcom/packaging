@@ -20,7 +20,7 @@ import {
 } from '@salesforce/core';
 import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
 import { Tokens } from '@salesforce/core/lib/messages';
-import { Many } from '@salesforce/ts-types';
+import { Many, Nullable } from '@salesforce/ts-types';
 import { SaveError } from 'jsforce';
 import {
   PackageVersionCreateEventData,
@@ -273,6 +273,11 @@ export async function getPackageVersionId(versionId: string, connection: Connect
     return queryResult.records[0].Id;
   });
 }
+
+export function escapeInstallationKey(key?: string): Nullable<string> {
+  return key ? key.replace(/\\/g, '\\\\').replace(/'/g, "\\'") : null;
+}
+
 /**
  * Given 0Ho the package type type (Managed, Unlocked, Locked(deprecated?))
  *

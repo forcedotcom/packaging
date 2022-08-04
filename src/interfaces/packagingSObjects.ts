@@ -4,6 +4,7 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
+import { Nullable } from '@salesforce/ts-types';
 import { PackageType } from './packagingInterfacesAndType';
 
 export namespace PackagingSObjects {
@@ -147,6 +148,25 @@ export namespace PackagingSObjects {
     settings: SubscriberPackageCspTrustedSite[];
   };
 
+  export type InstallValidationStatus =
+    | 'NO_ERRORS_DETECTED'
+    | 'BETA_INSTALL_INTO_PRODUCTION_ORG'
+    | 'CANNOT_INSTALL_EARLIER_VERSION'
+    | 'CANNOT_UPGRADE_BETA'
+    | 'CANNOT_UPGRADE_UNMANAGED'
+    | 'DEPRECATED_INSTALL_PACKAGE'
+    | 'EXTENSIONS_ON_LOCAL_PACKAGES'
+    | 'PACKAGE_NOT_INSTALLED'
+    | 'PACKAGE_HAS_IN_DEV_EXTENSIONS'
+    | 'INSTALL_INTO_DEV_ORG'
+    | 'NO_ACCESS'
+    | 'PACKAGING_DISABLED'
+    | 'PACKAGING_NO_ACCESS'
+    | 'PACKAGE_UNAVAILABLE'
+    | 'UNINSTALL_IN_PROGRESS'
+    | 'UNKNOWN_ERROR'
+    | 'NAMESPACE_COLLISION';
+
   export type SubscriberPackageVersion = {
     Id: string;
     SubscriberPackageId: string;
@@ -175,7 +195,7 @@ export namespace PackagingSObjects {
     CspTrustedSites: SubscriberPackageCspTrustedSites;
     Profiles: SubscriberPackageProfiles;
     Dependencies: SubscriberPackageDependencies;
-    InstallValidationStatus: string;
+    InstallValidationStatus: InstallValidationStatus;
   };
 
   export type SubscriberPackageVersionUninstallRequest = {
@@ -231,28 +251,14 @@ export namespace PackagingSObjects {
     NameConflictResolution: 'Block' | 'RenameMetadata';
     SecurityType: 'Custom' | 'Full' | 'None';
     PackageInstallSource: string;
-    ProfileMappings: SubscriberPackageProfileMappings;
-    Password: string;
+    ProfileMappings: Nullable<SubscriberPackageProfileMappings>;
+    Password: Nullable<string>;
     EnableRss: boolean;
-    UpgradeType: 'delete-only' | 'deprecate-only' | 'mixed';
-    ApexCompileType: 'all' | 'package';
-    Status: 'Error' | 'InProgress' | 'Success' | 'Unknown';
-    Errors: SubscriberPackageInstallErrors;
+    UpgradeType: Nullable<'delete-only' | 'deprecate-only' | 'mixed-mode'>;
+    ApexCompileType: Nullable<'all' | 'package'>;
+    Status: 'ERROR' | 'IN_PROGRESS' | 'SUCCESS' | 'UNKNOWN';
+    Errors: Nullable<SubscriberPackageInstallErrors>;
   };
-
-  export type PackageInstallCreateRequest = Partial<
-    Pick<
-      PackagingSObjects.PackageInstallRequest,
-      | 'ApexCompileType'
-      | 'EnableRss'
-      | 'NameConflictResolution'
-      | 'PackageInstallSource'
-      | 'Password'
-      | 'SecurityType'
-      | 'UpgradeType'
-    >
-  > &
-    Pick<PackagingSObjects.PackageInstallRequest, 'SubscriberPackageVersionKey'>;
 
   export type PackageUploadRequest = {
     Id: string;
