@@ -7,19 +7,26 @@
 
 import { Duration } from '@salesforce/kit';
 import { Connection, SfProject } from '@salesforce/core';
-import { SaveResult } from 'jsforce';
+import { QueryResult, SaveResult } from 'jsforce';
 import { PackageProfileApi } from '../package/packageProfileApi';
 import { PackagingSObjects } from './packagingSObjects';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
+import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 
 export interface IPackage {
   create(): Promise<void>;
   convert(): Promise<void>;
   delete(): Promise<void>;
-  install(): Promise<void>;
-  list(): Promise<void>;
+  install(
+    pkgInstallCreateRequest: PackageInstallCreateRequest,
+    options?: PackageInstallOptions
+  ): Promise<PackageInstallRequest>;
+  getInstallStatus(installRequestId: string): Promise<PackageInstallRequest>;
+  list(): Promise<QueryResult<PackagingSObjects.Package2>>;
   uninstall(): Promise<void>;
   update(): Promise<void>;
+  waitForPublish(subscriberPackageVersionKey: string, timeout: number | Duration, installationKey?: string);
+  getExternalSites(subscriberPackageVersionKey: string, installationKey?: string);
 }
 
 export interface IPackageVersion1GP {
@@ -42,7 +49,15 @@ export interface IPackageVersion2GP {
   update(): Promise<void>;
 }
 
-export type PackageOptions = Record<string, unknown>;
+export type PackageOptions = {
+  connection: Connection;
+};
+
+export type PackageIdType =
+  | 'PackageId'
+  | 'SubscriberPackageVersionId'
+  | 'PackageInstallRequestId'
+  | 'PackageUninstallRequestId';
 
 export type PackageVersionOptions1GP = Record<string, unknown>;
 
@@ -113,6 +128,20 @@ export type PackageVersionListResult = {
   HasMetadataRemoved?: boolean;
 };
 
+export type PackageInstallCreateRequest = Partial<
+  Pick<
+    PackageInstallRequest,
+    | 'ApexCompileType'
+    | 'EnableRss'
+    | 'NameConflictResolution'
+    | 'PackageInstallSource'
+    | 'Password'
+    | 'SecurityType'
+    | 'UpgradeType'
+  >
+> &
+  Pick<PackagingSObjects.PackageInstallRequest, 'SubscriberPackageVersionKey'>;
+
 export type Package1Display = {
   MetadataPackageVersionId: string;
   MetadataPackageId: string;
@@ -155,6 +184,19 @@ export type PackageVersionCreateRequestOptions = {
   codecoverage?: boolean;
   branch?: string;
   skipancestorcheck?: boolean;
+};
+
+export type PackageInstallOptions = {
+  /**
+   * The frequency to poll the org for package installation status. If providing a number
+   * it is interpreted in milliseconds.
+   */
+  pollingFrequency?: number | Duration;
+  /**
+   * The amount of time to wait for package installation to complete. If providing a number
+   * it is interpreted in minutes.
+   */
+  pollingTimeout?: number | Duration;
 };
 
 export type MDFolderForArtifactOptions = {
