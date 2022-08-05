@@ -132,7 +132,7 @@ export async function getExternalSites(
   }
 }
 
-async function getStatus(connection: Connection, installRequestId: string): Promise<PackageInstallRequest> {
+export async function getStatus(connection: Connection, installRequestId: string): Promise<PackageInstallRequest> {
   const result = await connection.tooling.retrieve('PackageInstallRequest', installRequestId);
 
   return result as unknown as PackageInstallRequest;

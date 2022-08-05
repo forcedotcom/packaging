@@ -4,15 +4,30 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
+import { Messages } from '@salesforce/core';
 import { AsyncCreatable, Duration } from '@salesforce/kit';
 import { QueryResult } from 'jsforce';
 import { Optional } from '@salesforce/ts-types';
 import { IPackage, PackageOptions, PackagingSObjects } from '../interfaces';
-import { PackageInstallOptions, PackageInstallCreateRequest } from '../interfaces/packagingInterfacesAndType';
+import {
+  PackageInstallOptions,
+  PackageInstallCreateRequest,
+  PackageIdType,
+} from '../interfaces/packagingInterfacesAndType';
 import { listPackages } from './packageList';
-import { getExternalSites, installPackage, waitForPublish } from './packageInstall';
+import { getExternalSites, getStatus, installPackage, waitForPublish } from './packageInstall';
 
 type PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
+
+const packagePrefixes = {
+  PackageId: '0Ho',
+  SubscriberPackageVersionId: '04t',
+  PackageInstallRequestId: '0Hf',
+  PackageUninstallRequestId: '06y',
+};
+
+Messages.importMessagesDirectory(__dirname);
+const messages = Messages.loadMessages('@salesforce/packaging', 'package');
 
 /**
  * Package class.
@@ -22,6 +37,29 @@ type PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 export class Package extends AsyncCreatable<PackageOptions> implements IPackage {
   public constructor(private options: PackageOptions) {
     super(options);
+  }
+
+  /**
+   * Given a Salesforce ID for a package resource and the type of resource,
+   * ensures the ID is valid.
+   *
+   * Valid ID types and prefixes for packaging resources:
+   * 1. package ID (0Ho)
+   * 2. subscriber package version ID (04t)
+   * 3. package install request ID (0Hf)
+   * 4. package uninstall request ID (06y)
+   *
+   * @param id Salesforce ID for a specific package resource
+   * @param type The type of package ID
+   */
+  public static validateId(id: string, type: PackageIdType): void {
+    const prefix = packagePrefixes[type];
+    if (!id.startsWith(prefix)) {
+      throw messages.createError('invalidPackageId', [type, id, prefix]);
+    }
+    if (![15, 18].includes(id.length)) {
+      throw messages.createError('invalidIdLength', [type, id]);
+    }
   }
 
   public convert(): Promise<void> {
@@ -41,6 +79,10 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
     options: PackageInstallOptions
   ): Promise<PackageInstallRequest> {
     return installPackage(this.options.connection, pkgInstallCreateRequest, options);
+  }
+
+  public async getInstallStatus(installRequestId: string): Promise<PackageInstallRequest> {
+    return getStatus(this.options.connection, installRequestId);
   }
 
   public list(): Promise<QueryResult<PackagingSObjects.Package2>> {

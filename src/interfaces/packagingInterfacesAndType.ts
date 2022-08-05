@@ -21,6 +21,7 @@ export interface IPackage {
     pkgInstallCreateRequest: PackageInstallCreateRequest,
     options: PackageInstallOptions
   ): Promise<PackageInstallRequest>;
+  getInstallStatus(installRequestId: string): Promise<PackageInstallRequest>;
   list(): Promise<QueryResult<PackagingSObjects.Package2>>;
   uninstall(): Promise<void>;
   update(): Promise<void>;
@@ -51,6 +52,12 @@ export interface IPackageVersion2GP {
 export type PackageOptions = {
   connection: Connection;
 };
+
+export type PackageIdType =
+  | 'PackageId'
+  | 'SubscriberPackageVersionId'
+  | 'PackageInstallRequestId'
+  | 'PackageUninstallRequestId';
 
 export type PackageVersionOptions1GP = Record<string, unknown>;
 
