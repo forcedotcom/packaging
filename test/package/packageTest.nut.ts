@@ -232,7 +232,10 @@ describe('Integration tests for #salesforce/packaging library', function () {
     it('install package async', async () => {
       const pkg = new Package({ connection: scratchOrg.getConnection() });
       await pkg.waitForPublish(subscriberPkgVersionId, 10, INSTALLATION_KEY);
-      const result = await pkg.install({ SubscriberPackageVersionKey: subscriberPkgVersionId });
+      const result = await pkg.install({
+        SubscriberPackageVersionKey: subscriberPkgVersionId,
+        Password: INSTALLATION_KEY,
+      });
       expect(result).to.have.property('Status', 'IN_PROGRESS');
       expect(result).to.have.property('Errors', null);
       expect(result).to.have.property('SubscriberPackageVersionKey', subscriberPkgVersionId);
