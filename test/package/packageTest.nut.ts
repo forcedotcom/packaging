@@ -21,6 +21,7 @@ import {
 import { createPackage } from '../../src/package';
 import { deletePackage } from '../../src/package';
 import { PackageVersion } from '../../src/package';
+import { Package } from '../../src/package';
 import { PackagingSObjects } from '../../src/interfaces';
 
 let session: TestSession;
@@ -61,6 +62,7 @@ describe('Integration tests for #salesforce/packaging library', function () {
   let pkgName = '';
   let configAggregator: ConfigAggregator;
   let devHubOrg: Org;
+  let scratchOrg: Org;
   let project: SfProject;
   before('pkgSetup', async () => {
     process.env.TESTKIT_EXECUTABLE_PATH = 'sfdx';
@@ -71,12 +73,13 @@ describe('Integration tests for #salesforce/packaging library', function () {
       },
       setupCommands: [
         'sfdx config:set restDeploy=false',
-        // `sfdx force:org:create -d 1 -a ${SUB_ORG_ALIAS} -f config/project-scratch-def.json`,
+        `sfdx force:org:create -d 1 -a ${SUB_ORG_ALIAS} -f config/project-scratch-def.json`,
       ],
     });
     pkgName = uniqid({ template: 'pnh-dancingbears-', length: 16 });
     configAggregator = await ConfigAggregator.create();
     devHubOrg = await Org.create({ aliasOrUsername: configAggregator.getPropertyValue<string>('target-dev-hub') });
+    scratchOrg = await Org.create({ aliasOrUsername: SUB_ORG_ALIAS });
     project = await SfProject.resolve();
   });
 
@@ -225,12 +228,11 @@ describe('Integration tests for #salesforce/packaging library', function () {
     });
   });
 
-  describe.skip('install the package in scratch org', () => {
-    it('run force:package:install without waiting', () => {
-      const result = execCmd<{ Status: string; Id: string }>(
-        `force:package:install --json --package ${subscriberPkgVersionId} --installationkey ${INSTALLATION_KEY} --targetusername ${SUB_ORG_ALIAS} --publishwait 10`
-      ).jsonOutput.result;
-
+  describe('install the package in scratch org', () => {
+    it('install package async', async () => {
+      const pkg = new Package({ connection: scratchOrg.getConnection() });
+      await pkg.waitForPublish(subscriberPkgVersionId, 10, INSTALLATION_KEY);
+      const result = await pkg.install({ SubscriberPackageVersionKey: subscriberPkgVersionId });
       expect(result).to.have.property('Status', 'IN_PROGRESS');
       expect(result).to.have.property('Errors', null);
       expect(result).to.have.property('SubscriberPackageVersionKey', subscriberPkgVersionId);
@@ -239,11 +241,10 @@ describe('Integration tests for #salesforce/packaging library', function () {
       installReqId = result.Id;
     });
 
-    it('runs force:package:version:install:report until it finishes', async () => {
+    it('getInstallStatus until it finishes', async () => {
       const waitForInstallRequestAndValidate = async (counter = 1): Promise<{ Status: string }> => {
-        const pollResult = execCmd<{ Status: string }>(
-          `force:package:install:report --requestid ${installReqId} --targetusername ${SUB_ORG_ALIAS} --json`
-        ).jsonOutput.result;
+        const pkg = new Package({ connection: scratchOrg.getConnection() });
+        const pollResult = await pkg.getInstallStatus(installReqId);
 
         expect(pollResult).to.have.property('Status');
         expect(pollResult).to.have.property('Id', installReqId);

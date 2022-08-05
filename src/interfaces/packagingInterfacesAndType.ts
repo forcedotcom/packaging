@@ -19,7 +19,7 @@ export interface IPackage {
   delete(): Promise<void>;
   install(
     pkgInstallCreateRequest: PackageInstallCreateRequest,
-    options: PackageInstallOptions
+    options?: PackageInstallOptions
   ): Promise<PackageInstallRequest>;
   getInstallStatus(installRequestId: string): Promise<PackageInstallRequest>;
   list(): Promise<QueryResult<PackagingSObjects.Package2>>;

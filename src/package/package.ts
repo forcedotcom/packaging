@@ -4,7 +4,7 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import { Messages } from '@salesforce/core';
+import { Messages, sfdc } from '@salesforce/core';
 import { AsyncCreatable, Duration } from '@salesforce/kit';
 import { QueryResult } from 'jsforce';
 import { Optional } from '@salesforce/ts-types';
@@ -57,7 +57,7 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
     if (!id.startsWith(prefix)) {
       throw messages.createError('invalidPackageId', [type, id, prefix]);
     }
-    if (![15, 18].includes(id.length)) {
+    if (!sfdc.validateSalesforceId(id)) {
       throw messages.createError('invalidIdLength', [type, id]);
     }
   }
@@ -76,7 +76,7 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
 
   public async install(
     pkgInstallCreateRequest: PackageInstallCreateRequest,
-    options: PackageInstallOptions
+    options?: PackageInstallOptions
   ): Promise<PackageInstallRequest> {
     return installPackage(this.options.connection, pkgInstallCreateRequest, options);
   }
