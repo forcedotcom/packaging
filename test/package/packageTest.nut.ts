@@ -283,10 +283,9 @@ describe('Integration tests for #salesforce/packaging library', function () {
     });
   });
 
-  // can enable once we can install a package in a scratch org
-  describe.skip('uninstall the package', () => {
+  describe('uninstall the package', () => {
     it('uninstallPackage', async () => {
-      const conn = (await Org.create({ aliasOrUsername: SUB_ORG_ALIAS })).getConnection();
+      const conn = scratchOrg.getConnection();
       const result = await uninstallPackage(subscriberPkgVersionId, conn);
 
       expect(result).to.include.keys(['Status', 'Id', 'SubscriberPackageVersionId']);
