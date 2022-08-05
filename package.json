@@ -35,8 +35,8 @@
     "!lib/**/*.map"
   ],
   "dependencies": {
-    "@salesforce/core": "^3.23.7",
-    "@salesforce/kit": "^1.5.42",
+    "@salesforce/core": "^3.24.0",
+    "@salesforce/kit": "^1.5.44",
     "@salesforce/schemas": "^1.2.0",
     "@salesforce/source-deploy-retrieve": "^6.2.0",
     "@salesforce/ts-types": "^1.5.20",
