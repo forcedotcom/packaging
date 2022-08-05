@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.13](https://github.com/forcedotcom/packaging/compare/v0.0.12...v0.0.13) (2022-08-05)
+
+### Bug Fixes
+
+- use regular xmlDom package ([57262c5](https://github.com/forcedotcom/packaging/commit/57262c574b54aa2690a47d5e702fe48dbdf475c7))
+
 ### [0.0.12](https://github.com/forcedotcom/packaging/compare/v0.0.11...v0.0.12) (2022-07-29)
 
 ### Features
