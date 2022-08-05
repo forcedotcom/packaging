@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.14](https://github.com/forcedotcom/packaging/compare/v0.0.13...v0.0.14) (2022-08-05)
+
+### Bug Fixes
+
+- adds package install ([97a821a](https://github.com/forcedotcom/packaging/commit/97a821af4e427b413e59c55143d5f17df0513dcc))
+- adds some package install code ([f2fff8e](https://github.com/forcedotcom/packaging/commit/f2fff8e52a498c70230575b1ace3a6f303168ad4))
+- enable install NUTs ([105250b](https://github.com/forcedotcom/packaging/commit/105250bbabe0185c04dab9cff2c9d17be4dd488f))
+- export getStatus and add validateId function ([8a97c4a](https://github.com/forcedotcom/packaging/commit/8a97c4ac2a58ad7992f0d37f74fcf4662f754793))
+- use install key ([457d777](https://github.com/forcedotcom/packaging/commit/457d7779f3e646f71b5faf1adc913094c524b74a))
+
 ### [0.0.13](https://github.com/forcedotcom/packaging/compare/v0.0.12...v0.0.13) (2022-08-05)
 
 ### Bug Fixes
