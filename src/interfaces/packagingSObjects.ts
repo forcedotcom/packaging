@@ -268,6 +268,15 @@ export namespace PackagingSObjects {
     MinPackageVersionId: string;
   };
 
+  export type InstalledPackage = {
+    Id: string;
+    SubscriberPackageId: string;
+    SubscriberPackageVersionId: string;
+    MinPackageVersionId: string;
+    SubscriberPackage?: SubscriberPackage;
+    SubscriberPackageVersion?: Omit<MetadataPackageVersion, 'MetadataPackageId' | 'ReleaseState' | 'IsDeprecated'>;
+  };
+
   export type MetadataPackageVersion = {
     Id: string;
     MetadataPackageId: string;
