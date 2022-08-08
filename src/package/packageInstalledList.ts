@@ -5,13 +5,12 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import { Connection } from '@salesforce/core';
-import { QueryResult } from 'jsforce';
 import { PackagingSObjects } from '../interfaces';
 
 type InstalledPackages = PackagingSObjects.InstalledPackage;
 
-export async function packageInstalledList(conn: Connection): Promise<QueryResult<InstalledPackages>> {
+export async function packageInstalledList(conn: Connection): Promise<InstalledPackages[]> {
   const query =
     'SELECT Id, SubscriberPackageId, SubscriberPackage.NamespacePrefix, SubscriberPackage.Name, SubscriberPackageVersion.Id, SubscriberPackageVersion.Name, SubscriberPackageVersion.MajorVersion, SubscriberPackageVersion.MinorVersion, SubscriberPackageVersion.PatchVersion, SubscriberPackageVersion.BuildNumber FROM InstalledSubscriberPackage ORDER BY SubscriberPackageId';
-  return await conn.tooling.query<InstalledPackages>(query);
+  return (await conn.tooling.query<InstalledPackages>(query)).records;
 }

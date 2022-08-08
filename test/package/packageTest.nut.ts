@@ -18,7 +18,7 @@ import {
   PackageVersionCreateReportProgress,
   PackageVersionCreateRequestResultInProgressStatuses,
 } from '../../src/interfaces';
-import { createPackage } from '../../src/package';
+import { createPackage, packageInstalledList } from '../../src/package';
 import { deletePackage } from '../../src/package';
 import { PackageVersion } from '../../src/package';
 import { PackagingSObjects } from '../../src/interfaces';
@@ -267,15 +267,23 @@ describe('Integration tests for #salesforce/packaging library', function () {
       expect(result.Status).to.equal('SUCCESS');
     });
 
-    it('run force:package:installed:list to verify in target scratch org', () => {
-      const result = execCmd<[{ SubscriberPackageVersionId: string }]>(
-        `force:package:installed:list --json --targetusername ${SUB_ORG_ALIAS}`
-      ).jsonOutput.result;
+    it('packageInstalledList returns the correct information', async () => {
+      const connection = (await Org.create({ aliasOrUsername: SUB_ORG_ALIAS })).getConnection();
+      const result = await packageInstalledList(connection);
+      const foundRecord = result.filter((item) => item.SubscriberPackageVersionId === subscriberPkgVersionId);
 
       expect(result).to.have.length.at.least(1);
-      const foundRecord = result.filter((item) => item.SubscriberPackageVersionId === subscriberPkgVersionId);
       expect(foundRecord, `Did not find SubscriberPackageVersionId ${subscriberPkgVersionId}`).to.have.length(1);
       expect(foundRecord[0]).to.have.property('Id');
+      expect(foundRecord[0]).to.have.property('SubscriberPackageId');
+      expect(foundRecord[0]).to.have.property('SubscriberPackage.Name');
+      expect(foundRecord[0]).to.have.property('SubscriberPackage.NamespacePrefix');
+      expect(foundRecord[0]).to.have.property('SubscriberPackageVersion.Id');
+      expect(foundRecord[0]).to.have.property('SubscriberPackageVersion.Name');
+      expect(foundRecord[0]).to.have.property('SubscriberPackageVersion.MajorVersion');
+      expect(foundRecord[0]).to.have.property('SubscriberPackageVersion.MinorVersion');
+      expect(foundRecord[0]).to.have.property('SubscriberPackageVersion.PatchVersion');
+      expect(foundRecord[0]).to.have.property('SubscriberPackageVersion.BuildNumber');
     });
   });
 
