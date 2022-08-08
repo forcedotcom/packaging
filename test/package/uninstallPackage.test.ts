@@ -51,6 +51,8 @@ describe('Package Uninstall', () => {
   });
 
   it('should send the uninstall request, wait for it to finish, and emit events along the way', async () => {
+    const millis1 = Duration.milliseconds(1);
+    $$.SANDBOX.stub(Duration, 'seconds').callsFake(() => millis1);
     sobjectStub
       .onSecondCall()
       .returns({
@@ -69,7 +71,7 @@ describe('Package Uninstall', () => {
 
     const result = await uninstallPackage(packageId, conn, Duration.minutes(3));
     expect(result).deep.equal(successResult);
-  }).timeout(10000);
+  });
 
   it('should send the uninstall request, and handle errors appropriately', async () => {
     sobjectStub.onSecondCall().returns({
