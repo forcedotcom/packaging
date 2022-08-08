@@ -43,7 +43,7 @@ export async function installPackage(
     EnableRss: false,
     NameConflictResolution: 'Block',
     PackageInstallSource: 'U',
-    SecurityType: 'none',
+    SecurityType: 'None',
     UpgradeType: 'mixed-mode',
   };
 
@@ -102,12 +102,12 @@ export async function getExternalSites(
   subscriberPackageVersionId: string,
   installationKey?: string
 ): Promise<Optional<string[]>> {
-  const installKey = escapeInstallationKey(installationKey);
   const queryNoKey = `SELECT RemoteSiteSettings, CspTrustedSites FROM SubscriberPackageVersion WHERE Id ='${subscriberPackageVersionId}'`;
-  const queryWithKey = `SELECT RemoteSiteSettings, CspTrustedSites FROM SubscriberPackageVersion WHERE Id ='${subscriberPackageVersionId}' AND InstallationKey ='${installKey}'`;
 
   let queryResult: QueryResult<SubscriberPackageVersion>;
   try {
+    const escapedInstallationKey = installationKey ? escapeInstallationKey(installationKey) : null;
+    const queryWithKey = `${queryNoKey} AND InstallationKey ='${escapedInstallationKey}'`;
     getLogger().debug(`Checking package: [${subscriberPackageVersionId}] for external sites`);
     queryResult = await connection.tooling.query<SubscriberPackageVersion>(queryWithKey);
   } catch (e) {
