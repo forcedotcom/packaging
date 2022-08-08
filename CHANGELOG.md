@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.16](https://github.com/forcedotcom/packaging/compare/v0.0.15...v0.0.16) (2022-08-08)
+
+### Bug Fixes
+
+- add method to uninstall package ([243f4e8](https://github.com/forcedotcom/packaging/commit/243f4e867d5b71a4a24afc70a8551f071dcbbc34))
+
 ### [0.0.15](https://github.com/forcedotcom/packaging/compare/v0.0.14...v0.0.15) (2022-08-08)
 
 ### Bug Fixes
