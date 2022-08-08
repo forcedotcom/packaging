@@ -355,6 +355,6 @@ describe('Package Install', () => {
     }
 
     expect(millisStub.called).to.be.true;
-    expect(queryStub.callCount).to.be.greaterThan(3);
+    expect(queryStub.callCount).to.be.greaterThan(2);
   });
 });
