@@ -239,14 +239,20 @@ export namespace PackagingSObjects {
     profileMappings: SubscriberPackageProfileMapping[];
   };
 
+  export type Attributes = {
+    type: string;
+    url: string;
+  };
+
   export type PackageInstallRequest = {
+    attributes: Attributes;
     Id: string;
     IsDeleted: boolean;
-    CreatedDate: number;
+    CreatedDate: string;
     CreatedById: string;
-    LastModifiedDate: number;
+    LastModifiedDate: string;
     LastModifiedById: string;
-    SystemModstamp: number;
+    SystemModstamp: string;
     SubscriberPackageVersionKey: string;
     NameConflictResolution: 'Block' | 'RenameMetadata';
     SecurityType: 'Custom' | 'Full' | 'None';

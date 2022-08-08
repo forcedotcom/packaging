@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.15](https://github.com/forcedotcom/packaging/compare/v0.0.14...v0.0.15) (2022-08-08)
+
+### Bug Fixes
+
+- better callCount expectation ([b009e67](https://github.com/forcedotcom/packaging/commit/b009e67445a6e00990fd19fbd048d87008ee49ab))
+- better timeout number for test ([3240911](https://github.com/forcedotcom/packaging/commit/3240911ef5b58ea6179290de066471f9e87ebda5))
+- higher polling timeout for windows ([e6ce60c](https://github.com/forcedotcom/packaging/commit/e6ce60c0583e0b5b92be5b9b86b78de7603dfa77))
+- unit tests and type updates ([23d8648](https://github.com/forcedotcom/packaging/commit/23d8648f570f326873b6e1ff1149067aba07e015))
+
 ### [0.0.14](https://github.com/forcedotcom/packaging/compare/v0.0.13...v0.0.14) (2022-08-05)
 
 ### Bug Fixes
