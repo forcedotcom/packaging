@@ -4,6 +4,7 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
+import { Nullable } from '@salesforce/ts-types';
 import { PackageType } from './packagingInterfacesAndType';
 
 export namespace PackagingSObjects {
@@ -130,6 +131,42 @@ export namespace PackagingSObjects {
     ids: string[];
   };
 
+  export type SubscriberPackageRemoteSiteSetting = {
+    secure: boolean;
+    url: string;
+  };
+
+  export type SubscriberPackageRemoteSiteSettings = {
+    settings: SubscriberPackageRemoteSiteSetting[];
+  };
+
+  export type SubscriberPackageCspTrustedSite = {
+    endpointUrl: string;
+  };
+
+  export type SubscriberPackageCspTrustedSites = {
+    settings: SubscriberPackageCspTrustedSite[];
+  };
+
+  export type InstallValidationStatus =
+    | 'NO_ERRORS_DETECTED'
+    | 'BETA_INSTALL_INTO_PRODUCTION_ORG'
+    | 'CANNOT_INSTALL_EARLIER_VERSION'
+    | 'CANNOT_UPGRADE_BETA'
+    | 'CANNOT_UPGRADE_UNMANAGED'
+    | 'DEPRECATED_INSTALL_PACKAGE'
+    | 'EXTENSIONS_ON_LOCAL_PACKAGES'
+    | 'PACKAGE_NOT_INSTALLED'
+    | 'PACKAGE_HAS_IN_DEV_EXTENSIONS'
+    | 'INSTALL_INTO_DEV_ORG'
+    | 'NO_ACCESS'
+    | 'PACKAGING_DISABLED'
+    | 'PACKAGING_NO_ACCESS'
+    | 'PACKAGE_UNAVAILABLE'
+    | 'UNINSTALL_IN_PROGRESS'
+    | 'UNKNOWN_ERROR'
+    | 'NAMESPACE_COLLISION';
+
   export type SubscriberPackageVersion = {
     Id: string;
     SubscriberPackageId: string;
@@ -154,11 +191,11 @@ export namespace PackagingSObjects {
     AppExchangeLogoUrl: string;
     ReleaseNotesUrl: string;
     PostInstallUrl: string;
-    RemoteSiteSettings: unknown;
-    CspTrustedSites: unknown;
+    RemoteSiteSettings: SubscriberPackageRemoteSiteSettings;
+    CspTrustedSites: SubscriberPackageCspTrustedSites;
     Profiles: SubscriberPackageProfiles;
     Dependencies: SubscriberPackageDependencies;
-    InstallValidationStatus: string;
+    InstallValidationStatus: InstallValidationStatus;
   };
 
   export type SubscriberPackageVersionUninstallRequest = {
@@ -185,6 +222,23 @@ export namespace PackagingSObjects {
     Status: string;
   };
 
+  export type SubscriberPackageInstallError = {
+    message: string;
+  };
+
+  export type SubscriberPackageInstallErrors = {
+    errors: SubscriberPackageInstallError[];
+  };
+
+  export type SubscriberPackageProfileMapping = {
+    source: string;
+    target: string;
+  };
+
+  export type SubscriberPackageProfileMappings = {
+    profileMappings: SubscriberPackageProfileMapping[];
+  };
+
   export type PackageInstallRequest = {
     Id: string;
     IsDeleted: boolean;
@@ -194,17 +248,16 @@ export namespace PackagingSObjects {
     LastModifiedById: string;
     SystemModstamp: number;
     SubscriberPackageVersionKey: string;
-    NameConflictResolution: string;
-    SecurityType: string;
+    NameConflictResolution: 'Block' | 'RenameMetadata';
+    SecurityType: 'Custom' | 'Full' | 'None';
     PackageInstallSource: string;
-    ProfileMappings: unknown;
-    Password: string;
+    ProfileMappings: Nullable<SubscriberPackageProfileMappings>;
+    Password: Nullable<string>;
     EnableRss: boolean;
-    UpgradeType: string;
-    ApexCompileType: string;
-    Status: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Errors: any[];
+    UpgradeType: Nullable<'delete-only' | 'deprecate-only' | 'mixed-mode'>;
+    ApexCompileType: Nullable<'all' | 'package'>;
+    Status: 'ERROR' | 'IN_PROGRESS' | 'SUCCESS' | 'UNKNOWN';
+    Errors: Nullable<SubscriberPackageInstallErrors>;
   };
 
   export type PackageUploadRequest = {

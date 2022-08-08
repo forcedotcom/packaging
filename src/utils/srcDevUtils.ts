@@ -21,9 +21,8 @@ const pipeline = promisify(cbPipeline);
  *
  * @param dir to zip
  * @param zipfile
- * @param options
  */
-export async function zipDir(dir: string, zipfile: string, options = {}): Promise<void> {
+export async function zipDir(dir: string, zipfile: string): Promise<void> {
   const logger = Logger.childFromRoot('srcDevUtils#zipDir');
 
   const timer = process.hrtime();
