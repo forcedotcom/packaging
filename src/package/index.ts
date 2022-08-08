@@ -12,3 +12,4 @@ export * from './packageVersionCreateRequest';
 export { listPackageVersions } from './packageVersionList';
 export { createPackage } from './packageCreate';
 export { deletePackage } from './packageDelete';
+export { uninstallPackage } from './packageUninstall';
