@@ -315,7 +315,7 @@ describe('Package Install', () => {
     const pkg = new Package({ connection });
     const installOptions: PackageInstallOptions = {
       pollingFrequency: Duration.milliseconds(5),
-      pollingTimeout: Duration.milliseconds(15),
+      pollingTimeout: Duration.milliseconds(20),
     };
 
     try {
