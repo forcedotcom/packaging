@@ -315,7 +315,7 @@ describe('Package Install', () => {
     const pkg = new Package({ connection });
     const installOptions: PackageInstallOptions = {
       pollingFrequency: Duration.milliseconds(5),
-      pollingTimeout: Duration.milliseconds(20),
+      pollingTimeout: Duration.milliseconds(50),
     };
 
     try {
@@ -341,13 +341,13 @@ describe('Package Install', () => {
     queryStub.restore();
     queryStub = $$.SANDBOX.stub(connection.tooling, 'query').resolves(queryResult);
     const millis5 = Duration.milliseconds(5);
-    const millis20 = Duration.milliseconds(20);
+    const millis50 = Duration.milliseconds(50);
     const millisStub = $$.SANDBOX.stub(Duration, 'milliseconds').callsFake(() => millis5);
 
     const pkg = new Package({ connection });
     const SubscriberPackageVersionKey = pkgInstallCreateRequest.SubscriberPackageVersionKey;
     try {
-      await pkg.waitForPublish(SubscriberPackageVersionKey, millis20);
+      await pkg.waitForPublish(SubscriberPackageVersionKey, millis50);
       expect(false, 'Expected timeout error to be thrown').to.be.true;
     } catch (err) {
       expect(err.name).to.equal('SubscriberPackageVersionNotPublishedError');
