@@ -5,9 +5,7 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import { Connection } from '@salesforce/core';
-import { PackagingSObjects } from '../interfaces';
-
-type InstalledPackages = PackagingSObjects.InstalledPackage;
+import { InstalledPackages } from '../interfaces';
 
 export async function packageInstalledList(conn: Connection): Promise<InstalledPackages[]> {
   const query =
