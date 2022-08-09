@@ -18,7 +18,9 @@ import {
   PackageVersionCreateReportProgress,
   PackageVersionCreateRequestResultInProgressStatuses,
 } from '../../src/interfaces';
-import { createPackage, packageInstalledList } from '../../src/package';
+import { createPackage } from '../../src/package';
+import { uninstallPackage } from '../../src/package';
+import { packageInstalledList } from '../../src/package';
 import { deletePackage } from '../../src/package';
 import { PackageVersion } from '../../src/package';
 import { Package } from '../../src/package';
@@ -291,14 +293,10 @@ describe('Integration tests for #salesforce/packaging library', function () {
     });
   });
 
-  describe.skip('uninstall the package', () => {
-    it('force:package:uninstall', () => {
-      const result = execCmd<{
-        Status: string;
-        Id: string;
-        SubscriberPackageVersionId: string;
-      }>(`force:package:uninstall --targetusername ${SUB_ORG_ALIAS} --package ${subscriberPkgVersionId} --json`)
-        .jsonOutput.result;
+  describe('uninstall the package', () => {
+    it('uninstallPackage', async () => {
+      const conn = scratchOrg.getConnection();
+      const result = await uninstallPackage(subscriberPkgVersionId, conn);
 
       expect(result).to.include.keys(['Status', 'Id', 'SubscriberPackageVersionId']);
       uninstallReqId = result.Id;

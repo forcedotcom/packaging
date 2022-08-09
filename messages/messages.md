@@ -247,3 +247,11 @@ Package version creation failed with unknown error
 
 Package upload failed.
 %s
+
+# defaultErrorMessage
+
+Can't uninstall the package %s during uninstall request %s.
+
+# uninstallErrorAction
+
+Verify installed package ID and resolve errors, then try again.
