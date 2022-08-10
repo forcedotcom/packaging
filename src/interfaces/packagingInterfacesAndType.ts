@@ -12,6 +12,7 @@ import { PackageProfileApi } from '../package/packageProfileApi';
 import { PackagingSObjects } from './packagingSObjects';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
+import MetadataPackageVersion = PackagingSObjects.MetadataPackageVersion;
 
 export interface IPackage {
   create(): Promise<void>;
@@ -280,3 +281,12 @@ export type Package1VersionCreateRequest = Pick<PackagingSObjects.PackageUploadR
       | 'Password'
     >
   >;
+
+export type InstalledPackages = {
+  Id: string;
+  SubscriberPackageId: string;
+  SubscriberPackageVersionId: string;
+  MinPackageVersionId: string;
+  SubscriberPackage?: PackagingSObjects.SubscriberPackage;
+  SubscriberPackageVersion?: Omit<MetadataPackageVersion, 'MetadataPackageId' | 'ReleaseState' | 'IsDeprecated'>;
+};

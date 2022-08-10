@@ -18,7 +18,9 @@ import {
   PackageVersionCreateReportProgress,
   PackageVersionCreateRequestResultInProgressStatuses,
 } from '../../src/interfaces';
-import { createPackage, uninstallPackage } from '../../src/package';
+import { createPackage } from '../../src/package';
+import { uninstallPackage } from '../../src/package';
+import { packageInstalledList } from '../../src/package';
 import { deletePackage } from '../../src/package';
 import { PackageVersion } from '../../src/package';
 import { Package } from '../../src/package';
@@ -254,7 +256,7 @@ describe('Integration tests for #salesforce/packaging library', function () {
         expect(pollResult).to.have.property('Errors', null);
         expect(pollResult).to.have.property('SubscriberPackageVersionKey', subscriberPkgVersionId);
 
-        if (pollResult.Status === 'IN_PROGRESS' && counter < 40) {
+        if (pollResult.Status === 'IN_PROGRESS' && counter < 80) {
           return sleep(WAIT_INTERVAL_MS, Duration.Unit.MILLISECONDS).then(() =>
             waitForInstallRequestAndValidate(counter++)
           );
@@ -271,15 +273,23 @@ describe('Integration tests for #salesforce/packaging library', function () {
       expect(result.Status).to.equal('SUCCESS');
     });
 
-    it('run force:package:installed:list to verify in target scratch org', () => {
-      const result = execCmd<[{ SubscriberPackageVersionId: string }]>(
-        `force:package:installed:list --json --targetusername ${SUB_ORG_ALIAS}`
-      ).jsonOutput.result;
+    it('packageInstalledList returns the correct information', async () => {
+      const connection = scratchOrg.getConnection();
+      const result = await packageInstalledList(connection);
+      const foundRecord = result.filter((item) => item.SubscriberPackageVersion.Id === subscriberPkgVersionId);
 
       expect(result).to.have.length.at.least(1);
-      const foundRecord = result.filter((item) => item.SubscriberPackageVersionId === subscriberPkgVersionId);
       expect(foundRecord, `Did not find SubscriberPackageVersionId ${subscriberPkgVersionId}`).to.have.length(1);
       expect(foundRecord[0]).to.have.property('Id');
+      expect(foundRecord[0]).to.have.property('SubscriberPackageId');
+      expect(foundRecord[0].SubscriberPackage).to.have.property('Name');
+      expect(foundRecord[0].SubscriberPackage).to.have.property('NamespacePrefix');
+      expect(foundRecord[0].SubscriberPackageVersion).to.have.property('Id');
+      expect(foundRecord[0].SubscriberPackageVersion).to.have.property('Name');
+      expect(foundRecord[0].SubscriberPackageVersion).to.have.property('MajorVersion');
+      expect(foundRecord[0].SubscriberPackageVersion).to.have.property('MinorVersion');
+      expect(foundRecord[0].SubscriberPackageVersion).to.have.property('PatchVersion');
+      expect(foundRecord[0].SubscriberPackageVersion).to.have.property('BuildNumber');
     });
   });
 
