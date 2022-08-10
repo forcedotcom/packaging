@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.17](https://github.com/forcedotcom/packaging/compare/v0.0.16...v0.0.17) (2022-08-10)
+
+### Bug Fixes
+
+- package insstalled list method ([40efd4d](https://github.com/forcedotcom/packaging/commit/40efd4d1dd30289782129d7fe3d56a1df7717517))
+
 ### [0.0.16](https://github.com/forcedotcom/packaging/compare/v0.0.15...v0.0.16) (2022-08-08)
 
 ### Bug Fixes
