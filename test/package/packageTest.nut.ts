@@ -256,7 +256,7 @@ describe('Integration tests for #salesforce/packaging library', function () {
         expect(pollResult).to.have.property('Errors', null);
         expect(pollResult).to.have.property('SubscriberPackageVersionKey', subscriberPkgVersionId);
 
-        if (pollResult.Status === 'IN_PROGRESS' && counter < 40) {
+        if (pollResult.Status === 'IN_PROGRESS' && counter < 80) {
           return sleep(WAIT_INTERVAL_MS, Duration.Unit.MILLISECONDS).then(() =>
             waitForInstallRequestAndValidate(counter++)
           );
@@ -274,9 +274,9 @@ describe('Integration tests for #salesforce/packaging library', function () {
     });
 
     it('packageInstalledList returns the correct information', async () => {
-      const connection = (await Org.create({ aliasOrUsername: SUB_ORG_ALIAS })).getConnection();
+      const connection = scratchOrg.getConnection();
       const result = await packageInstalledList(connection);
-      const foundRecord = result.filter((item) => item.SubscriberPackageVersionId === subscriberPkgVersionId);
+      const foundRecord = result.filter((item) => item.SubscriberPackageVersion.Id === subscriberPkgVersionId);
 
       expect(result).to.have.length.at.least(1);
       expect(foundRecord, `Did not find SubscriberPackageVersionId ${subscriberPkgVersionId}`).to.have.length(1);
