@@ -282,14 +282,14 @@ describe('Integration tests for #salesforce/packaging library', function () {
       expect(foundRecord, `Did not find SubscriberPackageVersionId ${subscriberPkgVersionId}`).to.have.length(1);
       expect(foundRecord[0]).to.have.property('Id');
       expect(foundRecord[0]).to.have.property('SubscriberPackageId');
-      expect(foundRecord[0]).to.have.property('SubscriberPackage.Name');
-      expect(foundRecord[0]).to.have.property('SubscriberPackage.NamespacePrefix');
-      expect(foundRecord[0]).to.have.property('SubscriberPackageVersion.Id');
-      expect(foundRecord[0]).to.have.property('SubscriberPackageVersion.Name');
-      expect(foundRecord[0]).to.have.property('SubscriberPackageVersion.MajorVersion');
-      expect(foundRecord[0]).to.have.property('SubscriberPackageVersion.MinorVersion');
-      expect(foundRecord[0]).to.have.property('SubscriberPackageVersion.PatchVersion');
-      expect(foundRecord[0]).to.have.property('SubscriberPackageVersion.BuildNumber');
+      expect(foundRecord[0].SubscriberPackage).to.have.property('Name');
+      expect(foundRecord[0].SubscriberPackage).to.have.property('NamespacePrefix');
+      expect(foundRecord[0].SubscriberPackageVersion).to.have.property('Id');
+      expect(foundRecord[0].SubscriberPackageVersion).to.have.property('Name');
+      expect(foundRecord[0].SubscriberPackageVersion).to.have.property('MajorVersion');
+      expect(foundRecord[0].SubscriberPackageVersion).to.have.property('MinorVersion');
+      expect(foundRecord[0].SubscriberPackageVersion).to.have.property('PatchVersion');
+      expect(foundRecord[0].SubscriberPackageVersion).to.have.property('BuildNumber');
     });
   });
 
