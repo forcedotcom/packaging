@@ -245,8 +245,7 @@ export class PackageVersion {
     wait: Duration,
     pollInterval: Duration
   ): Promise<Duration> {
-    let w = wait;
-    // If we are polling check to seeif the package is Org-Dependent, if so, update the poll time
+    // If we are polling check to see if the package is Org-Dependent, if so, update the poll time
     if (wait.milliseconds > 0) {
       const query = `SELECT IsOrgDependent FROM Package2 WHERE Id = '${resolvedPackageId}'`;
       try {
@@ -254,13 +253,13 @@ export class PackageVersion {
           tooling: true,
         });
         if (pkgQueryResult.IsOrgDependent) {
-          w = Duration.seconds((60 / pollInterval.seconds) * wait.seconds);
+          return Duration.seconds((60 / pollInterval.seconds) * wait.seconds);
         }
       } catch {
         // do nothing
       }
     }
-    return w;
+    return wait;
   }
 
   private async updateProjectWithPackageVersion(
