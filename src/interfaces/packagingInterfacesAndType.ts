@@ -6,7 +6,7 @@
  */
 
 import { Duration } from '@salesforce/kit';
-import { Connection, SfProject } from '@salesforce/core';
+import { Connection, NamedPackageDir, SfProject } from '@salesforce/core';
 import { QueryResult, SaveResult } from 'jsforce';
 import { PackageProfileApi } from '../package/packageProfileApi';
 import { PackagingSObjects } from './packagingSObjects';
@@ -162,6 +162,34 @@ export type PackageCreateOptions = {
   packageType: PackageType;
   errorNotificationUsername: string;
   path: string;
+};
+
+export type PackageDescriptorJson = Partial<NamedPackageDir> &
+  Partial<{
+    id: string;
+    features: string[];
+    orgPreferences: string[];
+    snapshot: string;
+    unpackagedMetadata: NamedPackageDir;
+    apexTestAccess: { permissionSets: string[] | string; permissionSetLicenses: string[] | string };
+    permissionSetNames: string[];
+    permissionSetLicenseDeveloperNames: string[];
+    branch: string;
+    subscriberPackageVersionId: string;
+    packageId: string;
+    versionName: string;
+  }>;
+
+export type PackageVersionCreateRequest = {
+  Package2Id: string;
+  VersionInfo: string;
+  Tag: string;
+  Branch: string;
+  InstallKey: string;
+  Instance: string;
+  SourceOrg: string;
+  CalculateCodeCoverage: boolean;
+  SkipValidation: boolean;
 };
 
 export type PackageVersionQueryOptions = {

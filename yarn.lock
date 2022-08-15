@@ -711,7 +711,7 @@
     strip-ansi "6.0.1"
     ts-retry-promise "^0.6.0"
 
-"@salesforce/core@^3.20.1", "@salesforce/core@^3.21.1", "@salesforce/core@^3.24.0":
+"@salesforce/core@^3.20.1", "@salesforce/core@^3.21.1":
   version "3.25.0"
   resolved "https://registry.yarnpkg.com/@salesforce/core/-/core-3.25.0.tgz#ae163d45d640326c999da1664a1e6111ce7d6482"
   integrity sha512-Rfj9uOXu/rABXJ6gLgO39Epw8FlRL7QNpVj0Q0VN+vHkxCs+icuQQ3iBAczkKfjXRqRLfjGZc+iiJBDWUyWdXw==
@@ -731,6 +731,29 @@
     graceful-fs "^4.2.9"
     js2xmlparser "^4.0.1"
     jsforce "^2.0.0-beta.16"
+    jsonwebtoken "8.5.1"
+    ts-retry-promise "^0.6.0"
+
+"@salesforce/core@^3.26.1":
+  version "3.26.1"
+  resolved "https://registry.yarnpkg.com/@salesforce/core/-/core-3.26.1.tgz#8d65c6b12085494106a2c7d2545902fa1ff95522"
+  integrity sha512-B2mhsiiAu9hkLAwkDu+Y5ArAtRJIx2oeqP8ofupLlSH4tohzcUmfKgCDZEk9iLC1sc5kmD1S/4DlS1QZhnNs8A==
+  dependencies:
+    "@salesforce/bunyan" "^2.0.0"
+    "@salesforce/kit" "^1.5.41"
+    "@salesforce/schemas" "^1.1.0"
+    "@salesforce/ts-types" "^1.5.20"
+    "@types/graceful-fs" "^4.1.5"
+    "@types/semver" "^7.3.9"
+    ajv "^8.11.0"
+    archiver "^5.3.0"
+    change-case "^4.1.2"
+    debug "^3.2.7"
+    faye "^1.4.0"
+    form-data "^4.0.0"
+    graceful-fs "^4.2.9"
+    js2xmlparser "^4.0.1"
+    jsforce beta
     jsonwebtoken "8.5.1"
     ts-retry-promise "^0.6.0"
 
