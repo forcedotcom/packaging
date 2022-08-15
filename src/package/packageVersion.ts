@@ -296,12 +296,7 @@ export class PackageVersion {
       getConfigPackageDirectory(withProject.getPackageDirectories(), 'id', pkg.Id) ?? ({} as NamedPackageDir);
     pkgDir.versionNumber = packageVersionVersionString;
     pkgDir.versionDescription = packageVersion.Description;
-    const packageDirs = withProject.getPackageDirectories().map((pd) => {
-      if (pkgDir['id'] === pd['id']) {
-        return pkgDir;
-      }
-      return pd;
-    });
+    const packageDirs = withProject.getPackageDirectories().map((pd) => pkgDir.id === pd.id ? pkgDir : pd)
     withProject.getSfProjectJson().set('packageDirectories', packageDirs);
   }
 }
