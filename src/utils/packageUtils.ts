@@ -149,10 +149,6 @@ export async function validatePatchVersion(
 }
 
 // TODO: let's get rid of this in favor of SfdcUrl.isValidUrl()
-// check that the provided url has a valid format
-export function validUrl(url: string): boolean {
-  return SfdcUrl.isValidUrl(url);
-}
 
 // determines if error is from malformed SubscriberPackageVersion query
 // this is in place to allow cli to run against app version 214, where SPV queries

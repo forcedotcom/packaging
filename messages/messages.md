@@ -177,14 +177,6 @@ Only one package in a Dev Hub is allowed per converted from first-generation pac
 
 Multiple errors occurred:
 
-# errorScriptsNotApplicableToUnlockedPackage
-
-We can’t create the package version. This parameter is available only for second-generation managed packages. Create the package version without the postinstallscript or uninstallscript parameters.,
-
-# errorAncestorNotApplicableToUnlockedPackage
-
-Can’t create package version. Specifying an ancestor is available only for second-generation managed packages. Remove the ancestorId or ancestorVersion from your sfdx-project.json file, and then create the package version again.,
-
 # itemDoesNotFitWithinMaxLength
 
 When calculating the number of items to be included in query "%s", when formatted, was too long.
@@ -207,33 +199,13 @@ The %s value [%s], doesn’t match the %s value in any packageDirectories specif
 
 The %s value, [%s], and %s value, [%s], were both found in sfdx-project.json but don’t match. If you supply both values, they must match the path and package values in one of the packageDirectories.,
 
-# tempFileLocation
+# errorInvalidPackageId
 
-The temp files are located at: %s.
-
-# failedToCreatePVCRequest
-
-Failed to create request %s: %s
-
-# versionNumberNotFoundInDevHub
-
-No version number was found in Dev Hub for package id %s and branch %s and version number %s that resolved to build number %s.
-
-# noReleaseVersionFound
-
-No released version was found in Dev Hub for package id %s and version number %s.
-
-# noReleaseVersionFoundForBranch
-
-No version number was found in Dev Hub for package id $s and branch %s and version number %s.
+The provided package ID '%s' is invalid.
 
 # packagingDirNotFoundInConfigFile
 
 Config file %s does not contain a packaging directory for %s.
-
-# unpackagedMDDirectoryDoesNotExist
-
-Un-packaged metadata directory %s was specified but does not exist.
 
 # directoryDoesNotExist
 
@@ -255,3 +227,7 @@ Can't uninstall the package %s during uninstall request %s.
 # uninstallErrorAction
 
 Verify installed package ID and resolve errors, then try again.
+
+# errorNoSubscriberPackageRecord
+
+No subscriber package was found for seed id: %s'

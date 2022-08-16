@@ -24,6 +24,7 @@ import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenera
 import * as xml2js from 'xml2js';
 import { PackageDirDependency } from '@salesforce/core/lib/sfProject';
 import { getAncestorIds, ScratchOrgInfoPayload } from '@salesforce/core/lib/org/scratchOrgInfoGenerator';
+import { QueryResult } from 'jsforce';
 import * as pkgUtils from '../utils/packageUtils';
 import { BuildNumberToken, VersionNumber } from '../utils/versionNumber';
 import {
@@ -35,13 +36,12 @@ import {
   PackageVersionCreateRequest,
   PackageType,
 } from '../interfaces';
-import { getPackageAliasesFromId, copyDir, zipDir } from '../utils';
-import { getPackageIdFromAlias } from '../utils/packageUtils';
+import { getPackageAliasesFromId, getPackageIdFromAlias, copyDir, zipDir } from '../utils';
 import { PackageProfileApi } from './packageProfileApi';
 import { byId } from './packageVersionCreateRequest';
 
 Messages.importMessagesDirectory(__dirname);
-const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
+const messages = Messages.loadMessages('@salesforce/packaging', 'packageVersionCreate');
 
 const logger = Logger.childFromRoot('packageVersionCreate');
 
@@ -102,11 +102,10 @@ export class PackageVersionCreate {
     }
   }
 
-  private validateDependencyValues(dependency: PackageDescriptorJson) {
+  private async validateDependencyValues(dependency: PackageDescriptorJson): Promise<QueryResult<{ Id: string }>> {
     // If valid 04t package, just return it to be used straight away.
     if (dependency.subscriberPackageVersionId) {
       pkgUtils.validateId(pkgUtils.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, dependency.subscriberPackageVersionId);
-      return Promise.resolve();
     }
 
     if (dependency.packageId && dependency.package) {
@@ -116,7 +115,6 @@ export class PackageVersionCreate {
     // If valid 04t package, just return it to be used straight away.
     if (pkgUtils.validateIdNoThrow(pkgUtils.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, this.packageId)) {
       dependency.subscriberPackageVersionId = this.packageId;
-      return Promise.resolve();
     }
 
     if (!this.packageId || !dependency.versionNumber) {
@@ -135,12 +133,12 @@ export class PackageVersionCreate {
 
     // Validate that the Package2 id exists on the server
     const query = `SELECT Id FROM Package2 WHERE Id = '${dependency.packageId}'`;
-    return this.connection.tooling.query(query).then((pkgQueryResult) => {
-      const subRecords = pkgQueryResult.records;
-      if (!subRecords || subRecords.length !== 1) {
-        throw messages.createError('errorNoIdInHub', [dependency.packageId]);
-      }
-    });
+    const result = await this.connection.tooling.query<{ Id: string }>(query);
+
+    if (!result.records || result.records.length !== 1) {
+      throw messages.createError('errorNoIdInHub', [dependency.packageId]);
+    }
+    return result;
   }
 
   /**
@@ -331,7 +329,7 @@ export class PackageVersionCreate {
       await settingsGenerator.extract(definitionFileJson);
       if (settingsGenerator.hasSettings() && definitionFileJson.orgPreferences) {
         // this is not allowed, exit with an error
-        return Promise.reject(messages.createError('signupDuplicateSettingsSpecified'));
+        throw messages.createError('signupDuplicateSettingsSpecified');
       }
 
       ['country', 'edition', 'language', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].forEach(
@@ -599,12 +597,12 @@ export class PackageVersionCreate {
     if (this.packageType === 'Unlocked') {
       // Don't allow scripts in unlocked packages
       if (this.options.postinstallscript || this.options.uninstallscript) {
-        throw messages.createError('version_create.errorScriptsNotApplicableToUnlockedPackage');
+        throw messages.createError('errorScriptsNotApplicableToUnlockedPackage');
       }
 
       // Don't allow ancestor in unlocked packages
       if (this.packageObject.ancestorId || this.packageObject.ancestorVersion) {
-        throw messages.createError('version_create.errorAncestorNotApplicableToUnlockedPackage');
+        throw messages.createError('errorAncestorNotApplicableToUnlockedPackage');
       }
     }
   }
