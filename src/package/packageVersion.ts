@@ -5,12 +5,12 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { Connection, Messages, SfProject, PollingClient, Lifecycle, StatusResult } from '@salesforce/core';
+import { Connection, Lifecycle, Messages, PollingClient, SfProject, StatusResult } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import {
-  PackageVersionCreateRequestResult,
   PackageSaveResult,
   PackageVersionCreateOptions,
+  PackageVersionCreateRequestResult,
   PackageVersionOptions,
   PackageVersionReportResult,
 } from '../interfaces';
@@ -43,16 +43,11 @@ export class PackageVersion {
   public async create(options: PackageVersionCreateOptions): Promise<Partial<PackageVersionCreateRequestResult>> {
     const pvc = new PackageVersionCreate({ ...options, ...this.options });
     const createResult = await pvc.createPackageVersion();
-    const waitResult = await this.waitForCreateVersion(
-      createResult.Id,
-      options.wait ?? Duration.milliseconds(0),
-      options.pollInterval ? options.pollInterval : Duration.seconds(30)
-    ).catch((err: Error) => {
+    return await this.waitForCreateVersion(createResult.Id).catch((err: Error) => {
       // TODO
       // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
       throw pkgUtils.applyErrorAction(err);
     });
-    return waitResult;
   }
 
   /**

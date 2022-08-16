@@ -102,10 +102,6 @@ describe('Integration tests for #salesforce/packaging library', function () {
         errorNotificationUsername: undefined,
       };
       const result = await createPackage(devHubOrg.getConnection(), project, options);
-      // const result = execCmd<{ Id: string }>(
-      //   `force:package:create --name ${pkgName} --packagetype Unlocked --path force-app --description "Don't ease, don't ease, don't ease me in." --json`,
-      //   { ensureExitCode: 0 }
-      // ).jsonOutput.result;
 
       pkgId = result.Id;
       expect(pkgId).to.be.ok;
@@ -124,7 +120,7 @@ describe('Integration tests for #salesforce/packaging library', function () {
     it('package version create', async () => {
       const pv = new PackageVersion({ project, connection: devHubOrg.getConnection() });
       const result = await pv.create({
-        package: pkgId,
+        packageId: pkgId,
         tag: TAG,
         branch: BRANCH,
         installationkey: INSTALLATION_KEY,

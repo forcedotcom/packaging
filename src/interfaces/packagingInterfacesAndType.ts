@@ -251,8 +251,7 @@ export type PackageVersionCreateOptions = Partial<
     definitionfile: string;
     installationkey: string;
     installationkeybypass: boolean;
-    package: string;
-    path: string;
+    packageId: string;
     postinstallscript: string;
     postinstallurl: string;
     preserve: boolean;
@@ -266,8 +265,6 @@ export type PackageVersionCreateOptions = Partial<
     versiondescription: string;
     versionname: string;
     versionnumber: string;
-    wait: Duration;
-    pollInterval: Duration;
     profileApi: PackageProfileApi;
   }
 >;

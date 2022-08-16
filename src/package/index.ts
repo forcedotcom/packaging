@@ -14,3 +14,4 @@ export { createPackage } from './packageCreate';
 export { deletePackage } from './packageDelete';
 export { uninstallPackage } from './packageUninstall';
 export * from './packageInstalledList';
+export * from './packageVersionCreateRequestReport';

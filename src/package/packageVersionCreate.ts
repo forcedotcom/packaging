@@ -14,7 +14,7 @@ import {
   LoggerLevel,
   Messages,
   NamedPackageDir,
-  PackageDir,
+  Org,
   ScratchOrgInfo,
   SfProject,
 } from '@salesforce/core';
@@ -23,6 +23,7 @@ import { uniqid } from '@salesforce/core/lib/testSetup';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import * as xml2js from 'xml2js';
 import { PackageDirDependency } from '@salesforce/core/lib/sfProject';
+import { getAncestorIds, ScratchOrgInfoPayload } from '@salesforce/core/lib/org/scratchOrgInfoGenerator';
 import * as pkgUtils from '../utils/packageUtils';
 import { BuildNumberToken, VersionNumber } from '../utils/versionNumber';
 import {
@@ -34,7 +35,8 @@ import {
   PackageVersionCreateRequest,
   PackageType,
 } from '../interfaces';
-import { getPackageAliasesFromId, validateVersionNumber, getPackageIdFromAlias, copyDir, zipDir } from '../utils';
+import { getPackageAliasesFromId, copyDir, zipDir } from '../utils';
+import { getPackageIdFromAlias } from '../utils/packageUtils';
 import { PackageProfileApi } from './packageProfileApi';
 import { byId } from './packageVersionCreateRequest';
 
@@ -62,13 +64,8 @@ export class PackageVersionCreate {
     try {
       return this.packageVersionCreate();
     } catch (err) {
-      // TODO: until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
       throw pkgUtils.applyErrorAction(pkgUtils.massageErrorMessage(err as Error));
     }
-  }
-
-  public async listRequestById(id: string, connection: Connection): Promise<PackageVersionCreateRequestResult[]> {
-    return byId(id, connection);
   }
 
   // convert source to mdapi format and copy to tmp dir packaging up
@@ -281,13 +278,10 @@ export class PackageVersionCreate {
   /**
    * Convert the list of command line options to a JSON object that can be used to create an Package2VersionCreateRequest entity.
    *
-   * @param versionNumberString
    * @returns {{Package2Id: (*|p|boolean), Package2VersionMetadata: *, Tag: *, Branch: number}}
    * @private
    */
-  private async createPackageVersionCreateRequestFromOptions(
-    versionNumberString: string
-  ): Promise<PackageVersionCreateRequest> {
+  private async createPackageVersionCreateRequestFromOptions(): Promise<PackageVersionCreateRequest> {
     const preserveFiles = !!(this.options.preserve || process.env.SFDX_PACKAGE2_VERSION_CREATE_PRESERVE);
     const uniqueHash = uniqid({ template: `${this.packageId}-%s` });
     const packageVersTmpRoot = path.join(os.tmpdir(), `${uniqueHash}`);
@@ -299,7 +293,7 @@ export class PackageVersionCreate {
     const unpackagedMetadataZipFile = path.join(packageVersBlobDirectory, 'unpackaged-metadata-package.zip');
     const settingsZipFile = path.join(packageVersBlobDirectory, 'settings.zip');
     const packageVersBlobZipFile = path.join(packageVersTmpRoot, 'package-version-info.zip');
-    const sourceBaseDir = path.join(this.project.getPath(), this.options.path ?? '');
+    const sourceBaseDir = path.join(this.project.getPath(), this.packageObject.path ?? '');
 
     const mdOptions = {
       deploydir: packageVersMetadataFolder,
@@ -362,14 +356,11 @@ export class PackageVersionCreate {
     const resultValues = await Promise.all(
       !dependencies ? [] : dependencies.map((dependency) => this.retrieveSubscriberPackageVersionId(dependency))
     );
-    const ancestorId = await pkgUtils.getAncestorId(
-      this.packageId,
-      this.packageType,
-      packageDescriptorJson as PackageDir,
-      this.connection,
-      this.project,
-      versionNumberString,
-      this.options.skipancestorcheck
+    const ancestorId = await getAncestorIds(
+      // TODO: investigate if it's ok to convert to ScratchOggInfoPayload
+      this.packageObject as unknown as ScratchOrgInfoPayload,
+      this.options.project.getSfProjectJson(),
+      await Org.create({ aliasOrUsername: this.options.connection.getUsername() })
     );
     // If dependencies exist, the resultValues array will contain the dependencies populated with a resolved
     // subscriber pkg version id.
@@ -390,7 +381,6 @@ export class PackageVersionCreate {
 
     await fs.promises.writeFile(
       path.join(packageVersBlobDirectory, DESCRIPTOR_FILE),
-      // TODO: need to make sure packageDescriptorJson contains the right values for the descriptor
       JSON.stringify(packageDescriptorJson),
       'utf-8'
     );
@@ -568,13 +558,11 @@ export class PackageVersionCreate {
     }
 
     // from the packageDirectories in sfdx-project.json, find the correct package entry either by finding a matching package (name) or path
-    const resolvedPackage = getPackageAliasesFromId(this.options.package, this.project)[0] ?? this.options.package;
+    const resolvedPackage = getPackageAliasesFromId(this.options.packageId, this.options.project).join();
     // set on the class so we can access them in other methods without redoing this logic
-    this.packageObject = this.project
-      .getPackageDirectories()
-      .find((pkg) => pkg.package === resolvedPackage ?? pkg.path === this.options.path);
-    this.packageId = getPackageIdFromAlias(this.packageObject.package, this.project);
+    this.packageObject = this.project.getPackageDirectories().find((pkg) => pkg.package === resolvedPackage);
     this.options.profileApi = await this.resolveUserLicenses(this.packageObject.includeProfileUserLicenses);
+    this.packageId = getPackageIdFromAlias(this.packageObject.package, this.project);
 
     // At this point, the packageIdFromAlias should have been resolved to an Id.  Now, we
     // need to validate that the Id is correct.
@@ -582,16 +570,7 @@ export class PackageVersionCreate {
 
     await this.validateOptionsForPackageType();
 
-    const versionNumberString = validateVersionNumber(
-      this.packageObject.versionNumber,
-      BuildNumberToken.NEXT_BUILD_NUMBER_TOKEN
-    );
-
-    if (!!this.options.path && !fs.existsSync(path.join(process.cwd(), this.options.path))) {
-      throw messages.createError('directoryDoesNotExist', [this.options.path]);
-    }
-
-    const request = await this.createPackageVersionCreateRequestFromOptions(versionNumberString);
+    const request = await this.createPackageVersionCreateRequestFromOptions();
     const createResult = await this.connection.tooling.create('Package2VersionCreateRequest', request);
     if (!createResult.success) {
       const errStr = createResult.errors?.join(', ') ?? createResult.errors;
@@ -600,18 +579,8 @@ export class PackageVersionCreate {
         errStr.toString(),
       ]);
     }
-    // let pollInterval = Duration.seconds(pkgUtils.POLL_INTERVAL_SECONDS);
-    //  let maxRetries = 0;
 
-    if (this.options.wait?.milliseconds > 0) {
-      if (this.options.skipvalidation === true) {
-        //  pollInterval = Duration.seconds(POLL_INTERVAL_WITHOUT_VALIDATION_SECONDS);
-      }
-      // maxRetries = (60 / pollInterval.seconds) * options.wait.seconds;
-    }
-    // await this.resolveOrgDependentPollingTime(packageId, options, pollInterval, maxRetries);
-
-    return (await this.listRequestById(createResult.id, this.connection))[0];
+    return (await byId(createResult.id, this.connection))[0];
   }
 
   private async resolveUserLicenses(includeUserLicenses: boolean): Promise<PackageProfileApi> {
