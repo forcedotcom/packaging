@@ -292,7 +292,6 @@ export type InstalledPackages = {
 };
 
 export type CodeCoverage = null | {
-  [key: string]: unknown;
   apexCodeCoveragePercentage: number;
 };
 
