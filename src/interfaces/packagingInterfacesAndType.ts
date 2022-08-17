@@ -290,3 +290,12 @@ export type InstalledPackages = {
   SubscriberPackage?: PackagingSObjects.SubscriberPackage;
   SubscriberPackageVersion?: Omit<MetadataPackageVersion, 'MetadataPackageId' | 'ReleaseState' | 'IsDeprecated'>;
 };
+
+export type CodeCoveragePercentages = null | {
+  codeCoveragePercentages: [
+    {
+      className: string;
+      codeCoveragePercentage: number;
+    }
+  ];
+};
