@@ -11,9 +11,6 @@
 module.exports = {
   extends: ['eslint-config-salesforce-typescript', 'eslint-config-salesforce-license'],
   rules: {
-    '@typescript-eslint/restrict-template-expressions': 'off',
-    '@typescript-eslint/explicit-function-return-type': 'off',
-    'jsdoc/check-indentation': 'off',
     '@typescript-eslint/prefer-regexp-exec': 'off',
     '@typescript-eslint/no-use-before-define': 'off',
     '@typescript-eslint/camelcase': 'off',

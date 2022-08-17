@@ -16,6 +16,7 @@ import {
   NamedPackageDir,
   Org,
   ScratchOrgInfo,
+  SfdcUrl,
   SfProject,
 } from '@salesforce/core';
 import { ComponentSetBuilder, ConvertResult, MetadataConverter } from '@salesforce/source-deploy-retrieve';
@@ -54,6 +55,7 @@ export class PackageVersionCreate {
   private packageObject: NamedPackageDir;
   private packageType: PackageType;
   private packageId: string;
+  private packageAlias: string;
 
   public constructor(private options: PackageVersionCreateOptions) {
     this.connection = this.options.connection;
@@ -142,12 +144,12 @@ export class PackageVersionCreate {
   }
 
   /**
-   *  A dependency in the workspace config file may be specified using either a subscriber package version id (04t)
-   *  or a package Id (0Ho) + a version number.  Additionally, a build number may be the actual build number, or a
-   *  keyword: LATEST or RELEASED (meaning the latest or released build number for a given major.minor.patch).
+   * A dependency in the workspace config file may be specified using either a subscriber package version id (04t)
+   * or a package Id (0Ho) + a version number.  Additionally, a build number may be the actual build number, or a
+   * keyword: LATEST or RELEASED (meaning the latest or released build number for a given major.minor.patch).
    *
-   *  This method resolves a package Id + version number to a subscriber package version id (04t)
-   *  and adds it as a SubscriberPackageVersionId parameter in the dependency object.
+   * This method resolves a package Id + version number to a subscriber package version id (04t)
+   * and adds it as a SubscriberPackageVersionId parameter in the dependency object.
    */
   private async retrieveSubscriberPackageVersionId(dependency: PackageDescriptorJson): Promise<PackageDescriptorJson> {
     await this.validateDependencyValues(dependency);
@@ -174,7 +176,7 @@ export class PackageVersionCreate {
       buildNumber === BuildNumberToken.RELEASED_BUILD_NUMBER_TOKEN
         ? 'AND IsReleased = true'
         : `AND Branch = ${branchString}`;
-    const query = `SELECT SubscriberPackageVersionId FROM Package2Version WHERE Package2Id = '${dependency.packageId}' AND MajorVersion = ${versionNumber[0]} AND MinorVersion = ${versionNumber[1]} AND PatchVersion = ${versionNumber[2]} AND BuildNumber = ${resolvedBuildNumber} ${branchOrReleasedCondition}`;
+    const query = `SELECT SubscriberPackageVersionId FROM Package2Version WHERE Package2Id = '${dependency.packageId}' AND MajorVersion = ${versionNumber.major} AND MinorVersion = ${versionNumber.minor} AND PatchVersion = ${versionNumber.patch} AND BuildNumber = ${resolvedBuildNumber} ${branchOrReleasedCondition}`;
     const pkgVerQueryResult = await this.connection.tooling.query<PackagingSObjects.Package2Version>(query);
     const subRecords = pkgVerQueryResult.records;
     if (!subRecords || subRecords.length !== 1) {
@@ -244,6 +246,7 @@ export class PackageVersionCreate {
         throw messages.createError('noReleaseVersionFoundForBranch', [packageId, branch, versionNumber.toString()]);
       }
     }
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     return `${results.records[0].expr0}`;
   }
 
@@ -420,7 +423,7 @@ export class PackageVersionCreate {
     fs.mkdirSync(packageVersProfileFolder, { recursive: true });
 
     // Apply any necessary exclusions to typesArr.
-    let typesArr = packageJson.Package.types;
+    let typesArr = packageJson.Package.types as Array<{ name: string[]; members: string[] }>;
     this.apiVersionFromPackageXml = packageJson.Package.version;
 
     const hasUnpackagedMetadata = await this.resolveUnpackagedMetadata(
@@ -443,7 +446,7 @@ export class PackageVersionCreate {
     const excludedProfiles = this.options.profileApi.generateProfiles(
       packageVersProfileFolder,
       {
-        Package: { types: typesArr },
+        Package: typesArr,
       },
       [clientSideInfo.get('UnpackagedMetadataPath')]
     );
@@ -491,7 +494,7 @@ export class PackageVersionCreate {
     await zipDir(packageVersBlobDirectory, packageVersBlobZipFile);
   }
 
-  private resolveApexTestPermissions(packageDescriptorJson: PackageDescriptorJson) {
+  private resolveApexTestPermissions(packageDescriptorJson: PackageDescriptorJson): void {
     // Process permissionSet and permissionSetLicenses that should be enabled when running Apex tests
     // This only applies if code coverage is enabled
     if (this.options.codecoverage) {
@@ -556,9 +559,9 @@ export class PackageVersionCreate {
     }
 
     // from the packageDirectories in sfdx-project.json, find the correct package entry either by finding a matching package (name) or path
-    const resolvedPackage = getPackageAliasesFromId(this.options.packageId, this.options.project).join();
+    this.packageAlias = getPackageAliasesFromId(this.options.packageId, this.options.project).join();
     // set on the class so we can access them in other methods without redoing this logic
-    this.packageObject = this.project.getPackageDirectories().find((pkg) => pkg.package === resolvedPackage);
+    this.packageObject = this.project.getPackageDirectories().find((pkg) => pkg.package === this.packageAlias);
     this.options.profileApi = await this.resolveUserLicenses(this.packageObject.includeProfileUserLicenses);
     this.packageId = getPackageIdFromAlias(this.packageObject.package, this.project);
 
@@ -577,8 +580,33 @@ export class PackageVersionCreate {
         errStr.toString(),
       ]);
     }
+    const result = (await byId(createResult.id, this.connection))[0];
 
-    return (await byId(createResult.id, this.connection))[0];
+    if (!process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE) {
+      // get the newly created package version from the server
+      const versionResult = (
+        await this.connection.tooling.query<{
+          Branch: string;
+          MajorVersion: string;
+          MinorVersion: string;
+          PatchVersion: string;
+          BuildNumber: string;
+        }>(
+          `SELECT Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version WHERE SubscriberPackageVersionId='${result.SubscriberPackageVersionId}'`
+        )
+      ).records[0];
+      const version = `${this.packageAlias}@${versionResult.MajorVersion ?? 0}.${versionResult.MinorVersion ?? 0}.${
+        versionResult.PatchVersion ?? 0
+      }`;
+      const build = versionResult.BuildNumber ? `-${versionResult.BuildNumber}` : '';
+      const branch = versionResult.Branch ? `-${versionResult.Branch}` : '';
+      // set packageAliases entry '<package>@<major>.<minor>.<patch>-<build>-<branch>: <result.subscriberPackageVersionId>'
+      this.project.getSfProjectJson().getContents().packageAliases[`${version}${build}${branch}`] =
+        result.SubscriberPackageVersionId;
+      await this.project.getSfProjectJson().write();
+    }
+
+    return result;
   }
 
   private async resolveUserLicenses(includeUserLicenses: boolean): Promise<PackageProfileApi> {
@@ -651,14 +679,14 @@ export class PackageVersionCreate {
     if (options.releasenotesurl) {
       packageDescriptorJson.releaseNotesUrl = options.releasenotesurl;
     }
-    if (packageDescriptorJson.releaseNotesUrl && !pkgUtils.validUrl(packageDescriptorJson.releaseNotesUrl)) {
+    if (packageDescriptorJson.releaseNotesUrl && !SfdcUrl.isValidUrl(packageDescriptorJson.releaseNotesUrl)) {
       throw messages.createError('malformedUrl', ['releaseNotesUrl', packageDescriptorJson.releaseNotesUrl]);
     }
 
     if (options.postinstallurl) {
       packageDescriptorJson.postInstallUrl = options.postinstallurl;
     }
-    if (packageDescriptorJson.postInstallUrl && !pkgUtils.validUrl(packageDescriptorJson.postInstallUrl)) {
+    if (packageDescriptorJson.postInstallUrl && !SfdcUrl.isValidUrl(packageDescriptorJson.postInstallUrl)) {
       throw messages.createError('malformedUrl', ['postInstallUrl', packageDescriptorJson.postInstallUrl]);
     }
 

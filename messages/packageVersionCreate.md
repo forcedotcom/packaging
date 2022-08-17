@@ -52,11 +52,11 @@ Failed to create request %s: %s
 
 # errorScriptsNotApplicableToUnlockedPackage
 
-We can’t create the package version. This parameter is available only for second-generation managed packages. Create the package version without the postinstallscript or uninstallscript parameters.,
+We can’t create the package version. This parameter is available only for second-generation managed packages. Create the package version without the postinstallscript or uninstallscript parameters.
 
 # errorAncestorNotApplicableToUnlockedPackage
 
-Can’t create package version. Specifying an ancestor is available only for second-generation managed packages. Remove the ancestorId or ancestorVersion from your sfdx-project.json file, and then create the package version again.,
+Can’t create package version. Specifying an ancestor is available only for second-generation managed packages. Remove the ancestorId or ancestorVersion from your sfdx-project.json file, and then create the package version again.
 
 # defaultVersionName
 

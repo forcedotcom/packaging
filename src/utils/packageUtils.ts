@@ -96,7 +96,7 @@ export function validateId(idObj: Many<IdRegistryValue>, value: string): void {
     ]);
   }
 }
-export function validateIdNoThrow(idObj: Many<IdRegistryValue>, value) {
+export function validateIdNoThrow(idObj: Many<IdRegistryValue>, value): IdRegistryValue | false {
   if (!value || (value.length !== 15 && value.length !== 18)) {
     return false;
   }
@@ -446,7 +446,7 @@ export async function queryWithInConditionChunking<T = Record<string, unknown>>(
   items: string[],
   replaceToken: string,
   connection: Connection
-) {
+): Promise<T[]> {
   let records: T[] = [];
   if (!query || !items || !replaceToken) {
     return records;
@@ -477,7 +477,7 @@ export async function queryWithInConditionChunking<T = Record<string, unknown>>(
   return records;
 }
 /**
- *   Returns the number of items that can be included in a quoted comma-separated string (e.g., "'item1','item2'") not exceeding maxLength
+ * Returns the number of items that can be included in a quoted comma-separated string (e.g., "'item1','item2'") not exceeding maxLength
  */
 // TODO: this function cannot handle a single item that is longer than maxLength - what to do, since this could be the root cause of an infinite loop?
 export function getInClauseItemsCount(items: string[], startIndex: number, maxLength: number): number {
@@ -596,7 +596,7 @@ export function concatVersion(
   minor: string | number,
   patch: string | number,
   build: string | number
-) {
+): string {
   return [major, minor, patch, build].map((part) => (part ? `${part}` : '0')).join('.');
 }
 
@@ -743,6 +743,7 @@ export async function pollForStatusWithInterval(
             // for multiple errors, display one per line prefixed with (x)
             if (results[0].Error.length > 1) {
               results[0].Error.forEach((error) => {
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 errors.push(`(${errors.length + 1}) ${error}`);
               });
               errors.unshift(messages.getMessage('versionCreateFailedWithMultipleErrors'));
@@ -761,7 +762,7 @@ export async function pollForStatusWithInterval(
           remainingTime,
         } as PackageVersionCreateEventData);
         logger.info(
-          `Request in progress. Sleeping ${interval} seconds. Will wait a total of ${
+          `Request in progress. Sleeping ${interval.seconds} seconds. Will wait a total of ${
             remainingTime.seconds
           } more seconds before timing out. Current Status='${convertCamelCaseStringToSentence(results[0]?.Status)}'`
         );
@@ -829,8 +830,8 @@ function _isStatusEqualTo(results: PackageVersionCreateRequestResult[], statuses
 }
 
 export function formatDate(date: Date): string {
-  const pad = (num) => {
-    return num < 10 ? `0${num}` : num;
+  const pad = (num: number): string => {
+    return num < 10 ? `0${num}` : `${num}`;
   };
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(
     date.getMinutes()
