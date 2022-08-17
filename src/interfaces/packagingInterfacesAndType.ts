@@ -297,7 +297,7 @@ export type CodeCoverage = null | {
 };
 
 export type CodeCoveragePercentages = null | {
-  codeCoveragePercentages: [
+  codeCovPercentages: [
     {
       className: string;
       codeCoveragePercentage: number;

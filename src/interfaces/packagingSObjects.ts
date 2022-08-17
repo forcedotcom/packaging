@@ -124,12 +124,14 @@ export namespace PackagingSObjects {
     label: string;
     value: string;
   };
+
   export type SubscriberPackageProfiles = {
     destinationProfiles: SubscriberPackageDestinationProfile[];
     sourceProfiles: SubscriberPackageSourceProfile[];
   };
+
   export type SubscriberPackageDependencies = {
-    ids: string[];
+    ids: Array<{ subscriberPackageVersionId: string }>;
   };
 
   export type SubscriberPackageRemoteSiteSetting = {
