@@ -50,6 +50,7 @@ export namespace PackagingSObjects {
     IsDeprecated: boolean;
     IsPasswordProtected: boolean;
     CodeCoverage: unknown;
+    CodeCoveragePercentages: unknown;
     HasPassedCodeCoverageCheck: boolean;
     InstallKey: string;
     IsReleased: boolean;
