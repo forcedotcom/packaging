@@ -291,6 +291,11 @@ export type InstalledPackages = {
   SubscriberPackageVersion?: Omit<MetadataPackageVersion, 'MetadataPackageId' | 'ReleaseState' | 'IsDeprecated'>;
 };
 
+export type CodeCoverage = null | {
+  [key: string]: unknown;
+  apexCodeCoveragePercentage: number;
+};
+
 export type CodeCoveragePercentages = null | {
   codeCoveragePercentages: [
     {

@@ -5,7 +5,7 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import { Nullable } from '@salesforce/ts-types';
-import { CodeCoveragePercentages, PackageType } from './packagingInterfacesAndType';
+import { CodeCoverage, CodeCoveragePercentages, PackageType } from './packagingInterfacesAndType';
 
 export namespace PackagingSObjects {
   export type Package2 = {
@@ -49,7 +49,7 @@ export namespace PackagingSObjects {
     BuildNumber: number;
     IsDeprecated: boolean;
     IsPasswordProtected: boolean;
-    CodeCoverage: null | number;
+    CodeCoverage: CodeCoverage;
     CodeCoveragePercentages: CodeCoveragePercentages;
     HasPassedCodeCoverageCheck: boolean;
     InstallKey: string;
