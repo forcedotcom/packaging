@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.18](https://github.com/forcedotcom/packaging/compare/v0.0.17...v0.0.18) (2022-08-17)
+
+### Bug Fixes
+
+- add missing field in package2version ([1f609e9](https://github.com/forcedotcom/packaging/commit/1f609e95a9fd5775feaeab77a794c8039e55b48b))
+- add missing field in package2version ([3a21cbc](https://github.com/forcedotcom/packaging/commit/3a21cbcbdfa786db901703a4bdf2ff84d6bb7902))
+
 ### [0.0.17](https://github.com/forcedotcom/packaging/compare/v0.0.16...v0.0.17) (2022-08-10)
 
 ### Bug Fixes
