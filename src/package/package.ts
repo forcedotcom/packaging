@@ -6,7 +6,7 @@
  */
 import { Messages, sfdc } from '@salesforce/core';
 import { AsyncCreatable, Duration } from '@salesforce/kit';
-import { QueryResult } from 'jsforce';
+import { QueryResult, SaveResult } from 'jsforce';
 import { Optional } from '@salesforce/ts-types';
 import { IPackage, PackageOptions, PackagingSObjects } from '../interfaces';
 import {
@@ -64,6 +64,10 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
 
   public convert(): Promise<void> {
     return Promise.resolve(undefined);
+  }
+
+  public async promote(id: string): Promise<SaveResult> {
+    return await this.options.connection.tooling.update('Package2Version', { IsReleased: true, Id: id });
   }
 
   public create(): Promise<void> {
