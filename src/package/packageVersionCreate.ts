@@ -22,7 +22,6 @@ import { ComponentSetBuilder, ConvertResult, MetadataConverter } from '@salesfor
 import { uniqid } from '@salesforce/core/lib/testSetup';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import * as xml2js from 'xml2js';
-import { Duration } from '@salesforce/kit';
 import { PackageDirDependency } from '@salesforce/core/lib/sfProject';
 import * as pkgUtils from '../utils/packageUtils';
 import { consts } from '../constants';
@@ -43,8 +42,6 @@ const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
 const logger = Logger.childFromRoot('packageVersionCreate');
 
 const DESCRIPTOR_FILE = 'package2-descriptor.json';
-
-const POLL_INTERVAL_WITHOUT_VALIDATION_SECONDS = 5;
 
 type PackageDescriptorJson = Partial<NamedPackageDir> &
   Partial<{
@@ -811,21 +808,6 @@ export class PackageVersionCreate {
         errStr.toString(),
       ]);
     }
-    let pollInterval = Duration.seconds(pkgUtils.POLL_INTERVAL_SECONDS);
-    let maxRetries = 0;
-
-    if (options.wait?.milliseconds > 0) {
-      if (options.skipvalidation === true) {
-        pollInterval = Duration.seconds(POLL_INTERVAL_WITHOUT_VALIDATION_SECONDS);
-      }
-      maxRetries = (60 / pollInterval.seconds) * options.wait.seconds;
-    }
-    [pollInterval, maxRetries] = await this.resolveOrgDependentPollingTime(
-      resolvedPackageId,
-      options,
-      pollInterval,
-      maxRetries
-    );
 
     return (await this.listRequestById(createResult.id, this.connection))[0];
   }
@@ -936,32 +918,6 @@ export class PackageVersionCreate {
       includeUserLicenses: includeProfileUserLicenses as boolean,
       generateProfileInformation: shouldGenerateProfileInformation,
     });
-  }
-
-  private async resolveOrgDependentPollingTime(
-    resolvedPackageId: string,
-    options: PackageVersionCreateOptions,
-    pollInterval: Duration,
-    maxRetries: number
-  ): Promise<[Duration, number]> {
-    let pi = pollInterval;
-    let mr = maxRetries;
-    // If we are polling check to see if the package is Org-Dependent, if so, update the poll time
-    if (options.wait) {
-      const query = `SELECT IsOrgDependent FROM Package2 WHERE Id = '${resolvedPackageId}'`;
-      try {
-        const pkgQueryResult = await this.connection.singleRecordQuery<PackagingSObjects.Package2>(query, {
-          tooling: true,
-        });
-        if (pkgQueryResult.IsOrgDependent) {
-          pi = Duration.seconds(POLL_INTERVAL_WITHOUT_VALIDATION_SECONDS);
-          mr = (60 / pollInterval.seconds) * options.wait.seconds;
-        }
-      } catch {
-        // do nothing
-      }
-    }
-    return [pi, mr];
   }
 
   private async validateFlagsForPackageType(packageId: string, options: PackageVersionCreateOptions): Promise<void> {
