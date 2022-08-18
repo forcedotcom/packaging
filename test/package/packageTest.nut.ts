@@ -160,11 +160,10 @@ describe('Integration tests for #salesforce/packaging library', function () {
       Lifecycle.getInstance().on('success', async (results: PackageVersionCreateReportProgress) => {
         expect(results.Status).to.equal(PackagingSObjects.Package2VersionStatus.success);
       });
-      const result = await pv.waitForCreateVersion(
-        pkgCreateVersionRequestId,
-        Duration.minutes(10),
-        Duration.seconds(30)
-      );
+      const result = await pv.waitForCreateVersion(pkgCreateVersionRequestId, {
+        frequency: Duration.seconds(30),
+        timeout: Duration.minutes(10),
+      });
       expect(result).to.include.keys(VERSION_CREATE_RESPONSE_KEYS);
 
       subscriberPkgVersionId = result.SubscriberPackageVersionId;

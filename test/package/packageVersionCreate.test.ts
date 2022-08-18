@@ -16,6 +16,7 @@ import { PackageVersionCreate } from '../../src/package/packageVersionCreate';
 describe('Package Version Create', () => {
   const $$ = instantiateContext();
   const testOrg = new MockTestOrgData();
+  const packageId = '0Ho3i000000Gmj6XXX';
   let connection: Connection;
   let packageTypeQuery: sinon.SinonStub;
   let packageCreateStub: sinon.SinonStub;
@@ -36,7 +37,7 @@ describe('Package Version Create', () => {
         },
       ],
       packageAliases: {
-        TEST: '0Ho3i000000Gmj6XXX',
+        TEST: packageId,
       },
     });
     await fs.promises.mkdir(path.join(project.getPath(), 'force-app'));
@@ -67,7 +68,7 @@ describe('Package Version Create', () => {
       packageDirectories: [],
       packageAliases: {},
     });
-    const pvc = new PackageVersionCreate({ connection, project, packageId: '0Ho3i000000Gmj6XXX' });
+    const pvc = new PackageVersionCreate({ connection, project, packageId });
 
     try {
       await pvc.createPackageVersion();
@@ -79,7 +80,7 @@ describe('Package Version Create', () => {
   });
 
   it('should create the package version create request', async () => {
-    const pvc = new PackageVersionCreate({ connection, project, packageId: '0Ho3i000000Gmj6XXX' });
+    const pvc = new PackageVersionCreate({ connection, project, packageId });
     const result = await pvc.createPackageVersion();
     expect(result).to.have.all.keys(
       'Branch',
@@ -97,7 +98,7 @@ describe('Package Version Create', () => {
   });
 
   it('should create the package version create request with codecoverage=true', async () => {
-    const pvc = new PackageVersionCreate({ connection, project, codecoverage: true, packageId: '0Ho3i000000Gmj6XXX' });
+    const pvc = new PackageVersionCreate({ connection, project, codecoverage: true, packageId });
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].CalculateCodeCoverage).to.equal(true);
     expect(result).to.have.all.keys(
@@ -116,7 +117,7 @@ describe('Package Version Create', () => {
   });
 
   it('should create the package version create request with codecoverage=false', async () => {
-    const pvc = new PackageVersionCreate({ connection, project, codecoverage: false, packageId: '0Ho3i000000Gmj6XXX' });
+    const pvc = new PackageVersionCreate({ connection, project, codecoverage: false, packageId });
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].CalculateCodeCoverage).to.equal(false);
     expect(result).to.have.all.keys(
@@ -139,7 +140,7 @@ describe('Package Version Create', () => {
       connection,
       project,
       tag: 'DancingBears',
-      packageId: '0Ho3i000000Gmj6XXX',
+      packageId,
     });
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].Tag).to.equal('DancingBears');
@@ -163,7 +164,7 @@ describe('Package Version Create', () => {
       connection,
       project,
       skipvalidation: true,
-      packageId: '0Ho3i000000Gmj6XXX',
+      packageId,
     });
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].SkipValidation).to.equal(true);
@@ -187,7 +188,7 @@ describe('Package Version Create', () => {
       connection,
       project,
       installationkey: 'guessMyPassword',
-      packageId: '0Ho3i000000Gmj6XXX',
+      packageId,
     });
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].InstallKey).to.equal('guessMyPassword');
@@ -208,7 +209,7 @@ describe('Package Version Create', () => {
   });
 
   it('should create the package version create request with branch', async () => {
-    const pvc = new PackageVersionCreate({ connection, project, branch: 'main', packageId: '0Ho3i000000Gmj6XXX' });
+    const pvc = new PackageVersionCreate({ connection, project, branch: 'main', packageId });
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].Branch).to.equal('main');
     expect(result).to.have.all.keys(
@@ -236,7 +237,7 @@ describe('Package Version Create', () => {
       connection,
       project,
       postinstallscript: 'myScript.sh',
-      packageId: '0Ho3i000000Gmj6XXX',
+      packageId,
     });
     try {
       await pvc.createPackageVersion();
@@ -251,7 +252,7 @@ describe('Package Version Create', () => {
       connection,
       project,
       uninstallscript: 'myScript.sh',
-      packageId: '0Ho3i000000Gmj6XXX',
+      packageId,
     });
     try {
       await pvc.createPackageVersion();
@@ -286,7 +287,7 @@ describe('Package Version Create', () => {
     const pvc = new PackageVersionCreate({
       connection,
       project,
-      packageId: '0Ho3i000000Gmj6XXX',
+      packageId,
     });
     try {
       await pvc.createPackageVersion();
@@ -327,11 +328,10 @@ describe('Package Version Create', () => {
       connection,
       project,
       validateschema: true,
-      packageId: '0Ho3i000000Gmj6XXX',
+      packageId,
     });
     const result = await pvc.createPackageVersion();
-    // it's 2 from the first validate, and then there's a hidden validate in write when writing back to sfdx-project.json
-    expect(validationSpy.callCount).to.equal(2);
+    expect(validationSpy.callCount).to.equal(1);
     expect(result).to.have.all.keys(
       'Branch',
       'CreatedBy',

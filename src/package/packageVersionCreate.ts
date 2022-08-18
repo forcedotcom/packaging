@@ -30,14 +30,14 @@ import * as pkgUtils from '../utils/packageUtils';
 import { BuildNumberToken, VersionNumber } from '../utils/versionNumber';
 import {
   MDFolderForArtifactOptions,
-  PackageVersionCreateRequestResult,
-  PackageVersionCreateOptions,
-  PackagingSObjects,
   PackageDescriptorJson,
-  PackageVersionCreateRequest,
   PackageType,
+  PackageVersionCreateOptions,
+  PackageVersionCreateRequest,
+  PackageVersionCreateRequestResult,
+  PackagingSObjects,
 } from '../interfaces';
-import { getPackageAliasesFromId, getPackageIdFromAlias, copyDir, zipDir } from '../utils';
+import { copyDir, getPackageAliasesFromId, getPackageIdFromAlias, zipDir } from '../utils';
 import { PackageProfileApi } from './packageProfileApi';
 import { byId } from './packageVersionCreateRequest';
 
@@ -580,33 +580,7 @@ export class PackageVersionCreate {
         errStr.toString(),
       ]);
     }
-    const result = (await byId(createResult.id, this.connection))[0];
-
-    if (!process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE) {
-      // get the newly created package version from the server
-      const versionResult = (
-        await this.connection.tooling.query<{
-          Branch: string;
-          MajorVersion: string;
-          MinorVersion: string;
-          PatchVersion: string;
-          BuildNumber: string;
-        }>(
-          `SELECT Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version WHERE SubscriberPackageVersionId='${result.SubscriberPackageVersionId}'`
-        )
-      ).records[0];
-      const version = `${this.packageAlias}@${versionResult.MajorVersion ?? 0}.${versionResult.MinorVersion ?? 0}.${
-        versionResult.PatchVersion ?? 0
-      }`;
-      const build = versionResult.BuildNumber ? `-${versionResult.BuildNumber}` : '';
-      const branch = versionResult.Branch ? `-${versionResult.Branch}` : '';
-      // set packageAliases entry '<package>@<major>.<minor>.<patch>-<build>-<branch>: <result.subscriberPackageVersionId>'
-      this.project.getSfProjectJson().getContents().packageAliases[`${version}${build}${branch}`] =
-        result.SubscriberPackageVersionId;
-      await this.project.getSfProjectJson().write();
-    }
-
-    return result;
+    return (await byId(createResult.id, this.connection))[0];
   }
 
   private async resolveUserLicenses(includeUserLicenses: boolean): Promise<PackageProfileApi> {

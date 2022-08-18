@@ -16,6 +16,7 @@ import {
 } from '../interfaces';
 import * as pkgUtils from '../utils/packageUtils';
 import { combineSaveErrors } from '../utils';
+import { getPackageAliasesFromId } from '../utils/packageUtils';
 import { PackageVersionCreate } from './packageVersionCreate';
 import { getPackageVersionReport } from './packageVersionReport';
 import { getCreatePackageVersionCreateRequestReport } from './packageVersionCreateRequestReport';
@@ -39,11 +40,18 @@ export class PackageVersion {
    * Creates a new package version.
    *
    * @param options
+   * @param polling frequency and timeout Durations to be used in polling
    */
-  public async create(options: PackageVersionCreateOptions): Promise<Partial<PackageVersionCreateRequestResult>> {
+  public async create(
+    options: PackageVersionCreateOptions,
+    polling: { frequency: Duration; timeout: Duration } = {
+      frequency: Duration.seconds(0),
+      timeout: Duration.seconds(0),
+    }
+  ): Promise<Partial<PackageVersionCreateRequestResult>> {
     const pvc = new PackageVersionCreate({ ...options, ...this.options });
     const createResult = await pvc.createPackageVersion();
-    return await this.waitForCreateVersion(createResult.Id).catch((err: Error) => {
+    return await this.waitForCreateVersion(createResult.Id, polling).catch((err: Error) => {
       // TODO
       // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
       throw pkgUtils.applyErrorAction(err);
@@ -111,19 +119,16 @@ export class PackageVersion {
    * progress and current status. Events also carry a payload of type PackageVersionCreateRequestResult.
    *
    * @param createPackageVersionRequestId
-   * @param wait - how long to wait for the package version to be created
-   * @param interval - frequency of checking for the package version to be created
-   */
+   * @param polling frequency and timeout Durations to be used in polling
+   * */
   public async waitForCreateVersion(
     createPackageVersionRequestId: string,
-    wait: Duration = Duration.milliseconds(0),
-    interval: Duration = Duration.milliseconds(0)
+    polling: { frequency: Duration; timeout: Duration }
   ): Promise<PackageVersionCreateRequestResult> {
-    if (wait?.milliseconds <= 0) {
-      const result = await this.getCreateVersionReport(createPackageVersionRequestId);
-      return result;
+    if (polling.timeout?.milliseconds <= 0) {
+      return await this.getCreateVersionReport(createPackageVersionRequestId);
     }
-    let remainingWaitTime: Duration = wait;
+    let remainingWaitTime: Duration = polling.timeout;
     let report: PackageVersionCreateRequestResult;
     const pollingClient = await PollingClient.create({
       poll: async (): Promise<StatusResult> => {
@@ -131,7 +136,7 @@ export class PackageVersion {
         switch (report.Status) {
           case 'Queued':
             await Lifecycle.getInstance().emit('enqueued', { ...report, remainingWaitTime });
-            remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - interval.seconds);
+            remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
             return {
               completed: false,
               payload: report,
@@ -143,21 +148,44 @@ export class PackageVersion {
           case 'VerifyingMetadata':
           case 'FinalizingPackageVersion':
             await Lifecycle.getInstance().emit('in-progress', { ...report, remainingWaitTime });
-            remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - interval.seconds);
+            remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
             return {
               completed: false,
               payload: report,
             };
           case 'Success':
             await Lifecycle.getInstance().emit('success', report);
+            if (!process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE) {
+              // get the newly created package version from the server
+              const versionResult = (
+                await this.connection.tooling.query<{
+                  Branch: string;
+                  MajorVersion: string;
+                  MinorVersion: string;
+                  PatchVersion: string;
+                  BuildNumber: string;
+                }>(
+                  `SELECT Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version WHERE SubscriberPackageVersionId='${report.SubscriberPackageVersionId}'`
+                )
+              ).records[0];
+              const version = `${getPackageAliasesFromId(report.Package2Id, this.project).join()}@${
+                versionResult.MajorVersion ?? 0
+              }.${versionResult.MinorVersion ?? 0}.${versionResult.PatchVersion ?? 0}`;
+              const build = versionResult.BuildNumber ? `-${versionResult.BuildNumber}` : '';
+              const branch = versionResult.Branch ? `-${versionResult.Branch}` : '';
+              // set packageAliases entry '<package>@<major>.<minor>.<patch>-<build>-<branch>: <result.subscriberPackageVersionId>'
+              this.project.getSfProjectJson().getContents().packageAliases[`${version}${build}${branch}`] =
+                report.SubscriberPackageVersionId;
+              await this.project.getSfProjectJson().write();
+            }
             return { completed: true, payload: report };
           case 'Error':
             await Lifecycle.getInstance().emit('error', report);
             return { completed: true, payload: report };
         }
       },
-      frequency: interval,
-      timeout: wait,
+      frequency: polling.frequency,
+      timeout: polling.timeout,
     });
     try {
       return pollingClient.subscribe<PackageVersionCreateRequestResult>();
