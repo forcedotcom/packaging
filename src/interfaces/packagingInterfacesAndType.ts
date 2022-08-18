@@ -315,3 +315,17 @@ export type InstalledPackages = {
   SubscriberPackage?: PackagingSObjects.SubscriberPackage;
   SubscriberPackageVersion?: Omit<MetadataPackageVersion, 'MetadataPackageId' | 'ReleaseState' | 'IsDeprecated'>;
 };
+
+export type CodeCoverage = null | {
+  [key: string]: unknown;
+  apexCodeCoveragePercentage: number;
+};
+
+export type CodeCoveragePercentages = null | {
+  codeCovPercentages: [
+    {
+      className: string;
+      codeCoveragePercentage: number;
+    }
+  ];
+};
