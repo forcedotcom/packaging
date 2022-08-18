@@ -97,6 +97,11 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
     return Promise.resolve(undefined);
   }
 
+  public async getPackage(packageId: string): Promise<PackagingSObjects.Package2> {
+    const package2 = await this.options.connection.tooling.sobject('Package2').retrieve(packageId);
+    return package2 as unknown as PackagingSObjects.Package2;
+  }
+
   public async getExternalSites(
     subscriberPackageVersionId: string,
     installationKey?: string
