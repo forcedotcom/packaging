@@ -126,6 +126,7 @@ describe('Integration tests for #salesforce/packaging library', function () {
       const result = await pv.create({
         package: pkgId,
         tag: TAG,
+        codecoverage: true,
         branch: BRANCH,
         installationkey: INSTALLATION_KEY,
         installationkeybypass: true,
@@ -229,6 +230,12 @@ describe('Integration tests for #salesforce/packaging library', function () {
       );
 
       expect(result.IsReleased, 'Expected IsReleased to be false').to.be.false;
+    });
+
+    it('will promote the package version', async () => {
+      const pvc = new PackageVersion({ connection: devHubOrg.getConnection(), project });
+      const result = await pvc.promote(subscriberPkgVersionId);
+      expect(result).to.have.all.keys('id', 'success', 'errors');
     });
   });
 
