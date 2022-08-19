@@ -350,9 +350,12 @@ export async function getSubscriberPackageVersionId(versionId: string, connectio
  * @param connection For tooling query
  */
 // eslint-disable-next-line @typescript-eslint/require-await
-export async function getContainerOptions(packageIds: string[], connection: Connection): Promise<Map<string, string>> {
+export async function getContainerOptions(
+  packageIds: string[],
+  connection: Connection
+): Promise<Map<string, PackageType>> {
   if (!packageIds || packageIds.length === 0) {
-    return new Map<string, string>();
+    return new Map<string, PackageType>();
   }
   const query = "SELECT Id, ContainerOptions FROM Package2 WHERE Id IN ('%IDS%')";
 
@@ -366,7 +369,7 @@ export async function getContainerOptions(packageIds: string[], connection: Conn
   if (records && records.length > 0) {
     return new Map(records.map((record) => [record.Id, record.ContainerOptions]));
   }
-  return new Map<string, string>();
+  return new Map<string, PackageType>();
 }
 /**
  * Return the Package2Version.HasMetadataRemoved field value for the given Id (05i)
@@ -719,7 +722,7 @@ export async function pollForStatusWithInterval(
                 const record = pkgQueryResult.records[0];
                 return `${record.MajorVersion}.${record.MinorVersion}.${record.PatchVersion}-${record.BuildNumber}`;
               });
-            const newConfig = await _generatePackageAliasEntry(
+            const newConfig = await generatePackageAliasEntry(
               connection,
               withProject,
               results[0].SubscriberPackageVersionId,
@@ -730,7 +733,7 @@ export async function pollForStatusWithInterval(
             withProject.getSfProjectJson().set('packageAliases', newConfig);
             await withProject.getSfProjectJson().write();
           }
-          Lifecycle.getInstance().emit(Package2VersionStatus.success, {
+          await Lifecycle.getInstance().emit(Package2VersionStatus.success, {
             id,
             packageVersionCreateRequestResult: results[0],
             projectUpdated,
@@ -750,12 +753,12 @@ export async function pollForStatusWithInterval(
             }
             status = errors.length !== 0 ? errors.join('\n') : results[0].Error.join('\n');
           }
-          Lifecycle.getInstance().emit(Package2VersionStatus.error, { id, status });
+          await Lifecycle.getInstance().emit(Package2VersionStatus.error, { id, status });
           throw new SfError(status);
         }
       } else {
         const remainingTime = Duration.milliseconds(interval.milliseconds * remainingRetries);
-        Lifecycle.getInstance().emit(Package2VersionStatus.inProgress, {
+        await Lifecycle.getInstance().emit(Package2VersionStatus.inProgress, {
           id,
           packageVersionCreateRequestResult: results[0],
           message: '',
@@ -788,7 +791,7 @@ export async function pollForStatusWithInterval(
  * @param packageId the 0Ho id
  * @private
  */
-async function _generatePackageAliasEntry(
+export async function generatePackageAliasEntry(
   connection: Connection,
   project: SfProject,
   packageVersionId: string,
@@ -803,9 +806,8 @@ async function _generatePackageAliasEntry(
   let packageName: Optional<string>;
   if (!aliasForPackageId || aliasForPackageId.length === 0) {
     const query = `SELECT Name FROM Package2 WHERE Id = '${packageId}'`;
-    packageName = await connection.tooling
-      .query<PackagingSObjects.Package2>(query)
-      .then((pkgQueryResult) => pkgQueryResult.records[0]?.Name);
+    const package2 = await connection.singleRecordQuery<PackagingSObjects.Package2>(query, { tooling: true });
+    packageName = package2.Name;
   } else {
     packageName = aliasForPackageId[0];
   }

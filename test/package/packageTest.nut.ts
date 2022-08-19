@@ -55,7 +55,7 @@ const SUB_ORG_ALIAS = 'pk2TargetOrg';
 const WAIT_INTERVAL_MS = 8000;
 const INSTALLATION_KEY = '123456';
 
-describe('Integration tests for #salesforce/packaging library', function () {
+describe('Integration tests for @salesforce/packaging library', function () {
   let pkgId = ''; // 0Ho
   let pkgCreateVersionRequestId = ''; // 08c
   let subscriberPkgVersionId = ''; // 04t
@@ -134,6 +134,7 @@ describe('Integration tests for #salesforce/packaging library', function () {
         `\n${JSON.stringify(result, undefined, 2)}`
       );
       pkgCreateVersionRequestId = result.Id;
+      pkgId = result.Package2Id;
     });
 
     it('get package version create report', async () => {
@@ -205,10 +206,10 @@ describe('Integration tests for #salesforce/packaging library', function () {
       // eslint-disable-next-line no-console
       console.log(`projectFile: ${JSON.stringify(projectFile, undefined, 2)}`);
 
-      // expect(result.Description).to.equal(
-      //   projectFile.packageDirectories[0].versionDescription,
-      //   `'force:package:version:report' Description mismatch: expected '${projectFile.packageDirectories[0].versionDescription}', got '${result.Description}'`
-      // );
+      expect(result.Description).to.equal(
+        projectFile.packageDirectories[0].versionDescription,
+        `'force:package:version:report' Description mismatch: expected '${projectFile.packageDirectories[0].versionDescription}', got '${result.Description}'`
+      );
 
       expect(result.Name).to.equal(
         projectFile.packageDirectories[0].versionName,

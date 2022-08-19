@@ -5,7 +5,15 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { Connection, Lifecycle, Messages, PollingClient, SfProject, StatusResult } from '@salesforce/core';
+import {
+  Connection,
+  Messages,
+  SfProject,
+  PollingClient,
+  Lifecycle,
+  StatusResult,
+  NamedPackageDir,
+} from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import {
   PackageSaveResult,
@@ -13,22 +21,23 @@ import {
   PackageVersionCreateRequestResult,
   PackageVersionOptions,
   PackageVersionReportResult,
+  PackagingSObjects,
 } from '../interfaces';
 import * as pkgUtils from '../utils/packageUtils';
-import { combineSaveErrors } from '../utils';
-import { getPackageAliasesFromId } from '../utils/packageUtils';
+import {
+  combineSaveErrors,
+  generatePackageAliasEntry,
+  getConfigPackageDirectory,
+  getPackageAliasesFromId,
+} from '../utils/packageUtils';
 import { PackageVersionCreate } from './packageVersionCreate';
 import { getPackageVersionReport } from './packageVersionReport';
 import { getCreatePackageVersionCreateRequestReport } from './packageVersionCreateRequestReport';
+import { Package } from './package';
 
 Messages.importMessagesDirectory(__dirname);
-// const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
-
-// const logger = Logger.childFromRoot('packageVersionCreate');
 export class PackageVersion {
-  // @ts-ignore
   private readonly project: SfProject;
-  // @ts-ignore
   private readonly connection: Connection;
 
   public constructor(private options: PackageVersionOptions) {
@@ -154,6 +163,7 @@ export class PackageVersion {
               payload: report,
             };
           case 'Success':
+            await this.updateProjectWithPackageVersion(this.project, report);
             await Lifecycle.getInstance().emit('success', report);
             if (!process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE) {
               // get the newly created package version from the server
@@ -184,6 +194,7 @@ export class PackageVersion {
             return { completed: true, payload: report };
         }
       },
+
       frequency: polling.frequency,
       timeout: polling.timeout,
     });
@@ -239,5 +250,43 @@ export class PackageVersion {
     }
     updateResult.id = await pkgUtils.getSubscriberPackageVersionId(packageVersionId, this.connection);
     return updateResult;
+  }
+
+  private async updateProjectWithPackageVersion(
+    withProject: SfProject,
+    results: PackageVersionCreateRequestResult
+  ): Promise<void> {
+    if (withProject && !process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE) {
+      const query = `SELECT Name, Package2Id, MajorVersion, MinorVersion, PatchVersion, BuildNumber, Description, Branch FROM Package2Version WHERE Id = '${results.Package2VersionId}'`;
+      const packageVersion = await this.connection.singleRecordQuery<PackagingSObjects.Package2Version>(query, {
+        tooling: true,
+      });
+      const packageVersionVersionString = `${packageVersion.MajorVersion}.${packageVersion.MinorVersion}.${packageVersion.PatchVersion}.${packageVersion.BuildNumber}`;
+      await this.generatePackageDirectory(packageVersion, withProject, packageVersionVersionString);
+      const newConfig = await generatePackageAliasEntry(
+        this.connection,
+        withProject,
+        packageVersion.SubscriberPackageVersionId,
+        packageVersionVersionString,
+        packageVersion.Branch,
+        packageVersion.Package2Id
+      );
+      withProject.getSfProjectJson().set('packageAliases', newConfig);
+      await withProject.getSfProjectJson().write();
+    }
+  }
+
+  private async generatePackageDirectory(
+    packageVersion: PackagingSObjects.Package2Version,
+    withProject: SfProject,
+    packageVersionVersionString: string
+  ): Promise<void> {
+    const pkg = await (await Package.create({ connection: this.connection })).getPackage(packageVersion.Package2Id);
+    const pkgDir =
+      getConfigPackageDirectory(withProject.getPackageDirectories(), 'id', pkg.Id) ?? ({} as NamedPackageDir);
+    pkgDir.versionNumber = packageVersionVersionString;
+    pkgDir.versionDescription = packageVersion.Description;
+    const packageDirs = withProject.getPackageDirectories().map((pd) => (pkgDir['id'] === pd['id'] ? pkgDir : pd));
+    withProject.getSfProjectJson().set('packageDirectories', packageDirs);
   }
 }

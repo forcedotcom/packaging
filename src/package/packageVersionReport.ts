@@ -58,18 +58,17 @@ export async function getPackageVersionReport(options: {
     record.Version = [record.MajorVersion, record.MinorVersion, record.PatchVersion, record.BuildNumber].join('.');
 
     const containerOptions = await pkgUtils.getContainerOptions([record.Package2Id], options.connection);
-    const packageType = containerOptions.get(record.Package2Id);
+    record.PackageType = containerOptions.get(record.Package2Id);
 
-    let ancestorVersion = null;
+    record.AncestorVersion = null;
 
     if (record.AncestorId) {
       // lookup AncestorVersion value
       const ancestorVersionMap = await pkgUtils.getPackageVersionStrings([record.AncestorId], options.connection);
-      ancestorVersion = ancestorVersionMap.get(record.AncestorId);
+      record.AncestorVersion = ancestorVersionMap.get(record.AncestorId);
     } else {
-      // otherwise display 'N/A' if package is Unlocked Packages
-      if (packageType !== 'Managed') {
-        ancestorVersion = null;
+      if (record.PackageType !== 'Managed') {
+        record.AncestorVersion = null;
         record.AncestorId = null;
       }
     }
@@ -79,12 +78,11 @@ export async function getPackageVersionReport(options: {
         ? null
         : record.HasPassedCodeCoverageCheck;
 
-    record.Package2.IsOrgDependent = packageType === 'Managed' ? null : !!record.Package2.IsOrgDependent;
+    record.Package2.IsOrgDependent = record.PackageType === 'Managed' ? null : !!record.Package2.IsOrgDependent;
 
     // set HasMetadataRemoved to null Unlocked, otherwise use existing value
-    record.HasMetadataRemoved = packageType !== 'Managed' ? null : !!record.HasMetadataRemoved;
+    record.HasMetadataRemoved = record.PackageType !== 'Managed' ? null : !!record.HasMetadataRemoved;
 
-    record.AncestorVersion = ancestorVersion;
     return records;
   }
   return [];
