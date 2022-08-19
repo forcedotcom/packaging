@@ -19,7 +19,12 @@ export enum BuildNumberToken {
 }
 
 export class VersionNumber {
-  private constructor(public major: string, public minor: string, public patch: string, public build: string) {}
+  public constructor(
+    public major: string | number,
+    public minor: string | number,
+    public patch: string | number,
+    public build: string | number
+  ) {}
 
   public static from(versionString: string): VersionNumber {
     if (!versionString) {
@@ -52,6 +57,6 @@ export class VersionNumber {
   public isbuildKeyword(): boolean {
     return Object.values(BuildNumberToken)
       .map((v) => v.toString())
-      .includes(this.build.toLowerCase());
+      .includes(typeof this.build === 'string' && this.build.toLowerCase());
   }
 }

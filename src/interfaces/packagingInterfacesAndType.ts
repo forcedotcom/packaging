@@ -8,6 +8,7 @@
 import { Duration } from '@salesforce/kit';
 import { Connection, SfProject } from '@salesforce/core';
 import { QueryResult, SaveResult } from 'jsforce';
+import { Attributes } from 'graphology-types';
 import { PackageProfileApi } from '../package/packageProfileApi';
 import { PackagingSObjects } from './packagingSObjects';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
@@ -303,4 +304,19 @@ export type CodeCoveragePercentages = null | {
       codeCoveragePercentage: number;
     }
   ];
+};
+
+export type PackageAncestryNodeOptions = Attributes & {
+  AncestorId?: string;
+  SubscriberPackageVersionId?: string;
+  MajorVersion?: string | number;
+  MinorVersion?: string | number;
+  PatchVersion?: string | number;
+  BuildNumber?: string | number;
+};
+
+export type PackageAncestryTreeOptions = {
+  packageId: string;
+  project: SfProject;
+  connection: Connection;
 };

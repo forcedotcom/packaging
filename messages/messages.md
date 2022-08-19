@@ -255,3 +255,7 @@ Can't uninstall the package %s during uninstall request %s.
 # uninstallErrorAction
 
 Verify installed package ID and resolve errors, then try again.
+
+# idOrAliasNotFound
+
+The packageId or Alias %s was not found in sfdx-project.json.
