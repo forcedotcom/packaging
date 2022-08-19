@@ -261,6 +261,7 @@ export type PackageVersionReportResult = Partial<PackagingSObjects.Package2Versi
   SubscriberPackageVersion?: Pick<PackagingSObjects.SubscriberPackageVersion, 'Dependencies'>;
   Version: string;
   AncestorVersion?: string;
+  PackageType: PackageType;
 };
 
 export type PackageVersionCreateReportProgress = PackageVersionCreateRequestResult & {
@@ -292,7 +293,6 @@ export type InstalledPackages = {
 };
 
 export type CodeCoverage = null | {
-  [key: string]: unknown;
   apexCodeCoveragePercentage: number;
 };
 

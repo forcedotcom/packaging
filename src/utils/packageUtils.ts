@@ -27,6 +27,7 @@ import {
   PackagingSObjects,
   PackageVersionCreateRequestResult,
   PackageVersionCreateOptions,
+  PackageType,
 } from '../interfaces';
 import * as pvcr from '../package/packageVersionCreateRequest';
 import { BuildNumberToken, VersionNumber } from './versionNumber';
@@ -354,9 +355,12 @@ export async function getSubscriberPackageVersionId(versionId: string, connectio
  * @param connection For tooling query
  */
 // eslint-disable-next-line @typescript-eslint/require-await
-export async function getContainerOptions(packageIds: string[], connection: Connection): Promise<Map<string, string>> {
+export async function getContainerOptions(
+  packageIds: string[],
+  connection: Connection
+): Promise<Map<string, PackageType>> {
   if (!packageIds || packageIds.length === 0) {
-    return new Map<string, string>();
+    return new Map<string, PackageType>();
   }
   const query = "SELECT Id, ContainerOptions FROM Package2 WHERE Id IN ('%IDS%')";
 
@@ -370,7 +374,7 @@ export async function getContainerOptions(packageIds: string[], connection: Conn
   if (records && records.length > 0) {
     return new Map(records.map((record) => [record.Id, record.ContainerOptions]));
   }
-  return new Map<string, string>();
+  return new Map<string, PackageType>();
 }
 /**
  * Return the Package2Version.HasMetadataRemoved field value for the given Id (05i)

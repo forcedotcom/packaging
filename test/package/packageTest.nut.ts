@@ -55,7 +55,7 @@ const SUB_ORG_ALIAS = 'pk2TargetOrg';
 const WAIT_INTERVAL_MS = 8000;
 const INSTALLATION_KEY = '123456';
 
-describe('Integration tests for #salesforce/packaging library', function () {
+describe('Integration tests for @salesforce/packaging library', function () {
   let pkgId = ''; // 0Ho
   let pkgCreateVersionRequestId = ''; // 08c
   let subscriberPkgVersionId = ''; // 04t
