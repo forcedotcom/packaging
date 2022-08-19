@@ -164,13 +164,11 @@ export type PackageCreateOptions = {
   path: string;
 };
 
-export type PackageVersionQueryOptions = {
-  project: SfProject;
+export type PackageVersionQueryOptions = Pick<PackageVersionOptions, 'connection'> & {
   orderBy: string;
   modifiedLastDays: number;
   createdLastDays: number;
   packages: string[];
-  connection: Connection;
   verbose: boolean;
   concise: boolean;
   isReleased: boolean;

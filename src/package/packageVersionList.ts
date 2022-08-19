@@ -5,10 +5,10 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { Logger, Messages, SfProject } from '@salesforce/core';
+import { Logger, Messages } from '@salesforce/core';
 import { QueryResult } from 'jsforce';
 import { isNumber } from '@salesforce/ts-types';
-import { BY_LABEL, getPackageIdFromAlias, validateId } from '../utils';
+import { BY_LABEL, validateId } from '../utils';
 import { PackageVersionListResult, PackageVersionQueryOptions } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
@@ -35,21 +35,18 @@ const logger = Logger.childFromRoot('packageVersionList');
 export async function listPackageVersions(
   options: PackageVersionQueryOptions
 ): Promise<QueryResult<PackageVersionListResult>> {
-  return options.connection.tooling.query<PackageVersionListResult>(_constructQuery(options));
+  return options.connection.tooling.query<PackageVersionListResult>(constructQuery(options));
 }
 
-export function _constructQuery(options: PackageVersionQueryOptions): string {
+function constructQuery(options: PackageVersionQueryOptions): string {
   // construct custom WHERE clause, if applicable
-  const where = _constructWhere(options.packages, options.createdLastDays, options.modifiedLastDays, options.project);
-  if (options.isReleased) {
-    where.push('IsReleased = true');
-  }
-  return _assembleQueryParts(options.verbose === true ? VERBOSE_SELECT : DEFAULT_SELECT, where, options.orderBy);
+  const where = constructWhere(options.packages, options.createdLastDays, options.modifiedLastDays, options.isReleased);
+
+  return assembleQueryParts(options.verbose === true ? VERBOSE_SELECT : DEFAULT_SELECT, where, options.orderBy);
 }
 
-export function _assembleQueryParts(select: string, where: string[], orderBy = DEFAULT_ORDER_BY_FIELDS): string {
+export function assembleQueryParts(select: string, where: string[], orderBy?): string {
   // construct ORDER BY clause
-  // TODO: validate given fields
   const orderByPart = `ORDER BY ${orderBy ? orderBy : DEFAULT_ORDER_BY_FIELDS}`;
   const wherePart = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
 
@@ -59,41 +56,42 @@ export function _assembleQueryParts(select: string, where: string[], orderBy = D
 }
 
 // construct custom WHERE clause parts
-export function _constructWhere(
-  idsOrAliases: string[],
+export function constructWhere(
+  packageIds: string[],
   createdLastDays: number,
   lastModLastDays: number,
-  project: SfProject
+  isReleased: boolean
 ): string[] {
   const where = [];
 
   // filter on given package ids
-  if (idsOrAliases?.length > 0) {
+  if (packageIds?.length > 0) {
     // remove dups
-    const aliasesOrIds = [...new Set(idsOrAliases)];
-
-    // resolve any aliases
-    const packageIds = aliasesOrIds.map((idOrAlias) => getPackageIdFromAlias(idOrAlias, project));
+    const uniquePackageIds = [...new Set(packageIds)];
 
     // validate ids
-    packageIds.forEach((packageId) => {
+    uniquePackageIds.forEach((packageId) => {
       validateId(BY_LABEL.PACKAGE_ID, packageId);
     });
 
     // stash where part
-    where.push(`Package2Id IN ('${packageIds.join("','")}')`);
+    where.push(`Package2Id IN ('${uniquePackageIds.join("','")}')`);
   }
 
   // filter on created date, days ago: 0 for today, etc
   if (isNumber(createdLastDays)) {
-    createdLastDays = _getLastDays('createdlastdays', createdLastDays);
+    createdLastDays = validateDays('createdlastdays', createdLastDays);
     where.push(`CreatedDate = LAST_N_DAYS:${createdLastDays}`);
   }
 
   // filter on last mod date, days ago: 0 for today, etc
   if (isNumber(lastModLastDays)) {
-    lastModLastDays = _getLastDays('modifiedlastdays', lastModLastDays);
+    lastModLastDays = validateDays('modifiedlastdays', lastModLastDays);
     where.push(`LastModifiedDate = LAST_N_DAYS:${lastModLastDays}`);
+  }
+
+  if (isReleased) {
+    where.push('IsReleased = true');
   }
 
   // exclude deleted
@@ -101,11 +99,7 @@ export function _constructWhere(
   return where;
 }
 
-export function _getLastDays(paramName: string, lastDays: number): number {
-  if (isNaN(lastDays)) {
-    return 0;
-  }
-
+export function validateDays(paramName: string, lastDays: number): number {
   if (lastDays < 0) {
     throw messages.createError('invalidDaysNumber', [paramName, `${lastDays}`]);
   }

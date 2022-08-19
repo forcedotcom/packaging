@@ -7,37 +7,35 @@
 
 import {
   Connection,
-  Messages,
-  SfProject,
-  PollingClient,
   Lifecycle,
-  StatusResult,
+  Messages,
   NamedPackageDir,
+  PollingClient,
+  SfProject,
+  StatusResult,
 } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import {
-  PackageVersionCreateRequestResult,
   PackageSaveResult,
   PackageVersionCreateOptions,
+  PackageVersionCreateRequestResult,
+  PackageVersionListResult,
   PackageVersionOptions,
+  PackageVersionQueryOptions,
   PackageVersionReportResult,
   PackagingSObjects,
 } from '../interfaces';
-import * as pkgUtils from '../utils/packageUtils';
-import { combineSaveErrors } from '../utils';
-import { generatePackageAliasEntry, getConfigPackageDirectory } from '../utils/packageUtils';
+import * as pkgUtils from '../utils';
 import { PackageVersionCreate } from './packageVersionCreate';
 import { getPackageVersionReport } from './packageVersionReport';
 import { getCreatePackageVersionCreateRequestReport } from './packageVersionCreateRequestReport';
 import { Package } from './package';
+import { listPackageVersions } from './packageVersionList';
 
 Messages.importMessagesDirectory(__dirname);
-// const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
-// const logger = Logger.childFromRoot('packageVersionCreate');
+
 export class PackageVersion {
-  // @ts-ignore
   private readonly project: SfProject;
-  // @ts-ignore
   private readonly connection: Connection;
 
   public constructor(private options: PackageVersionOptions) {
@@ -53,7 +51,7 @@ export class PackageVersion {
   public async create(options: PackageVersionCreateOptions): Promise<Partial<PackageVersionCreateRequestResult>> {
     const pvc = new PackageVersionCreate({ ...options, ...this.options });
     const createResult = await pvc.createPackageVersion();
-    const waitResult = await this.waitForCreateVersion(
+    return await this.waitForCreateVersion(
       createResult.Package2Id,
       createResult.Id,
       options.wait ?? Duration.milliseconds(0),
@@ -63,7 +61,6 @@ export class PackageVersion {
       // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
       throw pkgUtils.applyErrorAction(err);
     });
-    return waitResult;
   }
 
   /**
@@ -137,8 +134,7 @@ export class PackageVersion {
     interval: Duration = Duration.milliseconds(0)
   ): Promise<PackageVersionCreateRequestResult> {
     if (wait?.milliseconds <= 0) {
-      const result = await this.getCreateVersionReport(createPackageVersionRequestId);
-      return result;
+      return await this.getCreateVersionReport(createPackageVersionRequestId);
     }
     const resolvedWait = await this.resolveOrgDependentPollingTime(packageId, wait, interval);
     let remainingWaitTime: Duration = wait;
@@ -194,8 +190,8 @@ export class PackageVersion {
     return Promise.resolve(undefined);
   }
 
-  public list(): Promise<void> {
-    return Promise.resolve(undefined);
+  public async list(options: PackageVersionQueryOptions): Promise<PackageVersionListResult[]> {
+    return (await listPackageVersions(options)).records;
   }
 
   public uninstall(): Promise<void> {
@@ -226,7 +222,7 @@ export class PackageVersion {
 
     const updateResult = await this.connection.tooling.update('Package2Version', request);
     if (!updateResult.success) {
-      throw combineSaveErrors('Package2', 'update', updateResult.errors);
+      throw pkgUtils.combineSaveErrors('Package2', 'update', updateResult.errors);
     }
     updateResult.id = await pkgUtils.getSubscriberPackageVersionId(packageVersionId, this.connection);
     return updateResult;
@@ -273,7 +269,7 @@ export class PackageVersion {
       });
       const packageVersionVersionString = `${packageVersion.MajorVersion}.${packageVersion.MinorVersion}.${packageVersion.PatchVersion}.${packageVersion.BuildNumber}`;
       await this.generatePackageDirectory(packageVersion, withProject, packageVersionVersionString);
-      const newConfig = await generatePackageAliasEntry(
+      const newConfig = await pkgUtils.generatePackageAliasEntry(
         this.connection,
         withProject,
         packageVersion.SubscriberPackageVersionId,
@@ -293,7 +289,7 @@ export class PackageVersion {
   ) {
     const pkg = await (await Package.create({ connection: this.connection })).getPackage(packageVersion.Package2Id);
     const pkgDir =
-      getConfigPackageDirectory(withProject.getPackageDirectories(), 'id', pkg.Id) ?? ({} as NamedPackageDir);
+      pkgUtils.getConfigPackageDirectory(withProject.getPackageDirectories(), 'id', pkg.Id) ?? ({} as NamedPackageDir);
     pkgDir.versionNumber = packageVersionVersionString;
     pkgDir.versionDescription = packageVersion.Description;
     const packageDirs = withProject.getPackageDirectories().map((pd) => (pkgDir['id'] === pd['id'] ? pkgDir : pd));
