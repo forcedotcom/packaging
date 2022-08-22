@@ -20,12 +20,12 @@ import {
   SfProject,
 } from '@salesforce/core';
 import { ComponentSetBuilder, ConvertResult, MetadataConverter } from '@salesforce/source-deploy-retrieve';
-import { uniqid } from '@salesforce/core/lib/testSetup';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import * as xml2js from 'xml2js';
 import { PackageDirDependency } from '@salesforce/core/lib/sfProject';
 import { getAncestorIds, ScratchOrgInfoPayload } from '@salesforce/core/lib/org/scratchOrgInfoGenerator';
 import { QueryResult } from 'jsforce';
+import { uniqid } from '../utils/uniqid';
 import * as pkgUtils from '../utils/packageUtils';
 import { BuildNumberToken, VersionNumber } from '../utils/versionNumber';
 import {
