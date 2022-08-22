@@ -207,6 +207,10 @@ The %s value [%s], doesn’t match the %s value in any packageDirectories specif
 
 The %s value, [%s], and %s value, [%s], were both found in sfdx-project.json but don’t match. If you supply both values, they must match the path and package values in one of the packageDirectories.,
 
+# errorInvalidPackageId
+
+The provided package ID '%s' is invalid.
+
 # tempFileLocation
 
 The temp files are located at: %s.
@@ -256,6 +260,6 @@ Can't uninstall the package %s during uninstall request %s.
 
 Verify installed package ID and resolve errors, then try again.
 
-# idOrAliasNotFound
+# errorNoSubscriberPackageRecord
 
-The packageId or Alias %s was not found in sfdx-project.json.
+No subscriber package was found for seed id: %s'

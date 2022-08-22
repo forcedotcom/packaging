@@ -102,10 +102,6 @@ describe('Integration tests for @salesforce/packaging library', function () {
         errorNotificationUsername: undefined,
       };
       const result = await createPackage(devHubOrg.getConnection(), project, options);
-      // const result = execCmd<{ Id: string }>(
-      //   `force:package:create --name ${pkgName} --packagetype Unlocked --path force-app --description "Don't ease, don't ease, don't ease me in." --json`,
-      //   { ensureExitCode: 0 }
-      // ).jsonOutput.result;
 
       pkgId = result.Id;
       expect(pkgId).to.be.ok;
@@ -124,8 +120,9 @@ describe('Integration tests for @salesforce/packaging library', function () {
     it('package version create', async () => {
       const pv = new PackageVersion({ project, connection: devHubOrg.getConnection() });
       const result = await pv.create({
-        package: pkgId,
+        packageId: pkgId,
         tag: TAG,
+        codecoverage: true,
         branch: BRANCH,
         installationkey: INSTALLATION_KEY,
         installationkeybypass: true,
@@ -165,12 +162,10 @@ describe('Integration tests for @salesforce/packaging library', function () {
       Lifecycle.getInstance().on('success', async (results: PackageVersionCreateReportProgress) => {
         expect(results.Status).to.equal(PackagingSObjects.Package2VersionStatus.success);
       });
-      const result = await pv.waitForCreateVersion(
-        pkgId,
-        pkgCreateVersionRequestId,
-        Duration.minutes(10),
-        Duration.seconds(30)
-      );
+      const result = await pv.waitForCreateVersion(pkgCreateVersionRequestId, {
+        frequency: Duration.seconds(30),
+        timeout: Duration.minutes(10),
+      });
       expect(result).to.include.keys(VERSION_CREATE_RESPONSE_KEYS);
 
       subscriberPkgVersionId = result.SubscriberPackageVersionId;
@@ -229,6 +224,12 @@ describe('Integration tests for @salesforce/packaging library', function () {
       );
 
       expect(result.IsReleased, 'Expected IsReleased to be false').to.be.false;
+    });
+
+    it('will promote the package version', async () => {
+      const pvc = new PackageVersion({ connection: devHubOrg.getConnection(), project });
+      const result = await pvc.promote(subscriberPkgVersionId);
+      expect(result).to.have.all.keys('id', 'success', 'errors');
     });
   });
 

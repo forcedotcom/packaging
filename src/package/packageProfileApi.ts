@@ -35,7 +35,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
     super(options);
   }
 
-  public async init() {
+  public async init(): Promise<void> {
     this.project = this.options.project;
     this.includeUserLicenses = this.options.includeUserLicenses;
     this.generateProfileInformation = this.options.generateProfileInformation;
@@ -112,11 +112,11 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
   public generateProfiles(
     destPath: string,
     manifest: {
-      Package: { types: string[] };
+      Package: Array<{ name: string[]; members: string[] }>;
     },
     excludedDirectories: string[] = []
-  ) {
-    const excludedProfiles = [];
+  ): string[] {
+    const excludedProfiles: string[] = [];
 
     const profilePaths = this.findAllProfiles(excludedDirectories);
 
@@ -136,9 +136,9 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
 
       // We need to keep track of all the members for when we package up the "OtherProfileSettings"
       let allMembers = [];
-      manifest.Package.types.forEach((element) => {
-        const name = element['name'];
-        const members = element['members'];
+      manifest.Package.forEach((element) => {
+        const name = element.name;
+        const members = element.members;
         allMembers = allMembers.concat(members);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const idx = this.nodeEntities.name.indexOf(name[0]);
@@ -223,14 +223,17 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
    * @param typesArr array of objects { name[], members[] } that represent package types JSON.
    * @param excludedDirectories Direcotires not to generate profiles for
    */
-  public filterAndGenerateProfilesForManifest(typesArr, excludedDirectories: string[] = []) {
+  public filterAndGenerateProfilesForManifest(
+    typesArr: Array<{ name: string[]; members: string[] }>,
+    excludedDirectories: string[] = []
+  ): Array<{ name: string[]; members: string[] }> {
     const profilePaths = this.findAllProfiles(excludedDirectories);
 
     // Filter all profiles
     typesArr = typesArr.filter((kvp) => kvp.name[0] !== 'Profile');
 
     if (profilePaths) {
-      const members = [];
+      const members: string[] = [];
 
       profilePaths.forEach((profilePath) => {
         // profile metadata can present in any directory in the package structure
@@ -252,7 +255,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
     return this.profiles;
   }
 
-  private copyNodes(originalDom, parentElement, childElement, members, appendToNode, profileName) {
+  private copyNodes(originalDom, parentElement, childElement, members, appendToNode, profileName): boolean {
     let nodesAdded = false;
 
     const nodes = originalDom.getElementsByTagName(parentElement);
