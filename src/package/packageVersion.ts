@@ -7,12 +7,12 @@
 
 import {
   Connection,
-  Messages,
-  SfProject,
-  PollingClient,
   Lifecycle,
-  StatusResult,
+  Messages,
   NamedPackageDir,
+  PollingClient,
+  SfProject,
+  StatusResult,
 } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import {
@@ -23,19 +23,25 @@ import {
   PackageVersionReportResult,
   PackagingSObjects,
 } from '../interfaces';
-import * as pkgUtils from '../utils/packageUtils';
 import {
+  applyErrorAction,
+  BY_LABEL,
   combineSaveErrors,
   generatePackageAliasEntry,
   getConfigPackageDirectory,
   getPackageAliasesFromId,
-} from '../utils/packageUtils';
+  getPackageIdFromAlias,
+  getPackageVersionId,
+  getSubscriberPackageVersionId,
+  validateId,
+} from '../utils';
 import { PackageVersionCreate } from './packageVersionCreate';
 import { getPackageVersionReport } from './packageVersionReport';
 import { getCreatePackageVersionCreateRequestReport } from './packageVersionCreateRequestReport';
 import { Package } from './package';
 
 Messages.importMessagesDirectory(__dirname);
+
 export class PackageVersion {
   private readonly project: SfProject;
   private readonly connection: Connection;
@@ -60,10 +66,11 @@ export class PackageVersion {
   ): Promise<Partial<PackageVersionCreateRequestResult>> {
     const pvc = new PackageVersionCreate({ ...options, ...this.options });
     const createResult = await pvc.createPackageVersion();
+
     return await this.waitForCreateVersion(createResult.Id, polling).catch((err: Error) => {
       // TODO
       // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
-      throw pkgUtils.applyErrorAction(err);
+      throw applyErrorAction(err);
     });
   }
 
@@ -100,7 +107,7 @@ export class PackageVersion {
     }).catch((err: Error) => {
       // TODO
       // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
-      throw pkgUtils.applyErrorAction(err);
+      throw applyErrorAction(err);
     });
     return results[0];
   }
@@ -117,7 +124,7 @@ export class PackageVersion {
     }).catch((err: Error) => {
       // TODO
       // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
-      throw pkgUtils.applyErrorAction(err);
+      throw applyErrorAction(err);
     });
   }
 
@@ -127,6 +134,7 @@ export class PackageVersion {
    * This function emits LifeCycle events, "enqueued", "in-progress", "success", "error" and "timed-out" to
    * progress and current status. Events also carry a payload of type PackageVersionCreateRequestResult.
    *
+   * @param packageId - The package id to wait for
    * @param createPackageVersionRequestId
    * @param polling frequency and timeout Durations to be used in polling
    * */
@@ -202,7 +210,7 @@ export class PackageVersion {
       return pollingClient.subscribe<PackageVersionCreateRequestResult>();
     } catch (err) {
       await Lifecycle.getInstance().emit('timed-out', report);
-      throw pkgUtils.applyErrorAction(err as Error);
+      throw applyErrorAction(err as Error);
     }
   }
 
@@ -222,21 +230,26 @@ export class PackageVersion {
     return Promise.resolve(undefined);
   }
 
+  public async promote(id: string): Promise<PackageSaveResult> {
+    // lookup the 05i ID, if needed
+    if (id.startsWith('04t')) {
+      id = await getPackageVersionId(id, this.connection);
+    }
+    return await this.options.connection.tooling.update('Package2Version', { IsReleased: true, Id: id });
+  }
+
   public update(): Promise<void> {
     return Promise.resolve(undefined);
   }
 
   private async updateDeprecation(idOrAlias: string, IsDeprecated): Promise<PackageSaveResult> {
-    const packageVersionId = pkgUtils.getPackageIdFromAlias(idOrAlias, this.project);
+    const packageVersionId = getPackageIdFromAlias(idOrAlias, this.project);
 
     // ID can be an 04t or 05i
-    pkgUtils.validateId(
-      [pkgUtils.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, pkgUtils.BY_LABEL.PACKAGE_VERSION_ID],
-      packageVersionId
-    );
+    validateId([BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, BY_LABEL.PACKAGE_VERSION_ID], packageVersionId);
 
     // lookup the 05i ID, if needed
-    const packageId = await pkgUtils.getPackageVersionId(packageVersionId, this.connection);
+    const packageId = await getPackageVersionId(packageVersionId, this.connection);
 
     // setup the request
     const request: { Id: string; IsDeprecated: boolean } = {
@@ -248,7 +261,7 @@ export class PackageVersion {
     if (!updateResult.success) {
       throw combineSaveErrors('Package2', 'update', updateResult.errors);
     }
-    updateResult.id = await pkgUtils.getSubscriberPackageVersionId(packageVersionId, this.connection);
+    updateResult.id = await getSubscriberPackageVersionId(packageVersionId, this.connection);
     return updateResult;
   }
 
