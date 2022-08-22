@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.22](https://github.com/forcedotcom/packaging/compare/v0.0.21...v0.0.22) (2022-08-22)
+
+### Bug Fixes
+
+- add package.promote method ([de5867b](https://github.com/forcedotcom/packaging/commit/de5867bc45850ca2040e4e929a2149a7a146c93f))
+
 ### [0.0.21](https://github.com/forcedotcom/packaging/compare/v0.0.20...v0.0.21) (2022-08-19)
 
 ### Bug Fixes
