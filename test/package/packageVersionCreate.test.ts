@@ -207,7 +207,7 @@ describe('Package Version Create', () => {
       'SubscriberPackageVersionId',
       'Tag'
     );
-  });
+  }).timeout(10000);
 
   it('should create the package version create request with branch', async () => {
     const pvc = new PackageVersionCreate({ connection, project, branch: 'main', packageId });
@@ -347,4 +347,4 @@ describe('Package Version Create', () => {
       'Tag'
     );
   });
-}).timeout(10000);
+});
