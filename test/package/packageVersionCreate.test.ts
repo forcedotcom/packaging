@@ -13,6 +13,7 @@ import * as xml2js from 'xml2js';
 
 import { PackageVersionCreate } from '../../src/package/packageVersionCreate';
 
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
 describe('Package Version Create', () => {
   const $$ = instantiateContext();
   const testOrg = new MockTestOrgData();
@@ -225,7 +226,7 @@ describe('Package Version Create', () => {
       'SubscriberPackageVersionId',
       'Tag'
     );
-  });
+  }).timeout(10000);
 
   it('should validate options when package type = unlocked (scripts)', async () => {
     packageTypeQuery.restore();
