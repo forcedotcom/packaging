@@ -20,16 +20,16 @@ import {
 } from '@salesforce/core';
 import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
 import { Tokens } from '@salesforce/core/lib/messages';
-import { Many, Nullable } from '@salesforce/ts-types';
+import { Many, Nullable, Optional } from '@salesforce/ts-types';
 import { SaveError } from 'jsforce';
 import {
+  PackageType,
   PackageVersionCreateEventData,
-  PackagingSObjects,
   PackageVersionCreateRequestResult,
-  PackageVersionCreateOptions,
+  PackagingSObjects,
 } from '../interfaces';
 import * as pvcr from '../package/packageVersionCreateRequest';
-import { BuildNumberToken, VersionNumber } from './versionNumber';
+import { VersionNumber } from './versionNumber';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
 Messages.importMessagesDirectory(__dirname);
@@ -96,7 +96,7 @@ export function validateId(idObj: Many<IdRegistryValue>, value: string): void {
     ]);
   }
 }
-export function validateIdNoThrow(idObj: Many<IdRegistryValue>, value) {
+export function validateIdNoThrow(idObj: Many<IdRegistryValue>, value): IdRegistryValue | false {
   if (!value || (value.length !== 15 && value.length !== 18)) {
     return false;
   }
@@ -105,7 +105,7 @@ export function validateIdNoThrow(idObj: Many<IdRegistryValue>, value) {
 export function validateVersionNumber(
   versionNumberString: string,
   supportedBuildNumberToken: string,
-  supportedBuildNumberToken2: string
+  supportedBuildNumberToken2?: string
 ): string {
   const versionNumber = VersionNumber.from('1.1.0.NEXT');
   // build number can be a number or valid token
@@ -149,10 +149,6 @@ export async function validatePatchVersion(
 }
 
 // TODO: let's get rid of this in favor of SfdcUrl.isValidUrl()
-// check that the provided url has a valid format
-export function validUrl(url: string): boolean {
-  return SfdcUrl.isValidUrl(url);
-}
 
 // determines if error is from malformed SubscriberPackageVersion query
 // this is in place to allow cli to run against app version 214, where SPV queries
@@ -285,11 +281,11 @@ export function escapeInstallationKey(key?: string): Nullable<string> {
  * @param connection For tooling query
  * @throws Error with message when package2 cannot be found
  */
-export async function getPackageType(packageId: string, connection: Connection): Promise<string> {
+export async function getPackageType(packageId: string, connection: Connection): Promise<PackageType> {
   const query = `SELECT ContainerOptions FROM Package2 WHERE id ='${packageId}'`;
 
   const queryResult = await connection.tooling.query<Pick<PackagingSObjects.Package2, 'ContainerOptions'>>(query);
-  if (!queryResult || queryResult.records === null || queryResult.records.length === 0) {
+  if (queryResult.records.length === 0) {
     throw messages.createError('errorInvalidPackageId', [packageId]);
   }
   return queryResult.records[0].ContainerOptions;
@@ -354,9 +350,12 @@ export async function getSubscriberPackageVersionId(versionId: string, connectio
  * @param connection For tooling query
  */
 // eslint-disable-next-line @typescript-eslint/require-await
-export async function getContainerOptions(packageIds: string[], connection: Connection): Promise<Map<string, string>> {
+export async function getContainerOptions(
+  packageIds: string[],
+  connection: Connection
+): Promise<Map<string, PackageType>> {
   if (!packageIds || packageIds.length === 0) {
-    return new Map<string, string>();
+    return new Map<string, PackageType>();
   }
   const query = "SELECT Id, ContainerOptions FROM Package2 WHERE Id IN ('%IDS%')";
 
@@ -370,7 +369,7 @@ export async function getContainerOptions(packageIds: string[], connection: Conn
   if (records && records.length > 0) {
     return new Map(records.map((record) => [record.Id, record.ContainerOptions]));
   }
-  return new Map<string, string>();
+  return new Map<string, PackageType>();
 }
 /**
  * Return the Package2Version.HasMetadataRemoved field value for the given Id (05i)
@@ -450,7 +449,7 @@ export async function queryWithInConditionChunking<T = Record<string, unknown>>(
   items: string[],
   replaceToken: string,
   connection: Connection
-) {
+): Promise<T[]> {
   let records: T[] = [];
   if (!query || !items || !replaceToken) {
     return records;
@@ -481,7 +480,7 @@ export async function queryWithInConditionChunking<T = Record<string, unknown>>(
   return records;
 }
 /**
- *   Returns the number of items that can be included in a quoted comma-separated string (e.g., "'item1','item2'") not exceeding maxLength
+ * Returns the number of items that can be included in a quoted comma-separated string (e.g., "'item1','item2'") not exceeding maxLength
  */
 // TODO: this function cannot handle a single item that is longer than maxLength - what to do, since this could be the root cause of an infinite loop?
 export function getInClauseItemsCount(items: string[], startIndex: number, maxLength: number): number {
@@ -502,143 +501,7 @@ export function getInClauseItemsCount(items: string[], startIndex: number, maxLe
   }
   return includedCount;
 }
-/**
- * Given a package descriptor, return the ancestor ID. This code was duplicated to scratchOrgInfoGenerator.getAncestorIds,
- * changes here may need to be duplicated there until that code, and/or this code is moved to a separate plugin.
- *
- * @param packageDescriptorJson JSON for packageDirectories element in sfdx-project.json
- * @param connection For tooling query
- * @param project The project to use for looking up the ancestor ID
- * @param versionNumberString The version number string to use for looking up the ancestor ID
- * @param skipAncestorCheck If true, skip the check for the ancestor ID
- */
-export async function getAncestorId(
-  packageDescriptorJson: PackageDir,
-  connection: Connection,
-  project: SfProject,
-  versionNumberString: string,
-  skipAncestorCheck: boolean
-): Promise<string> {
-  // eslint-disable-next-line complexity
-  return Promise.resolve().then(async () => {
-    // If an id property is present, use it.  Otherwise, look up the package id from the package property.
-    const packageId: string =
-      packageDescriptorJson['id'] ?? getPackageIdFromAlias(packageDescriptorJson.package, project);
 
-    // No need to proceed if Unlocked
-    const packageType = await getPackageType(packageId, connection);
-    if (packageType === 'Unlocked') {
-      return '';
-    }
-
-    let ancestorId = '';
-    // ancestorID can be alias, 05i, or 04t;
-    // validate and convert to 05i, as needed
-
-    const versionNumber = versionNumberString.split(VERSION_NUMBER_SEP);
-    const isPatch = versionNumber[2] !== '0';
-
-    let origSpecifiedAncestor = packageDescriptorJson.ancestorId;
-    let highestReleasedVersion: PackagingSObjects.Package2Version = null;
-
-    const explicitUseHighestRelease =
-      packageDescriptorJson.ancestorId === BuildNumberToken.HIGHEST_VERSION_NUMBER_TOKEN ||
-      packageDescriptorJson.ancestorVersion === BuildNumberToken.HIGHEST_VERSION_NUMBER_TOKEN;
-    const explicitUseNoAncestor =
-      packageDescriptorJson.ancestorId === BuildNumberToken.NONE_VERSION_NUMBER_TOKEN ||
-      packageDescriptorJson.ancestorVersion === BuildNumberToken.NONE_VERSION_NUMBER_TOKEN;
-    if (
-      (explicitUseHighestRelease || explicitUseNoAncestor) &&
-      packageDescriptorJson.ancestorId &&
-      packageDescriptorJson.ancestorVersion
-    ) {
-      if (packageDescriptorJson.ancestorId !== packageDescriptorJson.ancestorVersion) {
-        // both ancestorId and ancestorVersion specified, HIGHEST and/or NONE are used, the values disagree
-        throw messages.createError('errorAncestorIdVersionHighestOrNoneMismatch', [
-          packageDescriptorJson.ancestorId,
-          packageDescriptorJson.ancestorVersion,
-        ]);
-      }
-    }
-
-    if (explicitUseNoAncestor && skipAncestorCheck) {
-      return '';
-    } else {
-      const result = await getAncestorIdHighestRelease(
-        connection,
-        packageId,
-        versionNumberString,
-        explicitUseHighestRelease,
-        skipAncestorCheck
-      );
-      if (result.finalAncestorId) {
-        return result.finalAncestorId;
-      }
-      highestReleasedVersion = result.highestReleasedVersion;
-    }
-    // at this point if explicitUseHighestRelease=true, we have returned the ancestorId or thrown an error
-    // highestReleasedVersion should be null only if skipAncestorCheck or if there is no existing released package version
-
-    if (!explicitUseNoAncestor && packageDescriptorJson.ancestorId) {
-      ancestorId = getPackageIdFromAlias(packageDescriptorJson.ancestorId, project);
-      validateId([BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, BY_LABEL.PACKAGE_VERSION_ID], ancestorId);
-      ancestorId = await getPackageVersionId(ancestorId, connection);
-    }
-
-    if (!explicitUseNoAncestor && packageDescriptorJson.ancestorVersion) {
-      const regNumbers = new RegExp('^[0-9]+$');
-      const versionNumber = packageDescriptorJson.ancestorVersion.split(VERSION_NUMBER_SEP);
-      if (
-        versionNumber.length < 3 ||
-        versionNumber.length > 4 ||
-        !versionNumber[0].match(regNumbers) ||
-        !versionNumber[1].match(regNumbers) ||
-        !versionNumber[2].match(regNumbers)
-      ) {
-        throw messages.createError('errorInvalidAncestorVersionFormat', [packageDescriptorJson.ancestorVersion]);
-      }
-
-      const query =
-        'SELECT Id, IsReleased FROM Package2Version ' +
-        `WHERE Package2Id = '${packageId}' AND MajorVersion = ${versionNumber[0]} AND MinorVersion = ${versionNumber[1]} AND PatchVersion = ${versionNumber[2]}`;
-
-      let queriedAncestorId;
-      const ancestorVersionResult = await connection.tooling.query(query);
-      if (!ancestorVersionResult || !ancestorVersionResult.totalSize) {
-        throw messages.createError('errorNoMatchingAncestor', [packageDescriptorJson.ancestorVersion, packageId]);
-      } else {
-        const releasedAncestor = ancestorVersionResult.records.find((rec) => rec.IsReleased === true);
-        if (!releasedAncestor) {
-          throw messages.createError('errorAncestorNotReleased', [packageDescriptorJson.ancestorVersion]);
-        } else {
-          queriedAncestorId = releasedAncestor.Id;
-        }
-      }
-
-      // check for discrepancy between queried ancestorId and descriptor's ancestorId
-      if (
-        Object.prototype.hasOwnProperty.call(packageDescriptorJson, 'ancestorId') &&
-        ancestorId !== queriedAncestorId
-      ) {
-        throw messages.createError('errorAncestorIdVersionMismatch', [
-          packageDescriptorJson.ancestorVersion,
-          packageDescriptorJson.ancestorId,
-        ]);
-      }
-      ancestorId = queriedAncestorId;
-      origSpecifiedAncestor = packageDescriptorJson.ancestorVersion;
-    }
-
-    return validateAncestorId(
-      ancestorId,
-      highestReleasedVersion,
-      explicitUseNoAncestor,
-      isPatch,
-      skipAncestorCheck,
-      origSpecifiedAncestor
-    );
-  });
-}
 export function validateAncestorId(
   ancestorId: string,
   highestReleasedVersion: PackagingSObjects.Package2Version,
@@ -736,7 +599,7 @@ export function concatVersion(
   minor: string | number,
   patch: string | number,
   build: string | number
-) {
+): string {
   return [major, minor, patch, build].map((part) => (part ? `${part}` : '0')).join('.');
 }
 
@@ -883,6 +746,7 @@ export async function pollForStatusWithInterval(
             // for multiple errors, display one per line prefixed with (x)
             if (results[0].Error.length > 1) {
               results[0].Error.forEach((error) => {
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 errors.push(`(${errors.length + 1}) ${error}`);
               });
               errors.unshift(messages.getMessage('versionCreateFailedWithMultipleErrors'));
@@ -901,7 +765,7 @@ export async function pollForStatusWithInterval(
           remainingTime,
         } as PackageVersionCreateEventData);
         logger.info(
-          `Request in progress. Sleeping ${interval} seconds. Will wait a total of ${
+          `Request in progress. Sleeping ${interval.seconds} seconds. Will wait a total of ${
             remainingTime.seconds
           } more seconds before timing out. Current Status='${convertCamelCaseStringToSentence(results[0]?.Status)}'`
         );
@@ -939,7 +803,7 @@ export async function generatePackageAliasEntry(
   const packageAliases = configContent.packageAliases || {};
 
   const aliasForPackageId = getPackageAliasesFromId(packageId, project);
-  let packageName;
+  let packageName: Optional<string>;
   if (!aliasForPackageId || aliasForPackageId.length === 0) {
     const query = `SELECT Name FROM Package2 WHERE Id = '${packageId}'`;
     const package2 = await connection.singleRecordQuery<PackagingSObjects.Package2>(query, { tooling: true });
@@ -967,14 +831,9 @@ function _isStatusEqualTo(results: PackageVersionCreateRequestResult[], statuses
   return results?.length <= 0 ? false : statuses?.some((status) => results[0].Status === status);
 }
 
-// added for unit testing
-export function getSoqlWhereClauseMaxLength() {
-  return SOQL_WHERE_CLAUSE_MAX_LENGTH;
-}
-
 export function formatDate(date: Date): string {
-  const pad = (num) => {
-    return num < 10 ? `0${num}` : num;
+  const pad = (num: number): string => {
+    return num < 10 ? `0${num}` : `${num}`;
   };
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(
     date.getMinutes()
@@ -986,67 +845,5 @@ export function combineSaveErrors(sObject: string, crudOperation: string, errors
     const fieldsString = error.fields?.length > 0 ? `Fields: [${error.fields.join(', ')}]` : '';
     return `Error: ${error.errorCode} Message: ${error.message} ${fieldsString}`;
   });
-  const sfError = messages.createError('errorDuringSObjectCRUDOperation', [
-    crudOperation,
-    sObject,
-    errorMessages.join(os.EOL),
-  ]);
-  return sfError;
-}
-
-export function resolveCanonicalPackageProperty(options: PackageVersionCreateOptions) {
-  let canonicalPackageProperty: 'id' | 'package';
-
-  if (!options.package) {
-    const packageValProp = this.getPackageValuePropertyFromDirectory(options.path, options);
-    options.package = packageValProp.packageValue;
-    canonicalPackageProperty = packageValProp.packageProperty;
-  } else if (!options.path) {
-    canonicalPackageProperty = this.getPackagePropertyFromPackage(this.project.getPackageDirectories(), options);
-    options.path = this.getConfigPackageDirectoriesValue(
-      this.project.getPackageDirectories(),
-      'path',
-      canonicalPackageProperty,
-      options.package,
-      'package',
-      options
-    );
-  } else {
-    canonicalPackageProperty = this.getPackagePropertyFromPackage(this.project.getPackageDirectories(), options);
-    this.getConfigPackageDirectoriesValue(
-      this.project.getPackageDirectories(),
-      canonicalPackageProperty,
-      'path',
-      options.path,
-      'path',
-      options
-    );
-
-    const expectedPackageId = this.getConfigPackageDirectoriesValue(
-      this.packageDirs,
-      canonicalPackageProperty,
-      'path',
-      options.path,
-      'path',
-      options
-    );
-
-    // This will throw an error if the package id flag value doesn't match
-    // any of the :id values in the package dirs.
-    this.getConfigPackageDirectoriesValue(
-      this.project.getPackageDirectories(),
-      'path',
-      canonicalPackageProperty,
-      options.package,
-      'package',
-      options
-    );
-
-    // This will throw an error if the package id flag value doesn't match
-    // the correct corresponding directory with that packageId.
-    if (options.package !== expectedPackageId) {
-      throw messages.createError('errorDirectoryIdMismatch', ['--path', options.path, '--package', options.package]);
-    }
-  }
-  return canonicalPackageProperty;
+  return messages.createError('errorDuringSObjectCRUDOperation', [crudOperation, sObject, errorMessages.join(os.EOL)]);
 }

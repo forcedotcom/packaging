@@ -189,7 +189,7 @@ async function pollStatus(
     error.setData(packageInstallRequest);
     if (error.stack && e.stack) {
       // add the original stack to this new error
-      error.stack += `\nDUE TO:\n${e.stack}`;
+      error.stack += `\nDUE TO:\n${(e as Error).stack}`;
     }
     throw error;
   }
@@ -256,7 +256,7 @@ export async function waitForPublish(
     error.setData(queryResult);
     if (error.stack && e.stack) {
       // append the original stack to this new error
-      error.stack += `\nDUE TO:\n${e.stack}`;
+      error.stack += `\nDUE TO:\n${(e as Error).stack}`;
     }
     throw error;
   }

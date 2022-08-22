@@ -36,7 +36,7 @@ export async function list(
 }
 
 export async function byId(
-  packageVersionCreateRequestId,
+  packageVersionCreateRequestId: string,
   connection: Connection
 ): Promise<PackageVersionCreateRequestResult[]> {
   const results = await _query(util.format(QUERY, `WHERE Id = '${packageVersionCreateRequestId}' `), connection);
@@ -91,7 +91,7 @@ function _constructWhere(options?: PackageVersionCreateRequestQueryOptions): str
     if (options.createdlastdays < 0) {
       throw messages.createError('invalidDaysNumber', ['createdlastdays', options.createdlastdays]);
     }
-    where.push(`CreatedDate = LAST_N_DAYS:${this.options.createdlastdays}`);
+    where.push(`CreatedDate = LAST_N_DAYS:${this.options.createdlastdays as string}`);
   }
 
   // filter on errors
