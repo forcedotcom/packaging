@@ -6,7 +6,7 @@
  */
 
 import { Duration } from '@salesforce/kit';
-import { Connection, SfProject } from '@salesforce/core';
+import { Connection, NamedPackageDir, SfProject } from '@salesforce/core';
 import { QueryResult, SaveResult } from 'jsforce';
 import { PackageProfileApi } from '../package/packageProfileApi';
 import { PackagingSObjects } from './packagingSObjects';
@@ -164,7 +164,36 @@ export type PackageCreateOptions = {
   path: string;
 };
 
+export type PackageDescriptorJson = Partial<NamedPackageDir> &
+  Partial<{
+    id: string;
+    features: string[];
+    orgPreferences: string[];
+    snapshot: string;
+    unpackagedMetadata: NamedPackageDir;
+    apexTestAccess: { permissionSets: string[] | string; permissionSetLicenses: string[] | string };
+    permissionSetNames: string[];
+    permissionSetLicenseDeveloperNames: string[];
+    branch: string;
+    subscriberPackageVersionId: string;
+    packageId: string;
+    versionName: string;
+  }>;
+
+export type PackageVersionCreateRequest = {
+  Package2Id: string;
+  VersionInfo: string;
+  Tag: string;
+  Branch: string;
+  InstallKey: string;
+  Instance: string;
+  SourceOrg: string;
+  CalculateCodeCoverage: boolean;
+  SkipValidation: boolean;
+};
+
 export type PackageVersionQueryOptions = Pick<PackageVersionOptions, 'connection'> & {
+  project: SfProject;
   orderBy: string;
   modifiedLastDays: number;
   createdLastDays: number;
@@ -221,8 +250,7 @@ export type PackageVersionCreateOptions = Partial<
     definitionfile: string;
     installationkey: string;
     installationkeybypass: boolean;
-    package: string;
-    path: string;
+    packageId: string;
     postinstallscript: string;
     postinstallurl: string;
     preserve: boolean;
@@ -236,8 +264,6 @@ export type PackageVersionCreateOptions = Partial<
     versiondescription: string;
     versionname: string;
     versionnumber: string;
-    wait: Duration;
-    pollInterval: Duration;
     profileApi: PackageProfileApi;
   }
 >;

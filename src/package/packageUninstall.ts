@@ -30,7 +30,7 @@ async function poll(id: string, conn: Connection): Promise<StatusResult> {
     }
     default: {
       const err = messages.getMessage('defaultErrorMessage', [id, uninstallRequest.Id]);
-      const errorQueryResult = await conn.tooling.query(
+      const errorQueryResult = await conn.tooling.query<{ Message: string }>(
         `"SELECT Message FROM PackageVersionUninstallRequestError WHERE ParentRequest.Id = '${id}' ORDER BY Message"`
       );
 

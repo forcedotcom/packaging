@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.23](https://github.com/forcedotcom/packaging/compare/v0.0.22...v0.0.23) (2022-08-22)
+
+### Bug Fixes
+
+- increase pvc ut timeout to 10 secs ([08e667f](https://github.com/forcedotcom/packaging/commit/08e667f574abf5a3de0686c5dcfd654d9fa4c0fa))
+- remove ref to dev dep ([a51323a](https://github.com/forcedotcom/packaging/commit/a51323aaf699eb82fc515722681c6f1b56edb5f4))
+
+### [0.0.22](https://github.com/forcedotcom/packaging/compare/v0.0.21...v0.0.22) (2022-08-22)
+
+### Bug Fixes
+
+- add package.promote method ([de5867b](https://github.com/forcedotcom/packaging/commit/de5867bc45850ca2040e4e929a2149a7a146c93f))
+
+### [0.0.21](https://github.com/forcedotcom/packaging/compare/v0.0.20...v0.0.21) (2022-08-19)
+
+### Bug Fixes
+
+- inital refactor for PVC - a lot left to do, but a lot has been done ([c629291](https://github.com/forcedotcom/packaging/commit/c629291ae375c7db627b47f4ddb2f6bdd874c394))
+
 ### [0.0.20](https://github.com/forcedotcom/packaging/compare/v0.0.19...v0.0.20) (2022-08-19)
 
 ### Bug Fixes

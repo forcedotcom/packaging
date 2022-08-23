@@ -45,7 +45,7 @@ function constructQuery(options: PackageVersionQueryOptions): string {
   return assembleQueryParts(options.verbose === true ? VERBOSE_SELECT : DEFAULT_SELECT, where, options.orderBy);
 }
 
-export function assembleQueryParts(select: string, where: string[], orderBy?): string {
+export function assembleQueryParts(select: string, where: string[], orderBy?: string): string {
   // construct ORDER BY clause
   const orderByPart = `ORDER BY ${orderBy ? orderBy : DEFAULT_ORDER_BY_FIELDS}`;
   const wherePart = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
