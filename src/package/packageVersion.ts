@@ -21,7 +21,7 @@ import {
   PackageVersionCreateRequestResult,
   PackageVersionListResult,
   PackageVersionOptions,
-  PackageVersionQueryOptions,
+  PackageVersionListOptions,
   PackageVersionReportResult,
   PackagingSObjects,
 } from '../interfaces';
@@ -222,8 +222,8 @@ export class PackageVersion {
     return Promise.resolve(undefined);
   }
 
-  public async list(options: PackageVersionQueryOptions): Promise<PackageVersionListResult[]> {
-    return (await listPackageVersions(options)).records;
+  public async list(options: PackageVersionListOptions): Promise<PackageVersionListResult[]> {
+    return (await listPackageVersions({ ...options, ...{ connection: this.connection } })).records;
   }
 
   public uninstall(): Promise<void> {

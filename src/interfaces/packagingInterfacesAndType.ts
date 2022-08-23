@@ -192,8 +192,7 @@ export type PackageVersionCreateRequest = {
   SkipValidation: boolean;
 };
 
-export type PackageVersionQueryOptions = Pick<PackageVersionOptions, 'connection'> & {
-  project: SfProject;
+export type PackageVersionListOptions = {
   orderBy: string;
   modifiedLastDays: number;
   createdLastDays: number;
@@ -202,6 +201,8 @@ export type PackageVersionQueryOptions = Pick<PackageVersionOptions, 'connection
   concise: boolean;
   isReleased: boolean;
 };
+
+export type ListPackageVersionOptions = PackageVersionListOptions & { connection: Connection };
 
 export type PackageSaveResult = SaveResult;
 
