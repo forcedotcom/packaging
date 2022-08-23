@@ -338,6 +338,7 @@ export type PackageAncestryNodeOptions = Attributes & {
   MinorVersion?: string | number;
   PatchVersion?: string | number;
   BuildNumber?: string | number;
+  depthCounter?: number;
 };
 
 export type PackageAncestryTreeOptions = {
