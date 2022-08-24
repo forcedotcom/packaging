@@ -798,9 +798,9 @@ export async function generatePackageAliasEntry(
   packageVersionNumber: string,
   branch: string,
   packageId: string
-): Promise<{ packageAliases: { [p: string]: string } }> {
+): Promise<{ [p: string]: string }> {
   const configContent = project.getSfProjectJson().getContents();
-  const packageAliases = configContent.packageAliases || {};
+  const packageAliases: { [p: string]: string } = configContent.packageAliases || {};
 
   const aliasForPackageId = getPackageAliasesFromId(packageId, project);
   let packageName: Optional<string>;
@@ -817,7 +817,7 @@ export async function generatePackageAliasEntry(
     : `${packageName}@${packageVersionNumber}`;
   packageAliases[packageAlias] = packageVersionId;
 
-  return { packageAliases };
+  return packageAliases;
 }
 
 /**
