@@ -341,7 +341,7 @@ export type PackageAncestryNodeOptions = Attributes & {
   depthCounter?: number;
 };
 
-export type PackageAncestryTreeOptions = {
+export type PackageAncestryOptions = {
   packageId: string;
   project: SfProject;
   connection: Connection;
