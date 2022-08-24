@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.24](https://github.com/forcedotcom/packaging/compare/v0.0.23...v0.0.24) (2022-08-24)
+
+### Bug Fixes
+
+- correct package alias generation ([c4617bd](https://github.com/forcedotcom/packaging/commit/c4617bd16eac1f2bfe5efadafc1062ea78ee352c))
+
 ### [0.0.23](https://github.com/forcedotcom/packaging/compare/v0.0.22...v0.0.23) (2022-08-22)
 
 ### Bug Fixes
