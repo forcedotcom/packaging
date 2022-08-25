@@ -14,7 +14,6 @@ import {
   LoggerLevel,
   Messages,
   NamedPackageDir,
-  Org,
   ScratchOrgInfo,
   SfdcUrl,
   SfProject,
@@ -23,7 +22,6 @@ import { ComponentSetBuilder, ConvertResult, MetadataConverter } from '@salesfor
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import * as xml2js from 'xml2js';
 import { PackageDirDependency } from '@salesforce/core/lib/sfProject';
-import { getAncestorIds, ScratchOrgInfoPayload } from '@salesforce/core/lib/org/scratchOrgInfoGenerator';
 import { QueryResult } from 'jsforce';
 import { uniqid } from '../utils/uniqid';
 import * as pkgUtils from '../utils/packageUtils';
@@ -38,6 +36,7 @@ import {
   PackagingSObjects,
 } from '../interfaces';
 import { copyDir, getPackageAliasesFromId, zipDir } from '../utils';
+import { getAncestorId } from '../utils/packageUtils';
 import { PackageProfileApi } from './packageProfileApi';
 import { byId } from './packageVersionCreateRequest';
 
@@ -357,11 +356,12 @@ export class PackageVersionCreate {
     const resultValues = await Promise.all(
       !dependencies ? [] : dependencies.map((dependency) => this.retrieveSubscriberPackageVersionId(dependency))
     );
-    const ancestorId = await getAncestorIds(
-      // TODO: investigate if it's ok to convert to ScratchOggInfoPayload
-      this.packageObject as unknown as ScratchOrgInfoPayload,
-      this.options.project.getSfProjectJson(),
-      await Org.create({ aliasOrUsername: this.options.connection.getUsername() })
+    const ancestorId = await getAncestorId(
+      packageDescriptorJson,
+      this.options.project,
+      this.options.connection,
+      this.options.versionnumber ?? packageDescriptorJson.versionNumber,
+      this.options.skipancestorcheck
     );
     // If dependencies exist, the resultValues array will contain the dependencies populated with a resolved
     // subscriber pkg version id.

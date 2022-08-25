@@ -10,8 +10,10 @@ import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from
 import { expect } from 'chai';
 import { Connection, SfProject } from '@salesforce/core';
 import * as xml2js from 'xml2js';
+import * as pkgUtils from '../../src/utils/packageUtils';
 
 import { PackageVersionCreate } from '../../src/package/packageVersionCreate';
+import { PackageType } from '../../src/interfaces';
 
 // eslint-disable-next-line @typescript-eslint/no-misused-promises
 describe('Package Version Create', () => {
@@ -55,6 +57,7 @@ describe('Package Version Create', () => {
     $$.SANDBOX.stub(xml2js, 'parseStringPromise').resolves({
       Package: { types: [{ name: ['Apexclass'], members: ['MyApexClass'] }] },
     });
+    $$.SANDBOX.stub(pkgUtils, 'getContainerOptions').resolves(new Map<string, PackageType>([[packageId, 'Managed']]));
   });
 
   afterEach(async () => {
