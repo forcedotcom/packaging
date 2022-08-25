@@ -17,7 +17,8 @@ describe('Package', () => {
         packageId: 'pnhcoverage',
         project: SfProject.getInstance('/Users/peter.hale/sfdxProjects/coverage'),
       });
-      const tree = await pa.getGraphAsUxTree('04t4p0000027oc7AAA');
+      const tree = await pa.getGraphAsUxTree();
+      tree.display();
       expect(tree).to.be.ok;
     });
     it('should get ancestors from leaf', async () => {
@@ -32,6 +33,11 @@ describe('Package', () => {
       const pathToLeafText = pathToRoot.map((path) => path.map((node) => node.getVersion()).join(' -> ')).join('\n');
       expect(pathToRoot.length).to.equal(1);
       expect(pathToLeafText).to.equal('0.4.0.0 -> 0.3.0.0 -> 0.2.0.0 -> 0.1.0.4');
+      // eslint-disable-next-line no-console
+      console.log(pathToLeafText + '\n');
+      const tree = await pa.getGraphAsUxTree();
+      tree.display();
+      expect(tree).to.be.ok;
     });
   });
   // describe('validateId', () => {

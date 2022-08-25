@@ -171,7 +171,6 @@ export class PackageVersion {
               payload: report,
             };
           case 'Success':
-            await this.updateProjectWithPackageVersion(this.project, report);
             await Lifecycle.getInstance().emit('success', report);
             if (!process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE) {
               // get the newly created package version from the server
@@ -186,6 +185,7 @@ export class PackageVersion {
                   `SELECT Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version WHERE SubscriberPackageVersionId='${report.SubscriberPackageVersionId}'`
                 )
               ).records[0];
+              await this.updateProjectWithPackageVersion(this.project, report);
               const version = `${getPackageAliasesFromId(report.Package2Id, this.project).join()}@${
                 versionResult.MajorVersion ?? 0
               }.${versionResult.MinorVersion ?? 0}.${versionResult.PatchVersion ?? 0}`;
@@ -295,11 +295,20 @@ export class PackageVersion {
     packageVersionVersionString: string
   ): Promise<void> {
     const pkg = await (await Package.create({ connection: this.connection })).getPackage(packageVersion.Package2Id);
+    // this will fail if the package dir excludes id but includes package
     const pkgDir =
-      getConfigPackageDirectory(withProject.getPackageDirectories(), 'id', pkg.Id) ?? ({} as NamedPackageDir);
+      getConfigPackageDirectory(withProject.getPackageDirectories(), 'id', pkg.Id) ??
+      getConfigPackageDirectory(withProject.getPackageDirectories(), 'package', pkg.Name) ??
+      ({} as NamedPackageDir);
     pkgDir.versionNumber = packageVersionVersionString;
-    pkgDir.versionDescription = packageVersion.Description;
-    const packageDirs = withProject.getPackageDirectories().map((pd) => (pkgDir['id'] === pd['id'] ? pkgDir : pd));
+    if (packageVersion.Description) {
+      pkgDir.versionDescription = packageVersion.Description;
+    } else {
+      delete pkgDir.versionDescription;
+    }
+    const packageDirs = withProject
+      .getPackageDirectories()
+      .map((pd) => (pkgDir['id'] === pd['id'] || pkgDir.package === pd.package ? pkgDir : pd));
     withProject.getSfProjectJson().set('packageDirectories', packageDirs);
   }
 }

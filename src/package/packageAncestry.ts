@@ -117,7 +117,6 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
       );
     }
     tree = !root ? tree : tree.search(this.graph.getNodeAttributes(requestedRoot).node.getVersion() as string);
-    tree.display();
     return tree;
   }
 
