@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.26](https://github.com/forcedotcom/packaging/compare/v0.0.25...v0.0.26) (2022-08-25)
+
+### Bug Fixes
+
+- remove hard coded string ([8c6d2dd](https://github.com/forcedotcom/packaging/commit/8c6d2dd769c2a91d33c8afafca02f3489c296060))
+
 ### [0.0.25](https://github.com/forcedotcom/packaging/compare/v0.0.24...v0.0.25) (2022-08-25)
 
 ### Bug Fixes
