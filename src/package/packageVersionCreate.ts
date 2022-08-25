@@ -37,7 +37,7 @@ import {
   PackageVersionCreateRequestResult,
   PackagingSObjects,
 } from '../interfaces';
-import { copyDir, getPackageAliasesFromId, getPackageIdFromAlias, zipDir } from '../utils';
+import { copyDir, getPackageAliasesFromId, zipDir } from '../utils';
 import { PackageProfileApi } from './packageProfileApi';
 import { byId } from './packageVersionCreateRequest';
 
@@ -560,10 +560,12 @@ export class PackageVersionCreate {
 
     // from the packageDirectories in sfdx-project.json, find the correct package entry either by finding a matching package (name) or path
     this.packageAlias = getPackageAliasesFromId(this.options.packageId, this.options.project).join();
-    // set on the class so we can access them in other methods without redoing this logic
-    this.packageObject = this.project.getPackageDirectories().find((pkg) => pkg.package === this.packageAlias);
+    this.packageId = this.options.packageId;
+    // set on the class, so we can access them in other methods without redoing this logic
+    this.packageObject = this.project
+      .getPackageDirectories()
+      .find((pkg) => pkg.package === this.packageAlias || pkg['id'] === this.options.packageId);
     this.options.profileApi = await this.resolveUserLicenses(this.packageObject.includeProfileUserLicenses);
-    this.packageId = getPackageIdFromAlias(this.packageObject.package, this.project);
 
     // At this point, the packageIdFromAlias should have been resolved to an Id.  Now, we
     // need to validate that the Id is correct.
