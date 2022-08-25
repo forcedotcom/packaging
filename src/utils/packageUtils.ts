@@ -107,7 +107,7 @@ export function validateVersionNumber(
   supportedBuildNumberToken: string,
   supportedBuildNumberToken2?: string
 ): string {
-  const versionNumber = VersionNumber.from('1.1.0.NEXT');
+  const versionNumber = VersionNumber.from(versionNumberString);
   // build number can be a number or valid token
   if (
     Number.isNaN(parseInt(versionNumber.build, 10)) &&
