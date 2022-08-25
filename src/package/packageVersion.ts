@@ -21,6 +21,7 @@ import {
   PackageVersionCreateRequestResult,
   PackageVersionOptions,
   PackageVersionReportResult,
+  PackageVersionUpdateOptions,
   PackagingSObjects,
 } from '../interfaces';
 import {
@@ -238,8 +239,32 @@ export class PackageVersion {
     return await this.options.connection.tooling.update('Package2Version', { IsReleased: true, Id: id });
   }
 
-  public update(): Promise<void> {
-    return Promise.resolve(undefined);
+  public async update(id: string, options: PackageVersionUpdateOptions): Promise<PackageSaveResult> {
+    // ID can be an 04t or 05i
+    validateId([BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, BY_LABEL.PACKAGE_VERSION_ID], id);
+
+    // lookup the 05i ID, if needed
+    id = await getPackageVersionId(id, this.connection);
+
+    const request = {
+      Id: id,
+      InstallKey: options.InstallKey,
+      Name: options.VersionName,
+      Description: options.VersionDescription,
+      Branch: options.Branch,
+      Tag: options.Tag,
+    };
+
+    // filter out any undefined values and their keys
+    Object.keys(request).forEach((key) => request[key] === undefined && delete request[key]);
+
+    const result = await this.connection.tooling.update('Package2Version', request);
+    if (!result.success) {
+      throw new Error(result.errors.join(', '));
+    }
+    // Use the 04t ID for the success message
+    result.id = await getSubscriberPackageVersionId(id, this.connection);
+    return result;
   }
 
   private async updateDeprecation(idOrAlias: string, IsDeprecated): Promise<PackageSaveResult> {
