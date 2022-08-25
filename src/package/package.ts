@@ -4,7 +4,7 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import { Messages, sfdc } from '@salesforce/core';
+import { Messages, sfdc, SfError } from '@salesforce/core';
 import { AsyncCreatable, Duration } from '@salesforce/kit';
 import { QueryResult } from 'jsforce';
 import { Optional } from '@salesforce/ts-types';
@@ -15,6 +15,8 @@ import {
   PackageInstallOptions,
   PackageInstallCreateRequest,
   PackageIdType,
+  PackageSaveResult,
+  PackageUpdateOptions,
 } from '../interfaces';
 import { listPackages } from './packageList';
 import { getExternalSites, getStatus, installPackage, waitForPublish } from './packageInstall';
@@ -95,8 +97,15 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
     return Promise.resolve(undefined);
   }
 
-  public update(): Promise<void> {
-    return Promise.resolve(undefined);
+  public async update(options: PackageUpdateOptions): Promise<PackageSaveResult> {
+    // filter out any undefined values and their keys
+    Object.keys(options).forEach((key) => options[key] === undefined && delete options[key]);
+
+    const result = await this.options.connection.tooling.update('Package2', options);
+    if (!result.success) {
+      throw new SfError(result.errors.join(', '));
+    }
+    return result;
   }
 
   public async getPackage(packageId: string): Promise<PackagingSObjects.Package2> {

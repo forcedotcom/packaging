@@ -25,7 +25,7 @@ export interface IPackage {
   getInstallStatus(installRequestId: string): Promise<PackageInstallRequest>;
   list(): Promise<QueryResult<PackagingSObjects.Package2>>;
   uninstall(): Promise<void>;
-  update(): Promise<void>;
+  update(options: PackageUpdateOptions): Promise<PackageSaveResult>;
   waitForPublish(subscriberPackageVersionKey: string, timeout: number | Duration, installationKey?: string);
   getExternalSites(subscriberPackageVersionKey: string, installationKey?: string);
 }
@@ -52,6 +52,13 @@ export interface IPackageVersion2GP {
 
 export type PackageOptions = {
   connection: Connection;
+};
+
+export type PackageUpdateOptions = {
+  Id: string;
+  Name?: string;
+  Description?: string;
+  PackageErrorUsername?: string;
 };
 
 export type PackageIdType =

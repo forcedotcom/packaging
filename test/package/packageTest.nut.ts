@@ -90,7 +90,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
     await session?.clean();
   });
 
-  describe('create package/version', () => {
+  describe('create package/version/update package/update package version', () => {
     it('package create', async () => {
       const options: PackageCreateOptions = {
         name: pkgName,
@@ -231,6 +231,15 @@ describe('Integration tests for @salesforce/packaging library', function () {
       const pvc = new PackageVersion({ connection: devHubOrg.getConnection(), project });
       const result = await pvc.promote(subscriberPkgVersionId);
       expect(result).to.have.all.keys('id', 'success', 'errors');
+    });
+
+    it('will update the package', async () => {
+      const pkg = new Package({ connection: devHubOrg.getConnection() });
+      const result = await pkg.update({ Id: pkgId, Description: 'new package description' });
+      expect(result).to.have.all.keys('id', 'success', 'errors');
+      expect(result.id.startsWith('0Ho')).to.be.true;
+      expect(result.success).to.be.true;
+      expect(result.errors).to.deep.equal([]);
     });
   });
 
