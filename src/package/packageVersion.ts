@@ -5,15 +5,7 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import {
-  Connection,
-  Lifecycle,
-  Messages,
-  NamedPackageDir,
-  PollingClient,
-  SfProject,
-  StatusResult,
-} from '@salesforce/core';
+import { Connection, Lifecycle, Messages, PollingClient, SfProject, StatusResult } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import {
   PackageSaveResult,
@@ -21,14 +13,11 @@ import {
   PackageVersionCreateRequestResult,
   PackageVersionOptions,
   PackageVersionReportResult,
-  PackagingSObjects,
 } from '../interfaces';
 import {
   applyErrorAction,
   BY_LABEL,
   combineSaveErrors,
-  generatePackageAliasEntry,
-  getConfigPackageDirectory,
   getPackageAliasesFromId,
   getPackageIdFromAlias,
   getPackageVersionId,
@@ -38,7 +27,6 @@ import {
 import { PackageVersionCreate } from './packageVersionCreate';
 import { getPackageVersionReport } from './packageVersionReport';
 import { getCreatePackageVersionCreateRequestReport } from './packageVersionCreateRequestReport';
-import { Package } from './package';
 
 Messages.importMessagesDirectory(__dirname);
 
@@ -171,31 +159,8 @@ export class PackageVersion {
               payload: report,
             };
           case 'Success':
-            await this.updateProjectWithPackageVersion(this.project, report);
             await Lifecycle.getInstance().emit('success', report);
-            if (!process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE) {
-              // get the newly created package version from the server
-              const versionResult = (
-                await this.connection.tooling.query<{
-                  Branch: string;
-                  MajorVersion: string;
-                  MinorVersion: string;
-                  PatchVersion: string;
-                  BuildNumber: string;
-                }>(
-                  `SELECT Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version WHERE SubscriberPackageVersionId='${report.SubscriberPackageVersionId}'`
-                )
-              ).records[0];
-              const version = `${getPackageAliasesFromId(report.Package2Id, this.project).join()}@${
-                versionResult.MajorVersion ?? 0
-              }.${versionResult.MinorVersion ?? 0}.${versionResult.PatchVersion ?? 0}`;
-              const build = versionResult.BuildNumber ? `-${versionResult.BuildNumber}` : '';
-              const branch = versionResult.Branch ? `-${versionResult.Branch}` : '';
-              // set packageAliases entry '<package>@<major>.<minor>.<patch>-<build>-<branch>: <result.subscriberPackageVersionId>'
-              this.project.getSfProjectJson().getContents().packageAliases[`${version}${build}${branch}`] =
-                report.SubscriberPackageVersionId;
-              await this.project.getSfProjectJson().write();
-            }
+            await this.updateProjectWithPackageVersion(this.project, report);
             return { completed: true, payload: report };
           case 'Error':
             await Lifecycle.getInstance().emit('error', report);
@@ -270,36 +235,27 @@ export class PackageVersion {
     results: PackageVersionCreateRequestResult
   ): Promise<void> {
     if (withProject && !process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE) {
-      const query = `SELECT Name, Package2Id, MajorVersion, MinorVersion, PatchVersion, BuildNumber, Description, Branch FROM Package2Version WHERE Id = '${results.Package2VersionId}'`;
-      const packageVersion = await this.connection.singleRecordQuery<PackagingSObjects.Package2Version>(query, {
-        tooling: true,
-      });
-      const packageVersionVersionString = `${packageVersion.MajorVersion}.${packageVersion.MinorVersion}.${packageVersion.PatchVersion}.${packageVersion.BuildNumber}`;
-      await this.generatePackageDirectory(packageVersion, withProject, packageVersionVersionString);
-      const newConfig = await generatePackageAliasEntry(
-        this.connection,
-        withProject,
-        packageVersion.SubscriberPackageVersionId,
-        packageVersionVersionString,
-        packageVersion.Branch,
-        packageVersion.Package2Id
-      );
-      withProject.getSfProjectJson().set('packageAliases', newConfig);
-      await withProject.getSfProjectJson().write();
+      // get the newly created package version from the server
+      const versionResult = (
+        await this.connection.tooling.query<{
+          Branch: string;
+          MajorVersion: string;
+          MinorVersion: string;
+          PatchVersion: string;
+          BuildNumber: string;
+        }>(
+          `SELECT Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version WHERE SubscriberPackageVersionId='${results.SubscriberPackageVersionId}'`
+        )
+      ).records[0];
+      const version = `${getPackageAliasesFromId(results.Package2Id, this.project).join()}@${
+        versionResult.MajorVersion ?? 0
+      }.${versionResult.MinorVersion ?? 0}.${versionResult.PatchVersion ?? 0}`;
+      const build = versionResult.BuildNumber ? `-${versionResult.BuildNumber}` : '';
+      const branch = versionResult.Branch ? `-${versionResult.Branch}` : '';
+      // set packageAliases entry '<package>@<major>.<minor>.<patch>-<build>-<branch>: <result.subscriberPackageVersionId>'
+      this.project.getSfProjectJson().getContents().packageAliases[`${version}${build}${branch}`] =
+        results.SubscriberPackageVersionId;
+      await this.project.getSfProjectJson().write();
     }
-  }
-
-  private async generatePackageDirectory(
-    packageVersion: PackagingSObjects.Package2Version,
-    withProject: SfProject,
-    packageVersionVersionString: string
-  ): Promise<void> {
-    const pkg = await (await Package.create({ connection: this.connection })).getPackage(packageVersion.Package2Id);
-    const pkgDir =
-      getConfigPackageDirectory(withProject.getPackageDirectories(), 'id', pkg.Id) ?? ({} as NamedPackageDir);
-    pkgDir.versionNumber = packageVersionVersionString;
-    pkgDir.versionDescription = packageVersion.Description;
-    const packageDirs = withProject.getPackageDirectories().map((pd) => (pkgDir['id'] === pd['id'] ? pkgDir : pd));
-    withProject.getSfProjectJson().set('packageDirectories', packageDirs);
   }
 }
