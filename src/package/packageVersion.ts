@@ -11,6 +11,8 @@ import {
   PackageSaveResult,
   PackageVersionCreateOptions,
   PackageVersionCreateRequestResult,
+  PackageVersionListOptions,
+  PackageVersionListResult,
   PackageVersionOptions,
   PackageVersionReportResult,
 } from '../interfaces';
@@ -27,6 +29,7 @@ import {
 import { PackageVersionCreate } from './packageVersionCreate';
 import { getPackageVersionReport } from './packageVersionReport';
 import { getCreatePackageVersionCreateRequestReport } from './packageVersionCreateRequestReport';
+import { listPackageVersions } from './packageVersionList';
 
 Messages.importMessagesDirectory(__dirname);
 
@@ -187,8 +190,8 @@ export class PackageVersion {
     return Promise.resolve(undefined);
   }
 
-  public list(): Promise<void> {
-    return Promise.resolve(undefined);
+  public async list(options: PackageVersionListOptions): Promise<PackageVersionListResult[]> {
+    return (await listPackageVersions({ ...options, ...{ connection: this.connection } })).records;
   }
 
   public uninstall(): Promise<void> {
