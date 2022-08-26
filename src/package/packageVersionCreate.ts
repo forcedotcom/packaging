@@ -22,7 +22,6 @@ import { ComponentSetBuilder, ConvertResult, MetadataConverter } from '@salesfor
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import * as xml2js from 'xml2js';
 import { PackageDirDependency } from '@salesforce/core/lib/sfProject';
-import { QueryResult } from 'jsforce';
 import { uniqid } from '../utils/uniqid';
 import * as pkgUtils from '../utils/packageUtils';
 import { BuildNumberToken, VersionNumber } from '../utils/versionNumber';
@@ -102,27 +101,32 @@ export class PackageVersionCreate {
     }
   }
 
-  private async validateDependencyValues(dependency: PackageDescriptorJson): Promise<QueryResult<{ Id: string }>> {
+  private async validateDependencyValues(dependency: PackageDescriptorJson): Promise<void> {
     // If valid 04t package, just return it to be used straight away.
     if (dependency.subscriberPackageVersionId) {
       pkgUtils.validateId(pkgUtils.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, dependency.subscriberPackageVersionId);
+      return;
     }
 
     if (dependency.packageId && dependency.package) {
       throw messages.createError('errorPackageAndPackageIdCollision', []);
     }
 
+    const packageIdFromAlias = pkgUtils.getPackageIdFromAlias(dependency.packageId || dependency.package, this.project);
+
     // If valid 04t package, just return it to be used straight away.
-    if (pkgUtils.validateIdNoThrow(pkgUtils.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, this.packageId)) {
-      dependency.subscriberPackageVersionId = this.packageId;
+    if (pkgUtils.validateIdNoThrow(pkgUtils.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, packageIdFromAlias)) {
+      dependency.subscriberPackageVersionId = packageIdFromAlias;
+
+      return;
     }
 
-    if (!this.packageId || !dependency.versionNumber) {
+    if (!packageIdFromAlias || !dependency.versionNumber) {
       throw messages.createError('errorDependencyPair', [JSON.stringify(dependency)]);
     }
 
     // Just override dependency.packageId value to the resolved alias.
-    dependency.packageId = this.packageId;
+    dependency.packageId = packageIdFromAlias;
 
     pkgUtils.validateId(pkgUtils.BY_LABEL.PACKAGE_ID, dependency.packageId);
     pkgUtils.validateVersionNumber(
@@ -138,7 +142,6 @@ export class PackageVersionCreate {
     if (!result.records || result.records.length !== 1) {
       throw messages.createError('errorNoIdInHub', [dependency.packageId]);
     }
-    return result;
   }
 
   /**
