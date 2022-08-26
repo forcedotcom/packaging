@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.27](https://github.com/forcedotcom/packaging/compare/v0.0.26...v0.0.27) (2022-08-26)
+
+### Bug Fixes
+
+- fix validateDependencyValues ([e37ac1e](https://github.com/forcedotcom/packaging/commit/e37ac1e08f5d764aefa8cf04271c6e72a30d78ea))
+
 ### [0.0.26](https://github.com/forcedotcom/packaging/compare/v0.0.25...v0.0.26) (2022-08-25)
 
 ### Bug Fixes
