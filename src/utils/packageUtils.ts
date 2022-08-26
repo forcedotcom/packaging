@@ -546,7 +546,7 @@ export async function getAncestorId(
   const packageId = packageDescriptorJson.id ?? getPackageIdFromAlias(packageDescriptorJson.package, project);
 
   // No need to proceed if Unlocked
-  const packageType = (await getContainerOptions([packageId], connection)).get(packageId);
+  const packageType = await getPackageType(packageId, connection);
 
   if (packageType === 'Unlocked') {
     return '';
@@ -601,7 +601,7 @@ export async function getAncestorId(
 
   if (!explicitUseNoAncestor && packageDescriptorJson.ancestorId) {
     ancestorId = getPackageIdFromAlias(packageDescriptorJson.ancestorId, project);
-    this.validateId([this.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, this.BY_LABEL.PACKAGE_VERSION_ID], ancestorId);
+    validateId([BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, BY_LABEL.PACKAGE_VERSION_ID], ancestorId);
     ancestorId = await getPackageVersionId(ancestorId, connection);
   }
 

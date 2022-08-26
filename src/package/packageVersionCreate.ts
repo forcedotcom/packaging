@@ -35,8 +35,7 @@ import {
   PackageVersionCreateRequestResult,
   PackagingSObjects,
 } from '../interfaces';
-import { copyDir, getPackageAliasesFromId, zipDir } from '../utils';
-import { getAncestorId } from '../utils/packageUtils';
+import { copyDir, getPackageAliasesFromId, getAncestorId, zipDir } from '../utils';
 import { PackageProfileApi } from './packageProfileApi';
 import { byId } from './packageVersionCreateRequest';
 
