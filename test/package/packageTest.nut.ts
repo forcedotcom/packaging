@@ -224,6 +224,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
       );
 
       expect(result.IsReleased, 'Expected IsReleased to be false').to.be.false;
+      expect(Object.values(projectFile.packageAliases).some((id) => id === subscriberPkgVersionId)).to.be.true;
     });
 
     it('will promote the package version', async () => {
