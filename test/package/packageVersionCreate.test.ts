@@ -225,7 +225,7 @@ describe('Package Version Create', () => {
       'SubscriberPackageVersionId',
       'Tag'
     );
-  }).timeout(10000);
+  });
 
   it('should validate options when package type = unlocked (scripts)', async () => {
     packageTypeQuery.restore();
