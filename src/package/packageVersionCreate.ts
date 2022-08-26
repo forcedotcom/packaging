@@ -10,6 +10,7 @@ import * as os from 'os';
 import * as fs from 'fs';
 import {
   Connection,
+  Lifecycle,
   Logger,
   LoggerLevel,
   Messages,
@@ -270,7 +271,12 @@ export class PackageVersionCreate {
     };
 
     if (preserveFiles) {
-      logger.info(messages.getMessage('tempFileLocation', [packageVersTmpRoot]));
+      const message = messages.getMessage('tempFileLocation', [packageVersTmpRoot]);
+      await Lifecycle.getInstance().emit('packageVersionCreate:preserveFiles', {
+        location: packageVersTmpRoot,
+        message,
+      });
+      logger.info(message);
       return requestObject;
     } else {
       return fs.promises.rm(packageVersTmpRoot, { recursive: true, force: true }).then(() => requestObject);
