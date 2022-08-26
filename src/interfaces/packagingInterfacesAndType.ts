@@ -202,6 +202,14 @@ export type PackageVersionListOptions = {
   isReleased: boolean;
 };
 
+export type PackageVersionUpdateOptions = {
+  InstallKey?: string;
+  VersionName?: string;
+  VersionDescription?: string;
+  Branch?: string;
+  Tag?: string;
+};
+
 export type ListPackageVersionOptions = PackageVersionListOptions & { connection: Connection };
 
 export type PackageSaveResult = SaveResult;
