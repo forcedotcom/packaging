@@ -10,10 +10,10 @@ import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from
 import { expect } from 'chai';
 import { Connection, SfProject } from '@salesforce/core';
 import * as xml2js from 'xml2js';
+import * as pkgUtils from '../../src/utils/packageUtils';
 
 import { PackageVersionCreate } from '../../src/package/packageVersionCreate';
 
-// eslint-disable-next-line @typescript-eslint/no-misused-promises
 describe('Package Version Create', () => {
   const $$ = instantiateContext();
   const testOrg = new MockTestOrgData();
@@ -35,18 +35,24 @@ describe('Package Version Create', () => {
           versionName: 'ver 0.1',
           versionNumber: '0.1.0.NEXT',
           default: true,
+          ancestorId: 'TEST2',
         },
       ],
       packageAliases: {
         TEST: packageId,
+        TEST2: '05i3i000000Gmj6XXX',
       },
     });
     await fs.promises.mkdir(path.join(project.getPath(), 'force-app'));
     stubContext($$);
     await $$.stubAuths(testOrg);
     connection = await testOrg.getConnection();
-    // @ts-ignore
-    packageTypeQuery = $$.SANDBOX.stub(connection.tooling, 'query').resolves({ records: [{}] });
+    packageTypeQuery = $$.SANDBOX.stub(connection.tooling, 'query')
+      .onFirstCall() // @ts-ignore
+      .resolves({ records: [{}] })
+      .onSecondCall() // @ts-ignore
+      .resolves({ records: [{ Id: '05i3i000000Gmj6XXX' }] }) // @ts-ignore
+      .resolves({ records: [{}] });
     packageCreateStub = $$.SANDBOX.stub(connection.tooling, 'create').resolves({
       id: '123',
       success: true,
@@ -55,6 +61,7 @@ describe('Package Version Create', () => {
     $$.SANDBOX.stub(xml2js, 'parseStringPromise').resolves({
       Package: { types: [{ name: ['Apexclass'], members: ['MyApexClass'] }] },
     });
+    $$.SANDBOX.stub(pkgUtils, 'getPackageType').resolves('Managed');
   });
 
   afterEach(async () => {
@@ -145,6 +152,31 @@ describe('Package Version Create', () => {
     });
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].Tag).to.equal('DancingBears');
+    expect(result).to.have.all.keys(
+      'Branch',
+      'CreatedBy',
+      'CreatedDate',
+      'Error',
+      'HasMetadataRemoved',
+      'Id',
+      'Package2Id',
+      'Package2VersionId',
+      'Status',
+      'SubscriberPackageVersionId',
+      'Tag'
+    );
+  });
+
+  it('should create the package version create request with skipancestorcheck info', async () => {
+    const pvc = new PackageVersionCreate({
+      connection,
+      project,
+      tag: 'DancingBears',
+      packageId,
+      skipancestorcheck: true,
+    });
+    const result = await pvc.createPackageVersion();
+    expect(packageCreateStub.firstCall.args[1].skipancestorcheck).to.equal(undefined);
     expect(result).to.have.all.keys(
       'Branch',
       'CreatedBy',
