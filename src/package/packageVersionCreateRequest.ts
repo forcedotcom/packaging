@@ -73,7 +73,7 @@ async function _queryErrors(
 ): Promise<PackageVersionCreateRequestError[]> {
   const errorResults = [];
 
-  const queryResult = connection.tooling.query(util.format(ERROR_QUERY, packageVersionCreateRequestId));
+  const queryResult = await connection.tooling.query(util.format(ERROR_QUERY, packageVersionCreateRequestId));
   if (queryResult.records) {
     queryResult.records.forEach((record) => {
       errorResults.push(record.Message);

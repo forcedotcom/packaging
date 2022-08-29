@@ -16,7 +16,11 @@ import MetadataPackageVersion = PackagingSObjects.MetadataPackageVersion;
 
 export interface IPackage {
   create(): Promise<void>;
-  convert(): Promise<void>;
+  convert(
+    pkgId: string,
+    options: ConvertPackageOptions,
+    project?: SfProject
+  ): Promise<PackageVersionCreateRequestResult>;
   delete(): Promise<void>;
   install(
     pkgInstallCreateRequest: PackageInstallCreateRequest,
@@ -241,6 +245,13 @@ export type MDFolderForArtifactOptions = {
 export type PackageVersionOptions = {
   connection: Connection;
   project: SfProject;
+};
+
+export type ConvertPackageOptions = {
+  installationKey: string;
+  installationKeyBypass: boolean;
+  wait: Duration;
+  buildInstance: string;
 };
 
 export type PackageVersionCreateOptions = Partial<

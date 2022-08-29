@@ -881,12 +881,12 @@ export async function pollForStatusWithInterval(
           throw new SfError(status);
         }
       } else {
-        const remainingTime = Duration.milliseconds(interval.milliseconds * remainingRetries);
+        const remainingTime = Duration.seconds(interval.seconds * remainingRetries);
         await Lifecycle.getInstance().emit(Package2VersionStatus.inProgress, {
           id,
           packageVersionCreateRequestResult: results[0],
           message: '',
-          remainingTime,
+          timeRemaining: remainingTime,
         } as PackageVersionCreateEventData);
         logger.info(
           `Request in progress. Sleeping ${interval.seconds} seconds. Will wait a total of ${
@@ -897,8 +897,8 @@ export async function pollForStatusWithInterval(
         return { completed: false, payload: results[0] };
       }
     },
-    frequency: Duration.milliseconds(interval.milliseconds * 1000),
-    timeout: Duration.milliseconds(interval.milliseconds * retries * 1000),
+    frequency: Duration.seconds(interval.seconds),
+    timeout: Duration.seconds(interval.seconds * retries),
   });
 
   return pollingClient.subscribe<PackageVersionCreateRequestResult>();

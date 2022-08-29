@@ -4,7 +4,7 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import { Messages, sfdc } from '@salesforce/core';
+import { Messages, sfdc, SfProject } from '@salesforce/core';
 import { AsyncCreatable, Duration } from '@salesforce/kit';
 import { QueryResult } from 'jsforce';
 import { Optional } from '@salesforce/ts-types';
@@ -15,9 +15,12 @@ import {
   PackageInstallOptions,
   PackageInstallCreateRequest,
   PackageIdType,
+  ConvertPackageOptions,
+  PackageVersionCreateRequestResult,
 } from '../interfaces';
 import { listPackages } from './packageList';
 import { getExternalSites, getStatus, installPackage, waitForPublish } from './packageInstall';
+import { convertPackage } from './packageConvert';
 
 type PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 
@@ -64,8 +67,12 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
     }
   }
 
-  public convert(): Promise<void> {
-    return Promise.resolve(undefined);
+  public async convert(
+    pkgId: string,
+    options: ConvertPackageOptions,
+    project?: SfProject
+  ): Promise<PackageVersionCreateRequestResult> {
+    return await convertPackage(pkgId, this.options.connection, options, project);
   }
 
   public create(): Promise<void> {
