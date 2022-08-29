@@ -10,11 +10,11 @@ import * as os from 'os';
 import * as fs from 'fs';
 import {
   Connection,
+  Lifecycle,
   Logger,
   LoggerLevel,
   Messages,
   NamedPackageDir,
-  Org,
   ScratchOrgInfo,
   SfdcUrl,
   SfProject,
@@ -23,8 +23,6 @@ import { ComponentSetBuilder, ConvertResult, MetadataConverter } from '@salesfor
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import * as xml2js from 'xml2js';
 import { PackageDirDependency } from '@salesforce/core/lib/sfProject';
-import { getAncestorIds, ScratchOrgInfoPayload } from '@salesforce/core/lib/org/scratchOrgInfoGenerator';
-import { QueryResult } from 'jsforce';
 import { uniqid } from '../utils/uniqid';
 import * as pkgUtils from '../utils/packageUtils';
 import { BuildNumberToken, VersionNumber } from '../utils/versionNumber';
@@ -37,7 +35,7 @@ import {
   PackageVersionCreateRequestResult,
   PackagingSObjects,
 } from '../interfaces';
-import { copyDir, getPackageAliasesFromId, getPackageIdFromAlias, zipDir } from '../utils';
+import { copyDir, getPackageAliasesFromId, getAncestorId, zipDir } from '../utils';
 import { PackageProfileApi } from './packageProfileApi';
 import { byId } from './packageVersionCreateRequest';
 
@@ -104,27 +102,32 @@ export class PackageVersionCreate {
     }
   }
 
-  private async validateDependencyValues(dependency: PackageDescriptorJson): Promise<QueryResult<{ Id: string }>> {
+  private async validateDependencyValues(dependency: PackageDescriptorJson): Promise<void> {
     // If valid 04t package, just return it to be used straight away.
     if (dependency.subscriberPackageVersionId) {
       pkgUtils.validateId(pkgUtils.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, dependency.subscriberPackageVersionId);
+      return;
     }
 
     if (dependency.packageId && dependency.package) {
       throw messages.createError('errorPackageAndPackageIdCollision', []);
     }
 
+    const packageIdFromAlias = pkgUtils.getPackageIdFromAlias(dependency.packageId || dependency.package, this.project);
+
     // If valid 04t package, just return it to be used straight away.
-    if (pkgUtils.validateIdNoThrow(pkgUtils.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, this.packageId)) {
-      dependency.subscriberPackageVersionId = this.packageId;
+    if (pkgUtils.validateIdNoThrow(pkgUtils.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, packageIdFromAlias)) {
+      dependency.subscriberPackageVersionId = packageIdFromAlias;
+
+      return;
     }
 
-    if (!this.packageId || !dependency.versionNumber) {
+    if (!packageIdFromAlias || !dependency.versionNumber) {
       throw messages.createError('errorDependencyPair', [JSON.stringify(dependency)]);
     }
 
     // Just override dependency.packageId value to the resolved alias.
-    dependency.packageId = this.packageId;
+    dependency.packageId = packageIdFromAlias;
 
     pkgUtils.validateId(pkgUtils.BY_LABEL.PACKAGE_ID, dependency.packageId);
     pkgUtils.validateVersionNumber(
@@ -140,7 +143,6 @@ export class PackageVersionCreate {
     if (!result.records || result.records.length !== 1) {
       throw messages.createError('errorNoIdInHub', [dependency.packageId]);
     }
-    return result;
   }
 
   /**
@@ -269,7 +271,12 @@ export class PackageVersionCreate {
     };
 
     if (preserveFiles) {
-      logger.info(messages.getMessage('tempFileLocation', [packageVersTmpRoot]));
+      const message = messages.getMessage('tempFileLocation', [packageVersTmpRoot]);
+      await Lifecycle.getInstance().emit('packageVersionCreate:preserveFiles', {
+        location: packageVersTmpRoot,
+        message,
+      });
+      logger.info(message);
       return requestObject;
     } else {
       return fs.promises.rm(packageVersTmpRoot, { recursive: true, force: true }).then(() => requestObject);
@@ -357,11 +364,12 @@ export class PackageVersionCreate {
     const resultValues = await Promise.all(
       !dependencies ? [] : dependencies.map((dependency) => this.retrieveSubscriberPackageVersionId(dependency))
     );
-    const ancestorId = await getAncestorIds(
-      // TODO: investigate if it's ok to convert to ScratchOggInfoPayload
-      this.packageObject as unknown as ScratchOrgInfoPayload,
-      this.options.project.getSfProjectJson(),
-      await Org.create({ aliasOrUsername: this.options.connection.getUsername() })
+    const ancestorId = await getAncestorId(
+      packageDescriptorJson,
+      this.options.project,
+      this.options.connection,
+      this.options.versionnumber ?? packageDescriptorJson.versionNumber,
+      this.options.skipancestorcheck
     );
     // If dependencies exist, the resultValues array will contain the dependencies populated with a resolved
     // subscriber pkg version id.
@@ -560,12 +568,12 @@ export class PackageVersionCreate {
 
     // from the packageDirectories in sfdx-project.json, find the correct package entry either by finding a matching package (name) or path
     this.packageAlias = getPackageAliasesFromId(this.options.packageId, this.options.project).join();
-    // set on the class so we can access them in other methods without redoing this logic
+    this.packageId = this.options.packageId;
+    // set on the class, so we can access them in other methods without redoing this logic
     this.packageObject = this.project
       .getPackageDirectories()
       .find((pkg) => pkg.package === this.packageAlias || pkg['id'] === this.options.packageId);
     this.options.profileApi = await this.resolveUserLicenses(this.packageObject.includeProfileUserLicenses);
-    this.packageId = getPackageIdFromAlias(this.packageObject.package || this.packageAlias, this.project);
 
     // At this point, the packageIdFromAlias should have been resolved to an Id.  Now, we
     // need to validate that the Id is correct.

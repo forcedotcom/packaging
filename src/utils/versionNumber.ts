@@ -57,6 +57,6 @@ export class VersionNumber {
   public isbuildKeyword(): boolean {
     return Object.values(BuildNumberToken)
       .map((v) => v.toString())
-      .includes(typeof this.build === 'string' && this.build.toLowerCase());
+      .includes(typeof this.build === 'string' && this.build.toUpperCase());
   }
 }

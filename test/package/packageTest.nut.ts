@@ -90,7 +90,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
     await session?.clean();
   });
 
-  describe('create package/version', () => {
+  describe('create/update/promote new package version', () => {
     it('package create', async () => {
       const options: PackageCreateOptions = {
         name: pkgName,
@@ -224,6 +224,16 @@ describe('Integration tests for @salesforce/packaging library', function () {
       );
 
       expect(result.IsReleased, 'Expected IsReleased to be false').to.be.false;
+      expect(Object.values(projectFile.packageAliases).some((id) => id === subscriberPkgVersionId)).to.be.true;
+    });
+
+    it('will update the package version with a new branch', async () => {
+      const pv = new PackageVersion({ connection: devHubOrg.getConnection(), project });
+      const result = await pv.update(subscriberPkgVersionId, { Branch: 'superFunBranch' });
+      expect(result).to.include.keys('id', 'success', 'errors');
+      expect(result.id.startsWith('04t')).to.be.true;
+      expect(result.success).to.be.true;
+      expect(result.errors).to.deep.equal([]);
     });
 
     it('will promote the package version', async () => {
