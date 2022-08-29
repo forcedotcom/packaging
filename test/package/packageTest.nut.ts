@@ -90,7 +90,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
     await session?.clean();
   });
 
-  describe('create package/version', () => {
+  describe('create package/package version, report on pvc, update package/promote package', () => {
     it('package create', async () => {
       const options: PackageCreateOptions = {
         name: pkgName,
@@ -227,10 +227,28 @@ describe('Integration tests for @salesforce/packaging library', function () {
       expect(Object.values(projectFile.packageAliases).some((id) => id === subscriberPkgVersionId)).to.be.true;
     });
 
+    it('will update the package version with a new branch', async () => {
+      const pv = new PackageVersion({ connection: devHubOrg.getConnection(), project });
+      const result = await pv.update(subscriberPkgVersionId, { Branch: 'superFunBranch' });
+      expect(result).to.include.keys('id', 'success', 'errors');
+      expect(result.id.startsWith('04t')).to.be.true;
+      expect(result.success).to.be.true;
+      expect(result.errors).to.deep.equal([]);
+    });
+
     it('will promote the package version', async () => {
       const pvc = new PackageVersion({ connection: devHubOrg.getConnection(), project });
       const result = await pvc.promote(subscriberPkgVersionId);
       expect(result).to.have.all.keys('id', 'success', 'errors');
+    });
+
+    it('will update the package', async () => {
+      const pkg = new Package({ connection: devHubOrg.getConnection() });
+      const result = await pkg.update({ Id: pkgId, Description: 'new package description' });
+      expect(result).to.have.all.keys('id', 'success', 'errors');
+      expect(result.id.startsWith('0Ho')).to.be.true;
+      expect(result.success).to.be.true;
+      expect(result.errors).to.deep.equal([]);
     });
   });
 
