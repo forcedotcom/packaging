@@ -199,17 +199,25 @@ export type PackageVersionCreateRequest = {
   SkipValidation: boolean;
 };
 
-export type PackageVersionQueryOptions = {
-  project: SfProject;
+export type PackageVersionListOptions = {
   orderBy: string;
   modifiedLastDays: number;
   createdLastDays: number;
   packages: string[];
-  connection: Connection;
   verbose: boolean;
   concise: boolean;
   isReleased: boolean;
 };
+
+export type PackageVersionUpdateOptions = {
+  InstallKey?: string;
+  VersionName?: string;
+  VersionDescription?: string;
+  Branch?: string;
+  Tag?: string;
+};
+
+export type ListPackageVersionOptions = PackageVersionListOptions & { connection: Connection };
 
 export type PackageSaveResult = SaveResult;
 

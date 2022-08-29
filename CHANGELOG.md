@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.29](https://github.com/forcedotcom/packaging/compare/v0.0.28...v0.0.29) (2022-08-26)
+
+### Bug Fixes
+
+- add PackageVersion.update, NUTs ([af8a816](https://github.com/forcedotcom/packaging/commit/af8a8167d5fbcf7056f7b72db49e4e9f6ed0363f))
+
+### [0.0.28](https://github.com/forcedotcom/packaging/compare/v0.0.27...v0.0.28) (2022-08-26)
+
+### Bug Fixes
+
+- finish pvl, implement a few missing things ([9bb825c](https://github.com/forcedotcom/packaging/commit/9bb825c97b6cb8c8b9522ddcb5e5fb32e5653995))
+
 ### [0.0.27](https://github.com/forcedotcom/packaging/compare/v0.0.26...v0.0.27) (2022-08-26)
 
 ### Bug Fixes
