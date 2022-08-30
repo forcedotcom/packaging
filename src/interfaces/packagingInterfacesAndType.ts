@@ -287,7 +287,7 @@ export type PackageVersionCreateOptions = Partial<
 export type PackageVersionCreateRequestQueryOptions = {
   createdlastdays?: number;
   connection?: Connection;
-  status?: string;
+  status?: 'Queued' | 'InProgress' | 'Success' | 'Error';
 };
 
 export type ProfileApiOptions = {

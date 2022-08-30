@@ -250,6 +250,64 @@ describe('Integration tests for @salesforce/packaging library', function () {
       expect(result.success).to.be.true;
       expect(result.errors).to.deep.equal([]);
     });
+
+    it('will list all of the created package versions', async () => {
+      const pkg = new PackageVersion({ connection: devHubOrg.getConnection(), project });
+      const result = await pkg.createdList();
+      expect(result).to.have.length.at.least(1);
+      expect(result[0]).to.have.all.keys(
+        'Id',
+        'Status',
+        'Package2Id',
+        'Package2VersionId',
+        'SubscriberPackageVersionId',
+        'Tag',
+        'Branch',
+        'Error',
+        'CreatedDate',
+        'HasMetadataRemoved',
+        'CreatedBy'
+      );
+      expect(result[0].Id.startsWith('08c')).to.be.true;
+      expect(result[0].Package2Id.startsWith('0Ho')).to.be.true;
+      expect(result[0].Package2VersionId.startsWith('05i')).to.be.true;
+      expect(result[0].SubscriberPackageVersionId.startsWith('04t')).to.be.true;
+      expect(result[0].Id.startsWith('08c')).to.be.true;
+    });
+
+    it('will list all of the created package versions (status = error)', async () => {
+      const pkg = new PackageVersion({ connection: devHubOrg.getConnection(), project });
+      const result = await pkg.createdList({ status: 'Success' });
+      result.map((res) => {
+        // we should've filtered to only successful package versions1
+        expect(res.Status).to.equal('Success');
+      });
+    });
+
+    it('will list all of the created package versions (createdLastDays = 3)', async () => {
+      const pkg = new PackageVersion({ connection: devHubOrg.getConnection(), project });
+      const result = await pkg.createdList({ createdlastdays: 3 });
+      expect(result).to.have.length.at.least(1);
+      expect(result[0]).to.have.all.keys(
+        'Id',
+        'Status',
+        'Package2Id',
+        'Package2VersionId',
+        'SubscriberPackageVersionId',
+        'Tag',
+        'Branch',
+        'Error',
+        'CreatedDate',
+        'HasMetadataRemoved',
+        'CreatedBy'
+      );
+      const createdDate = new Date(result[0].CreatedDate);
+      const currentDate = new Date();
+      expect(currentDate > createdDate).to.be.true;
+      // this package should've been made within the last 3 days
+      expect(currentDate.getDate() - 3 > createdDate.getDate()).to.be.false;
+      expect(currentDate.getDate() - 2 > createdDate.getDate()).to.be.true;
+    });
   });
 
   describe('install the package in scratch org', () => {

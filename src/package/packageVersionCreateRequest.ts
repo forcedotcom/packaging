@@ -26,12 +26,11 @@ const QUERY =
   '%s' + // WHERE, if applicable
   'ORDER BY CreatedDate';
 const ERROR_QUERY = "SELECT Message FROM Package2VersionCreateRequestError WHERE ParentRequest.Id = '%s'";
-const STATUSES = ['Queued', 'InProgress', 'Success', 'Error'];
 
 export async function list(
-  options: PackageVersionCreateRequestQueryOptions = {}
+  options?: PackageVersionCreateRequestQueryOptions
 ): Promise<PackageVersionCreateRequestResult[]> {
-  const whereClause = _constructWhere();
+  const whereClause = _constructWhere(options);
   return _query(util.format(QUERY, whereClause), options.connection);
 }
 
@@ -84,28 +83,19 @@ async function _queryErrors(
 }
 
 function _constructWhere(options?: PackageVersionCreateRequestQueryOptions): string {
-  const where = [];
+  const where: string[] = [];
 
   // filter on created date, days ago: 0 for today, etc
-  if (!util.isNullOrUndefined(this.options.createdlastdays)) {
+  if (options?.createdlastdays) {
     if (options.createdlastdays < 0) {
       throw messages.createError('invalidDaysNumber', ['createdlastdays', options.createdlastdays]);
     }
-    where.push(`CreatedDate = LAST_N_DAYS:${this.options.createdlastdays as string}`);
+    where.push(`CreatedDate = LAST_N_DAYS:${options.createdlastdays}`);
   }
 
   // filter on errors
   if (options.status) {
-    const foundStatus = STATUSES.find((status) => status.toLowerCase() === this.options.status.toLowerCase());
-    if (!foundStatus) {
-      const args = [options.status];
-      STATUSES.forEach((status) => {
-        args.push(status);
-      });
-      throw messages.createError('invalidStatus', args);
-    }
-
-    where.push(`Status = '${foundStatus}'`);
+    where.push(`Status = '${options.status.toLowerCase()}'`);
   }
 
   return where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
