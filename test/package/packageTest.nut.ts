@@ -331,16 +331,14 @@ describe('Integration tests for @salesforce/packaging library', function () {
 
     it('runs force:package:uninstall:report to wait for results', async () => {
       const MAX_TRIES = 40;
-
+      const pkg = new Package({ connection: scratchOrg.getConnection() });
       const waitForUninstallRequestAndValidate = async (
         counter = 1
       ): Promise<{
         Status: string;
         SubscriberPackageVersionId?: string;
       }> => {
-        const pollResult = execCmd<{ Status: string; Id: string }>(
-          `force:package:uninstall:report --targetusername ${SUB_ORG_ALIAS} --requestid ${uninstallReqId} --json`
-        ).jsonOutput.result;
+        const pollResult = await pkg.uninstallReport(uninstallReqId);
 
         if (pollResult.Status === 'InProgress' && counter < MAX_TRIES) {
           return sleep(WAIT_INTERVAL_MS, Duration.Unit.MILLISECONDS).then(() =>
@@ -367,13 +365,6 @@ describe('Integration tests for @salesforce/packaging library', function () {
         'LastModifiedById',
         'SystemModstamp',
       ]);
-    });
-
-    it('gets an error trying to uninstall again (and waiting for the result)', () => {
-      execCmd<{ Status: string; Id: string }>(
-        `force:package:uninstall:report --targetusername ${SUB_ORG_ALIAS} --requestid ${uninstallReqId} --wait 20`,
-        { ensureExitCode: 1 }
-      );
     });
 
     it('gets zero results from package:installed:list', () => {

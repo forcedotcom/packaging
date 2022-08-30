@@ -97,6 +97,13 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
     return Promise.resolve(undefined);
   }
 
+  public async uninstallReport(id: string): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest> {
+    return (await this.options.connection.tooling.retrieve(
+      'SubscriberPackageVersionUninstallRequest',
+      id
+    )) as PackagingSObjects.SubscriberPackageVersionUninstallRequest;
+  }
+
   public async update(options: PackageUpdateOptions): Promise<PackageSaveResult> {
     // filter out any undefined values and their keys
     Object.keys(options).forEach((key) => options[key] === undefined && delete options[key]);
