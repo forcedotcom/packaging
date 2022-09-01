@@ -4,7 +4,6 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import * as os from 'os';
 import { expect } from 'chai';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { Connection, Lifecycle } from '@salesforce/core';
@@ -248,11 +247,11 @@ describe('packageConvert', () => {
     const $$ = instantiateContext();
     const conn = await testOrg.getConnection();
 
-    Lifecycle.getInstance().on(Package2VersionStatus.error, async (data) => {
-      expect(data).to.deep.equal({
-        id: '0Ho3i000000Gmj6YYY',
-        status: `Multiple errors occurred:${os.EOL}(1) Server polling error 1${os.EOL}(2) server error 2`,
-      });
+    Lifecycle.getInstance().on(Package2VersionStatus.error, async (data: { id: string; status: string }) => {
+      expect(data.id).to.equal('0Ho3i000000Gmj6YYY');
+      expect(data.status).to.include('Multiple errors occurred:');
+      expect(data.status).to.include('(1) Server polling error 1');
+      expect(data.status).to.include('(2) server error 2');
     });
     $$.SANDBOX.stub(conn.tooling, 'query')
       .onFirstCall()
@@ -276,9 +275,10 @@ describe('packageConvert', () => {
         wait: Duration.minutes(1),
       });
     } catch (e) {
-      expect((e as Error).message).to.equal(
-        `Multiple errors occurred:${os.EOL}(1) Server polling error 1${os.EOL}(2) server error 2`
-      );
+      const message = (e as Error).message;
+      expect(message).to.include('Multiple errors occurred:');
+      expect(message).to.include('(1) Server polling error 1');
+      expect(message).to.include('(2) server error 2');
     }
   }).timeout(100000);
 });
