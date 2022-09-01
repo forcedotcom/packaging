@@ -19,7 +19,7 @@ import * as srcDevUtil from '../utils/srcDevUtils';
 import { byId } from './packageVersionCreateRequest';
 
 Messages.importMessagesDirectory(__dirname);
-const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
+const messages = Messages.loadMessages('@salesforce/packaging', 'packageVersionCreate');
 
 export async function convertPackage(
   pkg: string,
@@ -33,7 +33,7 @@ export async function convertPackage(
     maxRetries = (60 / pkgUtils.POLL_INTERVAL_SECONDS) * options.wait.minutes;
   }
 
-  const packageId = await pkgUtils.findOrCreatePackage(pkg, connection);
+  const packageId = await pkgUtils.findOrCreatePackage2(pkg, connection);
 
   const request = await createPackageVersionCreateRequest(
     { installationkey: options.installationKey, buildinstance: options.buildInstance },
@@ -78,8 +78,8 @@ export async function convertPackage(
  * @returns {{Package2Id: string, Package2VersionMetadata: *, Tag: *, Branch: number}}
  * @private
  */
-async function createPackageVersionCreateRequest(
-  context: { installationkey: string; buildinstance: string },
+export async function createPackageVersionCreateRequest(
+  context: { installationkey?: string; buildinstance?: string },
   packageId: string
 ): Promise<PackagingSObjects.Package2VersionCreateRequest> {
   const uniqueId = uniqid({ template: `${packageId}-%s` });
@@ -107,7 +107,7 @@ async function createPackageVersionCreateRequest(
 
 async function createRequestObject(
   packageId: string,
-  options: { installationkey: string; buildinstance: string },
+  options: { installationkey?: string; buildinstance?: string },
   packageVersTmpRoot: string,
   packageVersBlobZipFile: string
 ): Promise<PackagingSObjects.Package2VersionCreateRequest> {
