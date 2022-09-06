@@ -33,6 +33,9 @@ const SELECT_PACKAGE_VERSION_CONTAINER_OPTIONS = 'SELECT Package2ContainerOption
 // Add this to query calls to only show released package versions in the output
 const releasedOnlyFilter = ' AND IsReleased = true';
 
+/**
+ * A class that represents the package ancestry graph.
+ */
 export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   private _requestedPackageId: string;
   private graph: DirectedGraph = new DirectedGraph<PackageAncestryNode, Attributes, Attributes>();
@@ -49,10 +52,16 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
     await this.buildAncestryTree();
   }
 
+  /**
+   * Returns the internal representation of the requested package ancestry graph.
+   */
   public getAncestryGraph(): DirectedGraph<Attributes, Attributes, Attributes> {
     return this.graph;
   }
 
+  /**
+   * Convenience method to get the json representation of the package ancestry graph.
+   */
   public async getJsonProducer(): Promise<AncestryRepresentationProducer> {
     return this.getRepresentationProducer(
       (opts: AncestryRepresentationProducerOptions) => new AncestryJsonProducer(opts),
@@ -60,6 +69,9 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
     );
   }
 
+  /**
+   * Convenience method to get the CliUx.Tree representation of the package ancestry graph.
+   */
   public async getTreeProducer(verbose: boolean): Promise<AncestryRepresentationProducer> {
     return this.getRepresentationProducer(
       (opts: AncestryRepresentationProducerOptions) => new AncestryTreeProducer({ ...opts, verbose: !!verbose }),
@@ -67,12 +79,22 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
     );
   }
 
+  /**
+   * Convenience method to get the dot representation of the package ancestry graph.
+   */
   public async getDotProducer(): Promise<AncestryRepresentationProducer> {
     return this.getRepresentationProducer(
       (opts: AncestryRepresentationProducerOptions) => new AncestryDotProducer(opts),
       this.requestedPackageId
     );
   }
+
+  /**
+   * Returns the producer representation of the package ancestry graph.
+   *
+   * @param producerCtor - function that returns a new instance of the producer
+   * @param root - the subscriber package version id of the root node
+   */
   public async getRepresentationProducer(
     producerCtor: (options?: AncestryRepresentationProducerOptions) => AncestryRepresentationProducer,
     root: string | undefined
@@ -108,6 +130,12 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
     return tree;
   }
 
+  /**
+   * Returns a list of ancestry nodes that represent the path from subscriber package version id to the root of the
+   * package ancestry tree.
+   *
+   * @param subscriberPackageVersionId
+   */
   public async getLeafPathToRoot(subscriberPackageVersionId?: string): Promise<PackageAncestryNode[][]> {
     const root = this.graph.findNode((node, attributes) => attributes.node.AncestorId === null);
     const paths: PackageAncestryNode[][] = [];
