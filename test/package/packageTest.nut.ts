@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, salesforce.com, inc.
+ * Copyright (c) 2020, salesforce.com, inc.
  * All rights reserved.
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
@@ -98,7 +98,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
     await session?.clean();
   });
 
-  describe('create/update/promote new package version', () => {
+  describe('create package/package version, report on pvc, update package/promote package', () => {
     it('package create', async () => {
       const options: PackageCreateOptions = {
         name: pkgName,
@@ -248,6 +248,15 @@ describe('Integration tests for @salesforce/packaging library', function () {
       const pvc = new PackageVersion({ connection: devHubOrg.getConnection(), project });
       const result = await pvc.promote(subscriberPkgVersionId);
       expect(result).to.have.all.keys('id', 'success', 'errors');
+    });
+
+    it('will update the package', async () => {
+      const pkg = new Package({ connection: devHubOrg.getConnection() });
+      const result = await pkg.update({ Id: pkgId, Description: 'new package description' });
+      expect(result).to.have.all.keys('id', 'success', 'errors');
+      expect(result.id.startsWith('0Ho')).to.be.true;
+      expect(result.success).to.be.true;
+      expect(result.errors).to.deep.equal([]);
     });
   });
 

@@ -2,6 +2,55 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.30](https://github.com/forcedotcom/packaging/compare/v0.0.29...v0.0.30) (2022-08-29)
+
+### Bug Fixes
+
+- add Package.update method, NUT ([dd77095](https://github.com/forcedotcom/packaging/commit/dd77095f77d2224c347d146810f8d0f883bbd9a3))
+
+### [0.0.29](https://github.com/forcedotcom/packaging/compare/v0.0.28...v0.0.29) (2022-08-26)
+
+### Bug Fixes
+
+- add PackageVersion.update, NUTs ([af8a816](https://github.com/forcedotcom/packaging/commit/af8a8167d5fbcf7056f7b72db49e4e9f6ed0363f))
+
+### [0.0.28](https://github.com/forcedotcom/packaging/compare/v0.0.27...v0.0.28) (2022-08-26)
+
+### Bug Fixes
+
+- finish pvl, implement a few missing things ([9bb825c](https://github.com/forcedotcom/packaging/commit/9bb825c97b6cb8c8b9522ddcb5e5fb32e5653995))
+
+### [0.0.27](https://github.com/forcedotcom/packaging/compare/v0.0.26...v0.0.27) (2022-08-26)
+
+### Bug Fixes
+
+- fix validateDependencyValues ([e37ac1e](https://github.com/forcedotcom/packaging/commit/e37ac1e08f5d764aefa8cf04271c6e72a30d78ea))
+
+### [0.0.26](https://github.com/forcedotcom/packaging/compare/v0.0.25...v0.0.26) (2022-08-25)
+
+### Bug Fixes
+
+- remove hard coded string ([8c6d2dd](https://github.com/forcedotcom/packaging/commit/8c6d2dd769c2a91d33c8afafca02f3489c296060))
+
+### [0.0.25](https://github.com/forcedotcom/packaging/compare/v0.0.24...v0.0.25) (2022-08-25)
+
+### Bug Fixes
+
+- improve packge property maintenance ([c62acf8](https://github.com/forcedotcom/packaging/commit/c62acf84ad84deec6d77079200290ab09064f6d7))
+
+### [0.0.24](https://github.com/forcedotcom/packaging/compare/v0.0.23...v0.0.24) (2022-08-24)
+
+### Bug Fixes
+
+- correct package alias generation ([c4617bd](https://github.com/forcedotcom/packaging/commit/c4617bd16eac1f2bfe5efadafc1062ea78ee352c))
+
+### [0.0.23](https://github.com/forcedotcom/packaging/compare/v0.0.22...v0.0.23) (2022-08-22)
+
+### Bug Fixes
+
+- increase pvc ut timeout to 10 secs ([08e667f](https://github.com/forcedotcom/packaging/commit/08e667f574abf5a3de0686c5dcfd654d9fa4c0fa))
+- remove ref to dev dep ([a51323a](https://github.com/forcedotcom/packaging/commit/a51323aaf699eb82fc515722681c6f1b56edb5f4))
+
 ### [0.0.22](https://github.com/forcedotcom/packaging/compare/v0.0.21...v0.0.22) (2022-08-22)
 
 ### Bug Fixes
