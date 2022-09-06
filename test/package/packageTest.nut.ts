@@ -478,7 +478,7 @@ describe('ancestry tests', () => {
   it('should produce a json representation of the ancestor tree from package name (0Ho)', async () => {
     const pa = await PackageAncestry.create({ packageId: pkgName, project, connection: devHubOrg.getConnection() });
     expect(pa).to.be.ok;
-    const jsonProducer = await pa.getGraphAs(
+    const jsonProducer = await pa.getRepresentationProducer(
       (opts: AncestryRepresentationProducerOptions) => new AncestryJsonProducer(opts),
       undefined
     );
@@ -496,7 +496,7 @@ describe('ancestry tests', () => {
         super(options);
       }
     }
-    const treeProducer = await pa.getGraphAs(
+    const treeProducer = await pa.getRepresentationProducer(
       (opts: AncestryRepresentationProducerOptions) =>
         new TestAncestryTreeProducer({ ...opts, logger: (text) => (TestAncestryTreeProducer.treeAsText = text) }),
       undefined
@@ -515,7 +515,7 @@ describe('ancestry tests', () => {
         super(options);
       }
     }
-    const treeProducer = await pa.getGraphAs(
+    const treeProducer = await pa.getRepresentationProducer(
       (opts: AncestryRepresentationProducerOptions) =>
         new TestAncestryTreeProducer({
           ...opts,

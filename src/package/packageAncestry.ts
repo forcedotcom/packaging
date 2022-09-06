@@ -34,41 +34,46 @@ const SELECT_PACKAGE_VERSION_CONTAINER_OPTIONS = 'SELECT Package2ContainerOption
 const releasedOnlyFilter = ' AND IsReleased = true';
 
 export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
+  private _requestedPackageId: string;
   private graph: DirectedGraph = new DirectedGraph<PackageAncestryNode, Attributes, Attributes>();
   private roots: PackageAncestryNode[];
   public constructor(private options: PackageAncestryOptions) {
     super(options);
   }
+
+  public get requestedPackageId(): string {
+    return this._requestedPackageId;
+  }
+
   public async init(): Promise<void> {
     await this.buildAncestryTree();
-  }
-  public async buildAncestryTree(): Promise<void> {
-    this.roots = await this.getRoots();
-    await this.buildAncestryTreeFromRoots(this.roots);
-  }
-  public async getRoots(): Promise<PackageAncestryNode[]> {
-    let roots = [];
-    this.options.packageId = pkgUtils.getPackageIdFromAlias(this.options.packageId, this.options.project);
-    switch (this.options.packageId.slice(0, 3)) {
-      case '0Ho':
-        pkgUtils.validateId(pkgUtils.BY_LABEL.PACKAGE_ID, this.options.packageId);
-        roots = await this.findRootsForPackage();
-        break;
-      case '04t':
-        pkgUtils.validateId(pkgUtils.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, this.options.packageId);
-        roots = await this.findRootsForPackageVersion();
-        break;
-      default:
-        throw messages.createError('idOrAliasNotFound', [this.options.packageId]);
-    }
-    return roots;
   }
 
   public getAncestryGraph(): DirectedGraph<Attributes, Attributes, Attributes> {
     return this.graph;
   }
 
-  public async getGraphAs(
+  public async getJsonProducer(): Promise<AncestryRepresentationProducer> {
+    return this.getRepresentationProducer(
+      (opts: AncestryRepresentationProducerOptions) => new AncestryJsonProducer(opts),
+      this.requestedPackageId
+    );
+  }
+
+  public async getTreeProducer(verbose: boolean): Promise<AncestryRepresentationProducer> {
+    return this.getRepresentationProducer(
+      (opts: AncestryRepresentationProducerOptions) => new AncestryTreeProducer({ ...opts, verbose: !!verbose }),
+      this.requestedPackageId
+    );
+  }
+
+  public async getDotProducer(): Promise<AncestryRepresentationProducer> {
+    return this.getRepresentationProducer(
+      (opts: AncestryRepresentationProducerOptions) => new AncestryDotProducer(opts),
+      this.requestedPackageId
+    );
+  }
+  public async getRepresentationProducer(
     producerCtor: (options?: AncestryRepresentationProducerOptions) => AncestryRepresentationProducer,
     root: string | undefined
   ): Promise<AncestryRepresentationProducer> {
@@ -138,10 +143,33 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
       });
   }
 
+  private async buildAncestryTree(): Promise<void> {
+    this.roots = await this.getRoots();
+    await this.buildAncestryTreeFromRoots(this.roots);
+  }
+
+  private async getRoots(): Promise<PackageAncestryNode[]> {
+    let roots = [];
+    this._requestedPackageId = pkgUtils.getPackageIdFromAlias(this.options.packageId, this.options.project);
+    switch (this.requestedPackageId.slice(0, 3)) {
+      case '0Ho':
+        pkgUtils.validateId(pkgUtils.BY_LABEL.PACKAGE_ID, this.requestedPackageId);
+        roots = await this.findRootsForPackage();
+        break;
+      case '04t':
+        pkgUtils.validateId(pkgUtils.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, this.requestedPackageId);
+        roots = await this.findRootsForPackageVersion();
+        break;
+      default:
+        throw messages.createError('idOrAliasNotFound', [this.requestedPackageId]);
+    }
+    return roots;
+  }
+
   private async findRootsForPackageVersion(): Promise<PackageAncestryNode[]> {
     // Check to see if the package version is part of an unlocked package
     // if so, throw an error since ancestry only applies to managed packages
-    const versionQuery = `${SELECT_PACKAGE_VERSION_CONTAINER_OPTIONS} WHERE Id = '${this.options.packageId}'`;
+    const versionQuery = `${SELECT_PACKAGE_VERSION_CONTAINER_OPTIONS} WHERE Id = '${this.requestedPackageId}'`;
     const packageVersionTypeResults = await this.options.connection.singleRecordQuery<{
       Package2ContainerOptions?: PackageType;
     }>(versionQuery, { tooling: true });
@@ -151,7 +179,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
     }
 
     // Start with the node, and shoot up
-    let node = await this.getPackageVersion(this.options.packageId);
+    let node = await this.getPackageVersion(this.requestedPackageId);
     while (node.AncestorId !== null) {
       const ancestor = await this.getPackageVersion(node.AncestorId);
       this.addToGraph(ancestor, node);
@@ -179,16 +207,16 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   private async findRootsForPackage(): Promise<PackageAncestryNode[]> {
     // Check to see if the package is an unlocked package
     // if so, throw and error since ancestry only applies to managed packages
-    const query = `${SELECT_PACKAGE_CONTAINER_OPTIONS} WHERE Id = '${this.options.packageId}'`;
+    const query = `${SELECT_PACKAGE_CONTAINER_OPTIONS} WHERE Id = '${this.requestedPackageId}'`;
     const packageTypeResults = await this.options.connection.tooling.query<{ ContainerOptions?: PackageType }>(query);
 
     if (packageTypeResults?.records?.length === 0) {
-      throw messages.createError('invalidId', [this.options.packageId]);
+      throw messages.createError('invalidId', [this.requestedPackageId]);
     } else if (packageTypeResults?.records?.length && packageTypeResults?.records[0].ContainerOptions !== 'Managed') {
       throw messages.createError('unlockedPackageError');
     }
 
-    const normalQuery = `${SELECT_PACKAGE_VERSION} WHERE AncestorId = NULL AND Package2Id = '${this.options.packageId}' ${releasedOnlyFilter}`;
+    const normalQuery = `${SELECT_PACKAGE_VERSION} WHERE AncestorId = NULL AND Package2Id = '${this.requestedPackageId}' ${releasedOnlyFilter}`;
     const subscriberPackageVersions = (
       await this.options.connection.tooling.query<PackageAncestryNode>(normalQuery)
     ).records?.map((record) => new PackageAncestryNode(record));
