@@ -11,6 +11,8 @@ import { Tree } from '@oclif/core/lib/cli-ux/styled/tree';
 import { Attributes } from 'graphology-types';
 import { dfs, dfsFromNode } from 'graphology-traversal';
 import {
+  AncestryRepresentationProducer,
+  AncestryRepresentationProducerOptions,
   PackageAncestryNodeData,
   PackageAncestryNodeOptions,
   PackageAncestryOptions,
@@ -242,30 +244,20 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   }
 }
 
-export type AncestryRepresentationProducerOptions = {
-  [key: string]: unknown;
-  node: PackageAncestryNode;
-  depth?: number;
-};
-
-export interface AncestryRepresentationProducer {
-  label: string;
-  options: AncestryRepresentationProducerOptions;
-  addNode(node: AncestryRepresentationProducer): void;
-  produce<T>(): T | string | void;
-}
-
 export class AncestryTreeProducer extends Tree implements AncestryRepresentationProducer {
   public label: string;
   public options: AncestryRepresentationProducerOptions;
+  private verbose = false;
   public constructor(options?: AncestryRepresentationProducerOptions) {
     super();
     this.options = options;
     this.label = this.options?.node?.getVersion() || 'root';
+    this.verbose = this.options?.verbose || false;
   }
 
   public addNode(node: AncestryTreeProducer): void {
-    this.insert(node?.label || 'root', node);
+    const label = this.createLabel(node);
+    this.insert(label, node);
   }
 
   public produce(): void {
@@ -279,12 +271,21 @@ export class AncestryTreeProducer extends Tree implements AncestryRepresentation
           a.options.node.version.compareTo(b.options.node.version)
         )
         .forEach((child: AncestryTreeProducer) => {
-          delete producer.nodes[child.label];
+          delete producer.nodes[this.createLabel(child)];
           producer.addNode(child);
           producers.push(child);
         });
     }
     this.display(this.options ? this.options['logger'] : undefined);
+  }
+
+  private createLabel(node: AncestryTreeProducer): string {
+    const subscriberId =
+      this.verbose && node?.options?.node?.SubscriberPackageVersionId
+        ? ` (${node.options.node.SubscriberPackageVersionId})`
+        : '';
+    const label = node?.label ? `${node.label}${subscriberId}` : 'root';
+    return label;
   }
 }
 export class AncestryJsonProducer implements AncestryRepresentationProducer {

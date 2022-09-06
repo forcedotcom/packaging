@@ -27,12 +27,12 @@ import { PackageVersion } from '../../src/package';
 import { Package } from '../../src/package';
 import { PackagingSObjects } from '../../src/interfaces';
 import { VersionNumber } from '../../src/utils/versionNumber';
+import { AncestryJsonProducer, PackageAncestry } from '../../src/package/packageAncestry';
+import { AncestryTreeProducer } from '../../src/package/packageAncestry';
 import {
-  AncestryJsonProducer,
+  AncestryRepresentationProducer,
   AncestryRepresentationProducerOptions,
-  PackageAncestry,
-} from '../../src/package/packageAncestry';
-import { AncestryRepresentationProducer, AncestryTreeProducer } from '../../src/package/packageAncestry';
+} from '../../src/interfaces/packagingInterfacesAndType';
 
 let session: TestSession;
 
@@ -475,7 +475,7 @@ describe('ancestry tests', () => {
   it('should have a correct project config', async () => {
     expect(project.getSfProjectJson().get('packageAliases')).to.have.property(pkgName);
   });
-  it('should product a json representation of the ancestor tree from package name (0Ho)', async () => {
+  it('should produce a json representation of the ancestor tree from package name (0Ho)', async () => {
     const pa = await PackageAncestry.create({ packageId: pkgName, project, connection: devHubOrg.getConnection() });
     expect(pa).to.be.ok;
     const jsonProducer = await pa.getGraphAs(
@@ -487,7 +487,7 @@ describe('ancestry tests', () => {
     expect(jsonTree).to.have.property('data');
     expect(jsonTree).to.have.property('children');
   });
-  it('should product a graphic representation of the ancestor tree from package name (0Ho)', async () => {
+  it('should produce a graphic representation of the ancestor tree from package name (0Ho)', async () => {
     const pa = await PackageAncestry.create({ packageId: pkgName, project, connection: devHubOrg.getConnection() });
     expect(pa).to.be.ok;
     class TestAncestryTreeProducer extends AncestryTreeProducer implements AncestryRepresentationProducer {
@@ -505,6 +505,29 @@ describe('ancestry tests', () => {
     await treeProducer.produce();
     const treeText = TestAncestryTreeProducer.treeAsText.split(os.EOL);
     expect(treeText[0]).to.match(new RegExp(`^└─ ${sortedVersions[0].toString()}`));
+  });
+  it('should produce a verbose graphic representation of the ancestor tree from package name (0Ho)', async () => {
+    const pa = await PackageAncestry.create({ packageId: pkgName, project, connection: devHubOrg.getConnection() });
+    expect(pa).to.be.ok;
+    class TestAncestryTreeProducer extends AncestryTreeProducer implements AncestryRepresentationProducer {
+      public static treeAsText: string;
+      public constructor(options?: AncestryRepresentationProducerOptions) {
+        super(options);
+      }
+    }
+    const treeProducer = await pa.getGraphAs(
+      (opts: AncestryRepresentationProducerOptions) =>
+        new TestAncestryTreeProducer({
+          ...opts,
+          logger: (text) => (TestAncestryTreeProducer.treeAsText = text),
+          verbose: true,
+        }),
+      undefined
+    );
+    expect(treeProducer).to.be.ok;
+    await treeProducer.produce();
+    const treeText = TestAncestryTreeProducer.treeAsText.split(os.EOL);
+    expect(treeText[0]).to.match(new RegExp(`^└─ ${sortedVersions[0].toString()} \\(04t.{12,15}\\)`));
   });
   it('should get path from leaf to root', async () => {
     const pa = await PackageAncestry.create({ packageId: pkgName, project, connection: devHubOrg.getConnection() });
