@@ -263,3 +263,7 @@ Verify installed package ID and resolve errors, then try again.
 # errorNoSubscriberPackageRecord
 
 No subscriber package was found for seed id: %s'
+
+# idOrAliasNotFound
+
+Can't find package with id or alias: %s

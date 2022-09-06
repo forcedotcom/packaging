@@ -349,6 +349,13 @@ export type PackageAncestryNodeOptions = Attributes & {
   depthCounter?: number;
 };
 
+export type PackageAncestryData = Omit<PackageAncestryNodeOptions, 'AncestorId'>;
+
+export type PackageAncestryNodeData = {
+  data: PackageAncestryNodeOptions;
+  children: PackageAncestryNodeData[];
+};
+
 export type PackageAncestryOptions = {
   packageId: string;
   project: SfProject;

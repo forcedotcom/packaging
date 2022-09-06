@@ -59,4 +59,35 @@ export class VersionNumber {
       .map((v) => v.toString())
       .includes(typeof this.build === 'string' && this.build.toUpperCase());
   }
+
+  public compareTo(other: VersionNumber): number {
+    const [aMajor, aMinor, aPatch, aBuild] = [this.major, this.minor, this.patch, this.build].map((v) =>
+      typeof v === 'number' ? v : parseInt(v, 10)
+    );
+    const [oMajor, oMinor, oPatch, oBuild] = [other.major, other.minor, other.patch, other.build].map((v) =>
+      typeof v === 'number' ? v : parseInt(v, 10)
+    );
+    if (aMajor !== oMajor) {
+      return aMajor - oMajor;
+    }
+    if (aMinor !== oMinor) {
+      return aMinor - oMinor;
+    }
+    if (aPatch !== oPatch) {
+      return aPatch - oPatch;
+    }
+    if (isNaN(aBuild) && isNaN(oBuild)) {
+      return 0;
+    }
+    if (isNaN(aBuild)) {
+      return 1;
+    }
+    if (isNaN(oBuild)) {
+      return -1;
+    }
+    if (aBuild !== oBuild) {
+      return aBuild - oBuild;
+    }
+    return 0;
+  }
 }
