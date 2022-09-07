@@ -369,20 +369,30 @@ export class AncestryJsonProducer implements AncestryRepresentationProducer {
     this.children.push(node);
   }
 
-  public search(version: string): AncestryJsonProducer {
+  public produce<PackageAncestryNodeData>(): PackageAncestryNodeData {
     const producers: AncestryJsonProducer[] = [];
     producers.push(this);
+
     while (producers.length > 0) {
       const producer = producers.shift();
-      if (producer.label === version) {
-        return producer;
-      }
+      producer.data.children.sort((a, b): number => {
+        const aVersion = new VersionNumber(
+          a.data.MajorVersion,
+          a.data.MinorVersion,
+          a.data.PatchVersion,
+          a.data.BuildNumber
+        );
+        const bVersion = new VersionNumber(
+          b.data.MajorVersion,
+          b.data.MinorVersion,
+          b.data.PatchVersion,
+          b.data.BuildNumber
+        );
+        return aVersion.compareTo(bVersion);
+      });
       producers.push(...producer.children);
     }
-    return undefined;
-  }
 
-  public produce<PackageAncestryNodeData>(): PackageAncestryNodeData {
     return this.data.children[0] as unknown as PackageAncestryNodeData;
   }
 }
