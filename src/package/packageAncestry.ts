@@ -4,6 +4,7 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
+import { EOL } from 'os';
 import { Messages } from '@salesforce/core';
 import { DirectedGraph } from 'graphology';
 import { AsyncCreatable } from '@salesforce/kit';
@@ -447,7 +448,7 @@ export class AncestryDotProducer implements AncestryRepresentationProducer {
       }
       producers.push(...producer.children);
     }
-    return `strict graph G {\n${dotLines.join('\n')}}`;
+    return `strict graph G {${EOL}${dotLines.join(EOL)}${EOL}}`;
   }
 }
 
