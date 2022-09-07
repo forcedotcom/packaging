@@ -97,6 +97,32 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
     return Promise.resolve(undefined);
   }
 
+  /**
+   * Reports on the uninstall progress of a package.
+   *
+   * @param id the 06y package uninstall request id
+   */
+  public async uninstallReport(id: string): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest> {
+    const result = (await this.options.connection.tooling.retrieve(
+      'SubscriberPackageVersionUninstallRequest',
+      id
+    )) as PackagingSObjects.SubscriberPackageVersionUninstallRequest;
+    if (result.Status === 'Error') {
+      const errorDetails = await this.options.connection.tooling.query<{ Message: string }>(
+        `SELECT Message FROM PackageVersionUninstallRequestError WHERE ParentRequest.Id = '${id}' ORDER BY Message`
+      );
+      const errors: string[] = [];
+      errorDetails.records.forEach((record) => {
+        errors.push(`(${errors.length + 1}) ${record.Message}`);
+      });
+      const errHeader = errors.length > 0 ? `\n=== Errors\n${errors.join('\n')}` : '';
+      const err = messages.getMessage('defaultErrorMessage', [id, result.Id]);
+
+      throw new SfError(`${err}${errHeader}`, 'UNINSTALL_ERROR', [messages.getMessage('action')]);
+    }
+    return result;
+  }
+
   public async update(options: PackageUpdateOptions): Promise<PackageSaveResult> {
     // filter out any undefined values and their keys
     Object.keys(options).forEach((key) => options[key] === undefined && delete options[key]);

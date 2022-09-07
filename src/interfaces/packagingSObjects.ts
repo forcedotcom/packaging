@@ -210,7 +210,7 @@ export namespace PackagingSObjects {
     LastModifiedById: string;
     SystemModstamp: number;
     SubscriberPackageVersionId: string;
-    Status: string;
+    Status: 'Error' | 'InProgress' | 'Queued' | 'Success';
   };
 
   export type PackageVersionUninstallRequestError = {
