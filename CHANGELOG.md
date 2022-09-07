@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.32](https://github.com/forcedotcom/packaging/compare/v0.0.31...v0.0.32) (2022-09-07)
+
+### Bug Fixes
+
+- add Package.uninstallReport method, NUT ([9269c9b](https://github.com/forcedotcom/packaging/commit/9269c9b999dcac25ac52c4ee64bf261ffebfb0e0))
+
 ### [0.0.31](https://github.com/forcedotcom/packaging/compare/v0.0.30...v0.0.31) (2022-09-07)
 
 ### Bug Fixes
