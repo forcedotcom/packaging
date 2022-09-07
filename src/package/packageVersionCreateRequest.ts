@@ -94,7 +94,7 @@ function _constructWhere(options?: PackageVersionCreateRequestQueryOptions): str
   }
 
   // filter on errors
-  if (options.status) {
+  if (options?.status) {
     where.push(`Status = '${options.status.toLowerCase()}'`);
   }
 

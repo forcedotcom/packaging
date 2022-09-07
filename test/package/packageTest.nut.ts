@@ -171,7 +171,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
       });
       const result = await pv.waitForCreateVersion(pkgCreateVersionRequestId, {
         frequency: Duration.seconds(30),
-        timeout: Duration.minutes(10),
+        timeout: Duration.minutes(20),
       });
       expect(result).to.include.keys(VERSION_CREATE_RESPONSE_KEYS);
 
@@ -279,7 +279,6 @@ describe('Integration tests for @salesforce/packaging library', function () {
       expect(result[0].Package2Id.startsWith('0Ho')).to.be.true;
       expect(result[0].Package2VersionId.startsWith('05i')).to.be.true;
       expect(result[0].SubscriberPackageVersionId.startsWith('04t')).to.be.true;
-      expect(result[0].Id.startsWith('08c')).to.be.true;
     });
 
     it('will list all of the created package versions (status = error)', async () => {
@@ -312,8 +311,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
       const currentDate = new Date();
       expect(currentDate > createdDate).to.be.true;
       // this package should've been made within the last 3 days
-      expect(currentDate.getDate() - 3 > createdDate.getDate()).to.be.false;
-      expect(currentDate.getDate() - 2 > createdDate.getDate()).to.be.true;
+      expect(currentDate.getTime() - 1000 * 60 * 60 * 24 * 3 < createdDate.getTime()).to.be.true;
     });
   });
 
