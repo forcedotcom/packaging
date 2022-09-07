@@ -340,8 +340,7 @@ export class AncestryTreeProducer extends Tree implements AncestryRepresentation
       this.verbose && node?.options?.node?.SubscriberPackageVersionId
         ? ` (${node.options.node.SubscriberPackageVersionId})`
         : '';
-    const label = node?.label ? `${node.label}${subscriberId}` : 'root';
-    return label;
+    return node?.label ? `${node.label}${subscriberId}` : 'root';
   }
 }
 export class AncestryJsonProducer implements AncestryRepresentationProducer {
@@ -443,73 +442,73 @@ export class AncestryDotProducer implements AncestryRepresentationProducer {
 }
 
 export class PackageAncestryNode extends AsyncCreatable<PackageAncestryNodeOptions> implements Attributes {
-  private readonly _version: VersionNumber;
-  private readonly _MajorVersion: number;
-  private readonly _MinorVersion: number;
-  private readonly _PatchVersion: number;
-  private readonly _BuildNumber: number | string;
-  private readonly _AncestorId: string;
-  private readonly _SubscriberPackageVersionId: string;
-  private readonly _depthCounter: number;
+  readonly #version: VersionNumber;
+  readonly #MajorVersion: number;
+  readonly #MinorVersion: number;
+  readonly #PatchVersion: number;
+  readonly #BuildNumber: number | string;
+  readonly #AncestorId: string;
+  readonly #SubscriberPackageVersionId: string;
+  readonly #depthCounter: number;
 
   public constructor(public options: PackageAncestryNodeOptions) {
     super(options);
-    this._version = new VersionNumber(
+    this.#version = new VersionNumber(
       this.options.MajorVersion,
       this.options.MinorVersion,
       this.options.PatchVersion,
       this.options.BuildNumber
     );
-    this._AncestorId = this.options.AncestorId;
-    this._SubscriberPackageVersionId = this.options.SubscriberPackageVersionId;
-    this._MajorVersion =
+    this.#AncestorId = this.options.AncestorId;
+    this.#SubscriberPackageVersionId = this.options.SubscriberPackageVersionId;
+    this.#MajorVersion =
       typeof this.options.MajorVersion === 'number'
         ? this.options.MajorVersion
         : parseInt(this.options.MajorVersion, 10);
-    this._MinorVersion =
+    this.#MinorVersion =
       typeof this.options.MinorVersion === 'number'
         ? this.options.MinorVersion
         : parseInt(this.options.MinorVersion, 10);
-    this._PatchVersion =
+    this.#PatchVersion =
       typeof this.options.PatchVersion === 'number'
         ? this.options.PatchVersion
         : parseInt(this.options.PatchVersion, 10);
-    this._BuildNumber = this.options.BuildNumber;
+    this.#BuildNumber = this.options.BuildNumber;
   }
 
   public get AncestorId(): string {
-    return this._AncestorId;
+    return this.#AncestorId;
   }
 
   public get SubscriberPackageVersionId(): string {
-    return this._SubscriberPackageVersionId;
+    return this.#SubscriberPackageVersionId;
   }
 
   public get version(): VersionNumber {
-    return this._version;
+    return this.#version;
   }
 
   public get MinorVersion(): number {
-    return this._MinorVersion;
+    return this.#MinorVersion;
   }
 
   public get PatchVersion(): number {
-    return this._PatchVersion;
+    return this.#PatchVersion;
   }
 
   public get BuildNumber(): number | string {
-    return this._BuildNumber;
+    return this.#BuildNumber;
   }
   public get MajorVersion(): number {
-    return this._MajorVersion;
+    return this.#MajorVersion;
   }
 
   public get depthCounter(): number {
-    return this._depthCounter;
+    return this.#depthCounter;
   }
 
   public getVersion(): string {
-    return this._version.toString();
+    return this.#version.toString();
   }
   protected init(): Promise<void> {
     return Promise.resolve();

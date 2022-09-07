@@ -6,3 +6,4 @@
  */
 export * from './packageUtils';
 export * from './srcDevUtils';
+export * from './versionNumber';

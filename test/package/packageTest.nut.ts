@@ -18,21 +18,20 @@ import {
   PackageCreateOptions,
   PackageVersionCreateReportProgress,
   PackageVersionCreateRequestResultInProgressStatuses,
-} from '../../src/interfaces';
-import { createPackage } from '../../src/package';
-import { uninstallPackage } from '../../src/package';
-import { packageInstalledList } from '../../src/package';
-import { deletePackage } from '../../src/package';
-import { PackageVersion } from '../../src/package';
-import { Package } from '../../src/package';
-import { PackagingSObjects } from '../../src/interfaces';
-import { VersionNumber } from '../../src/utils/versionNumber';
-import { AncestryJsonProducer, PackageAncestry } from '../../src/package/packageAncestry';
-import { AncestryTreeProducer } from '../../src/package/packageAncestry';
-import {
   AncestryRepresentationProducer,
   AncestryRepresentationProducerOptions,
-} from '../../src/interfaces/packagingInterfacesAndType';
+  PackagingSObjects,
+  createPackage,
+  uninstallPackage,
+  packageInstalledList,
+  deletePackage,
+  Package,
+  PackageVersion,
+  AncestryJsonProducer,
+  PackageAncestry,
+  AncestryTreeProducer,
+  VersionNumber,
+} from '../../src/exported';
 
 let session: TestSession;
 
