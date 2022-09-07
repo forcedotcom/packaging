@@ -227,7 +227,7 @@ export class PackageVersionCreate {
   private async resolveBuildNumber(versionNumber: VersionNumber, packageId: string, branch: string): Promise<string> {
     if (!versionNumber.isbuildKeyword()) {
       // The build number is already specified so just return it using the tooling query result obj structure
-      return versionNumber.build;
+      return `${versionNumber.build}`;
     }
     // query for the LATEST or RELEASED build number (excluding deleted versions)
     let branchCondition = '';
