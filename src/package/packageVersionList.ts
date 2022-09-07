@@ -16,7 +16,7 @@ const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
 
 // Stripping CodeCoverage, HasPassedCodeCoverageCheck as they are causing a perf issue in 47.0+ W-6997762
 const DEFAULT_SELECT =
-  'SELECT Id, Package2Id, SubscriberPackageVersionId, Name, Package2.Name, Package2.NamespacePrefix, ' +
+  'SELECT Id, Package2Id, SubscriberPackageVersionId, Name, Package2.Name, Package2.NamespacePrefix, Package2.IsOrgDependent, ' +
   'Description, Tag, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber, IsReleased, ' +
   'CreatedDate, LastModifiedDate, IsPasswordProtected, AncestorId, ValidationSkipped, CreatedById ' +
   'FROM Package2Version';
