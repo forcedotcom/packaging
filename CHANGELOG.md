@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.31](https://github.com/forcedotcom/packaging/compare/v0.0.30...v0.0.31) (2022-09-07)
+
+### Bug Fixes
+
+- add Package2.IsOrgDependent to select query ([8f013ef](https://github.com/forcedotcom/packaging/commit/8f013ef602c76990fa8649b585214991c8afe2c0))
+
 ### [0.0.30](https://github.com/forcedotcom/packaging/compare/v0.0.29...v0.0.30) (2022-08-29)
 
 ### Bug Fixes
