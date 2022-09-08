@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.33](https://github.com/forcedotcom/packaging/compare/v0.0.32...v0.0.33) (2022-09-08)
+
+### Bug Fixes
+
+- add PackageVersion.listCreated, NUT ([31280aa](https://github.com/forcedotcom/packaging/commit/31280aaa79967e1bd9a2c039f028b7d7fe6d658b))
+
 ### [0.0.32](https://github.com/forcedotcom/packaging/compare/v0.0.31...v0.0.32) (2022-09-07)
 
 ### Bug Fixes
