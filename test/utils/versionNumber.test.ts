@@ -45,4 +45,17 @@ describe('VersionNumber', () => {
   it('should throw if version number undefined', () => {
     expect(() => VersionNumber.from(undefined)).to.throw(Error, 'The VersionNumber property must be specified.');
   });
+  it('should sort version numbers', () => {
+    const versions = [
+      VersionNumber.from('1.0.0.0'),
+      VersionNumber.from('1.1.0.0'),
+      VersionNumber.from('2.0.0.0'),
+      VersionNumber.from('2.0.2.0'),
+      VersionNumber.from('3.0.0.0'),
+      VersionNumber.from('3.0.0.3'),
+      VersionNumber.from('3.0.0.NONE'),
+    ];
+    const sorted = [...versions].reverse().sort((a, b) => a.compareTo(b));
+    expect(sorted).to.deep.equal(versions);
+  });
 });

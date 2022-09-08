@@ -44,6 +44,7 @@ workflows:
             - CLI_CTC
             - salesforce-cli
       - release-management/test-nut:
+          no_output_timeout: 30m
           matrix:
             parameters:
               os:

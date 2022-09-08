@@ -8,7 +8,9 @@
 import { Duration } from '@salesforce/kit';
 import { Connection, NamedPackageDir, SfProject } from '@salesforce/core';
 import { QueryResult, SaveResult } from 'jsforce';
+import { Attributes } from 'graphology-types';
 import { PackageProfileApi } from '../package/packageProfileApi';
+import { PackageAncestryNode } from '../package/packageAncestry';
 import { PackagingSObjects } from './packagingSObjects';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
@@ -298,7 +300,7 @@ export type PackageVersionCreateOptions = Partial<
 export type PackageVersionCreateRequestQueryOptions = {
   createdlastdays?: number;
   connection?: Connection;
-  status?: string;
+  status?: 'Queued' | 'InProgress' | 'Success' | 'Error';
 };
 
 export type ProfileApiOptions = {
@@ -355,3 +357,40 @@ export type CodeCoveragePercentages = null | {
     }
   ];
 };
+
+export type PackageAncestryNodeOptions = Attributes & {
+  AncestorId?: string;
+  SubscriberPackageVersionId?: string;
+  MajorVersion?: string | number;
+  MinorVersion?: string | number;
+  PatchVersion?: string | number;
+  BuildNumber?: string | number;
+  depthCounter?: number;
+};
+
+export type PackageAncestryData = Omit<PackageAncestryNodeOptions, 'AncestorId'>;
+
+export type PackageAncestryNodeData = {
+  data: PackageAncestryNodeOptions;
+  children: PackageAncestryNodeData[];
+};
+
+export type PackageAncestryOptions = {
+  packageId: string;
+  project: SfProject;
+  connection: Connection;
+};
+
+export type AncestryRepresentationProducerOptions = {
+  [key: string]: unknown;
+  node: PackageAncestryNode;
+  depth?: number;
+  verbose?: boolean;
+};
+
+export interface AncestryRepresentationProducer {
+  label: string;
+  options: AncestryRepresentationProducerOptions;
+  addNode(node: AncestryRepresentationProducer): void;
+  produce<T>(): T | string | void;
+}
