@@ -781,33 +781,31 @@ export function getPackageAliasesFromId(packageId: string, project: SfProject): 
     .filter((alias) => alias[1] === packageId)
     .map((alias) => alias[0]);
 }
-// probably used by convert.
-export async function findOrCreatePackage(seedPackage: string, connection: Connection): Promise<string> {
+
+export async function findOrCreatePackage2(seedPackage: string, connection: Connection): Promise<string> {
   const query = `SELECT Id FROM Package2 WHERE ConvertedFromPackageId = '${seedPackage}'`;
-  const queryResult = await connection.tooling.query<PackagingSObjects.Package2>(query);
-  const records = queryResult.records;
-  if (records && records.length > 1) {
-    const ids = records.map((r) => r.Id);
+  const queryResult = (await connection.tooling.query<PackagingSObjects.Package2>(query)).records;
+  if (queryResult?.length > 1) {
+    const ids = queryResult.map((r) => r.Id);
     throw messages.createError('errorMoreThanOnePackage2WithSeed', [ids.join(', ')]);
   }
 
-  if (records && records.length === 1) {
+  if (queryResult?.length === 1) {
     // return the package2 object
-    return records[0].Id;
+    return queryResult[0].Id;
   }
 
   // Need to create a new Package2
   const subQuery = `SELECT Name, Description, NamespacePrefix FROM SubscriberPackage WHERE Id = '${seedPackage}'`;
-  const subscriberResult = await connection.tooling.query<PackagingSObjects.SubscriberPackage>(subQuery);
-  const subscriberRecords = subscriberResult.records;
-  if (!subscriberRecords || subscriberRecords.length <= 0) {
+  const subscriberResult = (await connection.tooling.query<PackagingSObjects.SubscriberPackage>(subQuery)).records;
+  if (!subscriberResult || subscriberResult?.length <= 0) {
     throw messages.createError('errorNoSubscriberPackageRecord', [seedPackage]);
   }
 
   const request = {
-    Name: subscriberRecords[0].Name,
-    Description: subscriberRecords[0].Description,
-    NamespacePrefix: subscriberRecords[0].NamespacePrefix,
+    Name: subscriberResult[0].Name,
+    Description: subscriberResult[0].Description,
+    NamespacePrefix: subscriberResult[0].NamespacePrefix,
     ContainerOptions: 'Managed',
     ConvertedFromPackageId: seedPackage,
   };
@@ -882,12 +880,12 @@ export async function pollForStatusWithInterval(
           throw new SfError(status);
         }
       } else {
-        const remainingTime = Duration.milliseconds(interval.milliseconds * remainingRetries);
+        const remainingTime = Duration.seconds(interval.seconds * remainingRetries);
         await Lifecycle.getInstance().emit(Package2VersionStatus.inProgress, {
           id,
           packageVersionCreateRequestResult: results[0],
           message: '',
-          remainingTime,
+          timeRemaining: remainingTime,
         } as PackageVersionCreateEventData);
         logger.info(
           `Request in progress. Sleeping ${interval.seconds} seconds. Will wait a total of ${
@@ -898,8 +896,8 @@ export async function pollForStatusWithInterval(
         return { completed: false, payload: results[0] };
       }
     },
-    frequency: Duration.milliseconds(interval.milliseconds * 1000),
-    timeout: Duration.milliseconds(interval.milliseconds * retries * 1000),
+    frequency: Duration.seconds(interval.seconds),
+    timeout: Duration.seconds(interval.seconds * retries),
   });
 
   return pollingClient.subscribe<PackageVersionCreateRequestResult>();

@@ -6,45 +6,41 @@
  */
 
 import * as path from 'path';
-import * as util from 'util';
 import * as os from 'os';
 import * as fs from 'fs';
-import { Connection, Messages, Org, SfProject } from '@salesforce/core';
+import { Connection, Messages, SfProject } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import { Many } from '@salesforce/ts-types';
 import { uniqid } from '../utils/uniqid';
 import * as pkgUtils from '../utils/packageUtils';
-import { PackagingSObjects, PackageVersionCreateRequestResult } from '../interfaces';
+import { PackagingSObjects, PackageVersionCreateRequestResult, ConvertPackageOptions } from '../interfaces';
 import { consts } from '../constants';
 import * as srcDevUtil from '../utils/srcDevUtils';
 import { byId } from './packageVersionCreateRequest';
 
 Messages.importMessagesDirectory(__dirname);
-const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
-
-type ConvertPackageOptions = {
-  installationKey: string;
-  installationKeyBypass: boolean;
-  wait: Duration;
-  buildInstance: string;
-};
+const messages = Messages.loadMessages('@salesforce/packaging', 'packageVersionCreate');
 
 export async function convertPackage(
   pkg: string,
-  org: Org,
   connection: Connection,
-  project: SfProject,
-  options: ConvertPackageOptions
+  options: ConvertPackageOptions,
+  project?: SfProject
 ): Promise<PackageVersionCreateRequestResult> {
   let maxRetries = 0;
   const branch = 'main';
   if (options.wait) {
-    maxRetries = (60 / pkgUtils.POLL_INTERVAL_SECONDS) * options.wait.seconds;
+    maxRetries = (60 / pkgUtils.POLL_INTERVAL_SECONDS) * options.wait.minutes;
   }
 
-  const packageId = await pkgUtils.findOrCreatePackage(pkg, connection);
+  const packageId = await pkgUtils.findOrCreatePackage2(pkg, connection);
 
-  const request = await createPackageVersionCreateRequest(context, packageId);
+  const request = await createPackageVersionCreateRequest(
+    { installationkey: options.installationKey, buildinstance: options.buildInstance },
+    packageId
+  );
+
+  // TODO: a lot of this is duplicated from PC, PVC, and PVCR.
 
   const createResult = await connection.tooling.create('Package2VersionCreateRequest', request);
   if (!createResult.success) {
@@ -71,7 +67,7 @@ export async function convertPackage(
     results = await byId(packageId, connection);
   }
 
-  return util.isArray(results) ? results[0] : results;
+  return Array.isArray(results) ? results[0] : results;
 }
 
 /**
@@ -82,8 +78,8 @@ export async function convertPackage(
  * @returns {{Package2Id: string, Package2VersionMetadata: *, Tag: *, Branch: number}}
  * @private
  */
-async function createPackageVersionCreateRequest(
-  context,
+export async function createPackageVersionCreateRequest(
+  context: { installationkey?: string; buildinstance?: string },
   packageId: string
 ): Promise<PackagingSObjects.Package2VersionCreateRequest> {
   const uniqueId = uniqid({ template: `${packageId}-%s` });
@@ -111,7 +107,7 @@ async function createPackageVersionCreateRequest(
 
 async function createRequestObject(
   packageId: string,
-  options,
+  options: { installationkey?: string; buildinstance?: string },
   packageVersTmpRoot: string,
   packageVersBlobZipFile: string
 ): Promise<PackagingSObjects.Package2VersionCreateRequest> {
@@ -123,6 +119,6 @@ async function createRequestObject(
     Instance: options.buildinstance,
     IsConversionRequest: true,
   } as PackagingSObjects.Package2VersionCreateRequest;
-  await fs.promises.unlink(packageVersTmpRoot);
+  await fs.promises.rm(packageVersTmpRoot, { recursive: true });
   return requestObject;
 }
