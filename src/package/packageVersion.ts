@@ -10,6 +10,7 @@ import { Duration } from '@salesforce/kit';
 import {
   PackageSaveResult,
   PackageVersionCreateOptions,
+  PackageVersionCreateRequestQueryOptions,
   PackageVersionCreateRequestResult,
   PackageVersionListOptions,
   PackageVersionListResult,
@@ -31,6 +32,7 @@ import { PackageVersionCreate } from './packageVersionCreate';
 import { getPackageVersionReport } from './packageVersionReport';
 import { getCreatePackageVersionCreateRequestReport } from './packageVersionCreateRequestReport';
 import { listPackageVersions } from './packageVersionList';
+import { list } from './packageVersionCreateRequest';
 
 Messages.importMessagesDirectory(__dirname);
 
@@ -118,6 +120,12 @@ export class PackageVersion {
       // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
       throw applyErrorAction(err);
     });
+  }
+
+  public async createdList(
+    options?: Omit<PackageVersionCreateRequestQueryOptions, 'connection'>
+  ): Promise<PackageVersionCreateRequestResult[]> {
+    return await list({ ...options, connection: this.connection });
   }
 
   /**
