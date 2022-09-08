@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.34](https://github.com/forcedotcom/packaging/compare/v0.0.33...v0.0.34) (2022-09-08)
+
+### Bug Fixes
+
+- default ut timeout to 20 seconds ([e8dc2c1](https://github.com/forcedotcom/packaging/commit/e8dc2c10650ad2fd3d33fba212bf4ff5908e775e))
+- only required refactoring - waiting on packaging to enable na40 to convert ([5e6365c](https://github.com/forcedotcom/packaging/commit/5e6365ccbc2086a40652ddf518c369bd0584f926))
+
 ### [0.0.33](https://github.com/forcedotcom/packaging/compare/v0.0.32...v0.0.33) (2022-09-08)
 
 ### Bug Fixes
