@@ -14,7 +14,7 @@ import { AsyncCreatable } from '@salesforce/kit';
 import { ProfileApiOptions } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
-const profileApiMessages = Messages.loadMessages('@salesforce/packaging', 'profile-api');
+const profileApiMessages = Messages.loadMessages('@salesforce/packaging', 'profile_api');
 
 /*
  * This class provides functions used to re-write .profiles in the workspace when creating a package2 version.

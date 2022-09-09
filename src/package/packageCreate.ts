@@ -11,7 +11,7 @@ import * as pkgUtils from '../utils/packageUtils';
 import { PackageCreateOptions, PackagingSObjects } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
-const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
+const messages = Messages.loadMessages('@salesforce/packaging', 'package_create');
 
 type Package2Request = Pick<
   PackagingSObjects.Package2,

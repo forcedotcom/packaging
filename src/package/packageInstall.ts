@@ -23,7 +23,7 @@ import SubscriberPackageVersion = PackagingSObjects.SubscriberPackageVersion;
 import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 
 Messages.importMessagesDirectory(__dirname);
-const installMsgs = Messages.loadMessages('@salesforce/packaging', 'package-install');
+const installMsgs = Messages.loadMessages('@salesforce/packaging', 'package_install');
 
 let logger: Logger;
 const getLogger = (): Logger => {
