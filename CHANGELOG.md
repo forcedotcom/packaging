@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.35](https://github.com/forcedotcom/packaging/compare/v0.0.34...v0.0.35) (2022-09-09)
+
+### Bug Fixes
+
+- apply fixes from qa issues ([2949f18](https://github.com/forcedotcom/packaging/commit/2949f1875da2e953977769cd1a8b4d8131fbdc1a))
+
 ### [0.0.34](https://github.com/forcedotcom/packaging/compare/v0.0.33...v0.0.34) (2022-09-08)
 
 ### Bug Fixes
