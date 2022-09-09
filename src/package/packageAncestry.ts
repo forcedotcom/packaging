@@ -34,6 +34,21 @@ const SELECT_PACKAGE_VERSION_CONTAINER_OPTIONS = 'SELECT Package2ContainerOption
 // Add this to query calls to only show released package versions in the output
 const releasedOnlyFilter = ' AND IsReleased = true';
 
+const sortAncestryNodeData = (a: AncestryRepresentationProducer, b: AncestryRepresentationProducer): number => {
+  const aVersion = new VersionNumber(
+    a.options.node.MajorVersion,
+    a.options.node.MinorVersion,
+    a.options.node.PatchVersion,
+    a.options.node.BuildNumber
+  );
+  const bVersion = new VersionNumber(
+    b.options.node.MajorVersion,
+    b.options.node.MinorVersion,
+    b.options.node.PatchVersion,
+    b.options.node.BuildNumber
+  );
+  return aVersion.compareTo(bVersion);
+};
 /**
  * A class that represents the package ancestry graph.
  */
@@ -376,21 +391,7 @@ export class AncestryJsonProducer implements AncestryRepresentationProducer {
 
     while (producers.length > 0) {
       const producer = producers.shift();
-      producer.data.children.sort((a, b): number => {
-        const aVersion = new VersionNumber(
-          a.data.MajorVersion,
-          a.data.MinorVersion,
-          a.data.PatchVersion,
-          a.data.BuildNumber
-        );
-        const bVersion = new VersionNumber(
-          b.data.MajorVersion,
-          b.data.MinorVersion,
-          b.data.PatchVersion,
-          b.data.BuildNumber
-        );
-        return aVersion.compareTo(bVersion);
-      });
+      producer.children.sort(sortAncestryNodeData);
       producers.push(...producer.children);
     }
 
@@ -438,6 +439,7 @@ export class AncestryDotProducer implements AncestryRepresentationProducer {
       if (producer.options) {
         dotLines.push(AncestryDotProducer.buildDotNode(producer));
       }
+      producer.children.sort(sortAncestryNodeData);
       producers.push(...producer.children);
     }
     producers.push(this);

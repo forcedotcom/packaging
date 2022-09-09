@@ -14,8 +14,7 @@ import { AsyncCreatable } from '@salesforce/kit';
 import { ProfileApiOptions } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
-// TODO: need to transfer these messages
-const profileApiMessages = Messages.loadMessages('@salesforce/packaging', 'messages');
+const profileApiMessages = Messages.loadMessages('@salesforce/packaging', 'profile-api');
 
 /*
  * This class provides functions used to re-write .profiles in the workspace when creating a package2 version.
@@ -309,12 +308,12 @@ class ProfileInformation {
   }
 
   public logDebug(): string {
-    let info = profileApiMessages.getMessage('profile_api.addProfileToPackage', [this.ProfileName, this.ProfilePath]);
+    let info = profileApiMessages.getMessage('addProfileToPackage', [this.ProfileName, this.ProfilePath]);
     this.settingsRemoved.forEach((setting) => {
-      info += '\n\t' + profileApiMessages.getMessage('profile_api.removeProfileSetting', [setting, this.ProfileName]);
+      info += '\n\t' + profileApiMessages.getMessage('removeProfileSetting', [setting, this.ProfileName]);
     });
     if (!this.IsPackaged) {
-      info += '\n\t' + profileApiMessages.getMessage('profile_api.removeProfile', [this.ProfileName]);
+      info += '\n\t' + profileApiMessages.getMessage('removeProfile', [this.ProfileName]);
     }
     info += '\n';
     return info;
@@ -322,9 +321,9 @@ class ProfileInformation {
 
   public logInfo(): string {
     if (this.IsPackaged) {
-      return profileApiMessages.getMessage('profile_api.addProfileToPackage', [this.ProfileName, this.ProfilePath]);
+      return profileApiMessages.getMessage('addProfileToPackage', [this.ProfileName, this.ProfilePath]);
     } else {
-      return profileApiMessages.getMessage('profile_api.profileNotIncluded', [this.ProfileName]);
+      return profileApiMessages.getMessage('profileNotIncluded', [this.ProfileName]);
     }
   }
 }
