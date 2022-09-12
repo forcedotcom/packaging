@@ -72,7 +72,7 @@ describe('Package1 Version Create', () => {
         retrieve: async () => successResult,
       });
     Lifecycle.getInstance().on(
-      'package1VersionCreate:progress',
+      'PackageVersion/create-progress',
       async (data: { timeout: number; pollingResult: PackagingSObjects.PackageUploadRequest }) => {
         // 3 minute timeout (180 seconds) - 1 second per poll
         expect(data.timeout).to.equal(179);
@@ -111,7 +111,7 @@ describe('Package1 Version Create', () => {
       }),
     });
     Lifecycle.getInstance().on(
-      'package1VersionCreate:progress',
+      'PackageVersion/create-progress',
       async (data: { timeout: number; pollingResult: PackagingSObjects.PackageUploadRequest }) => {
         // 3 minute timeout (180 seconds) - 1 second per poll
         expect(data.timeout).to.equal(179);

@@ -152,7 +152,7 @@ export class PackageVersion {
         report = await this.getCreateVersionReport(createPackageVersionRequestId);
         switch (report.Status) {
           case 'Queued':
-            await Lifecycle.getInstance().emit('enqueued', { ...report, remainingWaitTime });
+            await Lifecycle.getInstance().emit('PackageVersion/create-enqueued', { ...report, remainingWaitTime });
             remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
             return {
               completed: false,
@@ -164,18 +164,18 @@ export class PackageVersion {
           case 'VerifyingDependencies':
           case 'VerifyingMetadata':
           case 'FinalizingPackageVersion':
-            await Lifecycle.getInstance().emit('in-progress', { ...report, remainingWaitTime });
+            await Lifecycle.getInstance().emit('PackageVersion/create-in-progress', { ...report, remainingWaitTime });
             remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
             return {
               completed: false,
               payload: report,
             };
           case 'Success':
-            await Lifecycle.getInstance().emit('success', report);
+            await Lifecycle.getInstance().emit('PackageVersion/create-success', report);
             await this.updateProjectWithPackageVersion(this.project, report);
             return { completed: true, payload: report };
           case 'Error':
-            await Lifecycle.getInstance().emit('error', report);
+            await Lifecycle.getInstance().emit('PackageVersion/create-error', report);
             return { completed: true, payload: report };
         }
       },
@@ -186,7 +186,7 @@ export class PackageVersion {
     try {
       return pollingClient.subscribe<PackageVersionCreateRequestResult>();
     } catch (err) {
-      await Lifecycle.getInstance().emit('timed-out', report);
+      await Lifecycle.getInstance().emit('PackageVersion/create-timed-out', report);
       throw applyErrorAction(err as Error);
     }
   }

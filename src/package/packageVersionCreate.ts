@@ -272,7 +272,7 @@ export class PackageVersionCreate {
 
     if (preserveFiles) {
       const message = messages.getMessage('tempFileLocation', [packageVersTmpRoot]);
-      await Lifecycle.getInstance().emit('packageVersionCreate:preserveFiles', {
+      await Lifecycle.getInstance().emit('PackageVersion/create-preserveFiles', {
         location: packageVersTmpRoot,
         message,
       });

@@ -25,7 +25,7 @@ const packageUploadRequestStatus = async (
     case 'IN_PROGRESS':
     case 'QUEUED':
       timeout -= frequency;
-      await Lifecycle.getInstance().emit('package1VersionCreate:progress', { timeout, pollingResult });
+      await Lifecycle.getInstance().emit('Package1Version/create-progress', { timeout, pollingResult });
 
       return { completed: false, payload: pollingResult };
     default: {

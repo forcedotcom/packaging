@@ -23,7 +23,7 @@ async function poll(id: string, conn: Connection): Promise<StatusResult> {
     }
     case 'InProgress':
     case 'Queued': {
-      Lifecycle.getInstance().emit('packageUninstall', {
+      await Lifecycle.getInstance().emit('Package/uninstall', {
         ...uninstallRequest,
       });
       return { completed: false, payload: uninstallRequest };

@@ -173,10 +173,6 @@ The requested resource does not exist
 Only one package in a Dev Hub is allowed per converted from first-generation package, but the following were found:
 %s
 
-# versionCreateFailedWithMultipleErrors
-
-Multiple errors occurred:
-
 # errorScriptsNotApplicableToUnlockedPackage
 
 We can’t create the package version. This parameter is available only for second-generation managed packages. Create the package version without the postinstallscript or uninstallscript parameters.,

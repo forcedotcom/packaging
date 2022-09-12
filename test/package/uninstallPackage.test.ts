@@ -63,9 +63,9 @@ describe('Package Uninstall', () => {
         retrieve: async () => successResult,
       });
     Lifecycle.getInstance().on(
-      'packageUninstall',
+      'Package/uninstall',
       async (data: PackagingSObjects.SubscriberPackageVersionUninstallRequest) => {
-        expect(data.Status).to.equal('QUEUED');
+        expect(data.Status).to.equal('Queued');
       }
     );
 
@@ -110,7 +110,7 @@ describe('Package Uninstall', () => {
       }),
     });
     Lifecycle.getInstance().on(
-      'packageUninstall',
+      'Package/uninstall',
       async (data: { timeout: number; pollingResult: PackagingSObjects.PackageUploadRequest }) => {
         // 3 minute timeout (180 seconds) - 1 second per poll
         expect(data.timeout).to.equal(179);

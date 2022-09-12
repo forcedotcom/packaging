@@ -30,7 +30,7 @@ export interface IPackage {
   ): Promise<PackageInstallRequest>;
   getInstallStatus(installRequestId: string): Promise<PackageInstallRequest>;
   list(): Promise<QueryResult<PackagingSObjects.Package2>>;
-  uninstall(): Promise<void>;
+  uninstall(id: string, wait: Duration): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest>;
   update(options: PackageUpdateOptions): Promise<PackageSaveResult>;
   waitForPublish(subscriberPackageVersionKey: string, timeout: number | Duration, installationKey?: string);
   getExternalSites(subscriberPackageVersionKey: string, installationKey?: string);

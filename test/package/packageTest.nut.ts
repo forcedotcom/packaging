@@ -158,17 +158,26 @@ describe('Integration tests for @salesforce/packaging library', function () {
     it('wait for package version create to finish', async () => {
       const pv = new PackageVersion({ project, connection: devHubOrg.getConnection() });
       // "enqueued", "in-progress", "success", "error" and "timed-out"
-      Lifecycle.getInstance().on('enqueued', async (results: PackageVersionCreateReportProgress) => {
-        expect(results.Status).to.equal(PackagingSObjects.Package2VersionStatus.queued);
-      });
-      Lifecycle.getInstance().on('in-progress', async (results: PackageVersionCreateReportProgress) => {
-        // eslint-disable-next-line no-console
-        console.log(`in-progress: ${JSON.stringify(results, undefined, 2)}`);
-        expect(PackageVersionCreateRequestResultInProgressStatuses).to.include(results.Status);
-      });
-      Lifecycle.getInstance().on('success', async (results: PackageVersionCreateReportProgress) => {
-        expect(results.Status).to.equal(PackagingSObjects.Package2VersionStatus.success);
-      });
+      Lifecycle.getInstance().on(
+        'PackageVersion/create-enqueued',
+        async (results: PackageVersionCreateReportProgress) => {
+          expect(results.Status).to.equal(PackagingSObjects.Package2VersionStatus.queued);
+        }
+      );
+      Lifecycle.getInstance().on(
+        'PackageVersion/create-in-progress',
+        async (results: PackageVersionCreateReportProgress) => {
+          // eslint-disable-next-line no-console
+          console.log(`in-progress: ${JSON.stringify(results, undefined, 2)}`);
+          expect(PackageVersionCreateRequestResultInProgressStatuses).to.include(results.Status);
+        }
+      );
+      Lifecycle.getInstance().on(
+        'PackageVersion/create-success',
+        async (results: PackageVersionCreateReportProgress) => {
+          expect(results.Status).to.equal(PackagingSObjects.Package2VersionStatus.success);
+        }
+      );
       const result = await pv.waitForCreateVersion(pkgCreateVersionRequestId, {
         frequency: Duration.seconds(30),
         timeout: Duration.minutes(20),

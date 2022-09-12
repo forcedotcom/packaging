@@ -23,6 +23,7 @@ import {
 import { listPackages } from './packageList';
 import { getExternalSites, getStatus, installPackage, waitForPublish } from './packageInstall';
 import { convertPackage } from './packageConvert';
+import { uninstallPackage } from './packageUninstall';
 
 type PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 
@@ -100,8 +101,11 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
     return listPackages(this.options.connection);
   }
 
-  public uninstall(): Promise<void> {
-    return Promise.resolve(undefined);
+  public async uninstall(
+    id: string,
+    wait: Duration
+  ): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest> {
+    return await uninstallPackage(id, this.options.connection, wait);
   }
 
   /**
