@@ -228,14 +228,14 @@ export async function waitForPublish(
       let installValidationStatus: SubscriberPackageVersion['InstallValidationStatus'];
       if (queryResult?.records?.length) {
         installValidationStatus = queryResult.records[0].InstallValidationStatus;
-        await Lifecycle.getInstance().emit('Package/install-status', installValidationStatus);
+        await Lifecycle.getInstance().emit('Package/install-subscriber-status', installValidationStatus);
         if (!['PACKAGE_UNAVAILABLE', 'UNINSTALL_IN_PROGRESS'].includes(installValidationStatus)) {
           return { completed: true, payload: queryResult };
         }
       }
       const tokens = installValidationStatus ? [` Status = ${installValidationStatus}`] : [];
       getLogger().debug(installMsgs.getMessage('publishWaitProgress', tokens));
-      await Lifecycle.getInstance().emit('Package/install-status', installValidationStatus);
+      await Lifecycle.getInstance().emit('Package/install-subscriber-status', installValidationStatus);
       return { completed: false, payload: queryResult };
     },
   };
