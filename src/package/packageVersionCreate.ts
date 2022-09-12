@@ -25,7 +25,7 @@ import * as xml2js from 'xml2js';
 import { PackageDirDependency } from '@salesforce/core/lib/sfProject';
 import { uniqid } from '../utils/uniqid';
 import * as pkgUtils from '../utils/packageUtils';
-import { BuildNumberToken, VersionNumber } from '../utils/versionNumber';
+import { BuildNumberToken, VersionNumber } from '../utils';
 import {
   MDFolderForArtifactOptions,
   PackageDescriptorJson,
@@ -40,7 +40,7 @@ import { PackageProfileApi } from './packageProfileApi';
 import { byId } from './packageVersionCreateRequest';
 
 Messages.importMessagesDirectory(__dirname);
-const messages = Messages.loadMessages('@salesforce/packaging', 'packageVersionCreate');
+const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
 
 const logger = Logger.childFromRoot('packageVersionCreate');
 

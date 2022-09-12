@@ -36,7 +36,7 @@ import * as pvcr from './packageVersionCreateRequest';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
 Messages.importMessagesDirectory(__dirname);
-const messages = Messages.loadMessages('@salesforce/packaging', 'packageVersionCreate');
+const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
 
 export async function convertPackage(
   pkg: string,

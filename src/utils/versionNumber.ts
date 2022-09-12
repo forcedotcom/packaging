@@ -8,7 +8,7 @@
 import { Messages } from '@salesforce/core';
 
 Messages.importMessagesDirectory(__dirname);
-const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
+const messages = Messages.loadMessages('@salesforce/packaging', 'version_number');
 
 export enum BuildNumberToken {
   LATEST_BUILD_NUMBER_TOKEN = 'LATEST',

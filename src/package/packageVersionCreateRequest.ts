@@ -16,7 +16,7 @@ import {
 import * as packageUtils from '../utils/packageUtils';
 
 Messages.importMessagesDirectory(__dirname);
-const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
+const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
 
 const STATUS_ERROR = 'Error';
 const QUERY =

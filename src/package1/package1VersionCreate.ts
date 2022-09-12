@@ -10,7 +10,7 @@ import { Duration } from '@salesforce/kit';
 import { Package1VersionCreateRequest, PackagingSObjects } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
-const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
+const messages = Messages.loadMessages('@salesforce/packaging', 'package1_version_create');
 
 const packageUploadRequestStatus = async (
   id: string,

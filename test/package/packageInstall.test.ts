@@ -23,7 +23,7 @@ describe('Package Install', () => {
   let queryStub: sinon.SinonStub;
 
   Messages.importMessagesDirectory(__dirname);
-  const installMsgs = Messages.loadMessages('@salesforce/packaging', 'package-install');
+  const installMsgs = Messages.loadMessages('@salesforce/packaging', 'package_install');
 
   const pkgInstallCreateRequest: PackageInstallCreateRequest = {
     SubscriberPackageVersionKey: '04t6A000002zgKSQAY',

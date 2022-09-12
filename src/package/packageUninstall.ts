@@ -10,7 +10,8 @@ import { Duration } from '@salesforce/kit';
 import { PackagingSObjects } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
-const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
+const messages = Messages.loadMessages('@salesforce/packaging', 'package_uninstall');
+const pkgMessages = Messages.loadMessages('@salesforce/packaging', 'package');
 
 type UninstallResult = PackagingSObjects.SubscriberPackageVersionUninstallRequest;
 
@@ -29,7 +30,7 @@ async function poll(id: string, conn: Connection): Promise<StatusResult> {
       return { completed: false, payload: uninstallRequest };
     }
     default: {
-      const err = messages.getMessage('defaultErrorMessage', [id, uninstallRequest.Id]);
+      const err = pkgMessages.getMessage('defaultErrorMessage', [id, uninstallRequest.Id]);
       const errorQueryResult = await conn.tooling.query<{ Message: string }>(
         `"SELECT Message FROM PackageVersionUninstallRequestError WHERE ParentRequest.Id = '${id}' ORDER BY Message"`
       );
