@@ -9,7 +9,7 @@ import { Duration } from '@salesforce/kit';
 import { expect } from 'chai';
 import { Connection, Lifecycle, SfError } from '@salesforce/core';
 import { assert } from 'sinon';
-import { PackagingSObjects } from '../../src/interfaces';
+import { PackageEvents, PackagingSObjects } from '../../src/interfaces';
 import { uninstallPackage } from '../../src/package';
 
 const packageId = '04t4p000002BaHYXXX';
@@ -63,7 +63,7 @@ describe('Package Uninstall', () => {
         retrieve: async () => successResult,
       });
     Lifecycle.getInstance().on(
-      'Package/uninstall',
+      PackageEvents.uninstall,
       async (data: PackagingSObjects.SubscriberPackageVersionUninstallRequest) => {
         expect(data.Status).to.equal('Queued');
       }
@@ -110,7 +110,7 @@ describe('Package Uninstall', () => {
       }),
     });
     Lifecycle.getInstance().on(
-      'Package/uninstall',
+      PackageEvents.uninstall,
       async (data: { timeout: number; pollingResult: PackagingSObjects.PackageUploadRequest }) => {
         // 3 minute timeout (180 seconds) - 1 second per poll
         expect(data.timeout).to.equal(179);

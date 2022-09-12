@@ -33,6 +33,7 @@ import {
   PackageVersionCreateOptions,
   PackageVersionCreateRequest,
   PackageVersionCreateRequestResult,
+  PackageVersionEvents,
   PackagingSObjects,
 } from '../interfaces';
 import { copyDir, getPackageAliasesFromId, getAncestorId, zipDir } from '../utils';
@@ -272,7 +273,7 @@ export class PackageVersionCreate {
 
     if (preserveFiles) {
       const message = messages.getMessage('tempFileLocation', [packageVersTmpRoot]);
-      await Lifecycle.getInstance().emit('PackageVersion/create-preserveFiles', {
+      await Lifecycle.getInstance().emit(PackageVersionEvents.create['preserve-files'], {
         location: packageVersTmpRoot,
         message,
       });

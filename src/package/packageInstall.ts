@@ -16,7 +16,7 @@ import {
   escapeInstallationKey,
 } from '../utils';
 import { consts } from '../constants';
-import { PackagingSObjects, PackageInstallOptions, PackageInstallCreateRequest } from '../interfaces';
+import { PackagingSObjects, PackageInstallOptions, PackageInstallCreateRequest, PackageEvents } from '../interfaces';
 
 import SubscriberPackageVersion = PackagingSObjects.SubscriberPackageVersion;
 import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
@@ -57,21 +57,21 @@ export async function installPackage(
   if (pkgType !== 'Unlocked') {
     if (request.UpgradeType !== defaults.UpgradeType) {
       const msg = installMsgs.getMessage('upgradeTypeOnlyForUnlockedWarning');
-      await Lifecycle.getInstance().emit('Package/install-warning', msg);
+      await Lifecycle.getInstance().emit(PackageEvents.install.warning, msg);
       delete request.UpgradeType;
     }
     if (request.ApexCompileType !== defaults.ApexCompileType) {
       const msg = installMsgs.getMessage('apexCompileOnlyForUnlockedWarning');
-      await Lifecycle.getInstance().emit('Package/install-warning', msg);
+      await Lifecycle.getInstance().emit(PackageEvents.install.warning, msg);
       delete request.ApexCompileType;
     }
   }
 
-  await Lifecycle.getInstance().emit('Package/install-presend', request);
+  await Lifecycle.getInstance().emit(PackageEvents.install.presend, request);
 
   const result = await connection.tooling.create('PackageInstallRequest', request);
 
-  await Lifecycle.getInstance().emit('Package/install-postsend', result);
+  await Lifecycle.getInstance().emit(PackageEvents.install.postsend, result);
 
   const packageInstallRequestId = result.id;
   if (!packageInstallRequestId) {
@@ -164,7 +164,7 @@ async function pollStatus(
     poll: async (): Promise<StatusResult> => {
       packageInstallRequest = await getStatus(connection, installRequestId);
       getLogger().debug(installMsgs.getMessage('packageInstallPolling', [packageInstallRequest?.Status]));
-      await Lifecycle.getInstance().emit('Package/install-status', packageInstallRequest);
+      await Lifecycle.getInstance().emit(PackageEvents.install.status, packageInstallRequest);
       if (['SUCCESS', 'ERROR'].includes(packageInstallRequest?.Status)) {
         return { completed: true, payload: packageInstallRequest };
       }
@@ -228,14 +228,14 @@ export async function waitForPublish(
       let installValidationStatus: SubscriberPackageVersion['InstallValidationStatus'];
       if (queryResult?.records?.length) {
         installValidationStatus = queryResult.records[0].InstallValidationStatus;
-        await Lifecycle.getInstance().emit('Package/install-subscriber-status', installValidationStatus);
+        await Lifecycle.getInstance().emit(PackageEvents.install['subscriber-status'], installValidationStatus);
         if (!['PACKAGE_UNAVAILABLE', 'UNINSTALL_IN_PROGRESS'].includes(installValidationStatus)) {
           return { completed: true, payload: queryResult };
         }
       }
       const tokens = installValidationStatus ? [` Status = ${installValidationStatus}`] : [];
       getLogger().debug(installMsgs.getMessage('publishWaitProgress', tokens));
-      await Lifecycle.getInstance().emit('Package/install-subscriber-status', installValidationStatus);
+      await Lifecycle.getInstance().emit(PackageEvents.install['subscriber-status'], installValidationStatus);
       return { completed: false, payload: queryResult };
     },
   };

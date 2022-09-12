@@ -7,7 +7,7 @@
 import * as os from 'os';
 import { Connection, Lifecycle, Messages, PollingClient, StatusResult } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
-import { Package1VersionCreateRequest, PackagingSObjects } from '../interfaces';
+import { Package1VersionCreateRequest, Package1VersionEvents, PackagingSObjects } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package1_version_create');
@@ -25,7 +25,7 @@ const packageUploadRequestStatus = async (
     case 'IN_PROGRESS':
     case 'QUEUED':
       timeout -= frequency;
-      await Lifecycle.getInstance().emit('Package1Version/create-progress', { timeout, pollingResult });
+      await Lifecycle.getInstance().emit(Package1VersionEvents.create.progress, { timeout, pollingResult });
 
       return { completed: false, payload: pollingResult };
     default: {

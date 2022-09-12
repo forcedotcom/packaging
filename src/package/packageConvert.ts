@@ -27,6 +27,7 @@ import {
   PackageVersionCreateRequestResult,
   ConvertPackageOptions,
   PackageVersionCreateEventData,
+  PackageEvents,
 } from '../interfaces';
 import { consts } from '../constants';
 import * as srcDevUtil from '../utils/srcDevUtils';
@@ -179,7 +180,7 @@ async function pollForStatusWithInterval(
             withProject.getSfProjectJson().set('packageAliases', newConfig);
             await withProject.getSfProjectJson().write();
           }
-          await Lifecycle.getInstance().emit('Package/convert-success', {
+          await Lifecycle.getInstance().emit(PackageEvents.convert.success, {
             id,
             packageVersionCreateRequestResult: results[0],
             projectUpdated,
@@ -199,12 +200,12 @@ async function pollForStatusWithInterval(
             }
             status = errors.length !== 0 ? errors.join('\n') : results[0].Error.join('\n');
           }
-          await Lifecycle.getInstance().emit('Package/convert-error', { id, status });
+          await Lifecycle.getInstance().emit(PackageEvents.convert.error, { id, status });
           throw new SfError(status);
         }
       } else {
         const remainingTime = Duration.seconds(interval.seconds * remainingRetries);
-        await Lifecycle.getInstance().emit('Package/convert-in-progress', {
+        await Lifecycle.getInstance().emit(PackageEvents.convert.progress, {
           id,
           packageVersionCreateRequestResult: results[0],
           message: '',

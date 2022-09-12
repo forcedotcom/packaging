@@ -31,6 +31,7 @@ import {
   PackageAncestry,
   AncestryTreeProducer,
   VersionNumber,
+  PackageVersionEvents,
 } from '../../src/exported';
 
 let session: TestSession;
@@ -159,13 +160,13 @@ describe('Integration tests for @salesforce/packaging library', function () {
       const pv = new PackageVersion({ project, connection: devHubOrg.getConnection() });
       // "enqueued", "in-progress", "success", "error" and "timed-out"
       Lifecycle.getInstance().on(
-        'PackageVersion/create-enqueued',
+        PackageVersionEvents.create.enqueued,
         async (results: PackageVersionCreateReportProgress) => {
           expect(results.Status).to.equal(PackagingSObjects.Package2VersionStatus.queued);
         }
       );
       Lifecycle.getInstance().on(
-        'PackageVersion/create-in-progress',
+        PackageVersionEvents.create.progress,
         async (results: PackageVersionCreateReportProgress) => {
           // eslint-disable-next-line no-console
           console.log(`in-progress: ${JSON.stringify(results, undefined, 2)}`);
@@ -173,7 +174,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
         }
       );
       Lifecycle.getInstance().on(
-        'PackageVersion/create-success',
+        PackageVersionEvents.create.success,
         async (results: PackageVersionCreateReportProgress) => {
           expect(results.Status).to.equal(PackagingSObjects.Package2VersionStatus.success);
         }
