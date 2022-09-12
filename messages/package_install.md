@@ -22,7 +22,3 @@ Waiting for the Subscriber Package Version ID to be published to the target org.
 # subscriberPackageVersionNotPublished
 
 The subscriber package version is not fully available.
-
-# subscriberPackageVersionNotPublished.actions
-
-If this is a recently created package version, try again in a few minutes or contact the package publisher.

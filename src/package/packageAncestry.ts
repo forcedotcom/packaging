@@ -20,10 +20,10 @@ import {
   PackageType,
 } from '../interfaces';
 import * as pkgUtils from '../utils/packageUtils';
-import { VersionNumber } from '../utils/versionNumber';
+import { VersionNumber } from '../utils';
 
 Messages.importMessagesDirectory(__dirname);
-const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
+const messages = Messages.loadMessages('@salesforce/packaging', 'package_ancestry');
 
 const SELECT_PACKAGE_VERSION =
   'SELECT AncestorId, SubscriberPackageVersionId, MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version';

@@ -19,7 +19,7 @@ import * as srcDevUtil from '../utils/srcDevUtils';
 import { byId } from './packageVersionCreateRequest';
 
 Messages.importMessagesDirectory(__dirname);
-const messages = Messages.loadMessages('@salesforce/packaging', 'packageVersionCreate');
+const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
 
 export async function convertPackage(
   pkg: string,

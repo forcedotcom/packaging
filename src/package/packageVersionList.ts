@@ -12,7 +12,7 @@ import { BY_LABEL, validateId } from '../utils';
 import { PackageVersionListResult, PackageVersionListOptions, ListPackageVersionOptions } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
-const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
+const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
 
 // Stripping CodeCoverage, HasPassedCodeCoverageCheck as they are causing a perf issue in 47.0+ W-6997762
 const DEFAULT_SELECT =

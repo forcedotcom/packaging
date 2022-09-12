@@ -19,7 +19,6 @@ import {
   StatusResult,
 } from '@salesforce/core';
 import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
-import { Tokens } from '@salesforce/core/lib/messages';
 import { Many, Nullable, Optional } from '@salesforce/ts-types';
 import { SaveError } from 'jsforce';
 import {
@@ -34,7 +33,7 @@ import { BuildNumberToken, VersionNumber } from './versionNumber';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
 Messages.importMessagesDirectory(__dirname);
-const messages = Messages.loadMessages('@salesforce/packaging', 'messages');
+const messages = Messages.loadMessages('@salesforce/packaging', 'pkg_utils');
 
 export const VERSION_NUMBER_SEP = '.';
 const INVALID_TYPE_REGEX = /[\w]*(sObject type '[A-Za-z]*Package[2]?[A-Za-z]*' is not supported)[\w]*/im;
@@ -526,7 +525,7 @@ export function validateAncestorId(
         throw messages.createError('errorAncestorNotHighest', [
           origSpecifiedAncestor,
           getPackageVersionNumber(highestReleasedVersion),
-        ] as Tokens);
+        ]);
       }
     } else {
       // looks like the initial version:create - allow
