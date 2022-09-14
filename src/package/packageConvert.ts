@@ -8,15 +8,33 @@
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
-import { Connection, Messages, SfProject } from '@salesforce/core';
+import {
+  Connection,
+  Lifecycle,
+  Logger,
+  Messages,
+  PollingClient,
+  SfError,
+  SfProject,
+  StatusResult,
+} from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import { Many } from '@salesforce/ts-types';
 import { uniqid } from '../utils/uniqid';
 import * as pkgUtils from '../utils/packageUtils';
-import { PackagingSObjects, PackageVersionCreateRequestResult, ConvertPackageOptions } from '../interfaces';
+import {
+  PackagingSObjects,
+  PackageVersionCreateRequestResult,
+  ConvertPackageOptions,
+  PackageVersionCreateEventData,
+  PackageEvents,
+} from '../interfaces';
 import { consts } from '../constants';
 import * as srcDevUtil from '../utils/srcDevUtils';
+import { convertCamelCaseStringToSentence, generatePackageAliasEntry } from '../utils';
 import { byId } from './packageVersionCreateRequest';
+import * as pvcr from './packageVersionCreateRequest';
+import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
@@ -54,7 +72,7 @@ export async function convertPackage(
 
   let results: Many<PackageVersionCreateRequestResult>;
   if (options.wait) {
-    results = await pkgUtils.pollForStatusWithInterval(
+    results = await pollForStatusWithInterval(
       createResult.id,
       maxRetries,
       packageId,
@@ -121,4 +139,103 @@ async function createRequestObject(
   } as PackagingSObjects.Package2VersionCreateRequest;
   await fs.promises.rm(packageVersTmpRoot, { recursive: true });
   return requestObject;
+}
+
+async function pollForStatusWithInterval(
+  id: string,
+  retries: number,
+  packageId: string,
+  branch: string,
+  withProject: SfProject,
+  connection: Connection,
+  interval: Duration
+): Promise<PackageVersionCreateRequestResult> {
+  let remainingRetries = retries;
+  const pollingClient = await PollingClient.create({
+    poll: async (): Promise<StatusResult> => {
+      const results: PackageVersionCreateRequestResult[] = await pvcr.byId(id, connection);
+
+      if (_isStatusEqualTo(results, [Package2VersionStatus.success, Package2VersionStatus.error])) {
+        // complete
+        if (_isStatusEqualTo(results, [Package2VersionStatus.success])) {
+          // update sfdx-project.json
+          let projectUpdated = false;
+          if (withProject && !process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE) {
+            projectUpdated = true;
+            const query = `SELECT MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version WHERE Id = '${results[0].Package2VersionId}'`;
+            const packageVersionVersionString: string = await connection.tooling
+              .query<PackagingSObjects.Package2Version>(query)
+              .then((pkgQueryResult) => {
+                const record = pkgQueryResult.records[0];
+                return `${record.MajorVersion}.${record.MinorVersion}.${record.PatchVersion}-${record.BuildNumber}`;
+              });
+            const newConfig = await generatePackageAliasEntry(
+              connection,
+              withProject,
+              results[0].SubscriberPackageVersionId,
+              packageVersionVersionString,
+              branch,
+              packageId
+            );
+            withProject.getSfProjectJson().set('packageAliases', newConfig);
+            await withProject.getSfProjectJson().write();
+          }
+          await Lifecycle.getInstance().emit(PackageEvents.convert.success, {
+            id,
+            packageVersionCreateRequestResult: results[0],
+            projectUpdated,
+          });
+          return { completed: true, payload: results[0] };
+        } else {
+          let status = 'Unknown Error';
+          if (results?.length > 0 && results[0].Error.length > 0) {
+            const errors = [];
+            // for multiple errors, display one per line prefixed with (x)
+            if (results[0].Error.length > 1) {
+              results[0].Error.forEach((error) => {
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                errors.push(`(${errors.length + 1}) ${error}`);
+              });
+              errors.unshift(messages.getMessage('versionCreateFailedWithMultipleErrors'));
+            }
+            status = errors.length !== 0 ? errors.join('\n') : results[0].Error.join('\n');
+          }
+          await Lifecycle.getInstance().emit(PackageEvents.convert.error, { id, status });
+          throw new SfError(status);
+        }
+      } else {
+        const remainingTime = Duration.seconds(interval.seconds * remainingRetries);
+        await Lifecycle.getInstance().emit(PackageEvents.convert.progress, {
+          id,
+          packageVersionCreateRequestResult: results[0],
+          message: '',
+          timeRemaining: remainingTime,
+        } as PackageVersionCreateEventData);
+        const logger = Logger.childFromRoot('packageConvert');
+
+        logger.info(
+          `Request in progress. Sleeping ${interval.seconds} seconds. Will wait a total of ${
+            remainingTime.seconds
+          } more seconds before timing out. Current Status='${convertCamelCaseStringToSentence(results[0]?.Status)}'`
+        );
+        remainingRetries--;
+        return { completed: false, payload: results[0] };
+      }
+    },
+    frequency: Duration.seconds(interval.seconds),
+    timeout: Duration.seconds(interval.seconds * retries),
+  });
+
+  return pollingClient.subscribe<PackageVersionCreateRequestResult>();
+}
+
+/**
+ * Return true if the queryResult.records[0].Status is equal to one of the values in statuses.
+ *
+ * @param results to examine
+ * @param statuses array of statuses to look for
+ * @returns {boolean} if one of the values in status is found.
+ */
+function _isStatusEqualTo(results: PackageVersionCreateRequestResult[], statuses?: Package2VersionStatus[]): boolean {
+  return results?.length <= 0 ? false : statuses?.some((status) => results[0].Status === status);
 }

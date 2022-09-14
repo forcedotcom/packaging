@@ -30,7 +30,7 @@ export interface IPackage {
   ): Promise<PackageInstallRequest>;
   getInstallStatus(installRequestId: string): Promise<PackageInstallRequest>;
   list(): Promise<QueryResult<PackagingSObjects.Package2>>;
-  uninstall(): Promise<void>;
+  uninstall(id: string, wait: Duration): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest>;
   update(options: PackageUpdateOptions): Promise<PackageSaveResult>;
   waitForPublish(subscriberPackageVersionKey: string, timeout: number | Duration, installationKey?: string);
   getExternalSites(subscriberPackageVersionKey: string, installationKey?: string);
@@ -394,3 +394,36 @@ export interface AncestryRepresentationProducer {
   addNode(node: AncestryRepresentationProducer): void;
   produce<T>(): T | string | void;
 }
+
+export const PackageEvents = {
+  convert: {
+    success: 'Package/convert-success',
+    error: 'Package/convert-error',
+    progress: 'Package/convert-in-progress',
+  },
+  install: {
+    warning: 'Package/install-warning',
+    presend: 'Package/install-presend',
+    postsend: 'Package/install-postsend',
+    status: 'Package/install-status',
+    'subscriber-status': 'Package/install-subscriber-status',
+  },
+  uninstall: 'Package/uninstall',
+};
+
+export const PackageVersionEvents = {
+  create: {
+    enqueued: 'PackageVersion/create-enqueued',
+    progress: 'PackageVersion/create-in-progress',
+    success: 'PackageVersion/create-success',
+    error: 'PackageVersion/create-error',
+    'timed-out': 'PackageVersion/create-timed-out',
+    'preserve-files': 'PackageVersion/create-preserve-files',
+  },
+};
+
+export const Package1VersionEvents = {
+  create: {
+    progress: 'Package1Version/create-progress',
+  },
+};

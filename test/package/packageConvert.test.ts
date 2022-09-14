@@ -10,8 +10,7 @@ import { Connection, Lifecycle } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import { convertPackage, createPackageVersionCreateRequest } from '../../src/package/packageConvert';
 import * as pkgUtils from '../../src/utils';
-import { PackagingSObjects } from '../../src/interfaces';
-import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
+import { PackageEvents } from '../../src/interfaces';
 
 describe('packageConvert', () => {
   const $$ = instantiateContext();
@@ -188,7 +187,7 @@ describe('packageConvert', () => {
       Tag: 'tag',
     };
 
-    Lifecycle.getInstance().on(Package2VersionStatus.inProgress, async (data) => {
+    Lifecycle.getInstance().on(PackageEvents.convert.progress, async (data) => {
       expect(data).to.deep.equal({
         id: '0Ho3i000000Gmj6YYY',
         message: '',
@@ -211,7 +210,7 @@ describe('packageConvert', () => {
         },
       });
     });
-    Lifecycle.getInstance().on(Package2VersionStatus.success, async (data) => {
+    Lifecycle.getInstance().on(PackageEvents.convert.success, async (data) => {
       expect(data).to.deep.equal({
         id: '0Ho3i000000Gmj6YYY',
         packageVersionCreateRequestResult: successResponse,
@@ -247,7 +246,7 @@ describe('packageConvert', () => {
     const $$ = instantiateContext();
     const conn = await testOrg.getConnection();
 
-    Lifecycle.getInstance().on(Package2VersionStatus.error, async (data: { id: string; status: string }) => {
+    Lifecycle.getInstance().on(PackageEvents.convert.error, async (data: { id: string; status: string }) => {
       expect(data.id).to.equal('0Ho3i000000Gmj6YYY');
       expect(data.status).to.include('Multiple errors occurred:');
       expect(data.status).to.include('(1) Server polling error 1');

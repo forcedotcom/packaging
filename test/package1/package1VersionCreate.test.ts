@@ -11,7 +11,7 @@ import { expect } from 'chai';
 import { Connection, Lifecycle } from '@salesforce/core';
 import { assert } from 'sinon';
 import { package1VersionCreate } from '../../src/package1';
-import { PackagingSObjects } from '../../src/interfaces';
+import { PackageVersionEvents, PackagingSObjects } from '../../src/interfaces';
 
 const options = {
   MetadataPackageId: '0HD4p000000blVyGAI',
@@ -72,7 +72,7 @@ describe('Package1 Version Create', () => {
         retrieve: async () => successResult,
       });
     Lifecycle.getInstance().on(
-      'package1VersionCreate:progress',
+      PackageVersionEvents.create.progress,
       async (data: { timeout: number; pollingResult: PackagingSObjects.PackageUploadRequest }) => {
         // 3 minute timeout (180 seconds) - 1 second per poll
         expect(data.timeout).to.equal(179);
@@ -111,7 +111,7 @@ describe('Package1 Version Create', () => {
       }),
     });
     Lifecycle.getInstance().on(
-      'package1VersionCreate:progress',
+      PackageVersionEvents.create.progress,
       async (data: { timeout: number; pollingResult: PackagingSObjects.PackageUploadRequest }) => {
         // 3 minute timeout (180 seconds) - 1 second per poll
         expect(data.timeout).to.equal(179);

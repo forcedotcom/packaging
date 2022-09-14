@@ -5,32 +5,13 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import * as os from 'os';
-import {
-  Connection,
-  Lifecycle,
-  Logger,
-  Messages,
-  NamedPackageDir,
-  PackageDir,
-  PollingClient,
-  SfdcUrl,
-  SfError,
-  SfProject,
-  StatusResult,
-} from '@salesforce/core';
-import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
+
+import { Connection, Messages, NamedPackageDir, PackageDir, SfdcUrl, SfError, SfProject } from '@salesforce/core';
+import { camelCaseToTitleCase } from '@salesforce/kit';
 import { Many, Nullable, Optional } from '@salesforce/ts-types';
 import { SaveError } from 'jsforce';
-import {
-  PackageDescriptorJson,
-  PackageType,
-  PackageVersionCreateEventData,
-  PackageVersionCreateRequestResult,
-  PackagingSObjects,
-} from '../interfaces';
-import * as pvcr from '../package/packageVersionCreateRequest';
+import { PackageDescriptorJson, PackageType, PackagingSObjects } from '../interfaces';
 import { BuildNumberToken, VersionNumber } from './versionNumber';
-import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'pkg_utils');
@@ -76,7 +57,6 @@ export const DEFAULT_PACKAGE_DIR = {
   default: true,
 };
 
-const logger = Logger.childFromRoot('packageUtils');
 export const BY_PREFIX = ((): IdRegistry => {
   return Object.fromEntries(ID_REGISTRY.map((id) => [id.prefix, { prefix: id.prefix, label: id.label }]));
 })();
@@ -816,92 +796,6 @@ export async function findOrCreatePackage2(seedPackage: string, connection: Conn
   return createResult.id;
 }
 
-export async function pollForStatusWithInterval(
-  id: string,
-  retries: number,
-  packageId: string,
-  branch: string,
-  withProject: SfProject,
-  connection: Connection,
-  interval: Duration
-): Promise<PackageVersionCreateRequestResult> {
-  let remainingRetries = retries;
-  const pollingClient = await PollingClient.create({
-    poll: async (): Promise<StatusResult> => {
-      const results: PackageVersionCreateRequestResult[] = await pvcr.byId(id, connection);
-
-      if (_isStatusEqualTo(results, [Package2VersionStatus.success, Package2VersionStatus.error])) {
-        // complete
-        if (_isStatusEqualTo(results, [Package2VersionStatus.success])) {
-          // update sfdx-project.json
-          let projectUpdated = false;
-          if (withProject && !process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE) {
-            projectUpdated = true;
-            const query = `SELECT MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version WHERE Id = '${results[0].Package2VersionId}'`;
-            const packageVersionVersionString: string = await connection.tooling
-              .query<PackagingSObjects.Package2Version>(query)
-              .then((pkgQueryResult) => {
-                const record = pkgQueryResult.records[0];
-                return `${record.MajorVersion}.${record.MinorVersion}.${record.PatchVersion}-${record.BuildNumber}`;
-              });
-            const newConfig = await generatePackageAliasEntry(
-              connection,
-              withProject,
-              results[0].SubscriberPackageVersionId,
-              packageVersionVersionString,
-              branch,
-              packageId
-            );
-            withProject.getSfProjectJson().set('packageAliases', newConfig);
-            await withProject.getSfProjectJson().write();
-          }
-          await Lifecycle.getInstance().emit(Package2VersionStatus.success, {
-            id,
-            packageVersionCreateRequestResult: results[0],
-            projectUpdated,
-          });
-          return { completed: true, payload: results[0] };
-        } else {
-          let status = 'Unknown Error';
-          if (results?.length > 0 && results[0].Error.length > 0) {
-            const errors = [];
-            // for multiple errors, display one per line prefixed with (x)
-            if (results[0].Error.length > 1) {
-              results[0].Error.forEach((error) => {
-                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                errors.push(`(${errors.length + 1}) ${error}`);
-              });
-              errors.unshift(messages.getMessage('versionCreateFailedWithMultipleErrors'));
-            }
-            status = errors.length !== 0 ? errors.join('\n') : results[0].Error.join('\n');
-          }
-          await Lifecycle.getInstance().emit(Package2VersionStatus.error, { id, status });
-          throw new SfError(status);
-        }
-      } else {
-        const remainingTime = Duration.seconds(interval.seconds * remainingRetries);
-        await Lifecycle.getInstance().emit(Package2VersionStatus.inProgress, {
-          id,
-          packageVersionCreateRequestResult: results[0],
-          message: '',
-          timeRemaining: remainingTime,
-        } as PackageVersionCreateEventData);
-        logger.info(
-          `Request in progress. Sleeping ${interval.seconds} seconds. Will wait a total of ${
-            remainingTime.seconds
-          } more seconds before timing out. Current Status='${convertCamelCaseStringToSentence(results[0]?.Status)}'`
-        );
-        remainingRetries--;
-        return { completed: false, payload: results[0] };
-      }
-    },
-    frequency: Duration.seconds(interval.seconds),
-    timeout: Duration.seconds(interval.seconds * retries),
-  });
-
-  return pollingClient.subscribe<PackageVersionCreateRequestResult>();
-}
-
 /**
  * Generate package alias json entry for this package version that can be written to sfdx-project.json
  *
@@ -940,17 +834,6 @@ export async function generatePackageAliasEntry(
   packageAliases[packageAlias] = packageVersionId;
 
   return packageAliases;
-}
-
-/**
- * Return true if the queryResult.records[0].Status is equal to one of the values in statuses.
- *
- * @param results to examine
- * @param statuses array of statuses to look for
- * @returns {boolean} if one of the values in status is found.
- */
-function _isStatusEqualTo(results: PackageVersionCreateRequestResult[], statuses?: Package2VersionStatus[]): boolean {
-  return results?.length <= 0 ? false : statuses?.some((status) => results[0].Status === status);
 }
 
 export function formatDate(date: Date): string {

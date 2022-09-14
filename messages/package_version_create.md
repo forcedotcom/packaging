@@ -66,6 +66,10 @@ versionName is blank in sfdx-project.json, so it will be set to this default val
 
 The %s value "%s" from the command line or sfdx-project.json is not in the correct format for a URL. It must be a valid URL in the format "http://salesforce.com". More information: https://nodejs.org/api/url.html#url_url_strings_and_url_objects
 
+# versionCreateFailedWithMultipleErrors
+
+Multiple errors occurred:
+
 # invalidDaysNumber
 
 Provide a valid positive number for %s.

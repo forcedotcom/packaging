@@ -7,7 +7,7 @@
 import * as os from 'os';
 import { Connection, Lifecycle, Messages, PollingClient, SfError, StatusResult } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
-import { PackagingSObjects } from '../interfaces';
+import { PackageEvents, PackagingSObjects } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_uninstall');
@@ -24,7 +24,7 @@ async function poll(id: string, conn: Connection): Promise<StatusResult> {
     }
     case 'InProgress':
     case 'Queued': {
-      Lifecycle.getInstance().emit('packageUninstall', {
+      await Lifecycle.getInstance().emit(PackageEvents.uninstall, {
         ...uninstallRequest,
       });
       return { completed: false, payload: uninstallRequest };

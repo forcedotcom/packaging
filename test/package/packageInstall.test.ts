@@ -116,7 +116,7 @@ describe('Package Install', () => {
 
     expect(lifecycleStub.calledTwice).to.be.true;
     expect(lifecycleStub.args[0][1]).to.deep.equal(expectedRequest);
-    expect(lifecycleStub.args[1][0]).to.equal('PackageInstallRequest:postsend');
+    expect(lifecycleStub.args[1][0]).to.equal('Package/install-postsend');
     expect(queryStub.called).to.be.true;
   });
 
@@ -140,14 +140,14 @@ describe('Package Install', () => {
     // verify we polled
     expect(retrieveStub.calledTwice).to.be.true;
     expect(lifecycleStub.callCount).to.equal(4);
-    expect(lifecycleStub.args[0][0]).to.equal('PackageInstallRequest:presend');
+    expect(lifecycleStub.args[0][0]).to.equal('Package/install-presend');
     const expectedRequest = Object.assign({}, pkgInstallCreateRequest, pkgInstallCreateRequestDefaults);
     expect(lifecycleStub.args[0][1]).to.deep.equal(expectedRequest);
-    expect(lifecycleStub.args[1][0]).to.equal('PackageInstallRequest:postsend');
+    expect(lifecycleStub.args[1][0]).to.equal('Package/install-postsend');
     expect(lifecycleStub.args[1][1]).to.deep.equal(pkgCreateRequest);
-    expect(lifecycleStub.args[2][0]).to.equal('PackageInstallRequest:status');
+    expect(lifecycleStub.args[2][0]).to.equal('Package/install-status');
     expect(lifecycleStub.args[2][1]).to.deep.equal(inProgressPIR);
-    expect(lifecycleStub.args[3][0]).to.equal('PackageInstallRequest:status');
+    expect(lifecycleStub.args[3][0]).to.equal('Package/install-status');
     expect(lifecycleStub.args[3][1]).to.deep.equal(successPIR);
 
     // verify expected return json
@@ -267,13 +267,13 @@ describe('Package Install', () => {
     // verify all lifecycle events fired
     expect(lifecycleStub.callCount).to.equal(4);
     const upgradeTypeWarning = installMsgs.getMessage('upgradeTypeOnlyForUnlockedWarning');
-    expect(lifecycleStub.args[0][0]).to.equal('PackageInstallRequest:warning');
+    expect(lifecycleStub.args[0][0]).to.equal('Package/install-warning');
     expect(lifecycleStub.args[0][1]).to.equal(upgradeTypeWarning);
     const apexCompileTypeWarning = installMsgs.getMessage('apexCompileOnlyForUnlockedWarning');
-    expect(lifecycleStub.args[1][0]).to.equal('PackageInstallRequest:warning');
+    expect(lifecycleStub.args[1][0]).to.equal('Package/install-warning');
     expect(lifecycleStub.args[1][1]).to.equal(apexCompileTypeWarning);
-    expect(lifecycleStub.args[2][0]).to.equal('PackageInstallRequest:presend');
-    expect(lifecycleStub.args[3][0]).to.equal('PackageInstallRequest:postsend');
+    expect(lifecycleStub.args[2][0]).to.equal('Package/install-presend');
+    expect(lifecycleStub.args[3][0]).to.equal('Package/install-postsend');
 
     expect(queryStub.called).to.be.true;
   });
@@ -303,8 +303,8 @@ describe('Package Install', () => {
 
     // verify all lifecycle events fired
     expect(lifecycleStub.callCount).to.equal(2);
-    expect(lifecycleStub.args[0][0]).to.equal('PackageInstallRequest:presend');
-    expect(lifecycleStub.args[1][0]).to.equal('PackageInstallRequest:postsend');
+    expect(lifecycleStub.args[0][0]).to.equal('Package/install-presend');
+    expect(lifecycleStub.args[1][0]).to.equal('Package/install-postsend');
 
     expect(queryStub.called).to.be.true;
   });
