@@ -18,6 +18,7 @@ import {
   PackageVersionOptions,
   PackageVersionReportResult,
   PackageVersionUpdateOptions,
+  PackagingSObjects,
 } from '../interfaces';
 import {
   applyErrorAction,
@@ -26,7 +27,6 @@ import {
   getPackageAliasesFromId,
   getPackageIdFromAlias,
   getPackageVersionId,
-  getSubscriberPackageVersionId,
   validateId,
 } from '../utils';
 import { PackageVersionCreate } from './packageVersionCreate';
@@ -36,7 +36,7 @@ import { listPackageVersions } from './packageVersionList';
 import { list } from './packageVersionCreateRequest';
 
 Messages.importMessagesDirectory(__dirname);
-
+const messages = Messages.loadMessages('@salesforce/packaging', 'package_version');
 export class PackageVersion {
   private readonly project: SfProject;
   private readonly connection: Connection;
@@ -243,7 +243,7 @@ export class PackageVersion {
       throw new Error(result.errors.join(', '));
     }
     // Use the 04t ID for the success message
-    result.id = await getSubscriberPackageVersionId(id, this.connection);
+    result.id = await this.getSubscriberPackageVersionId(id);
     return result;
   }
 
@@ -266,7 +266,7 @@ export class PackageVersion {
     if (!updateResult.success) {
       throw combineSaveErrors('Package2', 'update', updateResult.errors);
     }
-    updateResult.id = await getSubscriberPackageVersionId(packageVersionId, this.connection);
+    updateResult.id = await this.getSubscriberPackageVersionId(packageVersionId);
     return updateResult;
   }
 
@@ -297,5 +297,29 @@ export class PackageVersion {
         results.SubscriberPackageVersionId;
       await this.project.getSfProjectJson().write();
     }
+  }
+  /**
+   * Given a package version ID (05i) or subscriber package version ID (04t), return the subscriber package version ID (04t)
+   *
+   * @param versionId The suscriber package version ID
+   * @param connection For tooling query
+   */
+  private async getSubscriberPackageVersionId(versionId: string): Promise<string> {
+    // if it's already a 04t return it, otherwise query for it
+    if (!versionId || versionId.startsWith(BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.prefix)) {
+      return versionId;
+    }
+    const query = `SELECT SubscriberPackageVersionId FROM Package2Version WHERE Id = '${versionId}'`;
+    const queryResult = await this.connection.tooling.query<
+      Pick<PackagingSObjects.Package2Version, 'SubscriberPackageVersionId'>
+    >(query);
+    if (!queryResult || !queryResult.totalSize) {
+      throw messages.createError('errorInvalidIdNoMatchingVersionId', [
+        BY_LABEL.PACKAGE_VERSION_ID.label,
+        versionId,
+        BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.label,
+      ]);
+    }
+    return queryResult.records[0].SubscriberPackageVersionId;
   }
 }

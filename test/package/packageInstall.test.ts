@@ -9,7 +9,7 @@ import { expect } from 'chai';
 import { Connection, Lifecycle, Messages } from '@salesforce/core';
 import { SaveResult } from 'jsforce';
 import { Duration } from '@salesforce/kit';
-import { Package } from '../../src/package';
+import { Package, isErrorPackageNotAvailable, isErrorFromSPVQueryRestriction } from '../../src/package';
 import { PackagingSObjects, PackageInstallCreateRequest, PackageInstallOptions } from '../../src/interfaces';
 type PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 
@@ -356,5 +356,37 @@ describe('Package Install', () => {
 
     expect(millisStub.called).to.be.true;
     expect(queryStub.callCount).to.be.greaterThan(2);
+  });
+  describe('isErrorPackageNotAvailable', () => {
+    it('should return true if the error name is "UNKNOWN_EXCEPTION"', () => {
+      ['UNKNOWN_EXCEPTION', 'PACKAGE_UNAVAILABLE'].forEach((name) => {
+        const error = new Error();
+        error.name = name;
+        const result = isErrorPackageNotAvailable(error);
+        expect(result).to.be.equal(true, `Expected Error ${name} to be a "package not available" surrogates`);
+      });
+    });
+    it('should return false if the error name is one of the "package not available" surrogates', () => {
+      const error = new Error();
+      error.name = 'NOT_A_SURROGATE';
+      const result = isErrorPackageNotAvailable(error);
+      expect(result).to.be.false;
+    });
+  });
+  describe('isErrorFromSPVQueryRestriction', () => {
+    it('should return true if the error message is from "Subscriber Query Restriction"', () => {
+      const error = new Error();
+      error.name = 'MALFORMED_QUERY';
+      error.message = 'Implementation restriction: You can only perform queries of the form Id';
+      const result = isErrorFromSPVQueryRestriction(error);
+      expect(result).to.be.true;
+    });
+    it('should return false if the error message is not from "Subscriber Query Restriction"', () => {
+      const error = new Error();
+      error.name = 'NOT_MALFORMED_QUERY';
+      error.message = 'Implementation restriction: You can only perform queries of the form Id';
+      const result = isErrorFromSPVQueryRestriction(error);
+      expect(result).to.be.false;
+    });
   });
 });

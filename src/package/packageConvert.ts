@@ -18,7 +18,7 @@ import {
   SfProject,
   StatusResult,
 } from '@salesforce/core';
-import { Duration } from '@salesforce/kit';
+import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
 import { Many } from '@salesforce/ts-types';
 import { uniqid } from '../utils/uniqid';
 import * as pkgUtils from '../utils/packageUtils';
@@ -31,13 +31,48 @@ import {
 } from '../interfaces';
 import { consts } from '../constants';
 import * as srcDevUtil from '../utils/srcDevUtils';
-import { convertCamelCaseStringToSentence, generatePackageAliasEntry } from '../utils';
+import { generatePackageAliasEntry } from '../utils';
 import { byId } from './packageVersionCreateRequest';
 import * as pvcr from './packageVersionCreateRequest';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
+
+async function findOrCreatePackage2(seedPackage: string, connection: Connection): Promise<string> {
+  const query = `SELECT Id FROM Package2 WHERE ConvertedFromPackageId = '${seedPackage}'`;
+  const queryResult = (await connection.tooling.query<PackagingSObjects.Package2>(query)).records;
+  if (queryResult?.length > 1) {
+    const ids = queryResult.map((r) => r.Id);
+    throw messages.createError('errorMoreThanOnePackage2WithSeed', [ids.join(', ')]);
+  }
+
+  if (queryResult?.length === 1) {
+    // return the package2 object
+    return queryResult[0].Id;
+  }
+
+  // Need to create a new Package2
+  const subQuery = `SELECT Name, Description, NamespacePrefix FROM SubscriberPackage WHERE Id = '${seedPackage}'`;
+  const subscriberResult = (await connection.tooling.query<PackagingSObjects.SubscriberPackage>(subQuery)).records;
+  if (!subscriberResult || subscriberResult?.length <= 0) {
+    throw messages.createError('errorNoSubscriberPackageRecord', [seedPackage]);
+  }
+
+  const request = {
+    Name: subscriberResult[0].Name,
+    Description: subscriberResult[0].Description,
+    NamespacePrefix: subscriberResult[0].NamespacePrefix,
+    ContainerOptions: 'Managed',
+    ConvertedFromPackageId: seedPackage,
+  };
+
+  const createResult = await connection.tooling.create('Package2', request);
+  if (!createResult.success) {
+    throw pkgUtils.combineSaveErrors('Package2', 'create', createResult.errors);
+  }
+  return createResult.id;
+}
 
 export async function convertPackage(
   pkg: string,
@@ -51,7 +86,7 @@ export async function convertPackage(
     maxRetries = (60 / pkgUtils.POLL_INTERVAL_SECONDS) * options.wait.minutes;
   }
 
-  const packageId = await pkgUtils.findOrCreatePackage2(pkg, connection);
+  const packageId = await findOrCreatePackage2(pkg, connection);
 
   const request = await createPackageVersionCreateRequest(
     { installationkey: options.installationKey, buildinstance: options.buildInstance },
@@ -169,6 +204,7 @@ async function pollForStatusWithInterval(
                 const record = pkgQueryResult.records[0];
                 return `${record.MajorVersion}.${record.MinorVersion}.${record.PatchVersion}-${record.BuildNumber}`;
               });
+            // TODO SfProjectJson.addPackageAlias
             const newConfig = await generatePackageAliasEntry(
               connection,
               withProject,
@@ -216,7 +252,7 @@ async function pollForStatusWithInterval(
         logger.info(
           `Request in progress. Sleeping ${interval.seconds} seconds. Will wait a total of ${
             remainingTime.seconds
-          } more seconds before timing out. Current Status='${convertCamelCaseStringToSentence(results[0]?.Status)}'`
+          } more seconds before timing out. Current Status='${camelCaseToTitleCase(results[0]?.Status)}'`
         );
         remainingRetries--;
         return { completed: false, payload: results[0] };

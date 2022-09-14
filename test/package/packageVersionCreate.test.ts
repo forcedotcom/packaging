@@ -13,6 +13,7 @@ import * as xml2js from 'xml2js';
 import * as pkgUtils from '../../src/utils/packageUtils';
 
 import { PackageVersionCreate } from '../../src/package/packageVersionCreate';
+import { PackagingSObjects } from '../../src/interfaces';
 
 describe('Package Version Create', () => {
   const $$ = instantiateContext();
@@ -21,6 +22,7 @@ describe('Package Version Create', () => {
   let connection: Connection;
   let packageTypeQuery: sinon.SinonStub;
   let packageCreateStub: sinon.SinonStub;
+  let packageTypeStud: sinon.SinonStub;
 
   let project: SfProject;
 
@@ -49,8 +51,6 @@ describe('Package Version Create', () => {
     connection = await testOrg.getConnection();
     packageTypeQuery = $$.SANDBOX.stub(connection.tooling, 'query')
       .onFirstCall() // @ts-ignore
-      .resolves({ records: [{}] })
-      .onSecondCall() // @ts-ignore
       .resolves({ records: [{ Id: '05i3i000000Gmj6XXX' }] }) // @ts-ignore
       .resolves({ records: [{}] });
     packageCreateStub = $$.SANDBOX.stub(connection.tooling, 'create').resolves({
@@ -61,7 +61,7 @@ describe('Package Version Create', () => {
     $$.SANDBOX.stub(xml2js, 'parseStringPromise').resolves({
       Package: { types: [{ name: ['Apexclass'], members: ['MyApexClass'] }] },
     });
-    $$.SANDBOX.stub(pkgUtils, 'getPackageType').resolves('Managed');
+    packageTypeStud = $$.SANDBOX.stub(pkgUtils, 'getPackageType').resolves('Managed');
   });
 
   afterEach(async () => {
@@ -263,9 +263,10 @@ describe('Package Version Create', () => {
   it('should validate options when package type = unlocked (scripts)', async () => {
     packageTypeQuery.restore();
     // @ts-ignore
-    packageTypeQuery = $$.SANDBOX.stub(connection.tooling, 'query').resolves({
-      records: [{ ContainerOptions: 'Unlocked' }],
-    });
+    packageTypeQuery = $$.SANDBOX.stub(connection.tooling, 'query')
+      .onFirstCall() // @ts-ignore
+      .resolves({ records: [{ Id: '05i3i000000Gmj6XXX' }] }) // @ts-ignore
+      .resolves({ records: [{ ContainerOptions: 'Unlocked' }] });
     let pvc = new PackageVersionCreate({
       connection,
       project,
@@ -279,6 +280,13 @@ describe('Package Version Create', () => {
         'We can’t create the package version. This parameter is available only for second-generation managed packages. Create the package version without the postinstallscript or uninstallscript parameters.'
       );
     }
+
+    packageTypeQuery.restore();
+    // @ts-ignore
+    packageTypeQuery = $$.SANDBOX.stub(connection.tooling, 'query')
+      .onFirstCall() // @ts-ignore
+      .resolves({ records: [{ Id: '05i3i000000Gmj6XXX' }] }) // @ts-ignore
+      .resolves({ records: [{ ContainerOptions: 'Unlocked' }] });
 
     // check uninstallscript
     pvc = new PackageVersionCreate({
@@ -313,10 +321,13 @@ describe('Package Version Create', () => {
       },
     });
     packageTypeQuery.restore();
-    // @ts-ignore
-    packageTypeQuery = $$.SANDBOX.stub(connection.tooling, 'query').resolves({
-      records: [{ ContainerOptions: 'Unlocked' }],
-    });
+    packageTypeQuery = $$.SANDBOX.stub(connection.tooling, 'query')
+      .onFirstCall() // @ts-ignore
+      .resolves({ records: [{ ContainerOptions: 'Unlocked' }] })
+      // @ts-ignore
+      .resolves({ records: [{ Id: '05i3i000000Gmj6XXX' }] });
+    packageTypeStud.restore();
+    packageTypeStud = $$.SANDBOX.stub(pkgUtils, 'getPackageType').resolves('Unlocked');
     const pvc = new PackageVersionCreate({
       connection,
       project,
@@ -379,4 +390,130 @@ describe('Package Version Create', () => {
       'Tag'
     );
   });
-}).timeout(10000);
+  describe('validateAncestorId', () => {
+    let pvc: PackageVersionCreate;
+    beforeEach(() => {
+      pvc = new PackageVersionCreate({});
+    });
+    it('should throw if the explicitUseNoAncestor is true and highestReleasedVersion is not undefined', () => {
+      const ancestorId = 'ancestorId';
+      const highestReleasedVersion = {
+        Id: 'foo',
+        MajorVersion: 1,
+        MinorVersion: 2,
+        PatchVersion: 3,
+      } as PackagingSObjects.Package2Version;
+      const explicitUseNoAncestor = true;
+      const isPatch = false;
+      const skipAncestorCheck = false;
+      const origSpecifiedAncestor = 'orgAncestorId';
+      expect(() =>
+        pvc['validateAncestorId'](
+          ancestorId,
+          highestReleasedVersion,
+          explicitUseNoAncestor,
+          isPatch,
+          skipAncestorCheck,
+          origSpecifiedAncestor
+        )
+      ).to.throw(/Can’t create package version because you didn’t specify a package ancestor/);
+    });
+    it('should throw if !isPatch and !skipAncestorCheck and highestReleasedVersion.Id is not equal ancestorId', () => {
+      const ancestorId = 'ancestorId';
+      const highestReleasedVersion = {
+        Id: 'foo',
+        MajorVersion: 1,
+        MinorVersion: 2,
+        PatchVersion: 3,
+      } as PackagingSObjects.Package2Version;
+      const explicitUseNoAncestor = false;
+      const isPatch = false;
+      const skipAncestorCheck = false;
+      const origSpecifiedAncestor = 'orgAncestorId';
+      expect(() =>
+        pvc['validateAncestorId'](
+          ancestorId,
+          highestReleasedVersion,
+          explicitUseNoAncestor,
+          isPatch,
+          skipAncestorCheck,
+          origSpecifiedAncestor
+        )
+      ).to.throw(
+        /The ancestor version \[orgAncestorId\] you specified isn’t the highest released package version\. Set the ancestor version to 1\.2\.3/
+      );
+    });
+    it('should identify the ancestor as "" when version is the first version', () => {
+      const ancestorId = 'ancestorId';
+      const highestReleasedVersion = undefined as PackagingSObjects.Package2Version;
+      const explicitUseNoAncestor = false;
+      const isPatch = false;
+      const skipAncestorCheck = false;
+      const origSpecifiedAncestor = 'orgAncestorId';
+      const result = pvc['validateAncestorId'](
+        ancestorId,
+        highestReleasedVersion,
+        explicitUseNoAncestor,
+        isPatch,
+        skipAncestorCheck,
+        origSpecifiedAncestor
+      );
+      expect(result).to.be.equal('');
+    });
+    it('should identify the correct ancestor as the value passed to the function', () => {
+      const ancestorId = 'ancestorId';
+      const highestReleasedVersion = undefined as PackagingSObjects.Package2Version;
+      const explicitUseNoAncestor = false;
+      const isPatch = true;
+      const skipAncestorCheck = true;
+      const origSpecifiedAncestor = 'orgAncestorId';
+      const result = pvc['validateAncestorId'](
+        ancestorId,
+        highestReleasedVersion,
+        explicitUseNoAncestor,
+        isPatch,
+        skipAncestorCheck,
+        origSpecifiedAncestor
+      );
+      expect(result).to.be.equal('ancestorId');
+    });
+  });
+  describe('massageErrorMessage', () => {
+    let pvc: PackageVersionCreate;
+    beforeEach(() => {
+      pvc = new PackageVersionCreate({});
+    });
+    it('should return the correct error message', () => {
+      const error = new Error();
+      error.name = 'INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST';
+      const result = pvc['massageErrorMessage'](error);
+      expect(result.message).to.be.equal('Invalid package type');
+    });
+  });
+  describe('validateVersionNumber', () => {
+    let pvc: PackageVersionCreate;
+    beforeEach(() => {
+      pvc = new PackageVersionCreate({});
+    });
+    it('should return version number as valid', () => {
+      const versionNumber = pvc['validateVersionNumber']('1.2.3.NEXT', 'NEXT', 'LATEST');
+      expect(versionNumber).to.be.equal('1.2.3.NEXT');
+    });
+    it('should throw error if version number is invalid', () => {
+      expect(() => {
+        pvc['validateVersionNumber']('1.2.3.NEXT', 'foo', 'bar');
+      }).to.throw(
+        Error,
+        /The provided VersionNumber '1.2.3.NEXT' is invalid. Provide an integer value or use the keyword/
+      );
+    });
+    it('should throw error if build2 is undefined', () => {
+      expect(() => {
+        pvc['validateVersionNumber']('1.2.3.NEXT', 'foo', undefined);
+      }).to.throw(
+        Error,
+        /The provided VersionNumber '1.2.3.NEXT' is invalid. Provide an integer value or use the keyword/
+      );
+    });
+  });
+});

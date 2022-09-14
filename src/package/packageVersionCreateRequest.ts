@@ -13,7 +13,6 @@ import {
   PackageVersionCreateRequestQueryOptions,
   PackagingSObjects,
 } from '../interfaces';
-import * as packageUtils from '../utils/packageUtils';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
@@ -26,6 +25,15 @@ const QUERY =
   '%s' + // WHERE, if applicable
   'ORDER BY CreatedDate';
 const ERROR_QUERY = "SELECT Message FROM Package2VersionCreateRequestError WHERE ParentRequest.Id = '%s'";
+
+function formatDate(date: Date): string {
+  const pad = (num: number): string => {
+    return num < 10 ? `0${num}` : `${num}`;
+  };
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(
+    date.getMinutes()
+  )}`;
+}
 
 export async function list(
   options?: PackageVersionCreateRequestQueryOptions
@@ -60,7 +68,7 @@ async function _query(query: string, connection: Connection): Promise<PackageVer
     Tag: record.Tag,
     Branch: record.Branch,
     Error: [],
-    CreatedDate: packageUtils.formatDate(new Date(record.CreatedDate)),
+    CreatedDate: formatDate(new Date(record.CreatedDate)),
     HasMetadataRemoved: record.Package2Version != null ? record.Package2Version.HasMetadataRemoved : null,
     CreatedBy: record.CreatedById,
   }));

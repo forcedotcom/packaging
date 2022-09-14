@@ -9,12 +9,7 @@ import { Connection, Lifecycle, Logger, Messages, PollingClient, SfError, Status
 import { isString, isNumber, Optional } from '@salesforce/ts-types';
 import { QueryResult } from 'jsforce';
 import { Duration } from '@salesforce/kit';
-import {
-  isErrorFromSPVQueryRestriction,
-  isErrorPackageNotAvailable,
-  getPackageTypeBy04t,
-  escapeInstallationKey,
-} from '../utils';
+import { escapeInstallationKey } from '../utils';
 import { consts } from '../constants';
 import { PackagingSObjects, PackageInstallOptions, PackageInstallCreateRequest, PackageEvents } from '../interfaces';
 
@@ -31,6 +26,35 @@ const getLogger = (): Logger => {
   }
   return logger;
 };
+
+/**
+ * Given 04t the package type type (Managed, Unlocked, Locked(deprecated?))
+ *
+ * @param packageVersionId the 04t
+ * @param connection For tooling query
+ * @param installKey For tooling query, if an installation key is applicable to the package version it must be passed in the queries
+ * @throws Error with message when package2 cannot be found
+ */
+async function getPackageTypeBy04t(
+  packageVersionId: string,
+  connection: Connection,
+  installKey?: string
+): Promise<string> {
+  let query = `SELECT Package2ContainerOptions FROM SubscriberPackageVersion WHERE id ='${packageVersionId}'`;
+
+  if (installKey) {
+    const escapedInstallationKey = installKey.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    query += ` AND InstallationKey ='${escapedInstallationKey}'`;
+  }
+
+  const queryResult = await connection.tooling.query<
+    Pick<PackagingSObjects.SubscriberPackageVersion, 'Package2ContainerOptions'>
+  >(query);
+  if (!queryResult || queryResult.records === null || queryResult.records.length === 0) {
+    throw installMsgs.createError('errorInvalidPackageId', [packageVersionId]);
+  }
+  return queryResult.records[0].Package2ContainerOptions;
+}
 
 export async function installPackage(
   connection: Connection,
@@ -190,6 +214,20 @@ async function pollStatus(
     }
     throw error;
   }
+}
+
+// determines if error is from malformed SubscriberPackageVersion query
+// this is in place to allow cli to run against app version 214, where SPV queries
+// do not require installation key
+export function isErrorFromSPVQueryRestriction(err: Error): boolean {
+  return (
+    err.name === 'MALFORMED_QUERY' &&
+    err.message.includes('Implementation restriction: You can only perform queries of the form Id')
+  );
+}
+
+export function isErrorPackageNotAvailable(err: Error): boolean {
+  return err.name === 'UNKNOWN_EXCEPTION' || err.name === 'PACKAGE_UNAVAILABLE';
 }
 
 export async function waitForPublish(
