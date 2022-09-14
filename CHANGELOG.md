@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.36](https://github.com/forcedotcom/packaging/compare/v0.0.35...v0.0.36) (2022-09-14)
+
+### Bug Fixes
+
+- standardize event names across classes, methods, and events ([d97c231](https://github.com/forcedotcom/packaging/commit/d97c231928582dd092bf0ce225dffa3298cce8eb))
+
 ### [0.0.35](https://github.com/forcedotcom/packaging/compare/v0.0.34...v0.0.35) (2022-09-09)
 
 ### Bug Fixes
