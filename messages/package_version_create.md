@@ -93,3 +93,12 @@ The provided VersionNumber '%s' is invalid. Provide an integer value or use the 
 # errorInvalidBuildNumber
 
 The provided VersionNumber '%s' is invalid. Provide an integer value or use the keyword '%s' for the build number.
+
+# errorNoSubscriberPackageRecord
+
+No subscriber package was found for seed id: %s
+
+# errorMoreThanOnePackage2WithSeed
+
+Only one package in a Dev Hub is allowed per converted from first-generation package, but the following were found:
+%s

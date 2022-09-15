@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import { expect } from 'chai';
 import { instantiateContext, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { NamedPackageDir, SfProject } from '@salesforce/core';
-import { _createPackageRequestFromContext, _generatePackageDirEntry } from '../../src/package/packageCreate';
+import { createPackageRequestFromContext, generatePackageDirEntry } from '../../src/package/packageCreate';
 
 async function setupProject(setup: (project: SfProject) => void = () => {}) {
   const project = await SfProject.resolve();
@@ -52,7 +52,7 @@ describe('packageCreate', () => {
     it('should return a valid request', async () => {
       $$.inProject(true);
       const project = await setupProject();
-      const request = _createPackageRequestFromContext(project, {
+      const request = createPackageRequestFromContext(project, {
         name: 'test',
         description: 'test description',
         path: 'test/path',
@@ -75,7 +75,7 @@ describe('packageCreate', () => {
       const project = await setupProject((project) => {
         project.getSfProjectJson().set('namespace', 'testNamespace');
       });
-      const request = _createPackageRequestFromContext(project, {
+      const request = createPackageRequestFromContext(project, {
         name: 'test',
         description: 'test description',
         path: 'test/path',
@@ -98,7 +98,7 @@ describe('packageCreate', () => {
       const project = await setupProject((project) => {
         project.getSfProjectJson().set('namespace', 'testNamespace');
       });
-      const request = _createPackageRequestFromContext(project, {
+      const request = createPackageRequestFromContext(project, {
         name: 'test',
         description: 'test description',
         path: 'test/path',
@@ -120,7 +120,7 @@ describe('packageCreate', () => {
       it('should return a valid new package directory entry', async () => {
         $$.inProject(true);
         const project = await setupProject();
-        const entries = _generatePackageDirEntry(project, {
+        const entries = generatePackageDirEntry(project, {
           name: 'test',
           description: 'test description',
           path: 'test/path',
@@ -151,7 +151,7 @@ describe('packageCreate', () => {
           });
           project.getSfProjectJson().set('packageDirectories', packageDirectories);
         });
-        const entries = _generatePackageDirEntry(project, {
+        const entries = generatePackageDirEntry(project, {
           name: 'test-01',
           description: 'test description',
           path: 'test/path',

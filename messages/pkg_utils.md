@@ -1,7 +1,3 @@
-# errorNoSubscriberPackageRecord
-
-No subscriber package was found for seed id: %s'
-
 # errorDuringSObjectCRUDOperation
 
 An error occurred during CRUD operation %s on entity %s.
@@ -70,11 +66,6 @@ We can’t find this package ID for this Dev Hub.
 # notFoundMessage
 
 The requested resource does not exist
-
-# errorMoreThanOnePackage2WithSeed
-
-Only one package in a Dev Hub is allowed per converted from first-generation package, but the following were found:
-%s
 
 # versionCreateFailedWithMultipleErrors
 

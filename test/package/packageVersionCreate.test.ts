@@ -22,7 +22,7 @@ describe('Package Version Create', () => {
   let connection: Connection;
   let packageTypeQuery: sinon.SinonStub;
   let packageCreateStub: sinon.SinonStub;
-  let packageTypeStud: sinon.SinonStub;
+  let packageTypeStub: sinon.SinonStub;
 
   let project: SfProject;
 
@@ -61,7 +61,7 @@ describe('Package Version Create', () => {
     $$.SANDBOX.stub(xml2js, 'parseStringPromise').resolves({
       Package: { types: [{ name: ['Apexclass'], members: ['MyApexClass'] }] },
     });
-    packageTypeStud = $$.SANDBOX.stub(pkgUtils, 'getPackageType').resolves('Managed');
+    packageTypeStub = $$.SANDBOX.stub(pkgUtils, 'getPackageType').resolves('Managed');
   });
 
   afterEach(async () => {
@@ -326,8 +326,8 @@ describe('Package Version Create', () => {
       .resolves({ records: [{ ContainerOptions: 'Unlocked' }] })
       // @ts-ignore
       .resolves({ records: [{ Id: '05i3i000000Gmj6XXX' }] });
-    packageTypeStud.restore();
-    packageTypeStud = $$.SANDBOX.stub(pkgUtils, 'getPackageType').resolves('Unlocked');
+    packageTypeStub.restore();
+    packageTypeStub = $$.SANDBOX.stub(pkgUtils, 'getPackageType').resolves('Unlocked');
     const pvc = new PackageVersionCreate({
       connection,
       project,

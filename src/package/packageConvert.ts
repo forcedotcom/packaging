@@ -39,7 +39,7 @@ import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
 
-async function findOrCreatePackage2(seedPackage: string, connection: Connection): Promise<string> {
+export async function findOrCreatePackage2(seedPackage: string, connection: Connection): Promise<string> {
   const query = `SELECT Id FROM Package2 WHERE ConvertedFromPackageId = '${seedPackage}'`;
   const queryResult = (await connection.tooling.query<PackagingSObjects.Package2>(query)).records;
   if (queryResult?.length > 1) {
@@ -54,15 +54,19 @@ async function findOrCreatePackage2(seedPackage: string, connection: Connection)
 
   // Need to create a new Package2
   const subQuery = `SELECT Name, Description, NamespacePrefix FROM SubscriberPackage WHERE Id = '${seedPackage}'`;
-  const subscriberResult = (await connection.tooling.query<PackagingSObjects.SubscriberPackage>(subQuery)).records;
-  if (!subscriberResult || subscriberResult?.length <= 0) {
+  let subscriberResult;
+  try {
+    subscriberResult = await connection.singleRecordQuery<PackagingSObjects.SubscriberPackage>(subQuery, {
+      tooling: true,
+    });
+  } catch (e) {
     throw messages.createError('errorNoSubscriberPackageRecord', [seedPackage]);
   }
 
   const request = {
-    Name: subscriberResult[0].Name,
-    Description: subscriberResult[0].Description,
-    NamespacePrefix: subscriberResult[0].NamespacePrefix,
+    Name: subscriberResult.Name,
+    Description: subscriberResult.Description,
+    NamespacePrefix: subscriberResult.NamespacePrefix,
     ContainerOptions: 'Managed',
     ConvertedFromPackageId: seedPackage,
   };

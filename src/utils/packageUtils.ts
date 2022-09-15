@@ -402,41 +402,6 @@ export function getPackageAliasesFromId(packageId: string, project: SfProject): 
     .map((alias) => alias[0]);
 }
 
-export async function findOrCreatePackage2(seedPackage: string, connection: Connection): Promise<string> {
-  const query = `SELECT Id FROM Package2 WHERE ConvertedFromPackageId = '${seedPackage}'`;
-  const queryResult = (await connection.tooling.query<PackagingSObjects.Package2>(query)).records;
-  if (queryResult?.length > 1) {
-    const ids = queryResult.map((r) => r.Id);
-    throw messages.createError('errorMoreThanOnePackage2WithSeed', [ids.join(', ')]);
-  }
-
-  if (queryResult?.length === 1) {
-    // return the package2 object
-    return queryResult[0].Id;
-  }
-
-  // Need to create a new Package2
-  const subQuery = `SELECT Name, Description, NamespacePrefix FROM SubscriberPackage WHERE Id = '${seedPackage}'`;
-  const subscriberResult = (await connection.tooling.query<PackagingSObjects.SubscriberPackage>(subQuery)).records;
-  if (!subscriberResult || subscriberResult?.length <= 0) {
-    throw messages.createError('errorNoSubscriberPackageRecord', [seedPackage]);
-  }
-
-  const request = {
-    Name: subscriberResult[0].Name,
-    Description: subscriberResult[0].Description,
-    NamespacePrefix: subscriberResult[0].NamespacePrefix,
-    ContainerOptions: 'Managed',
-    ConvertedFromPackageId: seedPackage,
-  };
-
-  const createResult = await connection.tooling.create('Package2', request);
-  if (!createResult.success) {
-    throw combineSaveErrors('Package2', 'create', createResult.errors);
-  }
-  return createResult.id;
-}
-
 /**
  * Generate package alias json entry for this package version that can be written to sfdx-project.json
  *
