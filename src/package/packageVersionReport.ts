@@ -40,7 +40,6 @@ const logger = Logger.childFromRoot('getPackageVersionReport');
  * @param subscriberPackageVersionIds
  * @param connection For tooling query
  */
-// eslint-disable-next-line @typescript-eslint/require-await
 async function getPackageVersionStrings(
   subscriberPackageVersionIds: string[],
   connection: Connection
@@ -98,7 +97,7 @@ export async function getPackageVersionReport(options: {
     util.format(options.verbose ? QUERY_VERBOSE : QUERY, packageVersionId)
   );
   const records = queryResult.records;
-  if (records && records.length > 0) {
+  if (records?.length > 0) {
     const record = records[0];
     record.Version = [record.MajorVersion, record.MinorVersion, record.PatchVersion, record.BuildNumber].join('.');
 
