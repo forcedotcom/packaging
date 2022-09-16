@@ -13,7 +13,6 @@ import {
   createPackageVersionCreateRequest,
   findOrCreatePackage2,
 } from '../../src/package/packageConvert';
-// import * as pkgUtils from '../../src/utils';
 import { PackageEvents } from '../../src/interfaces';
 
 describe('packageConvert', () => {
