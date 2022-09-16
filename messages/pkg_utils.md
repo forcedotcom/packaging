@@ -1,19 +1,7 @@
-# errorNoSubscriberPackageRecord
-
-No subscriber package was found for seed id: %s'
-
-# errorInvalidPackageId
-
-The provided package ID '%s' is invalid.
-
 # errorDuringSObjectCRUDOperation
 
 An error occurred during CRUD operation %s on entity %s.
 %s
-
-# errorInvalidBuildNumberForKeywords
-
-The provided VersionNumber '%s' is invalid. Provide an integer value or use the keyword '%s' or '%s' for the build number.
 
 # errorInvalidPatchNumber
 
@@ -34,14 +22,6 @@ The ancestorId for ancestorVersion [%s] can't be found. Package ID [%s].
 # errorAncestorNotReleased
 
 The ancestor package version [%s] specified in the sfdx-project.json file hasn’t been promoted and released. Release the ancestor package version before specifying it as the ancestor in a new package or patch version.
-
-# errorAncestorNotHighest
-
-Can’t create package version. The ancestor version [%s] you specified isn’t the highest released package version. Set the ancestor version to %s, and try creating the package version again. You can also specify --skipancestorcheck to override the ancestry requirement.
-
-# errorAncestorNoneNotAllowed
-
-Can’t create package version because you didn’t specify a package ancestor. Set the ancestor version to %s, and try creating the package version. You can also specify --skipancestorcheck to override the ancestry requirement.
 
 # errorAncestorIdVersionMismatch
 
@@ -87,11 +67,6 @@ We can’t find this package ID for this Dev Hub.
 
 The requested resource does not exist
 
-# errorMoreThanOnePackage2WithSeed
-
-Only one package in a Dev Hub is allowed per converted from first-generation package, but the following were found:
-%s
-
 # versionCreateFailedWithMultipleErrors
 
 Multiple errors occurred:
@@ -116,7 +91,3 @@ Your Dev Hub does not have permission to specify a source org for your build org
 # invalidIdOrAlias
 
 The %s: %s isn't defined in the sfdx-project.json. Add it to the packageDirectories section and add the alias to packageAliases with its %s ID.
-
-# errorInvalidBuildNumber
-
-The provided VersionNumber '%s' is invalid. Provide an integer value or use the keyword '%s' for the build number.

@@ -321,7 +321,10 @@ describe('Integration tests for @salesforce/packaging library', function () {
       const currentDate = new Date();
       expect(currentDate > createdDate).to.be.true;
       // this package should've been made within the last 3 days
-      expect(currentDate.getTime() - 1000 * 60 * 60 * 24 * 3 < createdDate.getTime()).to.be.true;
+      expect(currentDate.getTime()).to.be.greaterThan(
+        currentDate.getTime() - Duration.days(3).milliseconds,
+        `Package was not created within the last 3 days, CreatedDate: ${result[0].CreatedDate}`
+      );
     });
   });
 

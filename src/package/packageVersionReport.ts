@@ -11,7 +11,7 @@ import * as util from 'util';
 // Local
 import { Logger, Connection, SfProject } from '@salesforce/core';
 import * as pkgUtils from '../utils/packageUtils';
-import { PackageVersionReportResult } from '../interfaces';
+import { PackageVersionReportResult, PackagingSObjects } from '../interfaces';
 
 const QUERY =
   'SELECT Package2Id, SubscriberPackageVersionId, Name, Description, Tag, Branch, AncestorId, ValidationSkipped, ' +
@@ -32,6 +32,50 @@ const QUERY_VERBOSE =
   'ORDER BY Package2Id, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber';
 
 const logger = Logger.childFromRoot('getPackageVersionReport');
+
+/**
+ * Given a list of subscriber package version IDs (04t), return the associated version strings (e.g., Major.Minor.Patch.Build)
+ *
+ * @return Map of subscriberPackageVersionId to versionString
+ * @param subscriberPackageVersionIds
+ * @param connection For tooling query
+ */
+async function getPackageVersionStrings(
+  subscriberPackageVersionIds: string[],
+  connection: Connection
+): Promise<Map<string, string>> {
+  type PackageVersionString = Pick<
+    PackagingSObjects.Package2Version,
+    'SubscriberPackageVersionId' | 'MajorVersion' | 'MinorVersion' | 'PatchVersion' | 'BuildNumber'
+  >;
+  let results = new Map<string, string>();
+  if (!subscriberPackageVersionIds || subscriberPackageVersionIds.length === 0) {
+    return results;
+  }
+  // remove any duplicate Ids
+  const ids = [...new Set<string>(subscriberPackageVersionIds)];
+
+  const query = `SELECT SubscriberPackageVersionId, MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version WHERE SubscriberPackageVersionId IN (${ids
+    .map((id) => `'${id}'`)
+    .join(',')})`;
+
+  const records = await pkgUtils.queryWithInConditionChunking<PackageVersionString>(query, ids, '%IDS%', connection);
+  if (records && records.length > 0) {
+    results = new Map<string, string>(
+      records.map((record) => {
+        const version = pkgUtils.concatVersion(
+          record.MajorVersion,
+          record.MinorVersion,
+          record.PatchVersion,
+          record.BuildNumber
+        );
+        return [record.SubscriberPackageVersionId, version];
+      })
+    );
+  }
+  return results;
+}
+
 export async function getPackageVersionReport(options: {
   idOrAlias: string;
   connection: Connection;
@@ -53,7 +97,7 @@ export async function getPackageVersionReport(options: {
     util.format(options.verbose ? QUERY_VERBOSE : QUERY, packageVersionId)
   );
   const records = queryResult.records;
-  if (records && records.length > 0) {
+  if (records?.length > 0) {
     const record = records[0];
     record.Version = [record.MajorVersion, record.MinorVersion, record.PatchVersion, record.BuildNumber].join('.');
 
@@ -64,7 +108,7 @@ export async function getPackageVersionReport(options: {
 
     if (record.AncestorId) {
       // lookup AncestorVersion value
-      const ancestorVersionMap = await pkgUtils.getPackageVersionStrings([record.AncestorId], options.connection);
+      const ancestorVersionMap = await getPackageVersionStrings([record.AncestorId], options.connection);
       record.AncestorVersion = ancestorVersionMap.get(record.AncestorId);
     } else {
       if (record.PackageType !== 'Managed') {

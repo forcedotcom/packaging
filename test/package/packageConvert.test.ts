@@ -8,8 +8,11 @@ import { expect } from 'chai';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { Connection, Lifecycle } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
-import { convertPackage, createPackageVersionCreateRequest } from '../../src/package/packageConvert';
-import * as pkgUtils from '../../src/utils';
+import {
+  convertPackage,
+  createPackageVersionCreateRequest,
+  findOrCreatePackage2,
+} from '../../src/package/packageConvert';
 import { PackageEvents } from '../../src/interfaces';
 
 describe('packageConvert', () => {
@@ -63,7 +66,7 @@ describe('packageConvert', () => {
         },
       } as unknown as Connection;
       try {
-        await pkgUtils.findOrCreatePackage2('0Ho3i000000Gmj6CAC', conn);
+        await findOrCreatePackage2('0Ho3i000000Gmj6CAC', conn);
       } catch (e) {
         expect((e as Error).message).to.include(
           'Only one package in a Dev Hub is allowed per converted from first-generation package, but the following were found:'
@@ -81,7 +84,7 @@ describe('packageConvert', () => {
         },
       } as unknown as Connection;
 
-      const result = await pkgUtils.findOrCreatePackage2('0Ho3i000000Gmj6CAC', conn);
+      const result = await findOrCreatePackage2('0Ho3i000000Gmj6CAC', conn);
       expect(result).to.equal('0Ho3i000000Gmj6YYY');
     });
 
@@ -101,7 +104,7 @@ describe('packageConvert', () => {
 
       $$.SANDBOX.stub(conn.tooling, 'create').resolves({ errors: undefined, success: true, id: '0Ho3i000000Gmj6YYY' });
 
-      const result = await pkgUtils.findOrCreatePackage2('0Ho3i000000Gmj6CAC', conn);
+      const result = await findOrCreatePackage2('0Ho3i000000Gmj6CAC', conn);
       expect(result).to.equal('0Ho3i000000Gmj6YYY');
     });
 
@@ -126,7 +129,7 @@ describe('packageConvert', () => {
       });
 
       try {
-        await pkgUtils.findOrCreatePackage2('0Ho3i000000Gmj6CAC', conn);
+        await findOrCreatePackage2('0Ho3i000000Gmj6CAC', conn);
       } catch (e) {
         expect((e as Error).message).to.include('An error occurred during CRUD operation create on entity Package2');
         expect((e as Error).message).to.include('Error: undefined Message: server error ');
@@ -143,7 +146,7 @@ describe('packageConvert', () => {
       } as unknown as Connection;
 
       try {
-        await pkgUtils.findOrCreatePackage2('0Ho3i000000Gmj6CAC', conn);
+        await findOrCreatePackage2('0Ho3i000000Gmj6CAC', conn);
       } catch (e) {
         expect((e as Error).message).to.include('No subscriber package was found for seed id: 0Ho3i000000Gmj6CAC');
       }

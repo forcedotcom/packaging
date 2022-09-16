@@ -18,7 +18,7 @@ type Package2Request = Pick<
   'Name' | 'Description' | 'NamespacePrefix' | 'ContainerOptions' | 'IsOrgDependent' | 'PackageErrorUsername'
 >;
 
-export function _createPackageRequestFromContext(project: SfProject, options: PackageCreateOptions): Package2Request {
+export function createPackageRequestFromContext(project: SfProject, options: PackageCreateOptions): Package2Request {
   const namespace = options.noNamespace ? '' : project.getSfProjectJson().getContents().namespace || '';
   return {
     Name: options.name,
@@ -38,10 +38,11 @@ export function _createPackageRequestFromContext(project: SfProject, options: Pa
  * @private
  */
 
-export function _generatePackageDirEntry(
+export function generatePackageDirEntry(
   project: SfProject,
   options: PackageCreateOptions
 ): PackageDir[] | NamedPackageDir[] {
+  // TODO: use SfProjectJson#addPackageDirectory for this maintenance
   let packageDirs: NamedPackageDir[] = project.getPackageDirectories();
   if (!packageDirs) {
     packageDirs = [];
@@ -86,7 +87,7 @@ export function _generatePackageDirEntry(
  * @param packageId the 0Ho id of the package to create the alias entry for
  * @private
  */
-export function _generatePackageAliasEntry(
+export function generatePackageAliasEntry(
   project: SfProject,
   options: PackageCreateOptions,
   packageId: string
@@ -107,7 +108,7 @@ export async function createPackage(
   // strip trailing slash from path param
   options.path = options.path.replace(/\/$/, '');
 
-  const request = _createPackageRequestFromContext(project, options);
+  const request = createPackageRequestFromContext(project, options);
   let packageId: string = null;
 
   const createResult = await connection.tooling
@@ -130,8 +131,8 @@ export async function createPackage(
   const record = queryResult.records[0];
 
   if (!process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE) {
-    const packageDirectory = _generatePackageDirEntry(project, options);
-    const packageAliases = _generatePackageAliasEntry(project, options, record.Id);
+    const packageDirectory = generatePackageDirEntry(project, options);
+    const packageAliases = generatePackageAliasEntry(project, options, record.Id);
     const projectJson = project.getSfProjectJson();
     projectJson.set('packageDirectories', packageDirectory);
     projectJson.set('packageAliases', packageAliases);

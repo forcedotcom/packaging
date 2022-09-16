@@ -15,13 +15,8 @@ import {
   getPackageIdFromAlias,
   getConfigPackageDirectory,
   getPackageVersionNumber,
-  validateAncestorId,
   getInClauseItemsCount,
   queryWithInConditionChunking,
-  massageErrorMessage,
-  isErrorPackageNotAvailable,
-  isErrorFromSPVQueryRestriction,
-  validateVersionNumber,
   combineSaveErrors,
 } from '../../src/utils';
 import { PackagingSObjects } from '../../src/interfaces';
@@ -36,28 +31,7 @@ describe('packageUtils', () => {
   afterEach(() => {
     restoreContext($$);
   });
-  describe('validateVersionNumber', () => {
-    it('should return version number as valid', () => {
-      const versionNumber = validateVersionNumber('1.2.3.NEXT', 'NEXT', 'LATEST');
-      expect(versionNumber).to.be.equal('1.2.3.NEXT');
-    });
-    it('should throw error if version number is invalid', () => {
-      expect(() => {
-        validateVersionNumber('1.2.3.NEXT', 'foo', 'bar');
-      }).to.throw(
-        Error,
-        /The provided VersionNumber '1.2.3.NEXT' is invalid. Provide an integer value or use the keyword/
-      );
-    });
-    it('should throw error if build2 is undefined', () => {
-      expect(() => {
-        validateVersionNumber('1.2.3.NEXT', 'foo', undefined);
-      }).to.throw(
-        Error,
-        /The provided VersionNumber '1.2.3.NEXT' is invalid. Provide an integer value or use the keyword/
-      );
-    });
-  });
+
   describe('getPackageAliasesFromId', () => {
     it('should return an empty array if the packageId is not valid', async () => {
       $$.inProject(true);
@@ -112,93 +86,6 @@ describe('packageUtils', () => {
       expect(result).to.have.property('fullPath', 'fullPath');
     });
   });
-  describe('validateAncestorId', () => {
-    it('should throw if the explicitUseNoAncestor is true and highestReleasedVersion is not undefined', () => {
-      const ancestorId = 'ancestorId';
-      const highestReleasedVersion = {
-        Id: 'foo',
-        MajorVersion: 1,
-        MinorVersion: 2,
-        PatchVersion: 3,
-      } as PackagingSObjects.Package2Version;
-      const explicitUseNoAncestor = true;
-      const isPatch = false;
-      const skipAncestorCheck = false;
-      const origSpecifiedAncestor = 'orgAncestorId';
-      expect(() =>
-        validateAncestorId(
-          ancestorId,
-          highestReleasedVersion,
-          explicitUseNoAncestor,
-          isPatch,
-          skipAncestorCheck,
-          origSpecifiedAncestor
-        )
-      ).to.throw(/Can’t create package version because you didn’t specify a package ancestor/);
-    });
-    it('should throw if !isPatch and !skipAncestorCheck and highestReleasedVersion.Id is not equal ancestorId', () => {
-      const ancestorId = 'ancestorId';
-      const highestReleasedVersion = {
-        Id: 'foo',
-        MajorVersion: 1,
-        MinorVersion: 2,
-        PatchVersion: 3,
-      } as PackagingSObjects.Package2Version;
-      const explicitUseNoAncestor = false;
-      const isPatch = false;
-      const skipAncestorCheck = false;
-      const origSpecifiedAncestor = 'orgAncestorId';
-      expect(() =>
-        validateAncestorId(
-          ancestorId,
-          highestReleasedVersion,
-          explicitUseNoAncestor,
-          isPatch,
-          skipAncestorCheck,
-          origSpecifiedAncestor
-        )
-      ).to.throw(
-        /The ancestor version \[orgAncestorId\] you specified isn’t the highest released package version\. Set the ancestor version to 1\.2\.3/
-      );
-    });
-    it('should identify the ancestor as "" when version is the first version', () => {
-      const ancestorId = 'ancestorId';
-      const highestReleasedVersion = undefined as PackagingSObjects.Package2Version;
-      const explicitUseNoAncestor = false;
-      const isPatch = false;
-      const skipAncestorCheck = false;
-      const origSpecifiedAncestor = 'orgAncestorId';
-      const result = validateAncestorId(
-        ancestorId,
-        highestReleasedVersion,
-        explicitUseNoAncestor,
-        isPatch,
-        skipAncestorCheck,
-        origSpecifiedAncestor
-      );
-      expect(result).to.be.equal('');
-    });
-    it('should identify the correct ancestor as the value passed to the function', () => {
-      const ancestorId = 'ancestorId';
-      const highestReleasedVersion = undefined as PackagingSObjects.Package2Version;
-      const explicitUseNoAncestor = false;
-      const isPatch = true;
-      const skipAncestorCheck = true;
-      const origSpecifiedAncestor = 'orgAncestorId';
-      const result = validateAncestorId(
-        ancestorId,
-        highestReleasedVersion,
-        explicitUseNoAncestor,
-        isPatch,
-        skipAncestorCheck,
-        origSpecifiedAncestor
-      );
-      expect(result).to.be.equal('ancestorId');
-    });
-  });
-  describe.skip('ancestorId', () => {
-    it('should be tested in nuts', () => {});
-  });
   describe('getPackage2VersionNumber', () => {
     it('should return the correct version number', () => {
       const version = {
@@ -227,46 +114,6 @@ describe('packageUtils', () => {
         expect(result).to.be.equal(0);
         items.pop();
       }
-    });
-  });
-  describe('isErrorFromSPVQueryRestriction', () => {
-    it('should return true if the error message is from "Subscriber Query Restriction"', () => {
-      const error = new Error();
-      error.name = 'MALFORMED_QUERY';
-      error.message = 'Implementation restriction: You can only perform queries of the form Id';
-      const result = isErrorFromSPVQueryRestriction(error);
-      expect(result).to.be.true;
-    });
-    it('should return false if the error message is not from "Subscriber Query Restriction"', () => {
-      const error = new Error();
-      error.name = 'NOT_MALFORMED_QUERY';
-      error.message = 'Implementation restriction: You can only perform queries of the form Id';
-      const result = isErrorFromSPVQueryRestriction(error);
-      expect(result).to.be.false;
-    });
-  });
-  describe('isErrorPackageNotAvailable', () => {
-    it('should return true if the error name is "UNKNOWN_EXCEPTION"', () => {
-      ['UNKNOWN_EXCEPTION', 'PACKAGE_UNAVAILABLE'].forEach((name) => {
-        const error = new Error();
-        error.name = name;
-        const result = isErrorPackageNotAvailable(error);
-        expect(result).to.be.equal(true, `Expected Error ${name} to be a "package not available" surrogates`);
-      });
-    });
-    it('should return false if the error name is one of the "package not available" surrogates', () => {
-      const error = new Error();
-      error.name = 'NOT_A_SURROGATE';
-      const result = isErrorPackageNotAvailable(error);
-      expect(result).to.be.false;
-    });
-  });
-  describe('massageErrorMessage', () => {
-    it('should return the correct error message', () => {
-      const error = new Error();
-      error.name = 'INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST';
-      const result = massageErrorMessage(error);
-      expect(result.message).to.be.equal('Invalid package type');
     });
   });
   describe('applyErrorAction', () => {

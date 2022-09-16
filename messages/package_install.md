@@ -22,3 +22,7 @@ Waiting for the Subscriber Package Version ID to be published to the target org.
 # subscriberPackageVersionNotPublished
 
 The subscriber package version is not fully available.
+
+# errorInvalidPackageId
+
+The provided package ID '%s' is invalid.
