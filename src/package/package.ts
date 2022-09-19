@@ -21,7 +21,7 @@ import {
 } from '../interfaces';
 import { getExternalSites, getStatus, installPackage, waitForPublish } from './packageInstall';
 import { convertPackage } from './packageConvert';
-import { uninstallPackage } from './packageUninstall';
+import { getUninstallErrors, uninstallPackage } from './packageUninstall';
 
 type PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 
@@ -121,10 +121,8 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
       id
     )) as PackagingSObjects.SubscriberPackageVersionUninstallRequest;
     if (result.Status === 'Error') {
-      const errorDetails = await this.options.connection.tooling.query<{ Message: string }>(
-        `SELECT Message FROM PackageVersionUninstallRequestError WHERE ParentRequest.Id = '${id}' ORDER BY Message`
-      );
-      const errors = errorDetails.records.map((record, index) => `(${index + 1}) ${record.Message}`);
+      const errorDetails = await getUninstallErrors(this.options.connection, id);
+      const errors = errorDetails.map((record, index) => `(${index + 1}) ${record.Message}`);
       const errHeader = errors.length > 0 ? `\n=== Errors\n${errors.join('\n')}` : '';
       const err = messages.getMessage('defaultErrorMessage', [id, result.Id]);
 
