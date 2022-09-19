@@ -15,6 +15,13 @@ const pkgMessages = Messages.loadMessages('@salesforce/packaging', 'package');
 
 type UninstallResult = PackagingSObjects.SubscriberPackageVersionUninstallRequest;
 
+export async function getUninstallErrors(conn: Connection, id: string): Promise<Array<{ Message: string }>> {
+  const errorQueryResult = await conn.tooling.query<{ Message: string }>(
+    `"SELECT Message FROM PackageVersionUninstallRequestError WHERE ParentRequest.Id = '${id}' ORDER BY Message"`
+  );
+  return errorQueryResult?.records || [];
+}
+
 async function poll(id: string, conn: Connection): Promise<StatusResult> {
   const uninstallRequest = await conn.tooling.sobject('SubscriberPackageVersionUninstallRequest').retrieve(id);
 
@@ -31,21 +38,11 @@ async function poll(id: string, conn: Connection): Promise<StatusResult> {
     }
     default: {
       const err = pkgMessages.getMessage('defaultErrorMessage', [id, uninstallRequest.Id]);
-      const errorQueryResult = await conn.tooling.query<{ Message: string }>(
-        `"SELECT Message FROM PackageVersionUninstallRequestError WHERE ParentRequest.Id = '${id}' ORDER BY Message"`
-      );
+      const errorMessages = await getUninstallErrors(conn, id);
 
-      const errors = [];
-      if (errorQueryResult.records.length) {
-        errors.push('\n=== Errors\n');
-        errorQueryResult.records.forEach((record) => {
-          errors.push(`(${errors.length}) ${record.Message}${os.EOL}`);
-        });
-      }
-
-      throw new SfError(`${err}${errors.join(os.EOL)}`, 'UNINSTALL_ERROR', [
-        messages.getMessage('uninstallErrorAction'),
-      ]);
+      const errors = errorMessages.map((error, index) => `(${index + 1}) ${error.Message}${os.EOL}`);
+      const combinedErrors = errors.length ? `\n=== Errors\n${errors.join(os.EOL)}` : '';
+      throw new SfError(`${err}${combinedErrors}`, 'UNINSTALL_ERROR', [messages.getMessage('uninstallErrorAction')]);
     }
   }
 }
