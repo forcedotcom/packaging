@@ -17,7 +17,6 @@ import {
   PackageAncestryNodeData,
   PackageAncestryNodeOptions,
   PackageAncestryOptions,
-  PackageType,
 } from '../interfaces';
 import * as pkgUtils from '../utils/packageUtils';
 import { VersionNumber } from '../utils';
@@ -27,9 +26,6 @@ const messages = Messages.loadMessages('@salesforce/packaging', 'package_ancestr
 
 const SELECT_PACKAGE_VERSION =
   'SELECT AncestorId, SubscriberPackageVersionId, MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version';
-const SELECT_PACKAGE_CONTAINER_OPTIONS = 'SELECT ContainerOptions FROM Package2   ';
-
-const SELECT_PACKAGE_VERSION_CONTAINER_OPTIONS = 'SELECT Package2ContainerOptions FROM SubscriberPackageVersion';
 
 // Add this to query calls to only show released package versions in the output
 const releasedOnlyFilter = ' AND IsReleased = true';
@@ -213,12 +209,9 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   private async findRootsForPackageVersion(): Promise<PackageAncestryNode[]> {
     // Check to see if the package version is part of an unlocked package
     // if so, throw an error since ancestry only applies to managed packages
-    const versionQuery = `${SELECT_PACKAGE_VERSION_CONTAINER_OPTIONS} WHERE Id = '${this.requestedPackageId}'`;
-    const packageVersionTypeResults = await this.options.connection.singleRecordQuery<{
-      Package2ContainerOptions?: PackageType;
-    }>(versionQuery, { tooling: true });
+    const packageType = await pkgUtils.getPackageType(this.requestedPackageId, this.options.connection);
 
-    if (packageVersionTypeResults.Package2ContainerOptions !== 'Managed') {
+    if (packageType !== 'Managed') {
       throw messages.createError('unlockedPackageError');
     }
 
@@ -251,12 +244,9 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   private async findRootsForPackage(): Promise<PackageAncestryNode[]> {
     // Check to see if the package is an unlocked package
     // if so, throw and error since ancestry only applies to managed packages
-    const query = `${SELECT_PACKAGE_CONTAINER_OPTIONS} WHERE Id = '${this.requestedPackageId}'`;
-    const packageTypeResults = await this.options.connection.tooling.query<{ ContainerOptions?: PackageType }>(query);
+    const packageType = await pkgUtils.getPackageType(this.requestedPackageId, this.options.connection);
 
-    if (packageTypeResults?.records?.length === 0) {
-      throw messages.createError('invalidId', [this.requestedPackageId]);
-    } else if (packageTypeResults?.records?.length && packageTypeResults?.records[0].ContainerOptions !== 'Managed') {
+    if (packageType !== 'Managed') {
       throw messages.createError('unlockedPackageError');
     }
 

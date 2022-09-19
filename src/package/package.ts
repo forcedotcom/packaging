@@ -122,10 +122,7 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
       const errorDetails = await this.options.connection.tooling.query<{ Message: string }>(
         `SELECT Message FROM PackageVersionUninstallRequestError WHERE ParentRequest.Id = '${id}' ORDER BY Message`
       );
-      const errors: string[] = [];
-      errorDetails.records.forEach((record) => {
-        errors.push(`(${errors.length + 1}) ${record.Message}`);
-      });
+      const errors = errorDetails.records.map((record, index) => `(${index + 1}) ${record.Message}`);
       const errHeader = errors.length > 0 ? `\n=== Errors\n${errors.join('\n')}` : '';
       const err = messages.getMessage('defaultErrorMessage', [id, result.Id]);
 

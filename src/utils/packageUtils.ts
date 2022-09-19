@@ -167,20 +167,42 @@ export function escapeInstallationKey(key?: string): Nullable<string> {
 }
 
 /**
- * Given 0Ho the package type type (Managed, Unlocked, Locked(deprecated?))
+ * Fetch the PackageType for a given package version ID
  *
- * @param packageId the 0Ho
+ * @param packageId the 0Ho (packageId) or 04t (subscriberPackageVersionId)
  * @param connection For tooling query
  * @throws Error with message when package2 cannot be found
  */
 export async function getPackageType(packageId: string, connection: Connection): Promise<PackageType> {
-  const query = `SELECT ContainerOptions FROM Package2 WHERE id ='${packageId}'`;
-
-  const queryResult = await connection.tooling.query<Pick<PackagingSObjects.Package2, 'ContainerOptions'>>(query);
-  if (queryResult.records.length === 0) {
-    throw messages.createError('errorInvalidPackageId', [packageId]);
+  switch (packageId?.substring(0, 3)) {
+    case '0Ho':
+      try {
+        return (
+          await connection.singleRecordQuery<{ ContainerOptions?: PackageType }>(
+            `SELECT ContainerOptions FROM Package2 WHERE id ='${packageId}'`,
+            {
+              tooling: true,
+            }
+          )
+        ).ContainerOptions;
+      } catch (err) {
+        throw messages.createError('errorInvalidPackageId', [packageId]);
+      }
+    case '04t':
+      try {
+        return (
+          await connection.singleRecordQuery<{
+            Package2ContainerOptions?: PackageType;
+          }>(`SELECT Package2ContainerOptions FROM SubscriberPackageVersion WHERE Id = '${packageId}'`, {
+            tooling: true,
+          })
+        ).Package2ContainerOptions;
+      } catch (err) {
+        throw messages.createError('errorInvalidPackageId', [packageId]);
+      }
+    default:
+      throw messages.createError('errorInvalidPackageId', [packageId]);
   }
-  return queryResult.records[0].ContainerOptions;
 }
 /**
  * Get the ContainerOptions for the specified Package2 (0Ho) IDs.
