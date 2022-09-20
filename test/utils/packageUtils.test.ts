@@ -16,6 +16,7 @@ import {
   getConfigPackageDirectory,
   getPackageVersionNumber,
   getInClauseItemsCount,
+  massageErrorMessage,
   queryWithInConditionChunking,
   combineSaveErrors,
 } from '../../src/utils';
@@ -126,6 +127,14 @@ describe('packageUtils', () => {
         const result = applyErrorAction(error);
         expect(result['action']).to.be.include('Packaging is not enabled on this org.');
       });
+    });
+  });
+  describe('massageErrorMessage', () => {
+    it('should return the correct error message', () => {
+      const error = new Error();
+      error.name = 'INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST';
+      const result = massageErrorMessage(error);
+      expect(result.message).to.be.equal('Invalid package type');
     });
   });
   describe('queryWithInConditionChunking', () => {

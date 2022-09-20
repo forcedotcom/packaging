@@ -4,8 +4,9 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import { Connection, Messages, sfdc, SfError, SfProject } from '@salesforce/core';
+import { Messages, sfdc, SfError, SfProject } from '@salesforce/core';
 import { AsyncCreatable, Duration } from '@salesforce/kit';
+import { QueryResult } from 'jsforce';
 import { Optional } from '@salesforce/ts-types';
 import {
   IPackage,
@@ -19,6 +20,8 @@ import {
   PackageSaveResult,
   PackageUpdateOptions,
 } from '../interfaces';
+import { applyErrorAction, massageErrorMessage } from '../utils';
+import { listPackages } from './packageList';
 import { getExternalSites, getStatus, installPackage, waitForPublish } from './packageInstall';
 import { convertPackage } from './packageConvert';
 import { getUninstallErrors, uninstallPackage } from './packageUninstall';
@@ -103,6 +106,10 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
     return getStatus(this.options.connection, installRequestId);
   }
 
+  public list(): Promise<QueryResult<PackagingSObjects.Package2>> {
+    return listPackages(this.options.connection);
+  }
+
   public async uninstall(
     id: string,
     wait: Duration
@@ -132,6 +139,7 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
   }
 
   public async update(options: PackageUpdateOptions): Promise<PackageSaveResult> {
+    try {
     // filter out any undefined values and their keys
     Object.keys(options).forEach((key) => options[key] === undefined && delete options[key]);
 
@@ -140,6 +148,9 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
       throw new SfError(result.errors.join(', '));
     }
     return result;
+    } catch (err) {
+      throw applyErrorAction(massageErrorMessage(err as Error));
+    }
   }
 
   public async getPackage(packageId: string): Promise<PackagingSObjects.Package2> {

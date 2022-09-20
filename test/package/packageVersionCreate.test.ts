@@ -393,7 +393,7 @@ describe('Package Version Create', () => {
   describe('validateAncestorId', () => {
     let pvc: PackageVersionCreate;
     beforeEach(() => {
-      pvc = new PackageVersionCreate({ connection, project, packageId });
+      pvc = new PackageVersionCreate({});
     });
     it('should throw if the explicitUseNoAncestor is true and highestReleasedVersion is not undefined', () => {
       const ancestorId = 'ancestorId';
@@ -478,22 +478,10 @@ describe('Package Version Create', () => {
       expect(result).to.be.equal('ancestorId');
     });
   });
-  describe('massageErrorMessage', () => {
-    let pvc: PackageVersionCreate;
-    beforeEach(() => {
-      pvc = new PackageVersionCreate({ connection, project, packageId });
-    });
-    it('should return the correct error message', () => {
-      const error = new Error();
-      error.name = 'INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST';
-      const result = pvc['massageErrorMessage'](error);
-      expect(result.message).to.be.equal('Invalid package type');
-    });
-  });
   describe('validateVersionNumber', () => {
     let pvc: PackageVersionCreate;
     beforeEach(() => {
-      pvc = new PackageVersionCreate({ connection, project, packageId });
+      pvc = new PackageVersionCreate({});
     });
     it('should return version number as valid', () => {
       const versionNumber = pvc['validateVersionNumber']('1.2.3.NEXT', 'NEXT', 'LATEST');

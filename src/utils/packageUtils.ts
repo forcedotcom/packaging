@@ -138,6 +138,31 @@ export function applyErrorAction(err: Error): Error {
 
   return err;
 }
+
+export function massageErrorMessage(err: Error): Error {
+  if (err.name === 'INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST') {
+    err['message'] = messages.getMessage('invalidPackageTypeMessage');
+  }
+
+  if (
+    err.name === 'MALFORMED_ID' &&
+    (err.message.includes('Version ID') || err.message.includes('Version Definition ID'))
+  ) {
+    err['message'] = messages.getMessage('malformedPackageVersionIdMessage');
+  }
+
+  if (err.name === 'MALFORMED_ID' && err.message.includes('Package2 ID')) {
+    err['message'] = messages.getMessage('malformedPackageIdMessage');
+  }
+
+  // remove references to Second Generation
+  if (err.message.includes('Second Generation ')) {
+    err['message'] = err.message.replace('Second Generation ', '');
+  }
+
+  return err;
+}
+
 /**
  * Given a subscriber package version ID (04t) or package version ID (05i), return the package version ID (05i)
  *
