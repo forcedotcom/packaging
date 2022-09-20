@@ -58,6 +58,7 @@ export interface IPackageVersion2GP {
 
 export type PackageOptions = {
   connection: Connection;
+  project?: SfProject;
 };
 
 export type PackageUpdateOptions = {
@@ -69,9 +70,12 @@ export type PackageUpdateOptions = {
 
 export type PackageIdType =
   | 'PackageId'
+  | 'Package1Id'
   | 'SubscriberPackageVersionId'
   | 'PackageInstallRequestId'
-  | 'PackageUninstallRequestId';
+  | 'PackageUninstallRequestId'
+  | 'PackageVersionCreateRequestId'
+  | 'Package2VersionId';
 
 export type PackageVersionOptions1GP = Record<string, unknown>;
 

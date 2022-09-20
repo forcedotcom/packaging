@@ -34,16 +34,19 @@ import { getPackageVersionReport } from './packageVersionReport';
 import { getCreatePackageVersionCreateRequestReport } from './packageVersionCreateRequestReport';
 import { listPackageVersions } from './packageVersionList';
 import { list } from './packageVersionCreateRequest';
+import { PackagingIdResolver } from './PackagingIdResolver';
 
 Messages.importMessagesDirectory(__dirname);
 
 export class PackageVersion {
   private readonly project: SfProject;
   private readonly connection: Connection;
+  private packagingIdResolver: PackagingIdResolver;
 
   public constructor(private options: PackageVersionOptions) {
-    this.connection = this.options.connection;
-    this.project = this.options.project;
+    this.connection = options.connection;
+    this.project = options.project;
+    this.packagingIdResolver = PackagingIdResolver.init(options.project);
   }
 
   /**
@@ -59,10 +62,11 @@ export class PackageVersion {
       timeout: Duration.seconds(0),
     }
   ): Promise<Partial<PackageVersionCreateRequestResult>> {
+    options.packageId = this.packagingIdResolver.resolve(options.packageId, 'PackageId');
     const pvc = new PackageVersionCreate({ ...options, ...this.options });
     const createResult = await pvc.createPackageVersion();
 
-    return await this.waitForCreateVersion(createResult.Id, polling).catch((err: Error) => {
+    return this.waitForCreateVersion(createResult.Id, polling).catch((err: Error) => {
       // TODO
       // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
       throw applyErrorAction(err);
@@ -72,7 +76,7 @@ export class PackageVersion {
   /**
    * Deletes a package version.
    *
-   * @param idOrAlias
+   * @param idOrAlias 04t ID, 05i ID, or alias for one of those IDs.
    */
   public async delete(idOrAlias: string): Promise<PackageSaveResult> {
     return this.updateDeprecation(idOrAlias, true);
@@ -81,7 +85,7 @@ export class PackageVersion {
   /**
    * Undeletes a package version.
    *
-   * @param idOrAlias
+   * @param idOrAlias 04t ID, 05i ID, or alias for one of those IDs.
    */
   public async undelete(idOrAlias: string): Promise<PackageSaveResult> {
     return this.updateDeprecation(idOrAlias, false);
@@ -90,12 +94,12 @@ export class PackageVersion {
   /**
    * Gets the package version report.
    *
-   * @param createPackageRequestId
+   * @param idOrAlias 04t ID, 05i ID, or alias for one of those IDs.
    * @param verbose
    */
-  public async report(createPackageRequestId: string, verbose = false): Promise<PackageVersionReportResult> {
+  public async report(idOrAlias: string, verbose = false): Promise<PackageVersionReportResult> {
     const results = await getPackageVersionReport({
-      idOrAlias: createPackageRequestId,
+      idOrAlias,
       connection: this.connection,
       project: this.project,
       verbose,
@@ -110,9 +114,10 @@ export class PackageVersion {
   /**
    * Gets current state of a package version create request.
    *
-   * @param createPackageRequestId
+   * @param createPackageRequestId The PackageVersionCreateRequestId
    */
   public async getCreateVersionReport(createPackageRequestId: string): Promise<PackageVersionCreateRequestResult> {
+    createPackageRequestId = this.packagingIdResolver.resolve(createPackageRequestId, 'PackageVersionCreateRequestId');
     return await getCreatePackageVersionCreateRequestReport({
       createPackageVersionRequestId: createPackageRequestId,
       connection: this.connection,
@@ -126,7 +131,7 @@ export class PackageVersion {
   public async createdList(
     options?: Omit<PackageVersionCreateRequestQueryOptions, 'connection'>
   ): Promise<PackageVersionCreateRequestResult[]> {
-    return await list({ ...options, connection: this.connection });
+    return list({ ...options, connection: this.connection });
   }
 
   /**
@@ -135,7 +140,6 @@ export class PackageVersion {
    * This function emits LifeCycle events, "enqueued", "in-progress", "success", "error" and "timed-out" to
    * progress and current status. Events also carry a payload of type PackageVersionCreateRequestResult.
    *
-   * @param packageId - The package id to wait for
    * @param createPackageVersionRequestId
    * @param polling frequency and timeout Durations to be used in polling
    * */
@@ -143,8 +147,12 @@ export class PackageVersion {
     createPackageVersionRequestId: string,
     polling: { frequency: Duration; timeout: Duration }
   ): Promise<PackageVersionCreateRequestResult> {
+    createPackageVersionRequestId = this.packagingIdResolver.resolve(
+      createPackageVersionRequestId,
+      'PackageVersionCreateRequestId'
+    );
     if (polling.timeout?.milliseconds <= 0) {
-      return await this.getCreateVersionReport(createPackageVersionRequestId);
+      return this.getCreateVersionReport(createPackageVersionRequestId);
     }
     let remainingWaitTime: Duration = polling.timeout;
     let report: PackageVersionCreateRequestResult;
@@ -195,20 +203,8 @@ export class PackageVersion {
     }
   }
 
-  public convert(): Promise<void> {
-    return Promise.resolve(undefined);
-  }
-
-  public install(): Promise<void> {
-    return Promise.resolve(undefined);
-  }
-
   public async list(options: PackageVersionListOptions): Promise<PackageVersionListResult[]> {
     return (await listPackageVersions({ ...options, ...{ connection: this.connection } })).records;
-  }
-
-  public uninstall(): Promise<void> {
-    return Promise.resolve(undefined);
   }
 
   public async promote(id: string): Promise<PackageSaveResult> {
@@ -216,7 +212,7 @@ export class PackageVersion {
     if (id.startsWith('04t')) {
       id = await getPackageVersionId(id, this.connection);
     }
-    return await this.options.connection.tooling.update('Package2Version', { IsReleased: true, Id: id });
+    return this.options.connection.tooling.update('Package2Version', { IsReleased: true, Id: id });
   }
 
   public async update(id: string, options: PackageVersionUpdateOptions): Promise<PackageSaveResult> {
