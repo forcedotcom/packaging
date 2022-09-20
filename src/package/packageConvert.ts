@@ -31,7 +31,6 @@ import {
 } from '../interfaces';
 import { consts } from '../constants';
 import * as srcDevUtil from '../utils/srcDevUtils';
-import { generatePackageAliasEntry } from '../utils';
 import { byId } from './packageVersionCreateRequest';
 import * as pvcr from './packageVersionCreateRequest';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
@@ -84,47 +83,51 @@ export async function convertPackage(
   options: ConvertPackageOptions,
   project?: SfProject
 ): Promise<PackageVersionCreateRequestResult> {
-  let maxRetries = 0;
-  const branch = 'main';
-  if (options.wait) {
-    maxRetries = (60 / pkgUtils.POLL_INTERVAL_SECONDS) * options.wait.minutes;
-  }
+  try {
+    let maxRetries = 0;
+    const branch = 'main';
+    if (options.wait) {
+      maxRetries = (60 / pkgUtils.POLL_INTERVAL_SECONDS) * options.wait.minutes;
+    }
 
-  const packageId = await findOrCreatePackage2(pkg, connection);
+    const packageId = await findOrCreatePackage2(pkg, connection);
 
-  const request = await createPackageVersionCreateRequest(
-    { installationkey: options.installationKey, buildinstance: options.buildInstance },
-    packageId
-  );
-
-  // TODO: a lot of this is duplicated from PC, PVC, and PVCR.
-
-  const createResult = await connection.tooling.create('Package2VersionCreateRequest', request);
-  if (!createResult.success) {
-    const errStr =
-      createResult.errors && createResult.errors.length ? createResult.errors.join(', ') : createResult.errors;
-    throw messages.createError('failedToCreatePVCRequest', [
-      createResult.id ? ` [${createResult.id}]` : '',
-      errStr.toString(),
-    ]);
-  }
-
-  let results: Many<PackageVersionCreateRequestResult>;
-  if (options.wait) {
-    results = await pollForStatusWithInterval(
-      createResult.id,
-      maxRetries,
-      packageId,
-      branch,
-      project,
-      connection,
-      new Duration(pkgUtils.POLL_INTERVAL_SECONDS, Duration.Unit.SECONDS)
+    const request = await createPackageVersionCreateRequest(
+      { installationkey: options.installationKey, buildinstance: options.buildInstance },
+      packageId
     );
-  } else {
-    results = await byId(packageId, connection);
-  }
 
-  return Array.isArray(results) ? results[0] : results;
+    // TODO: a lot of this is duplicated from PC, PVC, and PVCR.
+
+    const createResult = await connection.tooling.create('Package2VersionCreateRequest', request);
+    if (!createResult.success) {
+      const errStr =
+        createResult.errors && createResult.errors.length ? createResult.errors.join(', ') : createResult.errors;
+      throw messages.createError('failedToCreatePVCRequest', [
+        createResult.id ? ` [${createResult.id}]` : '',
+        errStr.toString(),
+      ]);
+    }
+
+    let results: Many<PackageVersionCreateRequestResult>;
+    if (options.wait) {
+      results = await pollForStatusWithInterval(
+        createResult.id,
+        maxRetries,
+        packageId,
+        branch,
+        project,
+        connection,
+        new Duration(pkgUtils.POLL_INTERVAL_SECONDS, Duration.Unit.SECONDS)
+      );
+    } else {
+      results = await byId(packageId, connection);
+    }
+
+    return Array.isArray(results) ? results[0] : results;
+  } catch (err) {
+    throw pkgUtils.applyErrorAction(pkgUtils.massageErrorMessage(err as Error));
+  }
 }
 
 /**
@@ -209,7 +212,7 @@ async function pollForStatusWithInterval(
                 return `${record.MajorVersion}.${record.MinorVersion}.${record.PatchVersion}-${record.BuildNumber}`;
               });
             // TODO SfProjectJson.addPackageAlias
-            const newConfig = await generatePackageAliasEntry(
+            const newConfig = await pkgUtils.generatePackageAliasEntry(
               connection,
               withProject,
               results[0].SubscriberPackageVersionId,

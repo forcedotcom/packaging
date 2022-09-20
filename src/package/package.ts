@@ -20,6 +20,7 @@ import {
   PackageSaveResult,
   PackageUpdateOptions,
 } from '../interfaces';
+import { applyErrorAction, massageErrorMessage } from '../utils';
 import { listPackages } from './packageList';
 import { getExternalSites, getStatus, installPackage, waitForPublish } from './packageInstall';
 import { convertPackage } from './packageConvert';
@@ -130,14 +131,18 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
   }
 
   public async update(options: PackageUpdateOptions): Promise<PackageSaveResult> {
-    // filter out any undefined values and their keys
-    Object.keys(options).forEach((key) => options[key] === undefined && delete options[key]);
+    try {
+      // filter out any undefined values and their keys
+      Object.keys(options).forEach((key) => options[key] === undefined && delete options[key]);
 
-    const result = await this.options.connection.tooling.update('Package2', options);
-    if (!result.success) {
-      throw new SfError(result.errors.join(', '));
+      const result = await this.options.connection.tooling.update('Package2', options);
+      if (!result.success) {
+        throw new SfError(result.errors.join(', '));
+      }
+      return result;
+    } catch (err) {
+      throw applyErrorAction(massageErrorMessage(err as Error));
     }
-    return result;
   }
 
   public async getPackage(packageId: string): Promise<PackagingSObjects.Package2> {

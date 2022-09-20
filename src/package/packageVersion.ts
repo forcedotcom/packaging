@@ -27,6 +27,7 @@ import {
   getPackageAliasesFromId,
   getPackageIdFromAlias,
   getPackageVersionId,
+  massageErrorMessage,
   validateId,
 } from '../utils';
 import { PackageVersionCreate } from './packageVersionCreate';
@@ -102,7 +103,7 @@ export class PackageVersion {
     }).catch((err: Error) => {
       // TODO
       // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
-      throw applyErrorAction(err);
+      throw applyErrorAction(massageErrorMessage(err));
     });
     return results[0];
   }
@@ -119,7 +120,7 @@ export class PackageVersion {
     }).catch((err: Error) => {
       // TODO
       // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
-      throw applyErrorAction(err);
+      throw applyErrorAction(massageErrorMessage(err));
     });
   }
 
@@ -204,7 +205,11 @@ export class PackageVersion {
   }
 
   public async list(options: PackageVersionListOptions): Promise<PackageVersionListResult[]> {
-    return (await listPackageVersions({ ...options, ...{ connection: this.connection } })).records;
+    try {
+      return (await listPackageVersions({ ...options, ...{ connection: this.connection } })).records;
+    } catch (err) {
+      throw applyErrorAction(massageErrorMessage(err as Error));
+    }
   }
 
   public uninstall(): Promise<void> {
@@ -212,62 +217,74 @@ export class PackageVersion {
   }
 
   public async promote(id: string): Promise<PackageSaveResult> {
-    // lookup the 05i ID, if needed
-    if (id.startsWith('04t')) {
-      id = await getPackageVersionId(id, this.connection);
+    try {
+      // lookup the 05i ID, if needed
+      if (id.startsWith('04t')) {
+        id = await getPackageVersionId(id, this.connection);
+      }
+      return await this.options.connection.tooling.update('Package2Version', { IsReleased: true, Id: id });
+    } catch (err) {
+      throw applyErrorAction(massageErrorMessage(err as Error));
     }
-    return await this.options.connection.tooling.update('Package2Version', { IsReleased: true, Id: id });
   }
 
   public async update(id: string, options: PackageVersionUpdateOptions): Promise<PackageSaveResult> {
-    // ID can be an 04t or 05i
-    validateId([BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, BY_LABEL.PACKAGE_VERSION_ID], id);
+    try {
+      // ID can be an 04t or 05i
+      validateId([BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, BY_LABEL.PACKAGE_VERSION_ID], id);
 
-    // lookup the 05i ID, if needed
-    id = await getPackageVersionId(id, this.connection);
+      // lookup the 05i ID, if needed
+      id = await getPackageVersionId(id, this.connection);
 
-    const request = {
-      Id: id,
-      InstallKey: options.InstallKey,
-      Name: options.VersionName,
-      Description: options.VersionDescription,
-      Branch: options.Branch,
-      Tag: options.Tag,
-    };
+      const request = {
+        Id: id,
+        InstallKey: options.InstallKey,
+        Name: options.VersionName,
+        Description: options.VersionDescription,
+        Branch: options.Branch,
+        Tag: options.Tag,
+      };
 
-    // filter out any undefined values and their keys
-    Object.keys(request).forEach((key) => request[key] === undefined && delete request[key]);
+      // filter out any undefined values and their keys
+      Object.keys(request).forEach((key) => request[key] === undefined && delete request[key]);
 
-    const result = await this.connection.tooling.update('Package2Version', request);
-    if (!result.success) {
-      throw new Error(result.errors.join(', '));
+      const result = await this.connection.tooling.update('Package2Version', request);
+      if (!result.success) {
+        throw new Error(result.errors.join(', '));
+      }
+      // Use the 04t ID for the success message
+      result.id = await this.getSubscriberPackageVersionId(id);
+      return result;
+    } catch (err) {
+      throw applyErrorAction(massageErrorMessage(err as Error));
     }
-    // Use the 04t ID for the success message
-    result.id = await this.getSubscriberPackageVersionId(id);
-    return result;
   }
 
   private async updateDeprecation(idOrAlias: string, IsDeprecated): Promise<PackageSaveResult> {
-    const packageVersionId = getPackageIdFromAlias(idOrAlias, this.project);
+    try {
+      const packageVersionId = getPackageIdFromAlias(idOrAlias, this.project);
 
-    // ID can be an 04t or 05i
-    validateId([BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, BY_LABEL.PACKAGE_VERSION_ID], packageVersionId);
+      // ID can be an 04t or 05i
+      validateId([BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, BY_LABEL.PACKAGE_VERSION_ID], packageVersionId);
 
-    // lookup the 05i ID, if needed
-    const packageId = await getPackageVersionId(packageVersionId, this.connection);
+      // lookup the 05i ID, if needed
+      const packageId = await getPackageVersionId(packageVersionId, this.connection);
 
-    // setup the request
-    const request: { Id: string; IsDeprecated: boolean } = {
-      Id: packageId,
-      IsDeprecated,
-    };
+      // setup the request
+      const request: { Id: string; IsDeprecated: boolean } = {
+        Id: packageId,
+        IsDeprecated,
+      };
 
-    const updateResult = await this.connection.tooling.update('Package2Version', request);
-    if (!updateResult.success) {
-      throw combineSaveErrors('Package2', 'update', updateResult.errors);
+      const updateResult = await this.connection.tooling.update('Package2Version', request);
+      if (!updateResult.success) {
+        throw combineSaveErrors('Package2', 'update', updateResult.errors);
+      }
+      updateResult.id = await this.getSubscriberPackageVersionId(packageVersionId);
+      return updateResult;
+    } catch (err) {
+      throw applyErrorAction(massageErrorMessage(err as Error));
     }
-    updateResult.id = await this.getSubscriberPackageVersionId(packageVersionId);
-    return updateResult;
   }
 
   private async updateProjectWithPackageVersion(

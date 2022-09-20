@@ -76,7 +76,7 @@ export class PackageVersionCreate {
     try {
       return this.packageVersionCreate();
     } catch (err) {
-      throw pkgUtils.applyErrorAction(this.massageErrorMessage(err as Error));
+      throw pkgUtils.applyErrorAction(pkgUtils.massageErrorMessage(err as Error));
     }
   }
 
@@ -735,30 +735,6 @@ export class PackageVersionCreate {
         throw messages.createError('errorInvalidPatchNumber', [versionNumberString]);
       }
     }
-  }
-
-  private massageErrorMessage(err: Error): Error {
-    if (err.name === 'INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST') {
-      err['message'] = messages.getMessage('invalidPackageTypeMessage');
-    }
-
-    if (
-      err.name === 'MALFORMED_ID' &&
-      (err.message.includes('Version ID') || err.message.includes('Version Definition ID'))
-    ) {
-      err['message'] = messages.getMessage('malformedPackageVersionIdMessage');
-    }
-
-    if (err.name === 'MALFORMED_ID' && err.message.includes('Package2 ID')) {
-      err['message'] = messages.getMessage('malformedPackageIdMessage');
-    }
-
-    // remove references to Second Generation
-    if (err.message.includes('Second Generation ')) {
-      err['message'] = err.message.replace('Second Generation ', '');
-    }
-
-    return err;
   }
 
   // eslint-disable-next-line complexity

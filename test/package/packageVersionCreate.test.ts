@@ -478,18 +478,6 @@ describe('Package Version Create', () => {
       expect(result).to.be.equal('ancestorId');
     });
   });
-  describe('massageErrorMessage', () => {
-    let pvc: PackageVersionCreate;
-    beforeEach(() => {
-      pvc = new PackageVersionCreate({});
-    });
-    it('should return the correct error message', () => {
-      const error = new Error();
-      error.name = 'INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST';
-      const result = pvc['massageErrorMessage'](error);
-      expect(result.message).to.be.equal('Invalid package type');
-    });
-  });
   describe('validateVersionNumber', () => {
     let pvc: PackageVersionCreate;
     beforeEach(() => {

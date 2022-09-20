@@ -8,6 +8,7 @@
 import { Connection } from '@salesforce/core';
 import { QueryResult } from 'jsforce';
 import { PackagingSObjects } from '../interfaces';
+import { applyErrorAction, massageErrorMessage } from '../utils';
 const QUERY =
   'SELECT Id, SubscriberPackageId, Name, Description, NamespacePrefix, ContainerOptions, IsOrgDependent, ConvertedFromPackageId, ' +
   'PackageErrorUsername, CreatedById ' +
@@ -16,5 +17,9 @@ const QUERY =
   'ORDER BY NamespacePrefix, Name';
 
 export async function listPackages(connection: Connection): Promise<QueryResult<PackagingSObjects.Package2>> {
-  return connection.tooling.query<PackagingSObjects.Package2>(QUERY);
+  try {
+    return await connection.tooling.query<PackagingSObjects.Package2>(QUERY);
+  } catch (err) {
+    throw applyErrorAction(massageErrorMessage(err as Error));
+  }
 }

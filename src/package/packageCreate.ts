@@ -9,6 +9,7 @@ import { Connection, Messages, NamedPackageDir, PackageDir, SfError, SfProject }
 import { isString } from '@salesforce/ts-types';
 import * as pkgUtils from '../utils/packageUtils';
 import { PackageCreateOptions, PackagingSObjects } from '../interfaces';
+import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_create');
@@ -115,8 +116,8 @@ export async function createPackage(
     .sobject('Package2')
     .create(request)
     .catch((err) => {
-      const error: string = isString(err) ? err : err.message;
-      throw SfError.wrap(error);
+      const error: Error = isString(err) ? new Error(err) : err;
+      throw SfError.wrap(applyErrorAction(massageErrorMessage(error)));
     });
 
   if (!createResult.success) {
