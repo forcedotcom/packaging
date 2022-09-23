@@ -7,7 +7,6 @@
 
 import { Messages, sfdc, SfProject } from '@salesforce/core';
 import { Optional } from '@salesforce/ts-types';
-import { PackageIdType } from '../interfaces';
 
 const packageIdPrefixes = {
   PackageId: '0Ho',
@@ -16,8 +15,9 @@ const packageIdPrefixes = {
   PackageUninstallRequestId: '06y',
   Package1Id: '033', // first-generation package
   PackageVersionCreateRequestId: '08c',
-  Package2VersionId: '05i',
+  PackageVersionId: '05i',
 };
+export type PackageIdType = keyof typeof packageIdPrefixes;
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package');
@@ -48,7 +48,7 @@ export class PackagingIdResolver {
    * 4. PackageUninstallRequestId = 06y
    * 5. Package1Id = 033
    * 6. PackageVersionCreateRequestId = 08c
-   * 7. Package2VersionId = 05i
+   * 7. PackageVersionId = 05i
    *
    * @param idOrAlias The alias within `sfdx-project.json` or the packaging ID.
    * @param type The valid type for the packaging ID or alias.

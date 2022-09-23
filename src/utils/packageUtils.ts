@@ -18,6 +18,7 @@ const messages = Messages.loadMessages('@salesforce/packaging', 'pkg_utils');
 
 export const VERSION_NUMBER_SEP = '.';
 const INVALID_TYPE_REGEX = /[\w]*(sObject type '[A-Za-z]*Package[2]?[A-Za-z]*' is not supported)[\w]*/im;
+// @TODO: remove in favor of code in PackagingIdResolver
 const ID_REGISTRY = [
   {
     prefix: '0Ho',
@@ -37,6 +38,7 @@ const ID_REGISTRY = [
   },
 ];
 
+// @TODO: remove in favor of code in PackagingIdResolver
 export type IdRegistryValue = { prefix: string; label: string };
 export type IdRegistry = {
   [key: string]: IdRegistryValue;
@@ -57,16 +59,19 @@ export const DEFAULT_PACKAGE_DIR = {
   default: true,
 };
 
+// @TODO: remove in favor of code in PackagingIdResolver
 export const BY_PREFIX = ((): IdRegistry => {
   return Object.fromEntries(ID_REGISTRY.map((id) => [id.prefix, { prefix: id.prefix, label: id.label }]));
 })();
 
+// @TODO: remove in favor of code in PackagingIdResolver
 export const BY_LABEL = ((): IdRegistry => {
   return Object.fromEntries(
     ID_REGISTRY.map((id) => [id.label.replace(/ /g, '_').toUpperCase(), { prefix: id.prefix, label: id.label }])
   );
 })();
 
+// @TODO: remove in favor of code in PackagingIdResolver
 export function validateId(idObj: Many<IdRegistryValue>, value: string): void {
   if (!validateIdNoThrow(idObj, value)) {
     throw messages.createError('invalidIdOrAlias', [
@@ -76,6 +81,7 @@ export function validateId(idObj: Many<IdRegistryValue>, value: string): void {
     ]);
   }
 }
+// @TODO: remove in favor of code in PackagingIdResolver
 export function validateIdNoThrow(idObj: Many<IdRegistryValue>, value): IdRegistryValue | false {
   if (!value || (value.length !== 15 && value.length !== 18)) {
     return false;
@@ -231,6 +237,8 @@ export function applyErrorAction(err: Error): Error {
  *
  * @param versionId The subscriber package version ID
  * @param connection For tooling query
+ * 
+ * @TODO: delete this in favor of code in PackagingIdResolver
  */
 export async function getPackageVersionId(versionId: string, connection: Connection): Promise<string> {
   // if it's already a 05i return it, otherwise query for it
@@ -301,9 +309,10 @@ export async function getPackageTypeBy04t(
 /**
  * Given a package version ID (05i) or subscriber package version ID (04t), return the subscriber package version ID (04t)
  *
- * @param versionId The suscriber package version ID
+ * @param versionId The subscriber package version ID
  * @param connection For tooling query
  */
+// @TODO: remove in favor of code in PackagingIdResolver
 export async function getSubscriberPackageVersionId(versionId: string, connection: Connection): Promise<string> {
   // if it's already a 04t return it, otherwise query for it
   if (!versionId || versionId.startsWith(BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.prefix)) {
@@ -734,6 +743,7 @@ export function getConfigPackageDirectory(
  * @param project for obtaining the project config
  * @returns the associated id or the arg given.
  */
+// @TODO: remove in favor of code in PackagingIdResolver
 export function getPackageIdFromAlias(packageAlias: string, project: SfProject): string {
   const packageAliases = project.getSfProjectJson().getContents().packageAliases || {};
   // return alias if it exists, otherwise return what was passed in
@@ -753,6 +763,7 @@ export function convertCamelCaseStringToSentence(stringIn: string): string {
  * @param project for obtaining the project config
  * @returns an array of alias for the given id.
  */
+// @TODO: remove in favor of code in PackagingIdResolver
 export function getPackageAliasesFromId(packageId: string, project: SfProject): string[] {
   const packageAliases = project?.getSfProjectJson().getContents().packageAliases || {};
   // check for a matching alias

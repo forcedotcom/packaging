@@ -98,6 +98,7 @@ export class PackageVersion {
    * @param verbose
    */
   public async report(idOrAlias: string, verbose = false): Promise<PackageVersionReportResult> {
+    // alias, 04t, or 05i
     const results = await getPackageVersionReport({
       idOrAlias,
       connection: this.connection,
@@ -208,6 +209,7 @@ export class PackageVersion {
   }
 
   public async promote(id: string): Promise<PackageSaveResult> {
+    // alias, 04t, or 05i
     // lookup the 05i ID, if needed
     if (id.startsWith('04t')) {
       id = await getPackageVersionId(id, this.connection);
@@ -216,7 +218,7 @@ export class PackageVersion {
   }
 
   public async update(id: string, options: PackageVersionUpdateOptions): Promise<PackageSaveResult> {
-    // ID can be an 04t or 05i
+    // alias, 04t, or 05i
     validateId([BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, BY_LABEL.PACKAGE_VERSION_ID], id);
 
     // lookup the 05i ID, if needed
@@ -244,6 +246,7 @@ export class PackageVersion {
   }
 
   private async updateDeprecation(idOrAlias: string, IsDeprecated): Promise<PackageSaveResult> {
+    // alias, 04t, or 05i
     const packageVersionId = getPackageIdFromAlias(idOrAlias, this.project);
 
     // ID can be an 04t or 05i
