@@ -582,9 +582,9 @@ export class PackageVersionCreate {
     this.packageAlias = getPackageAliasesFromId(this.options.packageId, this.options.project).join();
     this.packageId = this.options.packageId;
     // set on the class, so we can access them in other methods without redoing this logic
-    this.packageObject = this.project
-      .getPackageDirectories()
-      .find((pkg) => pkg.package === this.packageAlias || pkg['id'] === this.options.packageId);
+    this.packageObject = this.project.findPackage(
+      (pkg) => pkg.package === this.packageAlias || pkg['id'] === this.options.packageId
+    );
     this.options.profileApi = await this.resolveUserLicenses(this.packageObject.includeProfileUserLicenses);
 
     // At this point, the packageIdFromAlias should have been resolved to an Id.  Now, we

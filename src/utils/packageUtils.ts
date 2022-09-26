@@ -421,13 +421,10 @@ export async function generatePackageAliasEntry(
   packageVersionNumber: string,
   branch: string,
   packageId: string
-): Promise<{ [p: string]: string }> {
-  const configContent = project.getSfProjectJson().getContents();
-  const packageAliases: { [p: string]: string } = configContent.packageAliases || {};
-
+): Promise<[string, string]> {
   const aliasForPackageId = getPackageAliasesFromId(packageId, project);
   let packageName: Optional<string>;
-  if (!aliasForPackageId || aliasForPackageId.length === 0) {
+  if (aliasForPackageId?.length === 0) {
     const query = `SELECT Name FROM Package2 WHERE Id = '${packageId}'`;
     const package2 = await connection.singleRecordQuery<PackagingSObjects.Package2>(query, { tooling: true });
     packageName = package2.Name;
@@ -438,9 +435,8 @@ export async function generatePackageAliasEntry(
   const packageAlias = branch
     ? `${packageName}@${packageVersionNumber}-${branch}`
     : `${packageName}@${packageVersionNumber}`;
-  packageAliases[packageAlias] = packageVersionId;
 
-  return packageAliases;
+  return [packageAlias, packageVersionId];
 }
 
 export function formatDate(date: Date): string {

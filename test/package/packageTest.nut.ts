@@ -229,11 +229,6 @@ describe('Integration tests for @salesforce/packaging library', function () {
       // eslint-disable-next-line no-console
       console.log(`projectFile: ${JSON.stringify(projectFile, undefined, 2)}`);
 
-      expect(result.Description).to.equal(
-        projectFile.packageDirectories[0].versionDescription,
-        `'force:package:version:report' Description mismatch: expected '${projectFile.packageDirectories[0].versionDescription}', got '${result.Description}'`
-      );
-
       expect(result.Name).to.equal(
         projectFile.packageDirectories[0].versionName,
         `'force:package:version:report' Name mismatch: expected '${projectFile.packageDirectories[0].versionName}', got '${result.Name}'`

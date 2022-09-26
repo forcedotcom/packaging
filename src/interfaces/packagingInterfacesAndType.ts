@@ -7,7 +7,7 @@
 
 import { Duration } from '@salesforce/kit';
 import { Connection, NamedPackageDir, SfProject } from '@salesforce/core';
-import { QueryResult, SaveResult } from 'jsforce';
+import { SaveResult } from 'jsforce';
 import { Attributes } from 'graphology-types';
 import { PackageProfileApi } from '../package/packageProfileApi';
 import { PackageAncestryNode } from '../package/packageAncestry';
@@ -29,7 +29,6 @@ export interface IPackage {
     options?: PackageInstallOptions
   ): Promise<PackageInstallRequest>;
   getInstallStatus(installRequestId: string): Promise<PackageInstallRequest>;
-  list(): Promise<QueryResult<PackagingSObjects.Package2>>;
   uninstall(id: string, wait: Duration): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest>;
   update(options: PackageUpdateOptions): Promise<PackageSaveResult>;
   waitForPublish(subscriberPackageVersionKey: string, timeout: number | Duration, installationKey?: string);

@@ -4,9 +4,8 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import { Messages, sfdc, SfError, SfProject } from '@salesforce/core';
+import { Connection, Messages, sfdc, SfError, SfProject } from '@salesforce/core';
 import { AsyncCreatable, Duration } from '@salesforce/kit';
-import { QueryResult } from 'jsforce';
 import { Optional } from '@salesforce/ts-types';
 import {
   IPackage,
@@ -20,7 +19,6 @@ import {
   PackageSaveResult,
   PackageUpdateOptions,
 } from '../interfaces';
-import { listPackages } from './packageList';
 import { getExternalSites, getStatus, installPackage, waitForPublish } from './packageInstall';
 import { convertPackage } from './packageConvert';
 import { uninstallPackage } from './packageUninstall';
@@ -47,6 +45,14 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
     super(options);
   }
 
+  /**
+   * Returns all the packages that are available in the org.
+   *
+   * @param connection
+   */
+  public static async getAll(connection: Connection): Promise<PackagingSObjects.Package2[]> {
+    return (await connection.tooling.query<PackagingSObjects.Package2>('select fields(all) from Package2'))?.records;
+  }
   /**
    * Given a Salesforce ID for a package resource and the type of resource,
    * ensures the ID is valid.
@@ -95,10 +101,6 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
 
   public async getInstallStatus(installRequestId: string): Promise<PackageInstallRequest> {
     return getStatus(this.options.connection, installRequestId);
-  }
-
-  public list(): Promise<QueryResult<PackagingSObjects.Package2>> {
-    return listPackages(this.options.connection);
   }
 
   public async uninstall(
