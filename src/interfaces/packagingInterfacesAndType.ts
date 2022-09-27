@@ -261,6 +261,13 @@ export type MDFolderForArtifactOptions = {
 
 export type PackageVersionOptions = {
   connection: Connection;
+  /**
+   * Can be one of:
+   * 1. SubscriberPackageVersionId (04t)
+   * 2. PackageVersionId (05i)
+   * 3. Alias for a 04t or 05i, defined in sfdx-project.json
+   */
+  idOrAlias: string;
   project: SfProject;
 };
 

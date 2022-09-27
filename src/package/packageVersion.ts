@@ -26,7 +26,6 @@ import {
   combineSaveErrors,
   getPackageAliasesFromId,
   getPackageIdFromAlias,
-  getPackageVersionId,
   validateId,
 } from '../utils';
 import { PackageVersionCreate } from './packageVersionCreate';
@@ -35,76 +34,61 @@ import { getCreatePackageVersionCreateRequestReport } from './packageVersionCrea
 import { listPackageVersions } from './packageVersionList';
 import { list } from './packageVersionCreateRequest';
 
+type Package2Version = PackagingSObjects.Package2Version;
+
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version');
+
 export class PackageVersion {
   private readonly project: SfProject;
   private readonly connection: Connection;
 
+  private data: Package2Version;
+
   public constructor(private options: PackageVersionOptions) {
     this.connection = this.options.connection;
     this.project = this.options.project;
+    this.data = {} as Package2Version;
+    const id = getPackageIdFromAlias(this.options.idOrAlias, this.project);
+
+    // validate ID
+    if (id.startsWith('04t')) {
+      validateId(BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, id);
+      this.data.SubscriberPackageVersionId = id;
+    } else if (id.startsWith('05i')) {
+      validateId(BY_LABEL.PACKAGE_VERSION_ID, id);
+      this.data.Package2Id = id;
+    } else {
+      throw messages.createError('errorInvalidPackageVersionId', [this.options.idOrAlias]);
+    }
   }
 
   /**
-   * Creates a new package version.
+   * Sends a request to create a new package version and optionally polls for
+   * the status of the request until the package version is created or the
+   * polling timeout is reached.
    *
-   * @param options
+   * @param options PackageVersionCreateOptions
    * @param polling frequency and timeout Durations to be used in polling
+   * @returns PackageVersionCreateRequestResult
    */
-  public async create(
+  public static async create(
     options: PackageVersionCreateOptions,
     polling: { frequency: Duration; timeout: Duration } = {
       frequency: Duration.seconds(0),
       timeout: Duration.seconds(0),
     }
   ): Promise<Partial<PackageVersionCreateRequestResult>> {
-    const pvc = new PackageVersionCreate({ ...options, ...this.options });
+    const pvc = new PackageVersionCreate({ ...options });
     const createResult = await pvc.createPackageVersion();
 
-    return await this.waitForCreateVersion(createResult.Id, polling).catch((err: Error) => {
-      // TODO
-      // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
-      throw applyErrorAction(err);
-    });
-  }
-
-  /**
-   * Deletes a package version.
-   *
-   * @param idOrAlias
-   */
-  public async delete(idOrAlias: string): Promise<PackageSaveResult> {
-    return this.updateDeprecation(idOrAlias, true);
-  }
-
-  /**
-   * Undeletes a package version.
-   *
-   * @param idOrAlias
-   */
-  public async undelete(idOrAlias: string): Promise<PackageSaveResult> {
-    return this.updateDeprecation(idOrAlias, false);
-  }
-
-  /**
-   * Gets the package version report.
-   *
-   * @param createPackageRequestId
-   * @param verbose
-   */
-  public async report(createPackageRequestId: string, verbose = false): Promise<PackageVersionReportResult> {
-    const results = await getPackageVersionReport({
-      idOrAlias: createPackageRequestId,
-      connection: this.connection,
-      project: this.project,
-      verbose,
-    }).catch((err: Error) => {
-      // TODO
-      // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
-      throw applyErrorAction(err);
-    });
-    return results[0];
+    return await PackageVersion.pollCreateStatus(createResult.Id, options.connection, options.project, polling).catch(
+      (err: Error) => {
+        // TODO
+        // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
+        throw applyErrorAction(err);
+      }
+    );
   }
 
   /**
@@ -112,10 +96,13 @@ export class PackageVersion {
    *
    * @param createPackageRequestId
    */
-  public async getCreateVersionReport(createPackageRequestId: string): Promise<PackageVersionCreateRequestResult> {
+  public static async getCreateStatus(
+    createPackageRequestId: string,
+    connection: Connection
+  ): Promise<PackageVersionCreateRequestResult> {
     return await getCreatePackageVersionCreateRequestReport({
       createPackageVersionRequestId: createPackageRequestId,
-      connection: this.connection,
+      connection,
     }).catch((err: Error) => {
       // TODO
       // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
@@ -123,10 +110,18 @@ export class PackageVersion {
     });
   }
 
-  public async createdList(
-    options?: Omit<PackageVersionCreateRequestQueryOptions, 'connection'>
+  /**
+   * Fetch a list of created package versions based on the options passed in.
+   *
+   * @param connection connection to an org
+   * @param options PackageVersionCreateRequestQueryOptions
+   * @returns the list of package version create requests.
+   */
+  public static async createdList(
+    connection: Connection,
+    options?: PackageVersionCreateRequestQueryOptions
   ): Promise<PackageVersionCreateRequestResult[]> {
-    return await list({ ...options, connection: this.connection });
+    return list({ ...options, connection });
   }
 
   /**
@@ -135,22 +130,23 @@ export class PackageVersion {
    * This function emits LifeCycle events, "enqueued", "in-progress", "success", "error" and "timed-out" to
    * progress and current status. Events also carry a payload of type PackageVersionCreateRequestResult.
    *
-   * @param packageId - The package id to wait for
    * @param createPackageVersionRequestId
    * @param polling frequency and timeout Durations to be used in polling
    * */
-  public async waitForCreateVersion(
+  public static async pollCreateStatus(
     createPackageVersionRequestId: string,
+    connection: Connection,
+    project: SfProject,
     polling: { frequency: Duration; timeout: Duration }
   ): Promise<PackageVersionCreateRequestResult> {
     if (polling.timeout?.milliseconds <= 0) {
-      return await this.getCreateVersionReport(createPackageVersionRequestId);
+      return this.getCreateStatus(createPackageVersionRequestId, connection);
     }
     let remainingWaitTime: Duration = polling.timeout;
     let report: PackageVersionCreateRequestResult;
     const pollingClient = await PollingClient.create({
       poll: async (): Promise<StatusResult> => {
-        report = await this.getCreateVersionReport(createPackageVersionRequestId);
+        report = await this.getCreateStatus(createPackageVersionRequestId, connection);
         switch (report.Status) {
           case 'Queued':
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.enqueued, { ...report, remainingWaitTime });
@@ -174,10 +170,16 @@ export class PackageVersion {
               completed: false,
               payload: report,
             };
-          case 'Success':
+          case 'Success': {
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.success, report);
-            await this.updateProjectWithPackageVersion(this.project, report);
+            const packageVersion = new PackageVersion({
+              connection,
+              project,
+              idOrAlias: report.Package2VersionId,
+            });
+            await packageVersion.updateProjectWithPackageVersion(report);
             return { completed: true, payload: report };
+          }
           case 'Error':
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.error, report);
             return { completed: true, payload: report };
@@ -187,6 +189,7 @@ export class PackageVersion {
       frequency: polling.frequency,
       timeout: polling.timeout,
     });
+
     try {
       return pollingClient.subscribe<PackageVersionCreateRequestResult>();
     } catch (err) {
@@ -195,8 +198,96 @@ export class PackageVersion {
     }
   }
 
-  public convert(): Promise<void> {
-    return Promise.resolve(undefined);
+  /**
+   * Get the package version ID for this PackageVersion.
+   *
+   * @returns The PackageVersionId (05i).
+   */
+  public async getId(): Promise<string> {
+    if (!this.data.Package2Id) {
+      await this.getPackageVersionData();
+    }
+    return this.data.Package2Id;
+  }
+
+  /**
+   * Get the subscriber package version ID for this PackageVersion.
+   *
+   * @returns The SubscriberPackageVersionId (04t).
+   */
+  public async getSubscriberId(): Promise<string> {
+    if (!this.data.SubscriberPackageVersionId) {
+      await this.getPackageVersionData();
+    }
+    return this.data.SubscriberPackageVersionId;
+  }
+
+  /**
+   * Get the Package2Version SObject data for this PackageVersion.
+   *
+   * @param force force a refresh of the package version data.
+   * @returns Package2Version
+   */
+  public async getPackageVersionData(force = false): Promise<Package2Version> {
+    if (!this.data.Name || force) {
+      let queryConfig: { id: string; clause: string; label1: string; label2: string };
+      if (this.data.Package2Id) {
+        queryConfig.id = this.data.Package2Id;
+        queryConfig.clause = `Id = '${this.data.Package2Id}'`;
+        queryConfig.label1 = BY_LABEL.PACKAGE_VERSION_ID.label;
+        queryConfig.label2 = BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.label;
+      } else {
+        queryConfig.id = this.data.SubscriberPackageVersionId;
+        queryConfig.clause = `SubscriberPackageVersionId = '${this.data.SubscriberPackageVersionId}'`;
+        queryConfig.label1 = BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.label;
+        queryConfig.label2 = BY_LABEL.PACKAGE_VERSION_ID.label;
+      }
+      const query = `SELECT FIELDS(ALL) FROM Package2Version WHERE ${queryConfig.clause}`;
+      const queryResult = await this.connection.tooling.query<Package2Version>(query);
+      if (!queryResult || !queryResult.totalSize) {
+        throw messages.createError('errorInvalidIdNoMatchingVersionId', [
+          queryConfig.label1,
+          queryConfig.id,
+          queryConfig.label2,
+        ]);
+      }
+      this.data = queryResult.records[0];
+    }
+    return this.data;
+  }
+
+  /**
+   * Deletes this PackageVersion.
+   */
+  public async delete(): Promise<PackageSaveResult> {
+    return this.updateDeprecation(true);
+  }
+
+  /**
+   * Undeletes this PackageVersion.
+   */
+  public async undelete(): Promise<PackageSaveResult> {
+    return this.updateDeprecation(false);
+  }
+
+  /**
+   * Reports details about this PackageVersion.
+   *
+   * @param verbose Whether to get a detailed version of the report, at the expense of performance.
+   */
+  public async report(verbose = false): Promise<PackageVersionReportResult> {
+    const packageVersionId = await this.getId();
+    const results = await getPackageVersionReport({
+      idOrAlias: packageVersionId,
+      connection: this.connection,
+      project: this.project,
+      verbose,
+    }).catch((err: Error) => {
+      // TODO
+      // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
+      throw applyErrorAction(err);
+    });
+    return results[0];
   }
 
   public install(): Promise<void> {
@@ -211,20 +302,13 @@ export class PackageVersion {
     return Promise.resolve(undefined);
   }
 
-  public async promote(id: string): Promise<PackageSaveResult> {
-    // lookup the 05i ID, if needed
-    if (id.startsWith('04t')) {
-      id = await getPackageVersionId(id, this.connection);
-    }
-    return await this.options.connection.tooling.update('Package2Version', { IsReleased: true, Id: id });
+  public async promote(): Promise<PackageSaveResult> {
+    const id = await this.getId();
+    return this.options.connection.tooling.update('Package2Version', { IsReleased: true, Id: id });
   }
 
-  public async update(id: string, options: PackageVersionUpdateOptions): Promise<PackageSaveResult> {
-    // ID can be an 04t or 05i
-    validateId([BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, BY_LABEL.PACKAGE_VERSION_ID], id);
-
-    // lookup the 05i ID, if needed
-    id = await getPackageVersionId(id, this.connection);
+  public async update(options: PackageVersionUpdateOptions): Promise<PackageSaveResult> {
+    const id = await this.getId();
 
     const request = {
       Id: id,
@@ -243,38 +327,29 @@ export class PackageVersion {
       throw new Error(result.errors.join(', '));
     }
     // Use the 04t ID for the success message
-    result.id = await this.getSubscriberPackageVersionId(id);
+    result.id = await this.getSubscriberId();
     return result;
   }
 
-  private async updateDeprecation(idOrAlias: string, IsDeprecated): Promise<PackageSaveResult> {
-    const packageVersionId = getPackageIdFromAlias(idOrAlias, this.project);
-
-    // ID can be an 04t or 05i
-    validateId([BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, BY_LABEL.PACKAGE_VERSION_ID], packageVersionId);
-
-    // lookup the 05i ID, if needed
-    const packageId = await getPackageVersionId(packageVersionId, this.connection);
+  private async updateDeprecation(isDeprecated: boolean): Promise<PackageSaveResult> {
+    const id = await this.getId();
 
     // setup the request
     const request: { Id: string; IsDeprecated: boolean } = {
-      Id: packageId,
-      IsDeprecated,
+      Id: id,
+      IsDeprecated: isDeprecated,
     };
 
     const updateResult = await this.connection.tooling.update('Package2Version', request);
     if (!updateResult.success) {
       throw combineSaveErrors('Package2', 'update', updateResult.errors);
     }
-    updateResult.id = await this.getSubscriberPackageVersionId(packageVersionId);
+    updateResult.id = await this.getSubscriberId();
     return updateResult;
   }
 
-  private async updateProjectWithPackageVersion(
-    withProject: SfProject,
-    results: PackageVersionCreateRequestResult
-  ): Promise<void> {
-    if (withProject && !process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE) {
+  private async updateProjectWithPackageVersion(results: PackageVersionCreateRequestResult): Promise<void> {
+    if (!process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE) {
       // get the newly created package version from the server
       const versionResult = (
         await this.connection.tooling.query<{
@@ -297,29 +372,5 @@ export class PackageVersion {
         results.SubscriberPackageVersionId;
       await this.project.getSfProjectJson().write();
     }
-  }
-  /**
-   * Given a package version ID (05i) or subscriber package version ID (04t), return the subscriber package version ID (04t)
-   *
-   * @param versionId The suscriber package version ID
-   * @param connection For tooling query
-   */
-  private async getSubscriberPackageVersionId(versionId: string): Promise<string> {
-    // if it's already a 04t return it, otherwise query for it
-    if (!versionId || versionId.startsWith(BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.prefix)) {
-      return versionId;
-    }
-    const query = `SELECT SubscriberPackageVersionId FROM Package2Version WHERE Id = '${versionId}'`;
-    const queryResult = await this.connection.tooling.query<
-      Pick<PackagingSObjects.Package2Version, 'SubscriberPackageVersionId'>
-    >(query);
-    if (!queryResult || !queryResult.totalSize) {
-      throw messages.createError('errorInvalidIdNoMatchingVersionId', [
-        BY_LABEL.PACKAGE_VERSION_ID.label,
-        versionId,
-        BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.label,
-      ]);
-    }
-    return queryResult.records[0].SubscriberPackageVersionId;
   }
 }
