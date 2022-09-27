@@ -6,8 +6,8 @@
  */
 import { Connection } from '@salesforce/core';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
-import { expect } from 'chai';
-import { package1Display } from '../../lib/package1';
+import { assert, expect } from 'chai';
+import { Package1Version } from '../../src/package1';
 
 describe('Package1 Display', () => {
   const testOrg = new MockTestOrgData();
@@ -43,7 +43,8 @@ describe('Package1 Display', () => {
         },
       ],
     });
-    const result = await package1Display(conn, '04t46000001ZfaXXXX');
+    const pkg1 = new Package1Version(conn);
+    const result = await pkg1.display('04t46000001ZfaXXXX');
     expect(result).deep.equal([
       {
         BuildNumber: 1,
@@ -62,7 +63,23 @@ describe('Package1 Display', () => {
       totalSize: 0,
       records: [],
     });
-    const result = await package1Display(conn, '04t46000001ZfaXXXX');
+    const pkg1 = new Package1Version(conn);
+    const result = await pkg1.display('04t46000001ZfaXXXX');
     expect(result).deep.equal([]);
+  });
+
+  it('should throw an error when not an 04t id', async () => {
+    queryStub.resolves({
+      done: true,
+      totalSize: 0,
+      records: [],
+    });
+    const pkg1 = new Package1Version(conn);
+    try {
+      await pkg1.display('03346000001ZfaXXXX');
+      assert.fail('the above should throw');
+    } catch (e) {
+      expect(e.message).to.equal('Specify a valid package version ID (starts with 04t), received 03346000001ZfaXXXX');
+    }
   });
 });

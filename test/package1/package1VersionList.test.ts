@@ -6,8 +6,8 @@
  */
 import { Connection } from '@salesforce/core';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
-import { expect } from 'chai';
-import { package1VersionList } from '../../lib/package1';
+import { assert, expect } from 'chai';
+import { Package1Version } from '../../src/package1';
 
 const records = [
   {
@@ -74,7 +74,8 @@ describe('Package1 Version List', () => {
       totalSize: 1,
       records,
     });
-    const result = await package1VersionList(conn);
+    const pkg1 = new Package1Version(conn);
+    const result = await pkg1.list();
     expect(result).deep.equal(listResult);
     restoreContext($$);
   });
@@ -85,7 +86,8 @@ describe('Package1 Version List', () => {
       totalSize: 1,
       records: [records[0]],
     });
-    const result = await package1VersionList(conn, '03346000000dmo4XXX');
+    const pkg1 = new Package1Version(conn);
+    const result = await pkg1.list('03346000000dmo4XXX');
     expect(result).deep.equal([listResult[0]]);
   });
 
@@ -95,7 +97,25 @@ describe('Package1 Version List', () => {
       totalSize: 0,
       records: [],
     });
-    const result = await package1VersionList(conn, '03346000000dmo4XXX');
+    const pkg1 = new Package1Version(conn);
+    const result = await pkg1.list('03346000000dmo4XXX');
     expect(result).deep.equal([]);
+  });
+
+  it('should throw an error when invalid ID is provided', async () => {
+    queryStub.resolves({
+      done: true,
+      totalSize: 0,
+      records: [],
+    });
+    const pkg1 = new Package1Version(conn);
+    try {
+      await pkg1.list('04t46000001ZfaXXXX');
+      assert.fail('the above should throw an invalid id error');
+    } catch (e) {
+      expect(e.message).to.equal(
+        'Specify a valid package metadata package ID (starts with 033), received 04t46000001ZfaXXXX'
+      );
+    }
   });
 });

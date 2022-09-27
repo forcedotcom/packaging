@@ -10,8 +10,8 @@ import { Duration } from '@salesforce/kit';
 import { expect } from 'chai';
 import { Connection, Lifecycle } from '@salesforce/core';
 import { assert } from 'sinon';
-import { package1VersionCreate } from '../../src/package1';
 import { PackageVersionEvents, PackagingSObjects } from '../../src/interfaces';
+import { Package1Version } from '../../src/package1';
 
 const options = {
   MetadataPackageId: '0HD4p000000blVyGAI',
@@ -79,8 +79,8 @@ describe('Package1 Version Create', () => {
         expect(data.pollingResult.Status).to.equal('QUEUED');
       }
     );
-
-    const result = await package1VersionCreate(conn, options, {
+    const pkg1 = new Package1Version(conn);
+    const result = await pkg1.create(options, {
       frequency: Duration.seconds(1),
       timeout: Duration.minutes(3),
     });
@@ -96,7 +96,8 @@ describe('Package1 Version Create', () => {
     });
 
     try {
-      await package1VersionCreate(conn, options, { frequency: Duration.seconds(1), timeout: Duration.minutes(3) });
+      const pkg1 = new Package1Version(conn);
+      await pkg1.create(options, { frequency: Duration.seconds(1), timeout: Duration.minutes(3) });
       assert.fail('the above should throw an error from polling');
     } catch (e) {
       expect((e as Error).message).to.equal(`Package upload failed.${os.EOL}message 1${os.EOL}message 2`);
@@ -118,7 +119,11 @@ describe('Package1 Version Create', () => {
       }
     );
     try {
-      await package1VersionCreate(conn, options, { frequency: Duration.seconds(1), timeout: Duration.minutes(3) });
+      const pkg1 = new Package1Version(conn);
+      await pkg1.create(options, {
+        frequency: Duration.seconds(1),
+        timeout: Duration.minutes(3),
+      });
       assert.fail('the above should throw an error from polling');
     } catch (e) {
       expect((e as Error).message).to.equal('Package version creation failed with unknown error');
@@ -130,7 +135,8 @@ describe('Package1 Version Create', () => {
       retrieve: async () => queuedResult,
     });
 
-    const result = await package1VersionCreate(conn, options);
+    const pkg1 = new Package1Version(conn);
+    const result = await pkg1.create(options);
     expect(result).deep.equal(queuedResult);
   });
 });
