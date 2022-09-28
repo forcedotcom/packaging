@@ -11,6 +11,10 @@ Package upload failed.
 
 Specify a valid package version ID (starts with 04t), received %s
 
+# invalid0HDId
+
+Specify a valid Package Upload Request ID (starts with 0HD), received %s
+
 # invalid033Id
 
 Specify a valid package metadata package ID (starts with 033), received %s

@@ -38,9 +38,6 @@ export interface IPackage {
 
 export interface IPackageVersion1GP {
   create(options: Package1VersionCreateRequest, pollingOptions): Promise<PackagingSObjects.PackageUploadRequest>;
-  createReport(id: string): Promise<PackagingSObjects.PackageUploadRequest>;
-  display(id: string): Promise<Package1Display[]>;
-  list(id: string): Promise<Package1Display[]>;
 }
 
 export interface IPackageVersion2GP {

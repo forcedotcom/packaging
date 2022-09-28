@@ -74,8 +74,7 @@ describe('Package1 Version List', () => {
       totalSize: 1,
       records,
     });
-    const pkg1 = new Package1Version(conn);
-    const result = await pkg1.list();
+    const result = await Package1Version.list(conn);
     expect(result).deep.equal(listResult);
     restoreContext($$);
   });
@@ -86,8 +85,7 @@ describe('Package1 Version List', () => {
       totalSize: 1,
       records: [records[0]],
     });
-    const pkg1 = new Package1Version(conn);
-    const result = await pkg1.list('03346000000dmo4XXX');
+    const result = await Package1Version.list(conn, '03346000000dmo4XXX');
     expect(result).deep.equal([listResult[0]]);
   });
 
@@ -97,8 +95,7 @@ describe('Package1 Version List', () => {
       totalSize: 0,
       records: [],
     });
-    const pkg1 = new Package1Version(conn);
-    const result = await pkg1.list('03346000000dmo4XXX');
+    const result = await Package1Version.list(conn, '03346000000dmo4XXX');
     expect(result).deep.equal([]);
   });
 
@@ -108,9 +105,8 @@ describe('Package1 Version List', () => {
       totalSize: 0,
       records: [],
     });
-    const pkg1 = new Package1Version(conn);
     try {
-      await pkg1.list('04t46000001ZfaXXXX');
+      await Package1Version.list(conn, '04t46000001ZfaXXXX');
       assert.fail('the above should throw an invalid id error');
     } catch (e) {
       expect(e.message).to.equal(

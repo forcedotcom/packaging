@@ -43,8 +43,7 @@ describe('Package1 Display', () => {
         },
       ],
     });
-    const pkg1 = new Package1Version(conn);
-    const result = await pkg1.display('04t46000001ZfaXXXX');
+    const result = await Package1Version.display(conn, '04t46000001ZfaXXXX');
     expect(result).deep.equal([
       {
         BuildNumber: 1,
@@ -63,8 +62,7 @@ describe('Package1 Display', () => {
       totalSize: 0,
       records: [],
     });
-    const pkg1 = new Package1Version(conn);
-    const result = await pkg1.display('04t46000001ZfaXXXX');
+    const result = await Package1Version.display(conn, '04t46000001ZfaXXXX');
     expect(result).deep.equal([]);
   });
 
@@ -74,9 +72,8 @@ describe('Package1 Display', () => {
       totalSize: 0,
       records: [],
     });
-    const pkg1 = new Package1Version(conn);
     try {
-      await pkg1.display('03346000001ZfaXXXX');
+      await Package1Version.display(conn, '03346000001ZfaXXXX');
       assert.fail('the above should throw');
     } catch (e) {
       expect(e.message).to.equal('Specify a valid package version ID (starts with 04t), received 03346000001ZfaXXXX');

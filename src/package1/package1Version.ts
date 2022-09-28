@@ -20,47 +20,42 @@ const messages = Messages.loadMessages('@salesforce/packaging', 'package1Version
 
 /**
  * Package1Version class - Class to be used with 1st generation package versions
+ *
+ * implementation examples can be seen here: https://github.com/salesforcecli/plugin-packaging/tree/main/src/commands/force/package1/
  */
 export class Package1Version implements IPackageVersion1GP {
   public constructor(private connection: Connection) {}
 
-  public async createReport(id: string): Promise<PackagingSObjects.PackageUploadRequest> {
-    return (await this.connection.tooling
+  /**
+   * Returns the status of a PackageUploadRequest
+   *
+   * @param connection Connection to the target org
+   * @param id 0HD Id of the PackageUploadRequest
+   */
+  public static async getCreateStatus(
+    connection: Connection,
+    id: string
+  ): Promise<PackagingSObjects.PackageUploadRequest> {
+    if (!id.startsWith('0HD')) {
+      throw messages.createError('invalid0HDId', [id]);
+    }
+    return (await connection.tooling
       .sobject('PackageUploadRequest')
       .retrieve(id)) as unknown as PackagingSObjects.PackageUploadRequest;
-  }
-
-  public async create(
-    options: Package1VersionCreateRequest,
-    pollingOptions = { frequency: Duration.seconds(5), timeout: Duration.seconds(0) }
-  ): Promise<PackagingSObjects.PackageUploadRequest> {
-    const createRequest = await this.connection.tooling.sobject('PackageUploadRequest').create(options);
-    if (pollingOptions.timeout.seconds) {
-      const timeout = pollingOptions.timeout.seconds;
-      const pollingClient = await PollingClient.create({
-        poll: () => this.packageUploadRequestStatus(createRequest.id, timeout, pollingOptions.frequency.seconds),
-        ...pollingOptions,
-      });
-      return pollingClient.subscribe<PackagingSObjects.PackageUploadRequest>();
-    } else {
-      // jsforce templates weren't working when setting the type to PackageUploadRequest, so we have to cast `as unknown as PackagingSObjects.PackageUploadRequest`
-      return (await this.connection.tooling
-        .sobject('PackageUploadRequest')
-        .retrieve(createRequest.id)) as unknown as PackagingSObjects.PackageUploadRequest;
-    }
   }
 
   /**
    * Executes server-side logic for the package1:display command
    *
+   * @param connection Connection to the org
    * @param id: id of the MetadataPackageVersion sObject (starts with 04t)
    */
-  public async display(id: string): Promise<Package1Display[]> {
+  public static async display(connection: Connection, id: string): Promise<Package1Display[]> {
     if (!id.startsWith('04t')) {
       throw messages.createError('invalid04tId', [id]);
     }
     const query = `SELECT Id,MetadataPackageId,Name,ReleaseState,MajorVersion,MinorVersion,PatchVersion,BuildNumber FROM MetadataPackageVersion WHERE id = '${id}'`;
-    const results = (await this.connection.tooling.query<PackagingSObjects.MetadataPackageVersion>(query)).records;
+    const results = (await connection.tooling.query<PackagingSObjects.MetadataPackageVersion>(query)).records;
     return results.map((result) => ({
       MetadataPackageVersionId: result.Id,
       MetadataPackageId: result.MetadataPackageId,
@@ -72,21 +67,24 @@ export class Package1Version implements IPackageVersion1GP {
   }
 
   /**
-   * Lists package versions available in dev org. If package ID is supplied, only list versions of that package,
+   * Lists package versions available in the org. If package ID is supplied, only list versions of that package,
    * otherwise, list all package versions
    *
-   * @param id: optional, if present ID of package to list versions for (starts with 033)
+   * @param connection Connection to the org
+   * @param id: optional, if present, ID of package to list versions for (starts with 033)
    * @returns Array of package version results
    */
-  public async list(id?: string): Promise<Package1Display[]> {
+  public static async list(connection: Connection, id?: string): Promise<Package1Display[]> {
     if (id && !id?.startsWith('033')) {
+      // we have to check that it is present, and starts with 033
+      // otherwise, undefined doesn't start with 033 and will trigger this error, when it shouldn't
       throw messages.createError('invalid033Id', [id]);
     }
     const query = `SELECT Id,MetadataPackageId,Name,ReleaseState,MajorVersion,MinorVersion,PatchVersion,BuildNumber FROM MetadataPackageVersion ${
       id ? `WHERE MetadataPackageId = '${id}'` : ''
     } ORDER BY MetadataPackageId, MajorVersion, MinorVersion, PatchVersion, BuildNumber`;
 
-    const queryResult = await this.connection.tooling.query<PackagingSObjects.MetadataPackageVersion>(query);
+    const queryResult = await connection.tooling.query<PackagingSObjects.MetadataPackageVersion>(query);
     return queryResult.records?.map((record) => ({
       MetadataPackageVersionId: record.Id,
       MetadataPackageId: record.MetadataPackageId,
@@ -97,7 +95,33 @@ export class Package1Version implements IPackageVersion1GP {
     }));
   }
 
-  private async packageUploadRequestStatus(id: string, timeout: number, frequency: number): Promise<StatusResult> {
+  /**
+   * Will create a PackageUploadRequest object based on the options provided, will poll for completion if pollingOptions are provided
+   *
+   * @param options: Package1VersionCreateRequest options for the new PackageUploadRequest to be created with
+   * @param pollingOptions: options to set frequency, and duration of polling. Default to not poll
+   */
+  public async create(
+    options: Package1VersionCreateRequest,
+    pollingOptions = { frequency: Duration.seconds(5), timeout: Duration.seconds(0) }
+  ): Promise<PackagingSObjects.PackageUploadRequest> {
+    const createRequest = await this.connection.tooling.sobject('PackageUploadRequest').create(options);
+    if (pollingOptions.timeout.seconds) {
+      const timeout = pollingOptions.timeout.seconds;
+      const pollingClient = await PollingClient.create({
+        poll: () => this.packageUploadPolling(createRequest.id, timeout, pollingOptions.frequency.seconds),
+        ...pollingOptions,
+      });
+      return pollingClient.subscribe<PackagingSObjects.PackageUploadRequest>();
+    } else {
+      // jsforce templates weren't working when setting the type to PackageUploadRequest, so we have to cast `as unknown as PackagingSObjects.PackageUploadRequest`
+      return (await this.connection.tooling
+        .sobject('PackageUploadRequest')
+        .retrieve(createRequest.id)) as unknown as PackagingSObjects.PackageUploadRequest;
+    }
+  }
+
+  private async packageUploadPolling(id: string, timeout: number, frequency: number): Promise<StatusResult> {
     const pollingResult = await this.connection.tooling.sobject('PackageUploadRequest').retrieve(id);
     switch (pollingResult.Status) {
       case 'SUCCESS':
