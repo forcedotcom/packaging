@@ -278,31 +278,32 @@ export type ConvertPackageOptions = {
   buildInstance: string;
 };
 
-export type PackageVersionCreateOptions = Partial<
-  PackageVersionOptions & {
-    branch: string;
-    buildinstance: string;
-    codecoverage: boolean;
-    definitionfile: string;
-    installationkey: string;
-    installationkeybypass: boolean;
-    packageId: string;
-    postinstallscript: string;
-    postinstallurl: string;
-    preserve: boolean;
-    releasenotesurl: string;
-    skipancestorcheck: boolean;
-    skipvalidation: boolean;
-    sourceorg: string;
-    tag: string;
-    uninstallscript: string;
-    validateschema: boolean;
-    versiondescription: string;
-    versionname: string;
-    versionnumber: string;
-    profileApi: PackageProfileApi;
-  }
->;
+export type PackageVersionCreateOptions = {
+  connection: Connection;
+  project: SfProject;
+} & Partial<{
+  branch: string;
+  buildinstance: string;
+  codecoverage: boolean;
+  definitionfile: string;
+  installationkey: string;
+  installationkeybypass: boolean;
+  packageId: string;
+  postinstallscript: string;
+  postinstallurl: string;
+  preserve: boolean;
+  releasenotesurl: string;
+  skipancestorcheck: boolean;
+  skipvalidation: boolean;
+  sourceorg: string;
+  tag: string;
+  uninstallscript: string;
+  validateschema: boolean;
+  versiondescription: string;
+  versionname: string;
+  versionnumber: string;
+  profileApi: PackageProfileApi;
+}>;
 
 export type PackageVersionCreateRequestQueryOptions = {
   createdlastdays?: number;

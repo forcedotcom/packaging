@@ -39,6 +39,39 @@ type Package2Version = PackagingSObjects.Package2Version;
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version');
 
+export const Package2VersionFields = [
+  'Id',
+  'IsDeleted',
+  'CreatedDate',
+  'CreatedById',
+  'LastModifiedDate',
+  'LastModifiedById',
+  'SystemModstamp',
+  'Package2Id',
+  'SubscriberPackageVersionId',
+  'Tag',
+  'Branch',
+  'AncestorId',
+  'ValidationSkipped',
+  'Name',
+  'Description',
+  'MajorVersion',
+  'MinorVersion',
+  'PatchVersion',
+  'BuildNumber',
+  'IsDeprecated',
+  'IsPasswordProtected',
+  'CodeCoverage',
+  'CodeCoveragePercentages',
+  'HasPassedCodeCoverageCheck',
+  'InstallKey',
+  'IsReleased',
+  'ConvertedFromVersionId',
+  'ReleaseVersion',
+  'BuildDurationInSeconds',
+  'HasMetadataRemoved',
+];
+
 export class PackageVersion {
   private readonly project: SfProject;
   private readonly connection: Connection;
@@ -57,7 +90,7 @@ export class PackageVersion {
       this.data.SubscriberPackageVersionId = id;
     } else if (id.startsWith('05i')) {
       validateId(BY_LABEL.PACKAGE_VERSION_ID, id);
-      this.data.Package2Id = id;
+      this.data.Id = id;
     } else {
       throw messages.createError('errorInvalidPackageVersionId', [this.options.idOrAlias]);
     }
@@ -111,7 +144,7 @@ export class PackageVersion {
   }
 
   /**
-   * Fetch a list of created package versions based on the options passed in.
+   * Fetch a list of package version create requests based on the given options.
    *
    * @param connection connection to an org
    * @param options PackageVersionCreateRequestQueryOptions
@@ -204,10 +237,10 @@ export class PackageVersion {
    * @returns The PackageVersionId (05i).
    */
   public async getId(): Promise<string> {
-    if (!this.data.Package2Id) {
+    if (!this.data.Id) {
       await this.getPackageVersionData();
     }
-    return this.data.Package2Id;
+    return this.data.Id;
   }
 
   /**
@@ -231,27 +264,33 @@ export class PackageVersion {
   public async getPackageVersionData(force = false): Promise<Package2Version> {
     if (!this.data.Name || force) {
       let queryConfig: { id: string; clause: string; label1: string; label2: string };
-      if (this.data.Package2Id) {
-        queryConfig.id = this.data.Package2Id;
-        queryConfig.clause = `Id = '${this.data.Package2Id}'`;
-        queryConfig.label1 = BY_LABEL.PACKAGE_VERSION_ID.label;
-        queryConfig.label2 = BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.label;
+      if (this.data.Id) {
+        queryConfig = {
+          id: this.data.Id,
+          clause: `Id = '${this.data.Id}'`,
+          label1: BY_LABEL.PACKAGE_VERSION_ID.label,
+          label2: BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.label,
+        };
       } else {
-        queryConfig.id = this.data.SubscriberPackageVersionId;
-        queryConfig.clause = `SubscriberPackageVersionId = '${this.data.SubscriberPackageVersionId}'`;
-        queryConfig.label1 = BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.label;
-        queryConfig.label2 = BY_LABEL.PACKAGE_VERSION_ID.label;
+        queryConfig = {
+          id: this.data.SubscriberPackageVersionId,
+          clause: `SubscriberPackageVersionId = '${this.data.SubscriberPackageVersionId}'`,
+          label1: BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.label,
+          label2: BY_LABEL.PACKAGE_VERSION_ID.label,
+        };
       }
-      const query = `SELECT FIELDS(ALL) FROM Package2Version WHERE ${queryConfig.clause}`;
-      const queryResult = await this.connection.tooling.query<Package2Version>(query);
-      if (!queryResult || !queryResult.totalSize) {
-        throw messages.createError('errorInvalidIdNoMatchingVersionId', [
-          queryConfig.label1,
-          queryConfig.id,
-          queryConfig.label2,
-        ]);
+      const allFields = Package2VersionFields.toString();
+      const query = `SELECT ${allFields} FROM Package2Version WHERE ${queryConfig.clause} LIMIT 1`;
+      try {
+        this.data = await this.connection.singleRecordQuery<Package2Version>(query, { tooling: true });
+      } catch (err) {
+        throw messages.createError(
+          'errorInvalidIdNoMatchingVersionId',
+          [queryConfig.label1, queryConfig.id, queryConfig.label2],
+          undefined,
+          err as Error
+        );
       }
-      this.data = queryResult.records[0];
     }
     return this.data;
   }
@@ -278,7 +317,7 @@ export class PackageVersion {
   public async report(verbose = false): Promise<PackageVersionReportResult> {
     const packageVersionId = await this.getId();
     const results = await getPackageVersionReport({
-      idOrAlias: packageVersionId,
+      packageVersionId,
       connection: this.connection,
       project: this.project,
       verbose,

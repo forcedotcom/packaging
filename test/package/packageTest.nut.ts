@@ -127,6 +127,8 @@ describe('Integration tests for @salesforce/packaging library', function () {
 
     it('package version create', async () => {
       const result = await PackageVersion.create({
+        connection: devHubOrg.getConnection(),
+        project,
         packageId: pkgId,
         tag: TAG,
         codecoverage: true,
