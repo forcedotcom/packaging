@@ -77,24 +77,14 @@ async function getPackageVersionStrings(
 }
 
 export async function getPackageVersionReport(options: {
-  idOrAlias: string;
+  packageVersionId: string;
   connection: Connection;
   project: SfProject;
   verbose: boolean;
 }): Promise<PackageVersionReportResult[]> {
   logger.debug(`entering getPackageVersionReport(${util.inspect(options, { depth: null })})`);
-  let packageVersionId = pkgUtils.getPackageIdFromAlias(options.idOrAlias, options.project);
-
-  // ID can be an 04t or 05i
-  pkgUtils.validateId(
-    [pkgUtils.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, pkgUtils.BY_LABEL.PACKAGE_VERSION_ID],
-    packageVersionId
-  );
-
-  // lookup the 05i ID, if needed
-  packageVersionId = await pkgUtils.getPackageVersionId(packageVersionId, options.connection);
   const queryResult = await options.connection.tooling.query<PackageVersionReportResult>(
-    util.format(options.verbose ? QUERY_VERBOSE : QUERY, packageVersionId)
+    util.format(options.verbose ? QUERY_VERBOSE : QUERY, options.packageVersionId)
   );
   const records = queryResult.records;
   if (records?.length > 0) {
