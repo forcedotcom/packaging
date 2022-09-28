@@ -14,12 +14,14 @@ import {
   Logger,
   Messages,
   PollingClient,
+  ScratchOrgInfo,
   SfError,
   SfProject,
   StatusResult,
 } from '@salesforce/core';
 import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
 import { Many } from '@salesforce/ts-types';
+import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import { uniqid } from '../utils/uniqid';
 import * as pkgUtils from '../utils/packageUtils';
 import {
@@ -93,7 +95,7 @@ export async function convertPackage(
   const packageId = await findOrCreatePackage2(pkg, connection);
 
   const request = await createPackageVersionCreateRequest(
-    { installationkey: options.installationKey, buildinstance: options.buildInstance },
+    { installationkey: options.installationKey, definitionfile: options.definitionfile, buildinstance: options.buildInstance },
     packageId
   );
 
@@ -136,7 +138,7 @@ export async function convertPackage(
  * @private
  */
 export async function createPackageVersionCreateRequest(
-  context: { installationkey?: string; buildinstance?: string },
+  context: { installationkey?: string; definitionfile?: string; buildinstance?: string },
   packageId: string
 ): Promise<PackagingSObjects.Package2VersionCreateRequest> {
   const uniqueId = uniqid({ template: `${packageId}-%s` });
@@ -147,6 +149,30 @@ export async function createPackageVersionCreateRequest(
   const packageDescriptorJson = {
     id: packageId,
   };
+
+  const settingsGenerator = new SettingsGenerator({ asDirectory: true });
+  const definitionFile = context.definitionfile;
+  if (definitionFile) {
+
+    const definitionFilePayload = await fs.promises.readFile(definitionFile, 'utf8');
+    const definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo;
+
+    // Load any settings from the definition
+    await settingsGenerator.extract(definitionFileJson);
+    if (settingsGenerator.hasSettings() && definitionFileJson.orgPreferences) {
+      // this is not allowed, exit with an error
+      throw messages.createError('signupDuplicateSettingsSpecified');
+    }
+
+    ['country', 'edition', 'language', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].forEach(
+      (prop) => {
+        const propValue = definitionFileJson[prop];
+        if (propValue) {
+          packageDescriptorJson[prop] = propValue;
+        }
+      }
+    );
+  }
 
   await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
   await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
@@ -164,7 +190,7 @@ export async function createPackageVersionCreateRequest(
 
 async function createRequestObject(
   packageId: string,
-  options: { installationkey?: string; buildinstance?: string },
+  options: { installationkey?: string;  definitionFile?: string;  buildinstance?: string },
   packageVersTmpRoot: string,
   packageVersBlobZipFile: string
 ): Promise<PackagingSObjects.Package2VersionCreateRequest> {

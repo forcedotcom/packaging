@@ -164,6 +164,7 @@ describe('packageConvert', () => {
       await convertPackage('0334p000000EaIHAA0', conn, {
         buildInstance: '',
         installationKey: '',
+        definitionfile: '',
         installationKeyBypass: true,
         wait: Duration.minutes(1),
       });
@@ -239,6 +240,7 @@ describe('packageConvert', () => {
     const result = await convertPackage('0334p000000EaIHAA0', conn, {
       buildInstance: '',
       installationKey: '',
+      definitionfile: '',
       installationKeyBypass: true,
       wait: Duration.minutes(1),
     });
@@ -273,6 +275,7 @@ describe('packageConvert', () => {
       await convertPackage('0334p000000EaIHAA0', conn, {
         buildInstance: '',
         installationKey: '',
+        definitionfile: '',
         installationKeyBypass: true,
         wait: Duration.minutes(1),
       });
