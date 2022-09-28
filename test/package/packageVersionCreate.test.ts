@@ -393,7 +393,7 @@ describe('Package Version Create', () => {
   describe('validateAncestorId', () => {
     let pvc: PackageVersionCreate;
     beforeEach(() => {
-      pvc = new PackageVersionCreate({});
+      pvc = new PackageVersionCreate({ connection, project, packageId });
     });
     it('should throw if the explicitUseNoAncestor is true and highestReleasedVersion is not undefined', () => {
       const ancestorId = 'ancestorId';
@@ -481,7 +481,7 @@ describe('Package Version Create', () => {
   describe('massageErrorMessage', () => {
     let pvc: PackageVersionCreate;
     beforeEach(() => {
-      pvc = new PackageVersionCreate({});
+      pvc = new PackageVersionCreate({ connection, project, packageId });
     });
     it('should return the correct error message', () => {
       const error = new Error();
@@ -493,7 +493,7 @@ describe('Package Version Create', () => {
   describe('validateVersionNumber', () => {
     let pvc: PackageVersionCreate;
     beforeEach(() => {
-      pvc = new PackageVersionCreate({});
+      pvc = new PackageVersionCreate({ connection, project, packageId });
     });
     it('should return version number as valid', () => {
       const versionNumber = pvc['validateVersionNumber']('1.2.3.NEXT', 'NEXT', 'LATEST');
