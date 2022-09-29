@@ -22,6 +22,7 @@ import {
 import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
 import { Many } from '@salesforce/ts-types';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
+import * as xml2js from 'xml2js';
 import { uniqid } from '../utils/uniqid';
 import * as pkgUtils from '../utils/packageUtils';
 import {
@@ -95,7 +96,11 @@ export async function convertPackage(
   const packageId = await findOrCreatePackage2(pkg, connection);
 
   const request = await createPackageVersionCreateRequest(
-    { installationkey: options.installationKey, definitionfile: options.definitionfile, buildinstance: options.buildInstance },
+    {
+      installationkey: options.installationKey,
+      definitionfile: options.definitionfile,
+      buildinstance: options.buildInstance,
+    },
     packageId
   );
 
@@ -144,6 +149,7 @@ export async function createPackageVersionCreateRequest(
   const uniqueId = uniqid({ template: `${packageId}-%s` });
   const packageVersTmpRoot = path.join(os.tmpdir(), uniqueId);
   const packageVersBlobDirectory = path.join(packageVersTmpRoot, 'package-version-info');
+  const settingsZipFile = path.join(packageVersBlobDirectory, 'settings.zip');
   const packageVersBlobZipFile = path.join(packageVersTmpRoot, consts.PACKAGE_VERSION_INFO_FILE_ZIP);
 
   const packageDescriptorJson = {
@@ -153,7 +159,6 @@ export async function createPackageVersionCreateRequest(
   const settingsGenerator = new SettingsGenerator({ asDirectory: true });
   const definitionFile = context.definitionfile;
   if (definitionFile) {
-
     const definitionFilePayload = await fs.promises.readFile(definitionFile, 'utf8');
     const definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo;
 
@@ -173,9 +178,17 @@ export async function createPackageVersionCreateRequest(
       }
     );
   }
-
   await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
   await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
+
+  if (settingsGenerator.hasSettings()) {
+    await settingsGenerator.createDeploy();
+    await settingsGenerator.createDeployPackageContents('54.0');
+    await srcDevUtil.zipDir(
+      `${settingsGenerator.getDestinationPath()}${path.sep}${settingsGenerator.getShapeDirName()}`,
+      settingsZipFile
+    );
+  }
 
   await fs.promises.writeFile(
     path.join(packageVersBlobDirectory, consts.PACKAGE2_DESCRIPTOR_FILE),
@@ -190,7 +203,7 @@ export async function createPackageVersionCreateRequest(
 
 async function createRequestObject(
   packageId: string,
-  options: { installationkey?: string;  definitionFile?: string;  buildinstance?: string },
+  options: { installationkey?: string; definitionFile?: string; buildinstance?: string },
   packageVersTmpRoot: string,
   packageVersBlobZipFile: string
 ): Promise<PackagingSObjects.Package2VersionCreateRequest> {
