@@ -5,10 +5,24 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { Connection, Lifecycle, Messages, PollingClient, SfProject, StatusResult } from '@salesforce/core';
-import { Duration } from '@salesforce/kit';
 import {
+  Connection,
+  Lifecycle,
+  Logger,
+  Messages,
+  PollingClient,
+  SfError,
+  SfProject,
+  StatusResult,
+} from '@salesforce/core';
+import { Duration } from '@salesforce/kit';
+import { Optional } from '@salesforce/ts-types';
+import { QueryResult } from 'jsforce';
+import {
+  PackageInstallCreateRequest,
+  PackageInstallOptions,
   PackageSaveResult,
+  PackageType,
   PackageVersionCreateOptions,
   PackageVersionCreateRequestQueryOptions,
   PackageVersionCreateRequestResult,
@@ -24,8 +38,10 @@ import {
   applyErrorAction,
   BY_LABEL,
   combineSaveErrors,
+  escapeInstallationKey,
   getPackageAliasesFromId,
   getPackageIdFromAlias,
+  massageErrorMessage,
   validateId,
 } from '../utils';
 import { PackageVersionCreate } from './packageVersionCreate';
@@ -33,6 +49,14 @@ import { getPackageVersionReport } from './packageVersionReport';
 import { getCreatePackageVersionCreateRequestReport } from './packageVersionCreateRequestReport';
 import { listPackageVersions } from './packageVersionList';
 import { list } from './packageVersionCreateRequest';
+import { getUninstallErrors, uninstallPackage } from './packageUninstall';
+import {
+  createPackageInstallRequest,
+  getStatus,
+  isErrorFromSPVQueryRestriction,
+  waitForPublish,
+} from './packageInstall';
+import Package2 = PackagingSObjects.Package2;
 
 type Package2Version = PackagingSObjects.Package2Version;
 
@@ -72,11 +96,20 @@ export const Package2VersionFields = [
   'HasMetadataRemoved',
 ];
 
+let logger: Logger;
+const getLogger = (): Logger => {
+  if (!logger) {
+    logger = Logger.childFromRoot('package');
+  }
+  return logger;
+};
+
 export class PackageVersion {
   private readonly project: SfProject;
   private readonly connection: Connection;
 
   private data: Package2Version;
+  private packageType: Optional<PackageType>;
 
   public constructor(private options: PackageVersionOptions) {
     this.connection = this.options.connection;
@@ -119,7 +152,7 @@ export class PackageVersion {
       (err: Error) => {
         // TODO
         // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
-        throw applyErrorAction(err);
+        throw applyErrorAction(massageErrorMessage(err));
       }
     );
   }
@@ -128,6 +161,7 @@ export class PackageVersion {
    * Gets current state of a package version create request.
    *
    * @param createPackageRequestId
+   * @param connection
    */
   public static async getCreateStatus(
     createPackageRequestId: string,
@@ -139,7 +173,7 @@ export class PackageVersion {
     }).catch((err: Error) => {
       // TODO
       // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
-      throw applyErrorAction(err);
+      throw applyErrorAction(massageErrorMessage(err));
     });
   }
 
@@ -231,26 +265,120 @@ export class PackageVersion {
     }
   }
 
-  public static async list(
-    connection: Connection,
-    project: SfProject,
-    options: PackageVersionListOptions
-  ): Promise<PackageVersionListResult[]> {
-    // resolve/verify packages
-    const packages = options.packages.map((pkg) => {
-      const id = getPackageIdFromAlias(pkg, project);
+  /**
+   * Reports on the progress of a package version uninstall.
+   *
+   * @param id the 06y package version uninstall request id
+   * @param connection
+   */
+  public static async uninstallReport(
+    id: string,
+    connection: Connection
+  ): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest> {
+    const result = (await connection.tooling.retrieve(
+      'SubscriberPackageVersionUninstallRequest',
+      id
+    )) as PackagingSObjects.SubscriberPackageVersionUninstallRequest;
+    if (result.Status === 'Error') {
+      const errorDetails = await getUninstallErrors(connection, id);
+      const errors = errorDetails.map((record, index) => `(${index + 1}) ${record.Message}`);
+      const errHeader = errors.length > 0 ? `\n=== Errors\n${errors.join('\n')}` : '';
+      const err = messages.getMessage('defaultErrorMessage', [id, result.Id]);
 
-      // validate ID
-      if (id.startsWith('0Ho')) {
-        validateId(BY_LABEL.PACKAGE_ID, id);
-        return id;
-      } else {
-        throw messages.createError('errorInvalidPackageVersionId', [id]);
-      }
+      throw new SfError(`${err}${errHeader}`, 'UNINSTALL_ERROR', [messages.getMessage('action')]);
+    }
+    return result;
+  }
+
+  /**
+   * Gets current state of a package version create request.
+   *
+   * @param createPackageRequestId
+   * @param connection
+   */
+  public static async getCreateVersionReport(
+    createPackageRequestId: string,
+    connection: Connection
+  ): Promise<PackageVersionCreateRequestResult> {
+    return await getCreatePackageVersionCreateRequestReport({
+      createPackageVersionRequestId: createPackageRequestId,
+      connection,
+    }).catch((err: Error) => {
+      // TODO
+      // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
+      throw applyErrorAction(massageErrorMessage(err));
     });
-    options.packages = packages;
-
-    return (await listPackageVersions({ ...options, ...{ connection } })).records;
+  }
+  /**
+   * Convenience function that will wait for a package version to be created.
+   *
+   * This function emits LifeCycle events, "enqueued", "in-progress", "success", "error" and "timed-out" to
+   * progress and current status. Events also carry a payload of type PackageVersionCreateRequestResult.
+   *
+   * @param createPackageVersionRequestId
+   * @param project
+   * @param connection
+   * @param polling frequency and timeout Durations to be used in polling
+   * */
+  public static async waitForCreateVersion(
+    createPackageVersionRequestId: string,
+    project: SfProject,
+    connection: Connection,
+    polling: { frequency: Duration; timeout: Duration }
+  ): Promise<PackageVersionCreateRequestResult> {
+    if (polling.timeout?.milliseconds <= 0) {
+      return await PackageVersion.getCreateVersionReport(createPackageVersionRequestId, connection);
+    }
+    let remainingWaitTime: Duration = polling.timeout;
+    let report: PackageVersionCreateRequestResult;
+    const pollingClient = await PollingClient.create({
+      poll: async (): Promise<StatusResult> => {
+        report = await this.getCreateVersionReport(createPackageVersionRequestId, connection);
+        switch (report.Status) {
+          case 'Queued':
+            await Lifecycle.getInstance().emit(PackageVersionEvents.create.enqueued, { ...report, remainingWaitTime });
+            remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
+            return {
+              completed: false,
+              payload: report,
+            };
+          case 'InProgress':
+          case 'Initializing':
+          case 'VerifyingFeaturesAndSettings':
+          case 'VerifyingDependencies':
+          case 'VerifyingMetadata':
+          case 'FinalizingPackageVersion':
+            await Lifecycle.getInstance().emit(PackageVersionEvents.create.progress, {
+              ...report,
+              remainingWaitTime,
+            });
+            remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
+            return {
+              completed: false,
+              payload: report,
+            };
+          case 'Success':
+            await Lifecycle.getInstance().emit(PackageVersionEvents.create.success, report);
+            await new PackageVersion({
+              idOrAlias: report.SubscriberPackageVersionId,
+              project,
+              connection,
+            }).updateProjectWithPackageVersion(report);
+            return { completed: true, payload: report };
+          case 'Error':
+            await Lifecycle.getInstance().emit(PackageVersionEvents.create.error, report);
+            return { completed: true, payload: report };
+        }
+      },
+      frequency: polling.frequency,
+      timeout: polling.timeout,
+    });
+    try {
+      return pollingClient.subscribe<PackageVersionCreateRequestResult>();
+    } catch (err) {
+      await Lifecycle.getInstance().emit(PackageVersionEvents.create['timed-out'], report);
+      throw applyErrorAction(err as Error);
+    }
   }
 
   /**
@@ -275,6 +403,26 @@ export class PackageVersion {
       await this.getPackageVersionData();
     }
     return this.data.SubscriberPackageVersionId;
+  }
+
+  public async getPackageId(): Promise<string> {
+    if (!this.data.Package2Id) {
+      await this.getPackageVersionData();
+    }
+    return this.data.Package2Id;
+  }
+
+  public async getPackageType(): Promise<PackageType> {
+    if (!this.packageType) {
+      this.packageType = (
+        await this.connection.singleRecordQuery<Package2>(
+          `select ContainerOptions from Package2 where Id = '${await this.getPackageId()}' limit 1`,
+          { tooling: true }
+        )
+      ).ContainerOptions;
+    }
+
+    return this.packageType;
   }
 
   /**
@@ -346,17 +494,60 @@ export class PackageVersion {
     }).catch((err: Error) => {
       // TODO
       // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
-      throw applyErrorAction(err);
+      throw applyErrorAction(massageErrorMessage(err));
     });
     return results[0];
   }
 
-  public install(): Promise<void> {
-    return Promise.resolve(undefined);
+  public async install(
+    pkgInstallCreateRequest: PackageInstallCreateRequest,
+    options?: PackageInstallOptions
+  ): Promise<PackagingSObjects.PackageInstallRequest> {
+    const pkgVersionInstallRequest = await createPackageInstallRequest(
+      this.connection,
+      pkgInstallCreateRequest,
+      await this.getPackageType(),
+      options
+    );
+    return this.getInstallStatus(pkgVersionInstallRequest.Id, pkgInstallCreateRequest.Password, options);
   }
 
-  public uninstall(): Promise<void> {
-    return Promise.resolve(undefined);
+  public async getInstallStatus(
+    packageInstallRequestOrId: string | PackagingSObjects.PackageInstallRequest,
+    installationKey?: string,
+    options?: PackageInstallOptions
+  ): Promise<PackagingSObjects.PackageInstallRequest> {
+    const id = typeof packageInstallRequestOrId === 'string' ? packageInstallRequestOrId : packageInstallRequestOrId.Id;
+    const packageInstallRequest =
+      typeof packageInstallRequestOrId === 'string' ? await getStatus(this.connection, id) : packageInstallRequestOrId;
+    if (!options || options.pollingTimeout > 0) {
+      return packageInstallRequest;
+    } else {
+      await waitForPublish(
+        this.connection,
+        packageInstallRequest.SubscriberPackageVersionKey,
+        options.pollingFrequency,
+        options.pollingTimeout,
+        packageInstallRequest.Password
+      );
+      return getStatus(this.connection, id);
+    }
+  }
+
+  public async list(options: PackageVersionListOptions): Promise<PackageVersionListResult[]> {
+    try {
+      return (await listPackageVersions({ ...options, ...{ connection: this.connection } })).records;
+    } catch (err) {
+      throw applyErrorAction(massageErrorMessage(err as Error));
+    }
+  }
+
+  public async uninstall(
+    id: string,
+    connection: Connection,
+    wait: Duration
+  ): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest> {
+    return await uninstallPackage(await this.getSubscriberId(), connection, wait);
   }
 
   public async promote(): Promise<PackageSaveResult> {
@@ -386,6 +577,71 @@ export class PackageVersion {
     // Use the 04t ID for the success message
     result.id = await this.getSubscriberId();
     return result;
+  }
+
+  /**
+   * Creates a new package version.
+   *
+   * @param options
+   * @param polling frequency and timeout Durations to be used in polling
+   */
+  public async create(
+    options: PackageVersionCreateOptions,
+    polling: { frequency: Duration; timeout: Duration } = {
+      frequency: Duration.seconds(0),
+      timeout: Duration.seconds(0),
+    }
+  ): Promise<Partial<PackageVersionCreateRequestResult>> {
+    const pvc = new PackageVersionCreate({ ...options, ...this.options });
+    const createResult = await pvc.createPackageVersion();
+
+    if (polling.timeout?.milliseconds > 0) {
+      return await PackageVersion.waitForCreateVersion(createResult.Id, this.project, this.connection, polling).catch(
+        (err: Error) => {
+          // TODO
+          // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
+          throw applyErrorAction(massageErrorMessage(err));
+        }
+      );
+    }
+    return createResult;
+  }
+
+  /**
+   * Returns an array of RSS and CSP external sites for the package.
+   *
+   * @param installationKey The installation key (if any) for the subscriber package version.
+   * @returns an array of RSS and CSP site URLs, or undefined if the package doesn't have any.
+   */
+  public async getExternalSites(installationKey?: string): Promise<Optional<string[]>> {
+    const queryNoKey = `SELECT RemoteSiteSettings, CspTrustedSites FROM SubscriberPackageVersion WHERE Id ='${await this.getSubscriberId()}'`;
+
+    let queryResult: QueryResult<PackagingSObjects.SubscriberPackageVersion>;
+    try {
+      const escapedInstallationKey = installationKey ? escapeInstallationKey(installationKey) : null;
+      const queryWithKey = `${queryNoKey} AND InstallationKey ='${escapedInstallationKey}'`;
+      getLogger().debug(`Checking package: [${await this.getPackageId()}] for external sites`);
+      queryResult = await this.connection.tooling.query<PackagingSObjects.SubscriberPackageVersion>(queryWithKey);
+    } catch (e) {
+      // First check for Implementation Restriction error that is enforced in 214, before it was possible to query
+      // against InstallationKey, otherwise surface the error.
+      if (e instanceof Error && isErrorFromSPVQueryRestriction(e)) {
+        queryResult = await this.connection.tooling.query<PackagingSObjects.SubscriberPackageVersion>(queryNoKey);
+      } else {
+        throw e;
+      }
+    }
+
+    if (queryResult?.records?.length > 0) {
+      const record = queryResult.records[0];
+      const rssUrls = record.RemoteSiteSettings.settings.map((rss) => rss.url);
+      const cspUrls = record.CspTrustedSites.settings.map((csp) => csp.endpointUrl);
+
+      const sites = [...rssUrls, ...cspUrls];
+      if (sites.length) {
+        return sites;
+      }
+    }
   }
 
   private async updateDeprecation(isDeprecated: boolean): Promise<PackageSaveResult> {

@@ -4,29 +4,29 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import { Messages, sfdc, SfError, SfProject } from '@salesforce/core';
-import { AsyncCreatable, Duration } from '@salesforce/kit';
+import { Connection, Messages, sfdc, SfError, SfProject } from '@salesforce/core';
+import { AsyncCreatable } from '@salesforce/kit';
 import { QueryResult } from 'jsforce';
-import { Optional } from '@salesforce/ts-types';
 import {
-  IPackage,
   PackageOptions,
   PackagingSObjects,
-  PackageInstallOptions,
-  PackageInstallCreateRequest,
   PackageIdType,
   ConvertPackageOptions,
   PackageVersionCreateRequestResult,
   PackageSaveResult,
   PackageUpdateOptions,
+  PackageType,
+  PackageCreateOptions,
+  ListPackageVersionOptions,
+  PackageVersionListResult,
+  Package2Fields,
 } from '../interfaces';
-import { applyErrorAction, massageErrorMessage } from '../utils';
+import { applyErrorAction, combineSaveErrors, getPackageAliasesFromId, massageErrorMessage } from '../utils';
+import { createPackage } from './packageCreate';
 import { listPackages } from './packageList';
-import { getExternalSites, getStatus, installPackage, waitForPublish } from './packageInstall';
-import { convertPackage } from './packageConvert';
-import { getUninstallErrors, uninstallPackage } from './packageUninstall';
 
-type PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
+import { convertPackage } from './packageConvert';
+import { listPackageVersions } from './packageVersionList';
 
 const packagePrefixes = {
   PackageId: '0Ho',
@@ -42,10 +42,30 @@ const messages = Messages.loadMessages('@salesforce/packaging', 'package');
  * Package class.
  *
  * This class provides the base implementation for a package.
+ * To create a new instance of a package, use the static async Package.create({connection, project, packageOrAliasId}) method.
  */
-export class Package extends AsyncCreatable<PackageOptions> implements IPackage {
+export class Package extends AsyncCreatable<PackageOptions> {
+  private packageId: string;
+  private packageData: PackagingSObjects.Package2;
   public constructor(private options: PackageOptions) {
     super(options);
+  }
+
+  /**
+   * Create a new package.
+   *
+   * @param connection - instance of Connection
+   * @param project - instance of SfProject
+   * @param options - options for creating a package - see PackageCreateOptions
+   * @returns Package
+   */
+  public static async createPackage(
+    connection: Connection,
+    project: SfProject,
+    options: PackageCreateOptions
+  ): Promise<Package> {
+    const packageId = await createPackage(connection, project, options);
+    return await Package.create({ connection, project, packageAliasOrId: packageId.Id });
   }
 
   /**
@@ -53,8 +73,10 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
    *
    * @param connection
    */
-  public static async getAll(connection: Connection): Promise<PackagingSObjects.Package2[]> {
-    return (await connection.tooling.query<PackagingSObjects.Package2>('select fields(all) from Package2'))?.records;
+  public static async list(connection: Connection): Promise<PackagingSObjects.Package2[]> {
+    return (
+      await connection.tooling.query<PackagingSObjects.Package2>(`select ${Package2Fields.toString()} from Package2`)
+    )?.records;
   }
   /**
    * Given a Salesforce ID for a package resource and the type of resource,
@@ -79,6 +101,40 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
     }
   }
 
+  /**
+   * Returns the package ID for the package alias.
+   *
+   * @returns {string} package ID
+   */
+  public getId(): string {
+    return this.packageId;
+  }
+
+  /**
+   * Returns the package type of the package.
+   *
+   * @returns {Promise<PackageType>}
+   */
+  public async getType(): Promise<PackageType> {
+    return (await this.getPackageData()).ContainerOptions;
+  }
+
+  /**
+   * Returns the list of package versions for the package.
+   *
+   * @param options
+   * @returns {Promise<PackageVersionListResult[]>}
+   */
+  public async getPackageVersions(options?: ListPackageVersionOptions): Promise<PackageVersionListResult[]> {
+    // This should be calling PackageVersion.list() here, but that method is not implemented yet.
+    const packageOptions = {
+      packages: [this.packageId],
+      connection: this.options.connection,
+    };
+
+    return (await listPackageVersions(Object.assign({}, options, packageOptions))).records;
+  }
+
   public async convert(
     pkgId: string,
     options: ConvertPackageOptions,
@@ -87,93 +143,92 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
     return await convertPackage(pkgId, this.options.connection, options, project);
   }
 
-  public create(): Promise<void> {
-    return Promise.resolve(undefined);
-  }
-
-  public delete(): Promise<void> {
-    return Promise.resolve(undefined);
-  }
-
-  public async install(
-    pkgInstallCreateRequest: PackageInstallCreateRequest,
-    options?: PackageInstallOptions
-  ): Promise<PackageInstallRequest> {
-    return installPackage(this.options.connection, pkgInstallCreateRequest, options);
-  }
-
-  public async getInstallStatus(installRequestId: string): Promise<PackageInstallRequest> {
-    return getStatus(this.options.connection, installRequestId);
+  public async delete(): Promise<PackageSaveResult> {
+    const updateResult = await this.options.connection.tooling.delete('Package2', [this.packageId]).catch((err) => {
+      throw applyErrorAction(massageErrorMessage(err as Error));
+    });
+    if (updateResult[0]?.success) {
+      throw combineSaveErrors('Package2', 'update', updateResult[0]?.errors);
+    }
+    return updateResult[0];
   }
 
   public list(): Promise<QueryResult<PackagingSObjects.Package2>> {
     return listPackages(this.options.connection);
   }
 
-  public async uninstall(
-    id: string,
-    wait: Duration
-  ): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest> {
-    return await uninstallPackage(id, this.options.connection, wait);
-  }
-
-  /**
-   * Reports on the uninstall progress of a package.
-   *
-   * @param id the 06y package uninstall request id
-   */
-  public async uninstallReport(id: string): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest> {
-    const result = (await this.options.connection.tooling.retrieve(
-      'SubscriberPackageVersionUninstallRequest',
-      id
-    )) as PackagingSObjects.SubscriberPackageVersionUninstallRequest;
-    if (result.Status === 'Error') {
-      const errorDetails = await getUninstallErrors(this.options.connection, id);
-      const errors = errorDetails.map((record, index) => `(${index + 1}) ${record.Message}`);
-      const errHeader = errors.length > 0 ? `\n=== Errors\n${errors.join('\n')}` : '';
-      const err = messages.getMessage('defaultErrorMessage', [id, result.Id]);
-
-      throw new SfError(`${err}${errHeader}`, 'UNINSTALL_ERROR', [messages.getMessage('action')]);
-    }
-    return result;
-  }
-
   public async update(options: PackageUpdateOptions): Promise<PackageSaveResult> {
     try {
-    // filter out any undefined values and their keys
-    Object.keys(options).forEach((key) => options[key] === undefined && delete options[key]);
+      // filter out any undefined values and their keys
+      Object.keys(options).forEach((key) => options[key] === undefined && delete options[key]);
 
-    const result = await this.options.connection.tooling.update('Package2', options);
-    if (!result.success) {
-      throw new SfError(result.errors.join(', '));
-    }
-    return result;
+      const result = await this.options.connection.tooling.update('Package2', options);
+      if (!result.success) {
+        throw new SfError(result.errors.join(', '));
+      }
+      return result;
     } catch (err) {
       throw applyErrorAction(massageErrorMessage(err as Error));
     }
   }
 
-  public async getPackage(packageId: string): Promise<PackagingSObjects.Package2> {
-    const package2 = await this.options.connection.tooling.sobject('Package2').retrieve(packageId);
-    return package2 as unknown as PackagingSObjects.Package2;
+  /**
+   * Returns the package data for the package.
+   *
+   * @param force force a refresh of the package data
+   */
+  public async getPackageData(force = false): Promise<PackagingSObjects.Package2> {
+    if (!this.packageData || force) {
+      this.packageData = (await this.options.connection.tooling
+        .sobject('Package2')
+        .retrieve(this.packageId)) as PackagingSObjects.Package2;
+    }
+    return this.packageData;
   }
 
-  public async getExternalSites(
-    subscriberPackageVersionId: string,
-    installationKey?: string
-  ): Promise<Optional<string[]>> {
-    return getExternalSites(this.options.connection, subscriberPackageVersionId, installationKey);
+  protected async init(): Promise<void> {
+    if (!(await this.options.project.hasPackageAliases())) {
+      throw new SfError(messages.getMessage('noPackageAliases'));
+    }
+    if (
+      [packagePrefixes.SubscriberPackageVersionId, packagePrefixes.PackageId].some((prefix) =>
+        this.options.packageAliasOrId.startsWith(prefix)
+      )
+    ) {
+      this.packageId = this.options.packageAliasOrId;
+    } else {
+      this.packageId = this.options.project.getPackageAliases()[this.options.packageAliasOrId];
+      if (!this.packageId) {
+        throw messages.createError('packageAliasNotFound', [this.options.packageAliasOrId]);
+      }
+    }
+
+    // If packageOrAliasOrId os an "0Ho" id, then we can just use it as the packageId
+    if (this.options.packageAliasOrId.startsWith(packagePrefixes.PackageId)) {
+      this.packageId = this.options.packageAliasOrId;
+      this.verifyAliasForId();
+      return Promise.resolve();
+    }
+
+    // if 04t, get the 0Ho
+    if (this.options.packageAliasOrId.startsWith(packagePrefixes.SubscriberPackageVersionId)) {
+      this.packageId = this.options.packageAliasOrId;
+      this.verifyAliasForId();
+      const result = await this.options.connection.tooling.query<PackagingSObjects.Package2Version>(
+        `select Package2Id,  from Package2Version where SubscriberPackageVersionId = '${this.packageId}'`
+      );
+      this.packageId = result.records[0].Package2Id;
+      if (!this.packageId) {
+        throw messages.createError('package2VersionNotFoundFor04t', [this.options.packageAliasOrId]);
+      }
+      this.verifyAliasForId();
+      return Promise.resolve();
+    }
   }
 
-  public async waitForPublish(
-    subscriberPackageVersionId: string,
-    timeout: number | Duration,
-    installationKey?: string
-  ): Promise<void> {
-    return waitForPublish(this.options.connection, subscriberPackageVersionId, timeout, installationKey);
-  }
-
-  protected init(): Promise<void> {
-    return Promise.resolve(undefined);
+  private verifyAliasForId(): void {
+    if (getPackageAliasesFromId(this.packageId, this.options.project).length === 0) {
+      throw new SfError(messages.getMessage('couldNotFindAliasForId', [this.packageId]));
+    }
   }
 }

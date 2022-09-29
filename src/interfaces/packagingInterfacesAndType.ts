@@ -16,25 +16,6 @@ import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 import MetadataPackageVersion = PackagingSObjects.MetadataPackageVersion;
 
-export interface IPackage {
-  create(): Promise<void>;
-  convert(
-    pkgId: string,
-    options: ConvertPackageOptions,
-    project?: SfProject
-  ): Promise<PackageVersionCreateRequestResult>;
-  delete(): Promise<void>;
-  install(
-    pkgInstallCreateRequest: PackageInstallCreateRequest,
-    options?: PackageInstallOptions
-  ): Promise<PackageInstallRequest>;
-  getInstallStatus(installRequestId: string): Promise<PackageInstallRequest>;
-  uninstall(id: string, wait: Duration): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest>;
-  update(options: PackageUpdateOptions): Promise<PackageSaveResult>;
-  waitForPublish(subscriberPackageVersionKey: string, timeout: number | Duration, installationKey?: string);
-  getExternalSites(subscriberPackageVersionKey: string, installationKey?: string);
-}
-
 export interface IPackageVersion1GP {
   create(): Promise<void>;
   convert(): Promise<void>;
@@ -57,6 +38,8 @@ export interface IPackageVersion2GP {
 
 export type PackageOptions = {
   connection: Connection;
+  project: SfProject;
+  packageAliasOrId: string;
 };
 
 export type PackageUpdateOptions = {
@@ -434,3 +417,22 @@ export const Package1VersionEvents = {
     progress: 'Package1Version/create-progress',
   },
 };
+
+export const Package2Fields = [
+  'Id',
+  'IsDeleted',
+  'CreatedDate',
+  'CreatedById',
+  'LastModifiedDate',
+  'LastModifiedById',
+  'SystemModstamp',
+  'SubscriberPackageId',
+  'Name',
+  'Description',
+  'NamespacePrefix',
+  'ContainerOptions',
+  'IsDeprecated',
+  'IsOrgDependent',
+  'ConvertedFromPackageId',
+  'PackageErrorUsername',
+];
