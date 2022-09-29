@@ -22,6 +22,7 @@ import {
 import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
 import { Many } from '@salesforce/ts-types';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
+import * as xml2js from 'xml2js';
 import { uniqid } from '../utils/uniqid';
 import * as pkgUtils from '../utils/packageUtils';
 import {
@@ -147,8 +148,10 @@ export async function createPackageVersionCreateRequest(
 ): Promise<PackagingSObjects.Package2VersionCreateRequest> {
   const uniqueId = uniqid({ template: `${packageId}-%s` });
   const packageVersTmpRoot = path.join(os.tmpdir(), uniqueId);
+  const packageVersMetadataFolder = path.join(packageVersTmpRoot, 'md-files');
   const packageVersBlobDirectory = path.join(packageVersTmpRoot, 'package-version-info');
   const settingsZipFile = path.join(packageVersBlobDirectory, 'settings.zip');
+  const metadataZipFile = path.join(packageVersBlobDirectory, 'package.zip');
   const packageVersBlobZipFile = path.join(packageVersTmpRoot, consts.PACKAGE_VERSION_INFO_FILE_ZIP);
 
   const packageDescriptorJson = {
@@ -180,6 +183,8 @@ export async function createPackageVersionCreateRequest(
   await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
   await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
 
+  fs.mkdirSync(packageVersMetadataFolder, { recursive: true });
+
   if (settingsGenerator.hasSettings()) {
     await settingsGenerator.createDeploy();
     await settingsGenerator.createDeployPackageContents('54.0');
@@ -188,6 +193,21 @@ export async function createPackageVersionCreateRequest(
       settingsZipFile
     );
   }
+
+  const shapeDirectory = `${settingsGenerator.getDestinationPath()}${path.sep}${settingsGenerator.getShapeDirName()}`;
+  const currentPackageXml = await fs.promises.readFile(path.join(shapeDirectory, 'package.xml'), 'utf8');
+
+  const packageJson = await xml2js.parseStringPromise(currentPackageXml);
+
+  // Re-write the package.xml in case profiles have been added or removed
+  const xmlBuilder = new xml2js.Builder({
+    xmldec: { version: '1.0', encoding: 'UTF-8' },
+  });
+  const xml = xmlBuilder.buildObject(packageJson);
+
+  await fs.promises.writeFile(path.join(packageVersMetadataFolder, 'package.xml'), xml, 'utf-8');
+  // Zip the packageVersMetadataFolder folder and put the zip in {packageVersBlobDirectory}/package.zip
+  await srcDevUtil.zipDir(packageVersMetadataFolder, metadataZipFile);
 
   await fs.promises.writeFile(
     path.join(packageVersBlobDirectory, consts.PACKAGE2_DESCRIPTOR_FILE),
