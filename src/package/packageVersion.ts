@@ -231,6 +231,28 @@ export class PackageVersion {
     }
   }
 
+  public static async list(
+    connection: Connection,
+    project: SfProject,
+    options: PackageVersionListOptions
+  ): Promise<PackageVersionListResult[]> {
+    // resolve/verify packages
+    const packages = options.packages.map((pkg) => {
+      const id = getPackageIdFromAlias(pkg, project);
+
+      // validate ID
+      if (id.startsWith('0Ho')) {
+        validateId(BY_LABEL.PACKAGE_ID, id);
+        return id;
+      } else {
+        throw messages.createError('errorInvalidPackageVersionId', [id]);
+      }
+    });
+    options.packages = packages;
+
+    return (await listPackageVersions({ ...options, ...{ connection } })).records;
+  }
+
   /**
    * Get the package version ID for this PackageVersion.
    *
@@ -331,10 +353,6 @@ export class PackageVersion {
 
   public install(): Promise<void> {
     return Promise.resolve(undefined);
-  }
-
-  public async list(options: PackageVersionListOptions): Promise<PackageVersionListResult[]> {
-    return (await listPackageVersions({ ...options, ...{ connection: this.connection } })).records;
   }
 
   public uninstall(): Promise<void> {
