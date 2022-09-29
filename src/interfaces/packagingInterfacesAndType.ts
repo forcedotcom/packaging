@@ -37,7 +37,7 @@ export interface IPackage {
 }
 
 export interface IPackageVersion1GP {
-  create(options: Package1VersionCreateRequest, pollingOptions): Promise<PackagingSObjects.PackageUploadRequest>;
+  getPackageVersion(id: string): Promise<MetadataPackageVersion[]>;
 }
 
 export interface IPackageVersion2GP {
@@ -323,11 +323,13 @@ export type PackageVersionCreateReportProgress = PackageVersionCreateRequestResu
   remainingWaitTime: Duration;
 };
 
-export type Package1VersionCreateRequest = Pick<PackagingSObjects.PackageUploadRequest, 'VersionName'> &
+export type Package1VersionCreateRequest = Pick<
+  PackagingSObjects.PackageUploadRequest,
+  'VersionName' | 'MetadataPackageId'
+> &
   Partial<
     Pick<
       PackagingSObjects.PackageUploadRequest,
-      | 'MetadataPackageId'
       | 'Description'
       | 'MajorVersion'
       | 'MinorVersion'

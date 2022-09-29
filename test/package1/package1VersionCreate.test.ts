@@ -14,7 +14,7 @@ import { PackageVersionEvents, PackagingSObjects } from '../../src/interfaces';
 import { Package1Version } from '../../src/package1';
 
 const options = {
-  MetadataPackageId: '0HD4p000000blVyGAI',
+  MetadataPackageId: '0334p000000blVyGAI',
   VersionName: 'Test',
   Description: 'Test',
   MajorVersion: 0,
@@ -79,8 +79,7 @@ describe('Package1 Version Create', () => {
         expect(data.pollingResult.Status).to.equal('QUEUED');
       }
     );
-    const pkg1 = new Package1Version(conn);
-    const result = await pkg1.create(options, {
+    const result = await Package1Version.create(conn, options, {
       frequency: Duration.seconds(1),
       timeout: Duration.minutes(3),
     });
@@ -96,8 +95,7 @@ describe('Package1 Version Create', () => {
     });
 
     try {
-      const pkg1 = new Package1Version(conn);
-      await pkg1.create(options, { frequency: Duration.seconds(1), timeout: Duration.minutes(3) });
+      await Package1Version.create(conn, options, { frequency: Duration.seconds(1), timeout: Duration.minutes(3) });
       assert.fail('the above should throw an error from polling');
     } catch (e) {
       expect((e as Error).message).to.equal(`Package upload failed.${os.EOL}message 1${os.EOL}message 2`);
@@ -119,8 +117,7 @@ describe('Package1 Version Create', () => {
       }
     );
     try {
-      const pkg1 = new Package1Version(conn);
-      await pkg1.create(options, {
+      await Package1Version.create(conn, options, {
         frequency: Duration.seconds(1),
         timeout: Duration.minutes(3),
       });
@@ -135,8 +132,7 @@ describe('Package1 Version Create', () => {
       retrieve: async () => queuedResult,
     });
 
-    const pkg1 = new Package1Version(conn);
-    const result = await pkg1.create(options);
+    const result = await Package1Version.create(conn, options);
     expect(result).deep.equal(queuedResult);
   });
 });

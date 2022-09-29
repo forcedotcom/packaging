@@ -35,19 +35,23 @@ const records = [
 const listResult = [
   {
     BuildNumber: 1,
+    Id: '04t46000001ZfaXXXX',
+    MajorVersion: 1,
     MetadataPackageId: '03346000000dmo4XXX',
-    MetadataPackageVersionId: '04t46000001ZfaXXXX',
+    MinorVersion: 0,
     Name: 'Summer 22',
+    PatchVersion: 3,
     ReleaseState: 'Beta',
-    Version: '1.0.3',
   },
   {
     BuildNumber: 1,
+    Id: '04t46000001ZfaXXXY',
+    MajorVersion: 1,
     MetadataPackageId: '03346000000dmo4XXX',
-    MetadataPackageVersionId: '04t46000001ZfaXXXY',
+    MinorVersion: 0,
     Name: 'Summer 22',
+    PatchVersion: 4,
     ReleaseState: 'Beta',
-    Version: '1.0.4',
   },
 ];
 
