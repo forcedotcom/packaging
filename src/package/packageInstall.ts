@@ -114,13 +114,11 @@ export async function waitForPublish(
   installationKey?: string
 ): Promise<void> {
   let queryResult: QueryResult<SubscriberPackageVersion>;
-  let count = 1;
+  let installValidationStatus: SubscriberPackageVersion['InstallValidationStatus'];
   const pollingOptions: Partial<PollingClient.Options> = {
     frequency: isNumber(frequency) ? Duration.minutes(frequency) : frequency,
     timeout: isNumber(timeout) ? Duration.minutes(timeout) : timeout,
     poll: async (): Promise<StatusResult> => {
-      // eslint-disable-next-line no-console
-      console.log(`count: ${count++}`);
       const QUERY_NO_KEY = `SELECT Id, SubscriberPackageId, InstallValidationStatus FROM SubscriberPackageVersion WHERE Id ='${subscriberPackageVersionId}'`;
 
       try {
@@ -142,18 +140,18 @@ export async function waitForPublish(
       // Continue retrying if there is no record
       // or for an InstallValidationStatus of PACKAGE_UNAVAILABLE (replication to the subscriber's instance has not completed)
       // or for an InstallValidationStatus of UNINSTALL_IN_PROGRESS
-      let installValidationStatus: SubscriberPackageVersion['InstallValidationStatus'];
+
       if (queryResult?.records?.length) {
         installValidationStatus = queryResult.records[0].InstallValidationStatus;
         await Lifecycle.getInstance().emit(PackageEvents.install['subscriber-status'], installValidationStatus);
         if (!['PACKAGE_UNAVAILABLE', 'UNINSTALL_IN_PROGRESS'].includes(installValidationStatus)) {
-          return { completed: true, payload: queryResult };
+          return { completed: true, payload: installValidationStatus };
         }
       }
       const tokens = installValidationStatus ? [` Status = ${installValidationStatus}`] : [];
       getLogger().debug(installMsgs.getMessage('publishWaitProgress', tokens));
       await Lifecycle.getInstance().emit(PackageEvents.install['subscriber-status'], installValidationStatus);
-      return { completed: false, payload: queryResult };
+      return { completed: false, payload: installValidationStatus };
     },
   };
 
@@ -167,7 +165,7 @@ export async function waitForPublish(
   } catch (e) {
     // if polling timed out
     const error = installMsgs.createError('subscriberPackageVersionNotPublished');
-    error.setData(queryResult);
+    error.setData(queryResult?.records[0]);
     if (error.stack && e.stack) {
       // append the original stack to this new error
       error.stack += `\nDUE TO:\n${(e as Error).stack}`;

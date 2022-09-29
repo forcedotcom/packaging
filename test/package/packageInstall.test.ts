@@ -416,9 +416,14 @@ describe('Package Install', () => {
   });
 
   it('should NOT emit warnings for UpgradeType and ApexCompileType of unlocked package types', async () => {
+    $$.SANDBOX.stub(PackageVersion.prototype, 'getPackageType').resolves('Unlocked');
     const overrides = { UpgradeType: 'deprecate-only', ApexCompileType: 'package' };
     const inProgressPIR = Object.assign({}, pkgInstallRequest, { Status: 'IN_PROGRESS' }, overrides);
-    retrieveStub = $$.SANDBOX.stub(connection.tooling, 'retrieve').onFirstCall().resolves(inProgressPIR);
+    retrieveStub = $$.SANDBOX.stub(connection.tooling, 'retrieve')
+      .onFirstCall()
+      .resolves(inProgressPIR)
+      .onSecondCall()
+      .resolves(inProgressPIR);
     const picRequest = Object.assign({}, pkgInstallCreateRequest, pkgInstallCreateRequestDefaults, overrides);
     const pkg = new PackageVersion({ idOrAlias: myPackageVersion04t, connection, project });
     const result = await pkg.install(picRequest);
@@ -430,7 +435,7 @@ describe('Package Install', () => {
     expect(createArgs[1]).to.deep.equal(picRequest);
 
     // verify correct connection.tooling.retrieve() calls
-    expect(retrieveStub.calledOnce).to.be.true;
+    expect(retrieveStub.calledTwice).to.be.true;
     const retrieveArgs = retrieveStub.args[0];
     expect(retrieveArgs[0]).to.equal('PackageInstallRequest');
     expect(retrieveArgs[1]).to.equal(pkgInstallRequestId);
@@ -442,52 +447,32 @@ describe('Package Install', () => {
     expect(lifecycleStub.callCount).to.equal(2);
     expect(lifecycleStub.args[0][0]).to.equal('Package/install-presend');
     expect(lifecycleStub.args[1][0]).to.equal('Package/install-postsend');
-
-    expect(queryStub.called).to.be.true;
   });
 
   it('should report polling timeout', async () => {
-    const inProgressPIR = Object.assign({}, pkgInstallRequest, { Status: 'IN_PROGRESS' });
-    retrieveStub = $$.SANDBOX.stub(connection.tooling, 'retrieve').resolves(inProgressPIR);
-    const pkg = new PackageVersion({ idOrAlias: myPackageVersion04t, connection, project });
-    const installOptions: PackageInstallOptions = {
-      pollingFrequency: Duration.milliseconds(5),
-      pollingTimeout: Duration.milliseconds(50),
-    };
-
-    try {
-      await pkg.install(pkgInstallCreateRequest, installOptions);
-      expect(false, 'Expected timeout error to be thrown').to.be.true;
-    } catch (err) {
-      expect(err.name).to.equal('PackageInstallTimeout');
-      expect(err.data).to.deep.equal(inProgressPIR);
-    }
-
-    expect(toolingCreateStub.calledOnce).to.be.true;
-
-    // verify we polled
-    expect(retrieveStub.callCount).to.be.greaterThan(2);
-  });
-
-  it('should report publish polling timeout', async () => {
     const queryResult = { InstallValidationStatus: 'PACKAGE_UNAVAILABLE' };
     queryStub.restore();
-    queryStub = $$.SANDBOX.stub(connection.tooling, 'retrieve').resolves(queryResult);
+    queryStub = $$.SANDBOX.stub(connection.tooling, 'query').resolves({
+      done: true,
+      totalSize: 1,
+      records: [{ InstallValidationStatus: 'PACKAGE_UNAVAILABLE' }],
+    });
     const millis5 = Duration.milliseconds(5);
     const millis50 = Duration.milliseconds(50);
-    const millisStub = $$.SANDBOX.stub(Duration, 'milliseconds').callsFake(() => millis5);
 
     const pkg = new PackageVersion({ idOrAlias: myPackageVersion04t, connection, project });
     const SubscriberPackageVersionKey = pkgInstallCreateRequest.SubscriberPackageVersionKey;
     try {
-      await pkg.getInstallStatus(SubscriberPackageVersionKey, null, { pollingTimeout: millis50 });
+      await pkg.getInstallStatus(SubscriberPackageVersionKey, null, {
+        pollingFrequency: millis5,
+        pollingTimeout: millis50,
+      });
       expect(false, 'Expected timeout error to be thrown').to.be.true;
     } catch (err) {
       expect(err.name).to.equal('SubscriberPackageVersionNotPublishedError');
       expect(err.data).to.deep.equal(queryResult);
     }
 
-    expect(millisStub.called).to.be.true;
     expect(queryStub.callCount).to.be.greaterThan(2);
   });
   describe('isErrorPackageNotAvailable', () => {

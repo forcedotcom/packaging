@@ -520,13 +520,14 @@ export class PackageVersion {
     const id = typeof packageInstallRequestOrId === 'string' ? packageInstallRequestOrId : packageInstallRequestOrId.Id;
     const packageInstallRequest =
       typeof packageInstallRequestOrId === 'string' ? await getStatus(this.connection, id) : packageInstallRequestOrId;
-    if (!options || options.pollingTimeout > 0) {
+    if (!options || options.pollingTimeout <= 0) {
       return packageInstallRequest;
     } else {
+      const pollingFrequency = options.pollingFrequency || Duration.milliseconds(10000);
       await waitForPublish(
         this.connection,
         packageInstallRequest.SubscriberPackageVersionKey,
-        options.pollingFrequency,
+        pollingFrequency,
         options.pollingTimeout,
         packageInstallRequest.Password
       );

@@ -7,8 +7,9 @@
 import * as os from 'os';
 
 import { Connection, Messages, NamedPackageDir, PackageDir, SfdcUrl, SfError, SfProject } from '@salesforce/core';
-import { Many, Nullable, Optional } from '@salesforce/ts-types';
+import { isNumber, Many, Nullable, Optional } from '@salesforce/ts-types';
 import { SaveError } from 'jsforce';
+import { Duration } from '@salesforce/kit';
 import { PackageType, PackagingSObjects } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
@@ -501,4 +502,13 @@ export function combineSaveErrors(sObject: string, crudOperation: string, errors
     return `Error: ${error.errorCode} Message: ${error.message} ${fieldsString}`;
   });
   return messages.createError('errorDuringSObjectCRUDOperation', [crudOperation, sObject, errorMessages.join(os.EOL)]);
+}
+
+/**
+ * Returns a Duration object from param duration when it is a number, otherwise return itself
+ *
+ * @param duration = number of milliseconds or Duration object
+ */
+export function numberToDuration(duration: number | Duration): Duration {
+  return isNumber(duration) ? Duration.milliseconds(duration) : duration;
 }
