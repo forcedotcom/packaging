@@ -22,7 +22,6 @@ import {
 import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
 import { Many } from '@salesforce/ts-types';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
-import * as xml2js from 'xml2js';
 import { uniqid } from '../utils/uniqid';
 import * as pkgUtils from '../utils/packageUtils';
 import {
