@@ -53,11 +53,10 @@ export class Package1Version implements IPackageVersion1GP {
       });
       return pollingClient.subscribe<PackagingSObjects.PackageUploadRequest>();
     } else {
-      return createRequest as unknown as PackagingSObjects.PackageUploadRequest;
-      // // jsforce templates weren't working when setting the type to PackageUploadRequest, so we have to cast `as unknown as PackagingSObjects.PackageUploadRequest`
-      // return (await connection.tooling
-      //   .sobject('PackageUploadRequest')
-      //   .retrieve(createRequest.id)) as unknown as PackagingSObjects.PackageUploadRequest;
+      // jsforce templates weren't working when setting the type to PackageUploadRequest, so we have to cast `as unknown as PackagingSObjects.PackageUploadRequest`
+      return (await connection.tooling
+        .sobject('PackageUploadRequest')
+        .retrieve(createRequest.id)) as unknown as PackagingSObjects.PackageUploadRequest;
     }
   }
 
