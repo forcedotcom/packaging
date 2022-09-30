@@ -35,6 +35,7 @@ const logger = Logger.childFromRoot('packageVersionList');
 export async function listPackageVersions(
   options: ListPackageVersionOptions
 ): Promise<QueryResult<PackageVersionListResult>> {
+  // TODO: replaces with connection.autoFetchQuery w/ tooling enabled
   return options.connection.tooling.query<PackageVersionListResult>(constructQuery(options));
 }
 

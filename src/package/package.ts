@@ -4,12 +4,10 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import { Connection, Messages, sfdc, SfError, SfProject } from '@salesforce/core';
-import { AsyncCreatable } from '@salesforce/kit';
+import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
 import {
   PackageOptions,
   PackagingSObjects,
-  PackageIdType,
   ConvertPackageOptions,
   PackageVersionCreateRequestResult,
   PackageSaveResult,
@@ -50,13 +48,16 @@ const messages = Messages.loadMessages('@salesforce/packaging', 'package');
  * This class provides the base implementation for a package.
  * To create a new instance of a package, use the static async Package.create({connection, project, packageOrAliasId}) method.
  */
-export class Package extends AsyncCreatable<PackageOptions> {
+export class Package {
   private packageId: string;
   private packageData: PackagingSObjects.Package2;
   public constructor(private options: PackageOptions) {
-    super(options);
+    this.init();
   }
 
+  public static async create(options: PackageOptions): Promise<Package> {
+    return new Package(options);
+  }
   /**
    * Create a new package.
    *
@@ -84,28 +85,6 @@ export class Package extends AsyncCreatable<PackageOptions> {
       await connection.tooling.query<PackagingSObjects.Package2>(`select ${Package2Fields.toString()} from Package2`)
     )?.records;
   }
-  /**
-   * Given a Salesforce ID for a package resource and the type of resource,
-   * ensures the ID is valid.
-   *
-   * Valid ID types and prefixes for packaging resources:
-   * 1. package ID (0Ho)
-   * 2. subscriber package version ID (04t)
-   * 3. package install request ID (0Hf)
-   * 4. package uninstall request ID (06y)
-   *
-   * @param id Salesforce ID for a specific package resource
-   * @param type The type of package ID
-   */
-  public static validateId(id: string, type: PackageIdType): void {
-    const prefix = packagePrefixes[type];
-    if (!id.startsWith(prefix)) {
-      throw messages.createError('invalidPackageId', [type, id, prefix]);
-    }
-    if (!sfdc.validateSalesforceId(id)) {
-      throw messages.createError('invalidIdLength', [type, id]);
-    }
-  }
 
   public static async listVersions(
     connection: Connection,
@@ -124,9 +103,19 @@ export class Package extends AsyncCreatable<PackageOptions> {
         throw messages.createError('errorInvalidPackageVersionId', [id]);
       }
     });
-    options.packages = packages || [];
+    const opts = options || ({} as PackageVersionListOptions);
+    opts.packages = packages || [];
 
-    return (await listPackageVersions({ ...options, ...{ connection } })).records;
+    return (await listPackageVersions({ ...opts, ...{ connection } })).records;
+  }
+
+  public static async convert(
+    pkgId: string,
+    connection: Connection,
+    options: ConvertPackageOptions,
+    project?: SfProject
+  ): Promise<PackageVersionCreateRequestResult> {
+    return await convertPackage(pkgId, connection, options, project);
   }
 
   /**
@@ -163,14 +152,6 @@ export class Package extends AsyncCreatable<PackageOptions> {
       ...packageOptions,
       ...options,
     } as PackageVersionListOptions);
-  }
-
-  public async convert(
-    pkgId: string,
-    options: ConvertPackageOptions,
-    project?: SfProject
-  ): Promise<PackageVersionCreateRequestResult> {
-    return await convertPackage(pkgId, this.options.connection, options, project);
   }
 
   public async delete(): Promise<PackageSaveResult> {
@@ -212,43 +193,20 @@ export class Package extends AsyncCreatable<PackageOptions> {
     return this.packageData;
   }
 
-  protected async init(): Promise<void> {
-    if (!(await this.options.project.hasPackageAliases())) {
-      throw new SfError(messages.getMessage('noPackageAliases'));
-    }
-    if (
-      [packagePrefixes.SubscriberPackageVersionId, packagePrefixes.PackageId].some((prefix) =>
-        this.options.packageAliasOrId.startsWith(prefix)
-      )
-    ) {
-      this.packageId = this.options.packageAliasOrId;
-    } else {
-      this.packageId = this.options.project.getPackageAliases()[this.options.packageAliasOrId];
-      if (!this.packageId) {
+  protected init(): void {
+    let packageId = this.options.packageAliasOrId;
+    if (!packageId.startsWith(packagePrefixes.PackageId)) {
+      packageId = getPackageIdFromAlias(this.options.packageAliasOrId, this.options.project);
+      if (packageId === this.options.packageAliasOrId) {
         throw messages.createError('packageAliasNotFound', [this.options.packageAliasOrId]);
       }
     }
 
-    // If packageOrAliasOrId os an "0Ho" id, then we can just use it as the packageId
-    if (this.options.packageAliasOrId.startsWith(packagePrefixes.PackageId)) {
-      this.packageId = this.options.packageAliasOrId;
+    if (packageId.startsWith(packagePrefixes.PackageId)) {
+      this.packageId = packageId;
       this.verifyAliasForId();
-      return Promise.resolve();
-    }
-
-    // if 04t, get the 0Ho
-    if (this.options.packageAliasOrId.startsWith(packagePrefixes.SubscriberPackageVersionId)) {
-      this.packageId = this.options.packageAliasOrId;
-      this.verifyAliasForId();
-      const result = await this.options.connection.tooling.query<PackagingSObjects.Package2Version>(
-        `select Package2Id,  from Package2Version where SubscriberPackageVersionId = '${this.packageId}'`
-      );
-      this.packageId = result.records[0].Package2Id;
-      if (!this.packageId) {
-        throw messages.createError('package2VersionNotFoundFor04t', [this.options.packageAliasOrId]);
-      }
-      this.verifyAliasForId();
-      return Promise.resolve();
+    } else {
+      throw messages.createError('invalidPackageId', [this.options.packageAliasOrId, packagePrefixes.PackageId]);
     }
   }
 

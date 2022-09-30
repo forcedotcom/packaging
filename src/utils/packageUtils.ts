@@ -461,7 +461,7 @@ export function getPackageAliasesFromId(packageId: string, project: SfProject): 
  * @param packageId the 0Ho id
  * @private
  */
-// TODO: SfProjectJson.addPackageAlias
+// TODO: move sfProject
 export async function generatePackageAliasEntry(
   connection: Connection,
   project: SfProject,

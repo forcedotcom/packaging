@@ -181,7 +181,7 @@ export class PackageVersion {
    * @param options PackageVersionCreateRequestQueryOptions
    * @returns the list of package version create requests.
    */
-  public static async createdList(
+  public static async getPackageVersionCreateRequests(
     connection: Connection,
     options?: PackageVersionCreateRequestQueryOptions
   ): Promise<PackageVersionCreateRequestResult[]> {

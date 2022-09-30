@@ -201,14 +201,14 @@ describe('Integration tests for @salesforce/packaging library', function () {
       }
     });
 
-    it('verifies the package version create request is in dev hub via PackageVersion.createdList', async () => {
-      const result = await PackageVersion.createdList(devHubOrg.getConnection());
+    it('verifies the package version create request is in dev hub via PackageVersion.getPackageVersionCreateRequests', async () => {
+      const result = await PackageVersion.getPackageVersionCreateRequests(devHubOrg.getConnection());
 
       expect(result).to.have.length.at.least(1);
       result.forEach((item) => expect(item).to.have.all.keys(VERSION_CREATE_RESPONSE_KEYS));
       expect(
         result.filter((item) => item.Id === pkgCreateVersionRequestId),
-        `Did not find Package2CreateVersionRequestId '${pkgCreateVersionRequestId}' in 'PackageVersion.createdList' result`
+        `Did not find Package2CreateVersionRequestId '${pkgCreateVersionRequestId}' in 'PackageVersion.getPackageVersionCreateRequests' result`
       ).to.have.length(1);
     });
 
@@ -221,7 +221,6 @@ describe('Integration tests for @salesforce/packaging library', function () {
 
     it('package version should be in results of static Package#listVersions', async () => {
       const pkgVersions = await Package.listVersions(devHubOrg.getConnection(), project);
-      expect(pkgVersions).to.have.length(1);
       expect(pkgVersions.some((pvlr) => pvlr.SubscriberPackageVersionId === subscriberPkgVersionId)).to.be.true;
     });
 
@@ -297,7 +296,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
     });
 
     it('will list all of the created package versions', async () => {
-      const result = await PackageVersion.createdList(devHubOrg.getConnection());
+      const result = await PackageVersion.getPackageVersionCreateRequests(devHubOrg.getConnection());
       expect(result).to.have.length.at.least(1);
       expect(result[0]).to.have.all.keys(
         'Id',
@@ -319,7 +318,9 @@ describe('Integration tests for @salesforce/packaging library', function () {
     });
 
     it('will list all of the created package versions (status = error)', async () => {
-      const result = await PackageVersion.createdList(devHubOrg.getConnection(), { status: 'Success' });
+      const result = await PackageVersion.getPackageVersionCreateRequests(devHubOrg.getConnection(), {
+        status: 'Success',
+      });
       result.map((res) => {
         // we should've filtered to only successful package versions1
         expect(res.Status).to.equal('Success');
@@ -327,7 +328,9 @@ describe('Integration tests for @salesforce/packaging library', function () {
     });
 
     it('will list all of the created package versions (createdLastDays = 3)', async () => {
-      const result = await PackageVersion.createdList(devHubOrg.getConnection(), { createdlastdays: 3 });
+      const result = await PackageVersion.getPackageVersionCreateRequests(devHubOrg.getConnection(), {
+        createdlastdays: 3,
+      });
       expect(result).to.have.length.at.least(1);
       expect(result[0]).to.have.all.keys(
         'Id',

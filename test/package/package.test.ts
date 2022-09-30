@@ -50,39 +50,15 @@ describe('Package', () => {
     restoreContext($$);
   });
 
-  describe('validateId', () => {
-    it('should not throw for valid PackageId', async () => {
-      Package.validateId('0Ho6A000002zgKSQAY', 'PackageId');
-    });
-    it('should not throw for valid PackageInstallRequestId', async () => {
-      Package.validateId('0Hf1h0000006runCAA', 'PackageInstallRequestId');
-    });
-    it('should not throw for valid PackageUninstallRequestId', async () => {
-      Package.validateId('06y6A000002zgKSQAY', 'PackageUninstallRequestId');
-    });
-    it('should not throw for valid SubscriberPackageVersionId', async () => {
-      Package.validateId('04t6A000002zgKSQAY', 'SubscriberPackageVersionId');
-    });
-    it('should throw for invalid ID length', async () => {
-      const msg = 'The PackageId: [0Ho6A000002zgKSQ] is invalid. It must be either 15 or 18 characters.';
-      expect(() => Package.validateId('0Ho6A000002zgKSQ', 'PackageId')).to.throw(msg);
-    });
-    it('should throw for invalid ID prefix', async () => {
-      const msg = 'The PackageId: [04t6A000002zgKSQAY] is invalid. It must start with "0Ho"';
-      expect(() => Package.validateId('04t6A000002zgKSQAY', 'PackageId')).to.throw(msg);
-    });
-  });
   describe('instantiate package', () => {
     it('should fail to create a new package - no package aliases', async () => {
       $$.inProject(true);
       const project = await setupProject();
-      const pkg = new Package({ connection: undefined, packageAliasOrId: '0hoasdfsdfasd', project });
       try {
-        // @ts-ignore
-        await pkg.init();
+        new Package({ connection: undefined, packageAliasOrId: '0hoasdfsdfasd', project });
         expect.fail('Should have thrown an error');
       } catch (e) {
-        expect(e.message).to.equal("The project doesn't have any package aliases.");
+        expect(e.message).to.equal('Package alias 0hoasdfsdfasd not found in project.');
       }
     });
     it('should fail to create a new package - alias not found', async () => {
@@ -90,10 +66,8 @@ describe('Package', () => {
       project = await setupProject((p) => {
         p.getSfProjectJson().set('packageAliases', { MyName: 'somePackage' });
       });
-      const pkg = new Package({ connection: undefined, packageAliasOrId: 'mypkgalias', project });
       try {
-        // @ts-ignore
-        await pkg.init();
+        new Package({ connection: undefined, packageAliasOrId: 'mypkgalias', project });
         expect.fail('Should have thrown an error');
       } catch (e) {
         expect(e.message).to.equal('Package alias mypkgalias not found in project.');
@@ -106,7 +80,7 @@ describe('Package', () => {
       });
       const pkg = new Package({ connection: undefined, packageAliasOrId: 'mypkgalias', project });
       // @ts-ignore
-      await pkg.init();
+      pkg.init();
       expect(pkg.getId()).to.equal('0Hoasdsadfasdf');
     });
     it('should create a new package - from 0Ho', async () => {
@@ -115,11 +89,9 @@ describe('Package', () => {
         p.getSfProjectJson().set('packageAliases', { mypkgalias: '0Hoasdsadfasdf' });
       });
       const pkg = new Package({ connection: undefined, packageAliasOrId: '0Hoasdsadfasdf', project });
-      // @ts-ignore
-      await pkg.init();
       expect(pkg.getId()).to.equal('0Hoasdsadfasdf');
     });
-    it('should create a new package - from 04t', async () => {
+    it('should not create a new package - from 04t', async () => {
       $$.inProject(true);
       project = await setupProject((p) => {
         p.getSfProjectJson().set('packageAliases', {
@@ -127,22 +99,16 @@ describe('Package', () => {
           mypkgalias: '0Hoasdsadfasdf',
         });
       });
-      const conn = {
-        tooling: {
-          query: () => {
-            return { records: [{ Package2Id: '0Hoasdsadfasdf' }] };
-          },
-        },
-      } as unknown as Connection;
 
-      const pkg = new Package({
-        connection: conn,
-        packageAliasOrId: '04tasdsadfasdf',
-        project,
-      });
-      // @ts-ignore
-      await pkg.init();
-      expect(pkg.getId()).to.equal('0Hoasdsadfasdf');
+      try {
+        new Package({
+          connection: undefined,
+          packageAliasOrId: '04tasdsadfasdf',
+          project,
+        });
+      } catch (e) {
+        expect(e.message).to.equal('Package alias 04tasdsadfasdf not found in project.');
+      }
     });
   });
   describe('lazy load package data', () => {
@@ -165,7 +131,7 @@ describe('Package', () => {
 
       const pkg = new Package({ connection: conn, packageAliasOrId: '0Hoasdsadfasdf', project });
       // @ts-ignore
-      await pkg.init();
+      pkg.init();
       expect(pkg['packageData']).to.not.be.ok;
       expect(pkg.getId()).to.equal('0Hoasdsadfasdf');
       expect(await pkg.getType()).to.equal('Unlocked');

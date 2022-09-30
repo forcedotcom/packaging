@@ -24,7 +24,7 @@ const QUERY =
   'CreatedDate, Package2Version.HasMetadataRemoved, CreatedById ' +
   'FROM Package2VersionCreateRequest ' +
   '%s' + // WHERE, if applicable
-  'ORDER BY CreatedDate';
+  'ORDER BY CreatedDate desc';
 const ERROR_QUERY = "SELECT Message FROM Package2VersionCreateRequestError WHERE ParentRequest.Id = '%s'";
 
 function formatDate(date: Date): string {
@@ -62,6 +62,7 @@ async function query(query: string, connection: Connection): Promise<PackageVers
   type QueryRecord = PackagingSObjects.Package2VersionCreateRequest & {
     Package2Version: Pick<PackagingSObjects.Package2Version, 'HasMetadataRemoved' | 'SubscriberPackageVersionId'>;
   };
+  // TODO: use connection.autoFetchQuery - tooling enabled
   const queryResult = await connection.tooling.query<QueryRecord>(query);
   return (queryResult.records ? queryResult.records : []).map((record) => ({
     Id: record.Id,
@@ -98,6 +99,9 @@ async function _queryErrors(
 function _constructWhere(options?: PackageVersionCreateRequestQueryOptions): string {
   const where: string[] = [];
 
+  if (options?.id) {
+    where.push(`Id = '${options.id}'`);
+  }
   // filter on created date, days ago: 0 for today, etc
   if (options?.createdlastdays) {
     if (options.createdlastdays < 0) {

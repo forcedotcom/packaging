@@ -291,6 +291,7 @@ export type PackageVersionCreateRequestQueryOptions = {
   createdlastdays?: number;
   connection?: Connection;
   status?: 'Queued' | 'InProgress' | 'Success' | 'Error';
+  id?: string;
 };
 
 export type ProfileApiOptions = {
