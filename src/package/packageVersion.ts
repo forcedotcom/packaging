@@ -115,7 +115,7 @@ export class PackageVersion {
     const pvc = new PackageVersionCreate({ ...options });
     const createResult = await pvc.createPackageVersion();
 
-    return await PackageVersion.pollCreateStatus(createResult.Id, options.connection, options.project, polling).catch(
+    return PackageVersion.pollCreateStatus(createResult.Id, options.connection, options.project, polling).catch(
       (err: Error) => {
         // TODO
         // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
@@ -133,7 +133,7 @@ export class PackageVersion {
     createPackageRequestId: string,
     connection: Connection
   ): Promise<PackageVersionCreateRequestResult> {
-    return await getCreatePackageVersionCreateRequestReport({
+    return getCreatePackageVersionCreateRequestReport({
       createPackageVersionRequestId: createPackageRequestId,
       connection,
     }).catch((err: Error) => {
@@ -224,7 +224,7 @@ export class PackageVersion {
     });
 
     try {
-      return pollingClient.subscribe<PackageVersionCreateRequestResult>();
+      return await pollingClient.subscribe<PackageVersionCreateRequestResult>();
     } catch (err) {
       await Lifecycle.getInstance().emit(PackageVersionEvents.create['timed-out'], report);
       throw applyErrorAction(err as Error);

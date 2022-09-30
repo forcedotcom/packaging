@@ -253,11 +253,9 @@ export async function waitForPublish(
         // against InstallationKey, otherwise surface the error.
         if (e instanceof Error && isErrorFromSPVQueryRestriction(e)) {
           queryResult = await connection.tooling.query<SubscriberPackageVersion>(QUERY_NO_KEY);
-        } else {
-          if (e instanceof Error && !isErrorPackageNotAvailable(e)) {
+        } else if (e instanceof Error && !isErrorPackageNotAvailable(e)) {
             throw e;
           }
-        }
       }
 
       // Continue retrying if there is no record
