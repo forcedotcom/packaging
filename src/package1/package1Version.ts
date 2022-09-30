@@ -138,10 +138,10 @@ export class Package1Version implements IPackageVersion1GP {
   }
 
   /**
-   * Executes server-side logic for the package1:display command
+   * Queries the org for the package version with the given ID
    */
   public async getPackageVersion(): Promise<MetadataPackageVersion[]> {
-    const query = `SELECT Id,MetadataPackageId,Name,ReleaseState,MajorVersion,MinorVersion,PatchVersion,BuildNumber FROM MetadataPackageVersion WHERE id = '${this.id}'`;
+    const query = `SELECT Id, MetadataPackageId, Name, ReleaseState, MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM MetadataPackageVersion WHERE id = '${this.id}'`;
     return (await this.connection.tooling.query<PackagingSObjects.MetadataPackageVersion>(query)).records;
   }
 }

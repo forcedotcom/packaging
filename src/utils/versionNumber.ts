@@ -26,6 +26,11 @@ export class VersionNumber {
     public build: string | number
   ) {}
 
+  /**
+   * Separates at major.minor string into {major: Number, minor: Number} object
+   *
+   * @param versionString a string in the format of major.minor like '3.2'
+   */
   public static parseMajorMinor(versionString: string): { major: number; minor: number } {
     const versions = versionString?.split('.');
     if (!versions) {
