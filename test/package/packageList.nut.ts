@@ -208,7 +208,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
       result.forEach((item) => expect(item).to.have.all.keys(VERSION_CREATE_RESPONSE_KEYS));
       expect(
         result.filter((item) => item.Id === pkgCreateVersionRequestId),
-        `Did not find Package2CreateVersionRequestId '${pkgCreateVersionRequestId}' in 'PackageVersion.createdList' result`
+        `Did not find Package2CreateVersionRequestId '${pkgCreateVersionRequestId}' in 'force:package:version:create:list' result`
       ).to.have.length(1);
     });
 

@@ -7,12 +7,7 @@
 export * from './package';
 export * from './packageInstall';
 export * from './packageVersion';
-export * from './packageList';
 export * from './packageVersionCreateRequest';
-export { listPackageVersions } from './packageVersionList';
-export { createPackage } from './packageCreate';
-export { deletePackage } from './packageDelete';
-export { uninstallPackage } from './packageUninstall';
 export * from './packageInstalledList';
 export * from './packageVersionCreateRequestReport';
 export * from './packageAncestry';

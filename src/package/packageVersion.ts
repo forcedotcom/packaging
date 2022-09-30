@@ -27,8 +27,6 @@ import {
   PackageVersionCreateRequestQueryOptions,
   PackageVersionCreateRequestResult,
   PackageVersionEvents,
-  PackageVersionListOptions,
-  PackageVersionListResult,
   PackageVersionOptions,
   PackageVersionReportResult,
   PackageVersionUpdateOptions,
@@ -47,7 +45,6 @@ import {
 import { PackageVersionCreate } from './packageVersionCreate';
 import { getPackageVersionReport } from './packageVersionReport';
 import { getCreatePackageVersionCreateRequestReport } from './packageVersionCreateRequestReport';
-import { listPackageVersions } from './packageVersionList';
 import { list } from './packageVersionCreateRequest';
 import { getUninstallErrors, uninstallPackage } from './packageUninstall';
 import {
@@ -506,8 +503,7 @@ export class PackageVersion {
     const pkgVersionInstallRequest = await createPackageInstallRequest(
       this.connection,
       pkgInstallCreateRequest,
-      await this.getPackageType(),
-      options
+      await this.getPackageType()
     );
     return this.getInstallStatus(pkgVersionInstallRequest.Id, pkgInstallCreateRequest.Password, options);
   }
@@ -535,20 +531,10 @@ export class PackageVersion {
     }
   }
 
-  public async list(options: PackageVersionListOptions): Promise<PackageVersionListResult[]> {
-    try {
-      return (await listPackageVersions({ ...options, ...{ connection: this.connection } })).records;
-    } catch (err) {
-      throw applyErrorAction(massageErrorMessage(err as Error));
-    }
-  }
-
   public async uninstall(
-    id: string,
-    connection: Connection,
-    wait: Duration
+    wait: Duration = Duration.milliseconds(0)
   ): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest> {
-    return await uninstallPackage(await this.getSubscriberId(), connection, wait);
+    return await uninstallPackage(await this.getSubscriberId(), this.connection, wait);
   }
 
   public async promote(): Promise<PackageSaveResult> {

@@ -10,13 +10,7 @@ import { isNumber } from '@salesforce/ts-types';
 import { QueryResult } from 'jsforce';
 import { Duration } from '@salesforce/kit';
 import { escapeInstallationKey } from '../utils';
-import {
-  PackagingSObjects,
-  PackageInstallOptions,
-  PackageInstallCreateRequest,
-  PackageEvents,
-  PackageType,
-} from '../interfaces';
+import { PackagingSObjects, PackageInstallCreateRequest, PackageEvents, PackageType } from '../interfaces';
 
 import SubscriberPackageVersion = PackagingSObjects.SubscriberPackageVersion;
 import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
@@ -35,8 +29,7 @@ const getLogger = (): Logger => {
 export async function createPackageInstallRequest(
   connection: Connection,
   pkgInstallCreateRequest: PackageInstallCreateRequest,
-  packageType: PackageType,
-  options?: PackageInstallOptions
+  packageType: PackageType
 ): Promise<PackagingSObjects.PackageInstallRequest> {
   const defaults = {
     ApexCompileType: 'all',

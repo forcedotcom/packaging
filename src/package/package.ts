@@ -6,7 +6,6 @@
  */
 import { Connection, Messages, sfdc, SfError, SfProject } from '@salesforce/core';
 import { AsyncCreatable } from '@salesforce/kit';
-import { QueryResult } from 'jsforce';
 import {
   PackageOptions,
   PackagingSObjects,
@@ -17,13 +16,20 @@ import {
   PackageUpdateOptions,
   PackageType,
   PackageCreateOptions,
-  ListPackageVersionOptions,
   PackageVersionListResult,
   Package2Fields,
+  PackageVersionListOptions,
 } from '../interfaces';
-import { applyErrorAction, combineSaveErrors, getPackageAliasesFromId, massageErrorMessage } from '../utils';
+import {
+  applyErrorAction,
+  BY_LABEL,
+  combineSaveErrors,
+  getPackageAliasesFromId,
+  getPackageIdFromAlias,
+  massageErrorMessage,
+  validateId,
+} from '../utils';
 import { createPackage } from './packageCreate';
-import { listPackages } from './packageList';
 
 import { convertPackage } from './packageConvert';
 import { listPackageVersions } from './packageVersionList';
@@ -101,6 +107,28 @@ export class Package extends AsyncCreatable<PackageOptions> {
     }
   }
 
+  public static async listVersions(
+    connection: Connection,
+    project: SfProject,
+    options?: PackageVersionListOptions
+  ): Promise<PackageVersionListResult[]> {
+    // resolve/verify packages
+    const packages = options?.packages.map((pkg) => {
+      const id = getPackageIdFromAlias(pkg, project);
+
+      // validate ID
+      if (id.startsWith('0Ho')) {
+        validateId(BY_LABEL.PACKAGE_ID, id);
+        return id;
+      } else {
+        throw messages.createError('errorInvalidPackageVersionId', [id]);
+      }
+    });
+    options.packages = packages || [];
+
+    return (await listPackageVersions({ ...options, ...{ connection } })).records;
+  }
+
   /**
    * Returns the package ID for the package alias.
    *
@@ -125,14 +153,16 @@ export class Package extends AsyncCreatable<PackageOptions> {
    * @param options
    * @returns {Promise<PackageVersionListResult[]>}
    */
-  public async getPackageVersions(options?: ListPackageVersionOptions): Promise<PackageVersionListResult[]> {
+  public async getPackageVersions(options?: PackageVersionListOptions): Promise<PackageVersionListResult[]> {
     // This should be calling PackageVersion.list() here, but that method is not implemented yet.
     const packageOptions = {
       packages: [this.packageId],
-      connection: this.options.connection,
     };
 
-    return (await listPackageVersions(Object.assign({}, options, packageOptions))).records;
+    return Package.listVersions(this.options.connection, this.options.project, {
+      ...packageOptions,
+      ...options,
+    } as PackageVersionListOptions);
   }
 
   public async convert(
@@ -151,10 +181,6 @@ export class Package extends AsyncCreatable<PackageOptions> {
       throw combineSaveErrors('Package2', 'update', updateResult[0]?.errors);
     }
     return updateResult[0];
-  }
-
-  public list(): Promise<QueryResult<PackagingSObjects.Package2>> {
-    return listPackages(this.options.connection);
   }
 
   public async update(options: PackageUpdateOptions): Promise<PackageSaveResult> {

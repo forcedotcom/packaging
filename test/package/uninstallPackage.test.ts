@@ -10,7 +10,7 @@ import { expect } from 'chai';
 import { Connection, Lifecycle, SfError } from '@salesforce/core';
 import { assert } from 'sinon';
 import { PackageEvents, PackagingSObjects } from '../../src/interfaces';
-import { uninstallPackage } from '../../src/package';
+import { uninstallPackage } from '../../src/package/packageUninstall';
 
 const packageId = '04t4p000002BaHYXXX';
 
