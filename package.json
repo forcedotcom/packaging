@@ -55,7 +55,7 @@
     "xml2js": "^0.4.23"
   },
   "devDependencies": {
-    "@salesforce/cli-plugins-testkit": "^2.4.1",
+    "@salesforce/cli-plugins-testkit": "^2.5.2",
     "@salesforce/dev-config": "^3.0.1",
     "@salesforce/dev-scripts": "^2.0.4",
     "@salesforce/prettier-config": "^0.0.2",
@@ -64,11 +64,11 @@
     "@types/globby": "^9.1.0",
     "@types/jszip": "^3.4.1",
     "@types/xml2js": "^0.4.11",
-    "@typescript-eslint/eslint-plugin": "^5.27.1",
-    "@typescript-eslint/parser": "5.27.1",
+    "@typescript-eslint/eslint-plugin": "^5.38.1",
+    "@typescript-eslint/parser": "5.38.1",
     "chai": "^4.3.6",
     "commitizen": "^4.2.4",
-    "eslint": "^8.17.0",
+    "eslint": "^8.24.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-config-salesforce": "^0.1.6",
     "eslint-config-salesforce-license": "^0.1.6",
