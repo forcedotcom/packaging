@@ -24,7 +24,17 @@ const messages = Messages.loadMessages('@salesforce/packaging', 'package1Version
  * implementation examples can be seen here: https://github.com/salesforcecli/plugin-packaging/tree/main/src/commands/force/package1/
  */
 export class Package1Version implements IPackageVersion1GP {
-  public constructor(private connection: Connection) {}
+  /**
+   * Package1Version Constructor - Class to be used with 1st generation package versions
+   *
+   * @param connection: Connection to the org
+   * @param id: 04t ID of the package version
+   */
+  public constructor(private connection: Connection, private id: string) {
+    if (!id.startsWith('04t')) {
+      throw messages.createError('invalid04tId', [id]);
+    }
+  }
   /**
    * Will create a PackageUploadRequest object based on the options provided, will poll for completion if pollingOptions are provided
    *
@@ -129,14 +139,9 @@ export class Package1Version implements IPackageVersion1GP {
 
   /**
    * Executes server-side logic for the package1:display command
-   *
-   * @param id: id of the MetadataPackageVersion sObject (starts with 04t)
    */
-  public async getPackageVersion(id: string): Promise<MetadataPackageVersion[]> {
-    if (!id.startsWith('04t')) {
-      throw messages.createError('invalid04tId', [id]);
-    }
-    const query = `SELECT Id,MetadataPackageId,Name,ReleaseState,MajorVersion,MinorVersion,PatchVersion,BuildNumber FROM MetadataPackageVersion WHERE id = '${id}'`;
+  public async getPackageVersion(): Promise<MetadataPackageVersion[]> {
+    const query = `SELECT Id,MetadataPackageId,Name,ReleaseState,MajorVersion,MinorVersion,PatchVersion,BuildNumber FROM MetadataPackageVersion WHERE id = '${this.id}'`;
     return (await this.connection.tooling.query<PackagingSObjects.MetadataPackageVersion>(query)).records;
   }
 }

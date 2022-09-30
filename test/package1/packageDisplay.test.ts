@@ -43,8 +43,8 @@ describe('Package1 Display', () => {
         },
       ],
     });
-    const pv1 = new Package1Version(conn);
-    const result = await pv1.getPackageVersion('04t46000001ZfaXXXX');
+    const pv1 = new Package1Version(conn, '04t46000001ZfaXXXX');
+    const result = await pv1.getPackageVersion();
     expect(result).deep.equal([
       {
         BuildNumber: 1,
@@ -65,8 +65,8 @@ describe('Package1 Display', () => {
       totalSize: 0,
       records: [],
     });
-    const pv1 = new Package1Version(conn);
-    const result = await pv1.getPackageVersion('04t46000001ZfaXXXX');
+    const pv1 = new Package1Version(conn, '04t46000001ZfaXXXX');
+    const result = await pv1.getPackageVersion();
     expect(result).deep.equal([]);
   });
 });
