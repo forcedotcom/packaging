@@ -55,6 +55,11 @@ export class Package {
     this.init();
   }
 
+  /**
+   * Create a new instance of a package, using supplied options.
+   *
+   * @param options
+   */
   public static async create(options: PackageOptions): Promise<Package> {
     return new Package(options);
   }
@@ -86,6 +91,14 @@ export class Package {
     )?.records;
   }
 
+  /**
+   * Returns the package versions in the org.
+   * See {@link PackageVersionListOptions} for list options
+   *
+   * @param connection - connection to the org
+   * @param project - instance of SfProject
+   * @param options - see {@link PackageVersionListOptions}
+   */
   public static async listVersions(
     connection: Connection,
     project: SfProject,
@@ -109,6 +122,15 @@ export class Package {
     return (await listPackageVersions({ ...opts, ...{ connection } })).records;
   }
 
+  /**
+   * Convert a 1st generation package to a 2nd generation package.
+   * See {@link ConvertPackageOptions} for conversion options.
+   *
+   * @param pkgId
+   * @param connection
+   * @param options
+   * @param project
+   */
   public static async convert(
     pkgId: string,
     connection: Connection,
@@ -119,7 +141,7 @@ export class Package {
   }
 
   /**
-   * Returns the package ID for the package alias.
+   * Returns the package ID of the package.
    *
    * @returns {string} package ID
    */
@@ -138,6 +160,7 @@ export class Package {
 
   /**
    * Returns the list of package versions for the package.
+   * See {@link PackageVersionListOptions} for list options
    *
    * @param options
    * @returns {Promise<PackageVersionListResult[]>}
@@ -154,6 +177,10 @@ export class Package {
     } as PackageVersionListOptions);
   }
 
+  /**
+   * Deletes the package.
+   *
+   */
   public async delete(): Promise<PackageSaveResult> {
     const updateResult = await this.options.connection.tooling.delete('Package2', [this.packageId]).catch((err) => {
       throw applyErrorAction(massageErrorMessage(err as Error));
@@ -164,6 +191,12 @@ export class Package {
     return updateResult[0];
   }
 
+  /**
+   * Updates the package using the values defined in the options.
+   * See {@link PackageUpdateOptions} for update options.
+   *
+   * @param options
+   */
   public async update(options: PackageUpdateOptions): Promise<PackageSaveResult> {
     try {
       // filter out any undefined values and their keys
@@ -193,7 +226,7 @@ export class Package {
     return this.packageData;
   }
 
-  protected init(): void {
+  private init(): void {
     let packageId = this.options.packageAliasOrId;
     if (!packageId.startsWith(packagePrefixes.PackageId)) {
       packageId = getPackageIdFromAlias(this.options.packageAliasOrId, this.options.project);

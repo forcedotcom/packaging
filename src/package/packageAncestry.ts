@@ -49,7 +49,7 @@ const sortAncestryNodeData = (a: AncestryRepresentationProducer, b: AncestryRepr
  * A class that represents the package ancestry graph.
  */
 export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
-  private _requestedPackageId: string;
+  #requestedPackageId: string;
   private graph: DirectedGraph = new DirectedGraph<PackageAncestryNode, Attributes, Attributes>();
   private roots: PackageAncestryNode[];
   public constructor(private options: PackageAncestryOptions) {
@@ -57,7 +57,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   }
 
   public get requestedPackageId(): string {
-    return this._requestedPackageId;
+    return this.#requestedPackageId;
   }
 
   public async init(): Promise<void> {
@@ -190,7 +190,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
 
   private async getRoots(): Promise<PackageAncestryNode[]> {
     let roots = [];
-    this._requestedPackageId = pkgUtils.getPackageIdFromAlias(this.options.packageId, this.options.project);
+    this.#requestedPackageId = pkgUtils.getPackageIdFromAlias(this.options.packageId, this.options.project);
     switch (this.requestedPackageId.slice(0, 3)) {
       case '0Ho':
         pkgUtils.validateId(pkgUtils.BY_LABEL.PACKAGE_ID, this.requestedPackageId);
