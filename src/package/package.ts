@@ -78,10 +78,12 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
     return convertPackage(pkgId, this.options.connection, options, project);
   }
 
+  // eslint-disable-next-line class-methods-use-this
   public create(): Promise<void> {
     return Promise.resolve(undefined);
   }
 
+  // eslint-disable-next-line class-methods-use-this
   public delete(): Promise<void> {
     return Promise.resolve(undefined);
   }
@@ -165,6 +167,7 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
     return waitForPublish(this.options.connection, subscriberPackageVersionId, timeout, installationKey);
   }
 
+  // eslint-disable-next-line class-methods-use-this
   protected init(): Promise<void> {
     return Promise.resolve(undefined);
   }

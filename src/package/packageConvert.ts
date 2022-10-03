@@ -101,8 +101,7 @@ export async function convertPackage(
 
   const createResult = await connection.tooling.create('Package2VersionCreateRequest', request);
   if (!createResult.success) {
-    const errStr =
-      createResult.errors && createResult.errors.length ? createResult.errors.join(', ') : createResult.errors;
+    const errStr = createResult.errors?.length ? createResult.errors.join(', ') : createResult.errors;
     throw messages.createError('failedToCreatePVCRequest', [
       createResult.id ? ` [${createResult.id}]` : '',
       errStr.toString(),

@@ -225,6 +225,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
     // Start with the node, and shoot up
     let node = await this.getPackageVersion(this.requestedPackageId);
     while (node.AncestorId !== null) {
+      // eslint-disable-next-line no-await-in-loop
       const ancestor = await this.getPackageVersion(node.AncestorId);
       this.addToGraph(ancestor, node);
       node = ancestor;
@@ -276,6 +277,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   private async buildAncestryTreeFromRoots(roots: PackageAncestryNode[]): Promise<void> {
     while (roots.length > 0) {
       const subscriberPackageVersion = roots.shift();
+      // eslint-disable-next-line no-await-in-loop
       const descendants = await this.addDescendantsFromPackageVersion(subscriberPackageVersion);
       roots.push(...descendants);
     }
@@ -523,6 +525,7 @@ export class PackageAncestryNode extends AsyncCreatable<PackageAncestryNodeOptio
   public getVersion(): string {
     return this.#version.toString();
   }
+  // eslint-disable-next-line class-methods-use-this
   protected init(): Promise<void> {
     return Promise.resolve();
   }

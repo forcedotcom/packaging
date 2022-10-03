@@ -271,13 +271,11 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
         const currentNode = nodes[i].cloneNode(true);
         appendToNode.appendChild(currentNode);
         nodesAdded = true;
-      } else {
+      } else if (this.generateProfileInformation) {
         // Tell the user which profile setting has been removed from the package
-        if (this.generateProfileInformation) {
-          const profile = this.profiles.find(({ ProfileName }) => ProfileName === profileName);
-          if (profile) {
-            profile.appendRemovedSetting(name);
-          }
+        const profile = this.profiles.find(({ ProfileName }) => ProfileName === profileName);
+        if (profile) {
+          profile.appendRemovedSetting(name);
         }
       }
     }
