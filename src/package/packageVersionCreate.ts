@@ -76,7 +76,7 @@ export class PackageVersionCreate {
     try {
       return this.packageVersionCreate();
     } catch (err) {
-      throw pkgUtils.applyErrorAction(this.massageErrorMessage(err as Error));
+      throw pkgUtils.applyErrorAction(massageErrorMessage(err as Error));
     }
   }
 
@@ -142,7 +142,7 @@ export class PackageVersionCreate {
     dependency.packageId = packageIdFromAlias;
 
     pkgUtils.validateId(pkgUtils.BY_LABEL.PACKAGE_ID, dependency.packageId);
-    this.validateVersionNumber(
+    validateVersionNumber(
       dependency.versionNumber,
       BuildNumberToken.LATEST_BUILD_NUMBER_TOKEN,
       BuildNumberToken.RELEASED_BUILD_NUMBER_TOKEN
@@ -389,7 +389,7 @@ export class PackageVersionCreate {
       packageDescriptorJson.dependencies = resultValues as PackageDirDependency[];
     }
 
-    this.cleanPackageDescriptorJson(packageDescriptorJson);
+    cleanPackageDescriptorJson(packageDescriptorJson);
     this.setPackageDescriptorJsonValues(packageDescriptorJson);
 
     await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
@@ -632,19 +632,6 @@ export class PackageVersionCreate {
   }
 
   /**
-   * Cleans invalid attribute(s) from the packageDescriptorJSON
-   */
-  private cleanPackageDescriptorJson(packageDescriptorJson: PackageDescriptorJson): PackageDescriptorJson {
-    delete packageDescriptorJson.default; // for client-side use only, not needed
-    delete packageDescriptorJson.includeProfileUserLicenses; // for client-side use only, not needed
-    delete packageDescriptorJson.unpackagedMetadata; // for client-side use only, not needed
-    delete packageDescriptorJson.branch; // for client-side use only, not needed
-    delete packageDescriptorJson.fullPath; // for client-side use only, not needed
-    delete packageDescriptorJson.name; // for client-side use only, not needed
-    return packageDescriptorJson;
-  }
-
-  /**
    * Sets default or override values for packageDescriptorJSON attribs
    */
   private setPackageDescriptorJsonValues(packageDescriptorJson: PackageDescriptorJson): void {
@@ -694,32 +681,6 @@ export class PackageVersionCreate {
     }
   }
 
-  private validateVersionNumber(
-    versionNumberString: string,
-    supportedBuildNumberToken: string,
-    supportedBuildNumberToken2?: string
-  ): string {
-    const versionNumber = VersionNumber.from(versionNumberString);
-    // build number can be a number or valid token
-    if (
-      Number.isNaN(parseInt(`${versionNumber.build}`, 10)) &&
-      versionNumber.build !== supportedBuildNumberToken &&
-      versionNumber.build !== supportedBuildNumberToken2
-    ) {
-      if (supportedBuildNumberToken2) {
-        throw messages.createError('errorInvalidBuildNumberForKeywords', [
-          versionNumberString,
-          supportedBuildNumberToken,
-          supportedBuildNumberToken2,
-        ]);
-      } else {
-        throw messages.createError('errorInvalidBuildNumber', [versionNumberString, supportedBuildNumberToken]);
-      }
-    }
-
-    return versionNumberString;
-  }
-
   private async validatePatchVersion(versionNumberString: string, packageId: string): Promise<void> {
     const query = `SELECT ContainerOptions FROM Package2 WHERE id ='${packageId}'`;
     const queryResult = await this.connection.tooling.query(query);
@@ -735,30 +696,6 @@ export class PackageVersionCreate {
         throw messages.createError('errorInvalidPatchNumber', [versionNumberString]);
       }
     }
-  }
-
-  private massageErrorMessage(err: Error): Error {
-    if (err.name === 'INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST') {
-      err['message'] = messages.getMessage('invalidPackageTypeMessage');
-    }
-
-    if (
-      err.name === 'MALFORMED_ID' &&
-      (err.message.includes('Version ID') || err.message.includes('Version Definition ID'))
-    ) {
-      err['message'] = messages.getMessage('malformedPackageVersionIdMessage');
-    }
-
-    if (err.name === 'MALFORMED_ID' && err.message.includes('Package2 ID')) {
-      err['message'] = messages.getMessage('malformedPackageIdMessage');
-    }
-
-    // remove references to Second Generation
-    if (err.message.includes('Second Generation ')) {
-      err['message'] = err.message.replace('Second Generation ', '');
-    }
-
-    return err;
   }
 
   // eslint-disable-next-line complexity
@@ -873,7 +810,7 @@ export class PackageVersionCreate {
       origSpecifiedAncestor = packageDescriptorJson.ancestorVersion;
     }
 
-    return this.validateAncestorId(
+    return validateAncestorId(
       ancestorId,
       highestReleasedVersion,
       explicitUseNoAncestor,
@@ -881,38 +818,6 @@ export class PackageVersionCreate {
       skipAncestorCheck,
       origSpecifiedAncestor
     );
-  }
-
-  private validateAncestorId(
-    ancestorId: string,
-    highestReleasedVersion: PackagingSObjects.Package2Version,
-    explicitUseNoAncestor: boolean,
-    isPatch: boolean,
-    skipAncestorCheck: boolean,
-    origSpecifiedAncestor: string
-  ): string {
-    if (explicitUseNoAncestor) {
-      if (!highestReleasedVersion) {
-        return '';
-      } else {
-        // the explicitUseNoAncestor && skipAncestorCheck case is handled above
-        throw messages.createError('errorAncestorNoneNotAllowed', [getPackageVersionNumber(highestReleasedVersion)]);
-      }
-    }
-    if (!isPatch && !skipAncestorCheck) {
-      if (highestReleasedVersion) {
-        if (highestReleasedVersion.Id !== ancestorId) {
-          throw messages.createError('errorAncestorNotHighest', [
-            origSpecifiedAncestor,
-            getPackageVersionNumber(highestReleasedVersion),
-          ]);
-        }
-      } else {
-        // looks like the initial version:create - allow
-        ancestorId = '';
-      }
-    }
-    return ancestorId;
   }
 
   private async getAncestorIdHighestRelease(
@@ -960,7 +865,7 @@ export class PackageVersionCreate {
         'ORDER BY MajorVersion Desc, MinorVersion Desc, PatchVersion Desc, BuildNumber Desc LIMIT 1';
       const highestVersionResult = await this.connection.tooling.query<Package2VersionResult>(query);
       const highestVersionRecords = highestVersionResult.records;
-      if (highestVersionRecords && highestVersionRecords[0]) {
+      if (highestVersionRecords?.[0]) {
         result.highestReleasedVersion = highestVersionRecords[0];
         if (explicitUseHighestRelease) {
           result.finalAncestorId = result.highestReleasedVersion.Id;
@@ -973,3 +878,98 @@ export class PackageVersionCreate {
     return result;
   }
 }
+
+/**
+ * Cleans invalid attribute(s) from the packageDescriptorJSON
+ */
+const cleanPackageDescriptorJson = (packageDescriptorJson: PackageDescriptorJson): PackageDescriptorJson => {
+  delete packageDescriptorJson.default; // for client-side use only, not needed
+  delete packageDescriptorJson.includeProfileUserLicenses; // for client-side use only, not needed
+  delete packageDescriptorJson.unpackagedMetadata; // for client-side use only, not needed
+  delete packageDescriptorJson.branch; // for client-side use only, not needed
+  delete packageDescriptorJson.fullPath; // for client-side use only, not needed
+  delete packageDescriptorJson.name; // for client-side use only, not needed
+  return packageDescriptorJson;
+};
+
+const validateVersionNumber = (
+  versionNumberString: string,
+  supportedBuildNumberToken: string,
+  supportedBuildNumberToken2?: string
+): string => {
+  const versionNumber = VersionNumber.from(versionNumberString);
+  // build number can be a number or valid token
+  if (
+    Number.isNaN(parseInt(`${versionNumber.build}`, 10)) &&
+    versionNumber.build !== supportedBuildNumberToken &&
+    versionNumber.build !== supportedBuildNumberToken2
+  ) {
+    if (supportedBuildNumberToken2) {
+      throw messages.createError('errorInvalidBuildNumberForKeywords', [
+        versionNumberString,
+        supportedBuildNumberToken,
+        supportedBuildNumberToken2,
+      ]);
+    } else {
+      throw messages.createError('errorInvalidBuildNumber', [versionNumberString, supportedBuildNumberToken]);
+    }
+  }
+
+  return versionNumberString;
+};
+
+const massageErrorMessage = (err: Error): Error => {
+  if (err.name === 'INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST') {
+    err['message'] = messages.getMessage('invalidPackageTypeMessage');
+  }
+
+  if (
+    err.name === 'MALFORMED_ID' &&
+    (err.message.includes('Version ID') || err.message.includes('Version Definition ID'))
+  ) {
+    err['message'] = messages.getMessage('malformedPackageVersionIdMessage');
+  }
+
+  if (err.name === 'MALFORMED_ID' && err.message.includes('Package2 ID')) {
+    err['message'] = messages.getMessage('malformedPackageIdMessage');
+  }
+
+  // remove references to Second Generation
+  if (err.message.includes('Second Generation ')) {
+    err['message'] = err.message.replace('Second Generation ', '');
+  }
+
+  return err;
+};
+
+const validateAncestorId = (
+  ancestorId: string,
+  highestReleasedVersion: PackagingSObjects.Package2Version,
+  explicitUseNoAncestor: boolean,
+  isPatch: boolean,
+  skipAncestorCheck: boolean,
+  origSpecifiedAncestor: string
+): string => {
+  if (explicitUseNoAncestor) {
+    if (!highestReleasedVersion) {
+      return '';
+    } else {
+      // the explicitUseNoAncestor && skipAncestorCheck case is handled above
+      throw messages.createError('errorAncestorNoneNotAllowed', [getPackageVersionNumber(highestReleasedVersion)]);
+    }
+  }
+  if (!isPatch && !skipAncestorCheck) {
+    if (highestReleasedVersion) {
+      if (highestReleasedVersion.Id !== ancestorId) {
+        throw messages.createError('errorAncestorNotHighest', [
+          origSpecifiedAncestor,
+          getPackageVersionNumber(highestReleasedVersion),
+        ]);
+      }
+    } else {
+      // looks like the initial version:create - allow
+      ancestorId = '';
+    }
+  }
+  return ancestorId;
+};

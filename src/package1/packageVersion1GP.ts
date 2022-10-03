@@ -16,34 +16,42 @@ export class PackageVersion1GP extends AsyncCreatable<PackageVersionOptions1GP> 
     super(options);
   }
 
+  // eslint-disable-next-line class-methods-use-this
   public convert(): Promise<void> {
     return Promise.resolve(undefined);
   }
 
+  // eslint-disable-next-line class-methods-use-this
   public create(): Promise<void> {
     return Promise.resolve(undefined);
   }
 
+  // eslint-disable-next-line class-methods-use-this
   public delete(): Promise<void> {
     return Promise.resolve(undefined);
   }
 
+  // eslint-disable-next-line class-methods-use-this
   public install(): Promise<void> {
     return Promise.resolve(undefined);
   }
 
+  // eslint-disable-next-line class-methods-use-this
   public list(): Promise<void> {
     return Promise.resolve(undefined);
   }
 
+  // eslint-disable-next-line class-methods-use-this
   public uninstall(): Promise<void> {
     return Promise.resolve(undefined);
   }
 
+  // eslint-disable-next-line class-methods-use-this
   public update(): Promise<void> {
     return Promise.resolve(undefined);
   }
 
+  // eslint-disable-next-line class-methods-use-this
   protected init(): Promise<void> {
     return Promise.resolve(undefined);
   }

@@ -55,9 +55,11 @@ export const DEFAULT_PACKAGE_DIR = {
   default: true,
 };
 
-export const BY_PREFIX = ((): IdRegistry => Object.fromEntries(ID_REGISTRY.map((id) => [id.prefix, { prefix: id.prefix, label: id.label }])))();
+export const BY_PREFIX = ((): IdRegistry =>
+  Object.fromEntries(ID_REGISTRY.map((id) => [id.prefix, { prefix: id.prefix, label: id.label }])))();
 
-export const BY_LABEL = ((): IdRegistry => Object.fromEntries(
+export const BY_LABEL = ((): IdRegistry =>
+  Object.fromEntries(
     ID_REGISTRY.map((id) => [id.label.replace(/ /g, '_').toUpperCase(), { prefix: id.prefix, label: id.label }])
   ))();
 
@@ -308,6 +310,8 @@ export async function queryWithInConditionChunking<T = Record<string, unknown>>(
     }
     const itemsStr = `${items.slice(itemsQueried, itemsQueried + chunkCount).join("','")}`;
     const queryChunk = query.replace(replaceToken, itemsStr);
+    // temporary substitute for authFetch on tooling in jsforce
+    // eslint-disable-next-line no-await-in-loop
     const result = await connection.tooling.query<T>(queryChunk);
     if (result && result.records.length > 0) {
       records = records.concat(result.records);
@@ -440,7 +444,7 @@ export async function generatePackageAliasEntry(
 }
 
 export function formatDate(date: Date): string {
-  const pad = (num: number): string => num < 10 ? `0${num}` : `${num}`;
+  const pad = (num: number): string => (num < 10 ? `0${num}` : `${num}`);
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(
     date.getMinutes()
   )}`;

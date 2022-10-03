@@ -181,19 +181,19 @@ export class PackageVersion {
       poll: async (): Promise<StatusResult> => {
         report = await this.getCreateStatus(createPackageVersionRequestId, connection);
         switch (report.Status) {
-          case 'Queued':
+          case PackagingSObjects.Package2VersionStatus.queued:
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.enqueued, { ...report, remainingWaitTime });
             remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
             return {
               completed: false,
               payload: report,
             };
-          case 'InProgress':
-          case 'Initializing':
-          case 'VerifyingFeaturesAndSettings':
-          case 'VerifyingDependencies':
-          case 'VerifyingMetadata':
-          case 'FinalizingPackageVersion':
+          case PackagingSObjects.Package2VersionStatus.inProgress:
+          case PackagingSObjects.Package2VersionStatus.initializing:
+          case PackagingSObjects.Package2VersionStatus.verifyingFeaturesAndSettings:
+          case PackagingSObjects.Package2VersionStatus.verifyingDependencies:
+          case PackagingSObjects.Package2VersionStatus.verifyingMetadata:
+          case PackagingSObjects.Package2VersionStatus.finalizingPackageVersion:
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.progress, {
               ...report,
               remainingWaitTime,
@@ -203,7 +203,7 @@ export class PackageVersion {
               completed: false,
               payload: report,
             };
-          case 'Success': {
+          case PackagingSObjects.Package2VersionStatus.success: {
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.success, report);
             const packageVersion = new PackageVersion({
               connection,
@@ -213,7 +213,7 @@ export class PackageVersion {
             await packageVersion.updateProjectWithPackageVersion(report);
             return { completed: true, payload: report };
           }
-          case 'Error':
+          case PackagingSObjects.Package2VersionStatus.error:
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.error, report);
             return { completed: true, payload: report };
         }
@@ -351,10 +351,12 @@ export class PackageVersion {
     return results[0];
   }
 
+  // eslint-disable-next-line class-methods-use-this
   public install(): Promise<void> {
     return Promise.resolve(undefined);
   }
 
+  // eslint-disable-next-line class-methods-use-this
   public uninstall(): Promise<void> {
     return Promise.resolve(undefined);
   }
