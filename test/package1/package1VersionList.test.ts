@@ -6,8 +6,8 @@
  */
 import { Connection } from '@salesforce/core';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
-import { expect } from 'chai';
-import { package1VersionList } from '../../lib/package1';
+import { assert, expect } from 'chai';
+import { Package1Version } from '../../src/package1';
 
 const records = [
   {
@@ -35,19 +35,23 @@ const records = [
 const listResult = [
   {
     BuildNumber: 1,
+    Id: '04t46000001ZfaXXXX',
+    MajorVersion: 1,
     MetadataPackageId: '03346000000dmo4XXX',
-    MetadataPackageVersionId: '04t46000001ZfaXXXX',
+    MinorVersion: 0,
     Name: 'Summer 22',
+    PatchVersion: 3,
     ReleaseState: 'Beta',
-    Version: '1.0.3',
   },
   {
     BuildNumber: 1,
+    Id: '04t46000001ZfaXXXY',
+    MajorVersion: 1,
     MetadataPackageId: '03346000000dmo4XXX',
-    MetadataPackageVersionId: '04t46000001ZfaXXXY',
+    MinorVersion: 0,
     Name: 'Summer 22',
+    PatchVersion: 4,
     ReleaseState: 'Beta',
-    Version: '1.0.4',
   },
 ];
 
@@ -74,7 +78,7 @@ describe('Package1 Version List', () => {
       totalSize: 1,
       records,
     });
-    const result = await package1VersionList(conn);
+    const result = await Package1Version.list(conn);
     expect(result).deep.equal(listResult);
     restoreContext($$);
   });
@@ -85,7 +89,7 @@ describe('Package1 Version List', () => {
       totalSize: 1,
       records: [records[0]],
     });
-    const result = await package1VersionList(conn, '03346000000dmo4XXX');
+    const result = await Package1Version.list(conn, '03346000000dmo4XXX');
     expect(result).deep.equal([listResult[0]]);
   });
 
@@ -95,7 +99,23 @@ describe('Package1 Version List', () => {
       totalSize: 0,
       records: [],
     });
-    const result = await package1VersionList(conn, '03346000000dmo4XXX');
+    const result = await Package1Version.list(conn, '03346000000dmo4XXX');
     expect(result).deep.equal([]);
+  });
+
+  it('should throw an error when invalid ID is provided', async () => {
+    queryStub.resolves({
+      done: true,
+      totalSize: 0,
+      records: [],
+    });
+    try {
+      await Package1Version.list(conn, '04t46000001ZfaXXXX');
+      assert.fail('the above should throw an invalid id error');
+    } catch (e) {
+      expect(e.message).to.equal(
+        'Specify a valid package metadata package ID (starts with 033), received 04t46000001ZfaXXXX'
+      );
+    }
   });
 });

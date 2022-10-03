@@ -10,7 +10,7 @@ import { Connection, NamedPackageDir, SfProject } from '@salesforce/core';
 import { QueryResult, SaveResult } from 'jsforce';
 import { Attributes } from 'graphology-types';
 import { PackageProfileApi } from '../package/packageProfileApi';
-import { PackageAncestryNode } from '../package/packageAncestry';
+import { PackageAncestryNode } from '../package';
 import { PackagingSObjects } from './packagingSObjects';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
@@ -37,13 +37,7 @@ export interface IPackage {
 }
 
 export interface IPackageVersion1GP {
-  create(): Promise<void>;
-  convert(): Promise<void>;
-  delete(): Promise<void>;
-  install(): Promise<void>;
-  list(): Promise<void>;
-  uninstall(): Promise<void>;
-  update(): Promise<void>;
+  getPackageVersion(id: string): Promise<MetadataPackageVersion[]>;
 }
 
 export interface IPackageVersion2GP {
@@ -329,11 +323,13 @@ export type PackageVersionCreateReportProgress = PackageVersionCreateRequestResu
   remainingWaitTime: Duration;
 };
 
-export type Package1VersionCreateRequest = Pick<PackagingSObjects.PackageUploadRequest, 'VersionName'> &
+export type Package1VersionCreateRequest = Pick<
+  PackagingSObjects.PackageUploadRequest,
+  'VersionName' | 'MetadataPackageId'
+> &
   Partial<
     Pick<
       PackagingSObjects.PackageUploadRequest,
-      | 'MetadataPackageId'
       | 'Description'
       | 'MajorVersion'
       | 'MinorVersion'
