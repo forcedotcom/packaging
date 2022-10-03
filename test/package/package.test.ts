@@ -79,8 +79,6 @@ describe('Package', () => {
         p.getSfProjectJson().set('packageAliases', { mypkgalias: '0Hoasdsadfasdf' });
       });
       const pkg = new Package({ connection: undefined, packageAliasOrId: 'mypkgalias', project });
-      // @ts-ignore
-      pkg.init();
       expect(pkg.getId()).to.equal('0Hoasdsadfasdf');
     });
     it('should create a new package - from 0Ho', async () => {
@@ -130,8 +128,6 @@ describe('Package', () => {
       } as unknown as Connection;
 
       const pkg = new Package({ connection: conn, packageAliasOrId: '0Hoasdsadfasdf', project });
-      // @ts-ignore
-      pkg.init();
       expect(pkg['packageData']).to.not.be.ok;
       expect(pkg.getId()).to.equal('0Hoasdsadfasdf');
       expect(await pkg.getType()).to.equal('Unlocked');

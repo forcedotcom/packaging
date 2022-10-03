@@ -418,22 +418,3 @@ export const Package1VersionEvents = {
     progress: 'Package1Version/create-progress',
   },
 };
-
-export const Package2Fields = [
-  'Id',
-  'IsDeleted',
-  'CreatedDate',
-  'CreatedById',
-  'LastModifiedDate',
-  'LastModifiedById',
-  'SystemModstamp',
-  'SubscriberPackageId',
-  'Name',
-  'Description',
-  'NamespacePrefix',
-  'ContainerOptions',
-  'IsDeprecated',
-  'IsOrgDependent',
-  'ConvertedFromPackageId',
-  'PackageErrorUsername',
-];

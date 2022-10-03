@@ -6,17 +6,16 @@
  */
 import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
 import {
-  PackageOptions,
-  PackagingSObjects,
   ConvertPackageOptions,
-  PackageVersionCreateRequestResult,
-  PackageSaveResult,
-  PackageUpdateOptions,
-  PackageType,
   PackageCreateOptions,
-  PackageVersionListResult,
-  Package2Fields,
+  PackageOptions,
+  PackageSaveResult,
+  PackageType,
+  PackageUpdateOptions,
+  PackageVersionCreateRequestResult,
   PackageVersionListOptions,
+  PackageVersionListResult,
+  PackagingSObjects,
 } from '../interfaces';
 import {
   applyErrorAction,
@@ -42,6 +41,25 @@ const packagePrefixes = {
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package');
 
+export const Package2Fields = [
+  'Id',
+  'IsDeleted',
+  'CreatedDate',
+  'CreatedById',
+  'LastModifiedDate',
+  'LastModifiedById',
+  'SystemModstamp',
+  'SubscriberPackageId',
+  'Name',
+  'Description',
+  'NamespacePrefix',
+  'ContainerOptions',
+  'IsDeprecated',
+  'IsOrgDependent',
+  'ConvertedFromPackageId',
+  'PackageErrorUsername',
+];
+
 /**
  * Package class.
  *
@@ -49,20 +67,25 @@ const messages = Messages.loadMessages('@salesforce/packaging', 'package');
  * To create a new instance of a package, use the static async Package.create({connection, project, packageOrAliasId}) method.
  */
 export class Package {
-  private packageId: string;
+  private readonly packageId: string;
   private packageData: PackagingSObjects.Package2;
   public constructor(private options: PackageOptions) {
-    this.init();
+    let packageId = this.options.packageAliasOrId;
+    if (!packageId.startsWith(packagePrefixes.PackageId)) {
+      packageId = getPackageIdFromAlias(this.options.packageAliasOrId, this.options.project);
+      if (packageId === this.options.packageAliasOrId) {
+        throw messages.createError('packageAliasNotFound', [this.options.packageAliasOrId]);
+      }
+    }
+
+    if (packageId.startsWith(packagePrefixes.PackageId)) {
+      this.packageId = packageId;
+      this.verifyAliasForId();
+    } else {
+      throw messages.createError('invalidPackageId', [this.options.packageAliasOrId, packagePrefixes.PackageId]);
+    }
   }
 
-  /**
-   * Create a new instance of a package, using supplied options.
-   *
-   * @param options
-   */
-  public static async create(options: PackageOptions): Promise<Package> {
-    return new Package(options);
-  }
   /**
    * Create a new package.
    *
@@ -71,13 +94,12 @@ export class Package {
    * @param options - options for creating a package - see PackageCreateOptions
    * @returns Package
    */
-  public static async createPackage(
+  public static async create(
     connection: Connection,
     project: SfProject,
     options: PackageCreateOptions
-  ): Promise<Package> {
-    const packageId = await createPackage(connection, project, options);
-    return await Package.create({ connection, project, packageAliasOrId: packageId.Id });
+  ): Promise<{ Id: string }> {
+    return createPackage(connection, project, options);
   }
 
   /**
@@ -105,7 +127,7 @@ export class Package {
     options?: PackageVersionListOptions
   ): Promise<PackageVersionListResult[]> {
     // resolve/verify packages
-    const packages = options?.packages.map((pkg) => {
+    const packages = options?.packages?.map((pkg) => {
       const id = getPackageIdFromAlias(pkg, project);
 
       // validate ID
@@ -224,23 +246,6 @@ export class Package {
         .retrieve(this.packageId)) as PackagingSObjects.Package2;
     }
     return this.packageData;
-  }
-
-  private init(): void {
-    let packageId = this.options.packageAliasOrId;
-    if (!packageId.startsWith(packagePrefixes.PackageId)) {
-      packageId = getPackageIdFromAlias(this.options.packageAliasOrId, this.options.project);
-      if (packageId === this.options.packageAliasOrId) {
-        throw messages.createError('packageAliasNotFound', [this.options.packageAliasOrId]);
-      }
-    }
-
-    if (packageId.startsWith(packagePrefixes.PackageId)) {
-      this.packageId = packageId;
-      this.verifyAliasForId();
-    } else {
-      throw messages.createError('invalidPackageId', [this.options.packageAliasOrId, packagePrefixes.PackageId]);
-    }
   }
 
   private verifyAliasForId(): void {

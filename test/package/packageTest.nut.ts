@@ -107,8 +107,8 @@ describe('Integration tests for @salesforce/packaging library', function () {
         orgDependent: false,
         errorNotificationUsername: undefined,
       };
-      const pkg = await Package.createPackage(devHubOrg.getConnection(), project, options);
-      pkgId = pkg.getId();
+      const pkg = await Package.create(devHubOrg.getConnection(), project, options);
+      pkgId = pkg.Id;
       expect(pkgId).to.be.ok;
       expect(pkgId).to.match(new RegExp(PKG2_ID_PREFIX));
 
@@ -128,7 +128,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
     });
 
     it('should find no package versions for the new package', async () => {
-      const pkg = await Package.create({ packageAliasOrId: pkgId, connection: devHubOrg.getConnection(), project });
+      const pkg = new Package({ connection: devHubOrg.getConnection(), project, packageAliasOrId: pkgId });
       const pkgVersions = await pkg.getPackageVersions();
       expect(pkgVersions).to.be.empty;
     });
@@ -213,7 +213,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
     });
 
     it('package version should be in results of Package#getPackageVersions', async () => {
-      const pkg = await Package.create({ packageAliasOrId: pkgId, connection: devHubOrg.getConnection(), project });
+      const pkg = new Package({ connection: devHubOrg.getConnection(), project, packageAliasOrId: pkgId });
       const pkgVersions = await pkg.getPackageVersions();
       expect(pkgVersions).to.have.length(1);
       expect(pkgVersions.some((pvlr) => pvlr.SubscriberPackageVersionId === subscriberPkgVersionId)).to.be.true;
