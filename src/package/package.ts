@@ -137,7 +137,7 @@ export class Package {
     options: ConvertPackageOptions,
     project?: SfProject
   ): Promise<PackageVersionCreateRequestResult> {
-    return await convertPackage(pkgId, connection, options, project);
+    return convertPackage(pkgId, connection, options, project);
   }
 
   /**
