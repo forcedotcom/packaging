@@ -11,6 +11,7 @@ import {
   Logger,
   Messages,
   PollingClient,
+  sfdc,
   SfError,
   SfProject,
   StatusResult,
@@ -272,6 +273,9 @@ export class PackageVersion {
     id: string,
     connection: Connection
   ): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest> {
+    if (!id.startsWith('06y') || !sfdc.validateSalesforceId(id)) {
+      throw messages.createError('packageVersionUninstallRequestIdInvalid', [id]);
+    }
     const result = (await connection.tooling.retrieve(
       'SubscriberPackageVersionUninstallRequest',
       id
@@ -378,6 +382,25 @@ export class PackageVersion {
     }
   }
 
+  /**
+   * Retrieves the package version create request.
+   *
+   * @param installRequestId
+   * @param connection
+   */
+  public static async getInstallRequest(
+    installRequestId: string,
+    connection: Connection
+  ): Promise<PackagingSObjects.PackageInstallRequest> {
+    if (!installRequestId.startsWith('0Hf') || !sfdc.validateSalesforceId(installRequestId)) {
+      throw messages.createError('packageVersionInstallRequestIdInvalid', [installRequestId]);
+    }
+    const installRequest = await getStatus(connection, installRequestId);
+    if (!installRequest) {
+      throw messages.createError('packageVersionInstallRequestNotFound', [installRequestId]);
+    }
+    return installRequest;
+  }
   /**
    * Get the package version ID for this PackageVersion.
    *
@@ -496,6 +519,18 @@ export class PackageVersion {
     return results[0];
   }
 
+  /**
+   * Installs a package version in a subscriber org.
+   *
+   * Package Version install emits the following events:
+   * - PackageEvents.install.warning
+   * - PackageEvents.install.presend
+   * - PackageEvents.install.postsend
+   * - PackageEvents.install['subscriber-status']
+   *
+   * @param pkgInstallCreateRequest
+   * @param options
+   */
   public async install(
     pkgInstallCreateRequest: PackageInstallCreateRequest,
     options?: PackageInstallOptions
@@ -508,6 +543,15 @@ export class PackageVersion {
     return this.getInstallStatus(pkgVersionInstallRequest.Id, pkgInstallCreateRequest.Password, options);
   }
 
+  /**
+   * Fetches the status of a package version install request and will wait for the install to complete, if requested
+   * Package Version install emits the following events:
+   * - PackageEvents.install['subscriber-status']
+   *
+   * @param packageInstallRequestOrId
+   * @param installationKey
+   * @param options
+   */
   public async getInstallStatus(
     packageInstallRequestOrId: string | PackagingSObjects.PackageInstallRequest,
     installationKey?: string,

@@ -20,7 +20,6 @@ import {
 import {
   applyErrorAction,
   BY_LABEL,
-  combineSaveErrors,
   getPackageAliasesFromId,
   getPackageIdFromAlias,
   massageErrorMessage,
@@ -30,6 +29,7 @@ import { createPackage } from './packageCreate';
 
 import { convertPackage } from './packageConvert';
 import { listPackageVersions } from './packageVersionList';
+import { deletePackage } from './packageDelete';
 
 const packagePrefixes = {
   PackageId: '0Ho',
@@ -204,13 +204,15 @@ export class Package {
    *
    */
   public async delete(): Promise<PackageSaveResult> {
-    const updateResult = await this.options.connection.tooling.delete('Package2', [this.packageId]).catch((err) => {
-      throw applyErrorAction(massageErrorMessage(err as Error));
-    });
-    if (updateResult[0]?.success) {
-      throw combineSaveErrors('Package2', 'update', updateResult[0]?.errors);
-    }
-    return updateResult[0];
+    return await deletePackage(this.getId(), this.options.project, this.options.connection, false);
+  }
+
+  /**
+   * Un-Deletes the package.
+   *
+   */
+  public async undelete(): Promise<PackageSaveResult> {
+    return await deletePackage(this.getId(), this.options.project, this.options.connection, true);
   }
 
   /**

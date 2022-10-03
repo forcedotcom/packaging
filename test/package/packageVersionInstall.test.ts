@@ -307,6 +307,32 @@ describe('Package Install', () => {
     expect(result).to.deep.equal(successPIR);
   });
 
+  it('should get install request', async () => {
+    retrieveStub = $$.SANDBOX.stub(connection.tooling, 'retrieve').onFirstCall().resolves(pkgInstallRequest);
+
+    const result = await PackageVersion.getInstallRequest('0Hf1h0000006runCAA', connection);
+    expect(result).to.deep.equal(pkgInstallRequest);
+  });
+  it('should throw package install request not found error', async () => {
+    retrieveStub = $$.SANDBOX.stub(connection.tooling, 'retrieve').onFirstCall().resolves(undefined);
+
+    try {
+      await PackageVersion.getInstallRequest('0Hf1h0000006runCAA', connection);
+      expect.fail('should have thrown');
+    } catch (e) {
+      expect(e.message).to.include('The provided package install request ID: [0Hf1h0000006runCAA] could not be found');
+    }
+  });
+  it('should throw invalid id error', async () => {
+    retrieveStub = $$.SANDBOX.stub(connection.tooling, 'retrieve').onFirstCall().resolves(undefined);
+
+    try {
+      await PackageVersion.getInstallRequest('04t1h0000006runCAA', connection);
+      expect.fail('should have thrown');
+    } catch (e) {
+      expect(e.message).to.include('The provided package install request ID: [04t1h0000006runCAA] is invalid');
+    }
+  });
   it('should get external sites', async () => {
     const sites = ['foo/bar', 'baz/nib', 'blah/yadda'];
     const RemoteSiteSettings = { settings: [{ url: sites[0] }, { url: sites[1] }] };
