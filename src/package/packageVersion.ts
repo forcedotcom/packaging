@@ -50,6 +50,7 @@ import { list } from './packageVersionCreateRequest';
 import { getUninstallErrors, uninstallPackage } from './packageUninstall';
 import {
   createPackageInstallRequest,
+  getInstallationStatus,
   getStatus,
   isErrorFromSPVQueryRestriction,
   waitForPublish,
@@ -60,6 +61,7 @@ type Package2Version = PackagingSObjects.Package2Version;
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version');
+const installMsgs = Messages.loadMessages('@salesforce/packaging', 'package_install');
 
 export const Package2VersionFields = [
   'Id',
@@ -535,6 +537,7 @@ export class PackageVersion {
     pkgInstallCreateRequest: PackageInstallCreateRequest,
     options?: PackageInstallOptions
   ): Promise<PackagingSObjects.PackageInstallRequest> {
+    await this.waitForPublish(pkgInstallCreateRequest, options);
     const pkgVersionInstallRequest = await createPackageInstallRequest(
       this.connection,
       pkgInstallCreateRequest,
@@ -720,5 +723,35 @@ export class PackageVersion {
   }
   private resolveId(): string {
     return getPackageIdFromAlias(this.options.idOrAlias, this.project);
+  }
+
+  private async waitForPublish(
+    pkgInstallCreateRequest: PackageInstallCreateRequest,
+    options: PackageInstallOptions
+  ): Promise<void> {
+    if (options?.publishTimeout > Duration.milliseconds(0)) {
+      await waitForPublish(
+        this.connection,
+        pkgInstallCreateRequest.SubscriberPackageVersionKey,
+        options.pollingFrequency,
+        options.publishTimeout,
+        pkgInstallCreateRequest.Password
+      );
+    } else {
+      try {
+        const result = await getInstallationStatus(
+          pkgInstallCreateRequest.SubscriberPackageVersionKey,
+          pkgInstallCreateRequest.Password,
+          this.connection
+        );
+        if (result?.records.length === 0 || result?.records[0].InstallValidationStatus !== 'PACKAGE_UNAVAILABLE') {
+          throw installMsgs.createError('subscriberPackageVersionNotPublished');
+        }
+      } catch (e) {
+        // TODO
+        // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
+        throw applyErrorAction(massageErrorMessage(e as Error));
+      }
+    }
   }
 }

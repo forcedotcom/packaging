@@ -99,6 +99,32 @@ export function isErrorPackageNotAvailable(err: Error): boolean {
   return err.name === 'UNKNOWN_EXCEPTION' || err.name === 'PACKAGE_UNAVAILABLE';
 }
 
+export async function getInstallationStatus(
+  subscriberPackageVersionId: string,
+  installationKey: string,
+  connection: Connection
+): Promise<QueryResult<PackagingSObjects.SubscriberPackageVersion>> {
+  let queryResult;
+  const QUERY_NO_KEY = `SELECT Id, SubscriberPackageId, InstallValidationStatus FROM SubscriberPackageVersion WHERE Id ='${subscriberPackageVersionId}'`;
+
+  try {
+    const escapedInstallationKey = installationKey ? escapeInstallationKey(installationKey) : null;
+    const queryWithKey = `${QUERY_NO_KEY} AND InstallationKey ='${escapedInstallationKey}'`;
+    queryResult = await connection.tooling.query<SubscriberPackageVersion>(queryWithKey);
+  } catch (e) {
+    // Check first for Implementation Restriction error that is enforced in 214, before it was possible to query
+    // against InstallationKey, otherwise surface the error.
+    if (e instanceof Error && isErrorFromSPVQueryRestriction(e)) {
+      queryResult = await connection.tooling.query<SubscriberPackageVersion>(QUERY_NO_KEY);
+    } else {
+      if (e instanceof Error && !isErrorPackageNotAvailable(e)) {
+        throw e;
+      }
+    }
+  }
+  return queryResult;
+}
+
 export async function waitForPublish(
   connection: Connection,
   subscriberPackageVersionId: string,
@@ -112,23 +138,7 @@ export async function waitForPublish(
     frequency: isNumber(frequency) ? Duration.minutes(frequency) : frequency,
     timeout: isNumber(timeout) ? Duration.minutes(timeout) : timeout,
     poll: async (): Promise<StatusResult> => {
-      const QUERY_NO_KEY = `SELECT Id, SubscriberPackageId, InstallValidationStatus FROM SubscriberPackageVersion WHERE Id ='${subscriberPackageVersionId}'`;
-
-      try {
-        const escapedInstallationKey = installationKey ? escapeInstallationKey(installationKey) : null;
-        const queryWithKey = `${QUERY_NO_KEY} AND InstallationKey ='${escapedInstallationKey}'`;
-        queryResult = await connection.tooling.query<SubscriberPackageVersion>(queryWithKey);
-      } catch (e) {
-        // Check first for Implementation Restriction error that is enforced in 214, before it was possible to query
-        // against InstallationKey, otherwise surface the error.
-        if (e instanceof Error && isErrorFromSPVQueryRestriction(e)) {
-          queryResult = await connection.tooling.query<SubscriberPackageVersion>(QUERY_NO_KEY);
-        } else {
-          if (e instanceof Error && !isErrorPackageNotAvailable(e)) {
-            throw e;
-          }
-        }
-      }
+      queryResult = await getInstallationStatus(subscriberPackageVersionId, installationKey, connection);
 
       // Continue retrying if there is no record
       // or for an InstallValidationStatus of PACKAGE_UNAVAILABLE (replication to the subscriber's instance has not completed)

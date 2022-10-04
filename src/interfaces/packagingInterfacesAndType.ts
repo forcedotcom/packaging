@@ -214,6 +214,18 @@ export type PackageVersionCreateRequestOptions = {
 
 export type PackageInstallOptions = {
   /**
+   * The frequency to poll the org for package publish status. If providing a number
+   * it is interpreted in milliseconds.
+   */
+
+  publishFrequency?: number | Duration;
+  /**
+   * The amount of time to wait for package publish to complete. If providing a number
+   * it is interpreted in minutes.
+   */
+
+  publishTimeout?: number | Duration;
+  /**
    * The frequency to poll the org for package installation status. If providing a number
    * it is interpreted in milliseconds.
    */
