@@ -7,9 +7,8 @@
 import * as os from 'os';
 
 import { Connection, Messages, NamedPackageDir, PackageDir, SfdcUrl, SfError, SfProject } from '@salesforce/core';
-import { isNumber, Many, Nullable, Optional } from '@salesforce/ts-types';
+import { Many, Nullable, Optional } from '@salesforce/ts-types';
 import { SaveError } from 'jsforce';
-import { Duration } from '@salesforce/kit';
 import { PackageType, PackagingSObjects } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
@@ -192,44 +191,6 @@ export function escapeInstallationKey(key?: string): Nullable<string> {
   return key ? key.replace(/\\/g, '\\\\').replace(/'/g, "\\'") : null;
 }
 
-/**
- * Fetch the PackageType for a given package version ID
- *
- * @param packageId the 0Ho (packageId) or 04t (subscriberPackageVersionId)
- * @param connection For tooling query
- * @throws Error with message when package2 cannot be found
- */
-export async function getPackageType(packageId: string, connection: Connection): Promise<PackageType> {
-  switch (packageId?.substring(0, 3)) {
-    case '0Ho':
-      try {
-        return (
-          await connection.singleRecordQuery<{ ContainerOptions?: PackageType }>(
-            `SELECT ContainerOptions FROM Package2 WHERE id ='${packageId}'`,
-            {
-              tooling: true,
-            }
-          )
-        ).ContainerOptions;
-      } catch (err) {
-        throw messages.createError('errorInvalidPackageId', [packageId]);
-      }
-    case '04t':
-      try {
-        return (
-          await connection.singleRecordQuery<{
-            Package2ContainerOptions?: PackageType;
-          }>(`SELECT Package2ContainerOptions FROM SubscriberPackageVersion WHERE Id = '${packageId}'`, {
-            tooling: true,
-          })
-        ).Package2ContainerOptions;
-      } catch (err) {
-        throw messages.createError('errorInvalidPackageId', [packageId]);
-      }
-    default:
-      throw messages.createError('errorInvalidPackageId', [packageId]);
-  }
-}
 /**
  * Get the ContainerOptions for the specified Package2 (0Ho) IDs.
  *
@@ -502,13 +463,4 @@ export function combineSaveErrors(sObject: string, crudOperation: string, errors
     return `Error: ${error.errorCode} Message: ${error.message} ${fieldsString}`;
   });
   return messages.createError('errorDuringSObjectCRUDOperation', [crudOperation, sObject, errorMessages.join(os.EOL)]);
-}
-
-/**
- * Returns a Duration object from param duration when it is a number, otherwise return itself
- *
- * @param duration = number of milliseconds or Duration object
- */
-export function numberToDuration(duration: number | Duration): Duration {
-  return isNumber(duration) ? Duration.milliseconds(duration) : duration;
 }

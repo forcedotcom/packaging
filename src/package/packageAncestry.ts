@@ -17,9 +17,12 @@ import {
   PackageAncestryNodeData,
   PackageAncestryNodeOptions,
   PackageAncestryOptions,
+  PackageType,
 } from '../interfaces';
 import * as pkgUtils from '../utils/packageUtils';
 import { VersionNumber } from '../utils';
+import { PackageVersion } from './packageVersion';
+import { Package } from './package';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_ancestry');
@@ -47,6 +50,7 @@ const sortAncestryNodeData = (a: AncestryRepresentationProducer, b: AncestryRepr
 };
 /**
  * A class that represents the package ancestry graph.
+ * Given a package Id (0Ho) or a package version Id (04t), it will build a graph of the package's ancestors.
  */
 export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   #requestedPackageId: string;
@@ -203,18 +207,11 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
       default:
         throw messages.createError('idOrAliasNotFound', [this.requestedPackageId]);
     }
+    await this.validatePackageType();
     return roots;
   }
 
   private async findRootsForPackageVersion(): Promise<PackageAncestryNode[]> {
-    // Check to see if the package version is part of an unlocked package
-    // if so, throw an error since ancestry only applies to managed packages
-    const packageType = await pkgUtils.getPackageType(this.requestedPackageId, this.options.connection);
-
-    if (packageType !== 'Managed') {
-      throw messages.createError('unlockedPackageError');
-    }
-
     // Start with the node, and shoot up
     let node = await this.getPackageVersion(this.requestedPackageId);
     while (node.AncestorId !== null) {
@@ -223,6 +220,36 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
       node = ancestor;
     }
     return [node];
+  }
+
+  private async validatePackageType(): Promise<void> {
+    // Check to see if the package version is part of an unlocked package
+    // if so, throw an error since ancestry only applies to managed packages
+    let packageType: PackageType;
+    switch (this.requestedPackageId.slice(0, 3)) {
+      case '04t':
+        // eslint-disable-next-line no-case-declarations
+        const packageVersion = new PackageVersion({
+          idOrAlias: this.requestedPackageId,
+          project: this.options.project,
+          connection: this.options.connection,
+        });
+        packageType = await packageVersion.getPackageType();
+        break;
+      case '0Ho':
+        // eslint-disable-next-line no-case-declarations
+        const pkg = new Package({
+          packageAliasOrId: this.requestedPackageId,
+          project: this.options.project,
+          connection: this.options.connection,
+        });
+        packageType = await pkg.getType();
+        break;
+    }
+
+    if (packageType !== 'Managed') {
+      throw messages.createError('unlockedPackageError');
+    }
   }
 
   private async getPackageVersion(nodeId: string): Promise<PackageAncestryNode> {
@@ -244,12 +271,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   private async findRootsForPackage(): Promise<PackageAncestryNode[]> {
     // Check to see if the package is an unlocked package
     // if so, throw and error since ancestry only applies to managed packages
-    const packageType = await pkgUtils.getPackageType(this.requestedPackageId, this.options.connection);
-
-    if (packageType !== 'Managed') {
-      throw messages.createError('unlockedPackageError');
-    }
-
+    await this.validatePackageType();
     const normalQuery = `${SELECT_PACKAGE_VERSION} WHERE AncestorId = NULL AND Package2Id = '${this.requestedPackageId}' ${releasedOnlyFilter}`;
     const subscriberPackageVersions = (
       await this.options.connection.tooling.query<PackageAncestryNode>(normalQuery)

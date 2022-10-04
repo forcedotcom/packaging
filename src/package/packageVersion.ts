@@ -113,7 +113,7 @@ export class PackageVersion {
     this.connection = this.options.connection;
     this.project = this.options.project;
     this.data = {} as Package2Version;
-    const id = getPackageIdFromAlias(this.options.idOrAlias, this.project);
+    const id = this.resolveId();
 
     // validate ID
     if (id.startsWith('04t')) {
@@ -576,9 +576,10 @@ export class PackageVersion {
   }
 
   public async uninstall(
+    frequency: Duration = Duration.milliseconds(0),
     wait: Duration = Duration.milliseconds(0)
   ): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest> {
-    return await uninstallPackage(await this.getSubscriberId(), this.connection, wait);
+    return await uninstallPackage(await this.getSubscriberId(), this.connection, frequency, wait);
   }
 
   public async promote(): Promise<PackageSaveResult> {
@@ -716,5 +717,8 @@ export class PackageVersion {
         results.SubscriberPackageVersionId;
       await this.project.getSfProjectJson().write();
     }
+  }
+  private resolveId(): string {
+    return getPackageIdFromAlias(this.options.idOrAlias, this.project);
   }
 }

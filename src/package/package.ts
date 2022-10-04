@@ -148,9 +148,9 @@ export class Package {
    * Convert a 1st generation package to a 2nd generation package.
    * See {@link ConvertPackageOptions} for conversion options.
    *
-   * @param pkgId
+   * @param pkgId the 1GP package ID (033) of the package to convert
    * @param connection
-   * @param options
+   * @param options {@link ConvertPackageOptions}
    * @param project
    */
   public static async convert(

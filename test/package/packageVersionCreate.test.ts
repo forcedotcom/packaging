@@ -10,7 +10,7 @@ import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from
 import { expect } from 'chai';
 import { Connection, SfProject } from '@salesforce/core';
 import * as xml2js from 'xml2js';
-import * as pkgUtils from '../../src/utils/packageUtils';
+// import * as pkgUtils from '../../src/utils/packageUtils';
 
 import { PackageVersionCreate } from '../../src/package/packageVersionCreate';
 import { PackagingSObjects } from '../../src/interfaces';
@@ -22,7 +22,7 @@ describe('Package Version Create', () => {
   let connection: Connection;
   let packageTypeQuery: sinon.SinonStub;
   let packageCreateStub: sinon.SinonStub;
-  let packageTypeStub: sinon.SinonStub;
+  // let packageTypeStub: sinon.SinonStub;
 
   let project: SfProject;
 
@@ -61,7 +61,7 @@ describe('Package Version Create', () => {
     $$.SANDBOX.stub(xml2js, 'parseStringPromise').resolves({
       Package: { types: [{ name: ['Apexclass'], members: ['MyApexClass'] }] },
     });
-    packageTypeStub = $$.SANDBOX.stub(pkgUtils, 'getPackageType').resolves('Managed');
+    // packageTypeStub = $$.SANDBOX.stub(pkgUtils, 'getPackageType').resolves('Managed');
   });
 
   afterEach(async () => {
@@ -323,11 +323,8 @@ describe('Package Version Create', () => {
     packageTypeQuery.restore();
     packageTypeQuery = $$.SANDBOX.stub(connection.tooling, 'query')
       .onFirstCall() // @ts-ignore
-      .resolves({ records: [{ ContainerOptions: 'Unlocked' }] })
-      // @ts-ignore
       .resolves({ records: [{ Id: '05i3i000000Gmj6XXX' }] });
-    packageTypeStub.restore();
-    packageTypeStub = $$.SANDBOX.stub(pkgUtils, 'getPackageType').resolves('Unlocked');
+    $$.SANDBOX.stub(connection.tooling, 'retrieve').resolves({ ContainerOptions: 'Unlocked' });
     const pvc = new PackageVersionCreate({
       connection,
       project,

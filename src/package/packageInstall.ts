@@ -72,7 +72,7 @@ export async function createPackageInstallRequest(
       result.errors.toString(),
     ]);
   }
-  return await getStatus(connection, packageInstallRequestId);
+  return getStatus(connection, packageInstallRequestId);
 }
 
 export async function getStatus(

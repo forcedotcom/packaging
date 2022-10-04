@@ -26,6 +26,7 @@ export async function getUninstallErrors(conn: Connection, id: string): Promise<
 export async function pollUninstall(
   uninstallRequestId: string,
   conn: Connection,
+  frequency: Duration,
   wait: Duration
 ): Promise<UninstallResult> {
   const poll = async (id: string, conn: Connection): Promise<{ completed: boolean; payload: UninstallResult }> => {
@@ -56,7 +57,7 @@ export async function pollUninstall(
   };
   const pollingClient = await PollingClient.create({
     poll: () => poll(uninstallRequestId, conn),
-    frequency: Duration.seconds(5),
+    frequency,
     timeout: wait,
   });
   return pollingClient.subscribe();
@@ -65,6 +66,7 @@ export async function pollUninstall(
 export async function uninstallPackage(
   id: string,
   conn: Connection,
+  frequency: Duration = Duration.seconds(0),
   wait: Duration = Duration.seconds(0)
 ): Promise<UninstallResult> {
   try {
@@ -77,7 +79,7 @@ export async function uninstallPackage(
         .sobject('SubscriberPackageVersionUninstallRequest')
         .retrieve(uninstallRequest.id)) as UninstallResult;
     } else {
-      return await pollUninstall(uninstallRequest.id, conn, wait);
+      return await pollUninstall(uninstallRequest.id, conn, frequency, wait);
     }
   } catch (err) {
     throw applyErrorAction(massageErrorMessage(err as Error));
