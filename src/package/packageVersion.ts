@@ -744,7 +744,7 @@ export class PackageVersion {
           pkgInstallCreateRequest.Password,
           this.connection
         );
-        if (result?.records.length === 0 || result?.records[0].InstallValidationStatus !== 'PACKAGE_UNAVAILABLE') {
+        if (result?.records.length === 0 || result?.records[0].InstallValidationStatus === 'PACKAGE_UNAVAILABLE') {
           throw installMsgs.createError('subscriberPackageVersionNotPublished');
         }
       } catch (e) {

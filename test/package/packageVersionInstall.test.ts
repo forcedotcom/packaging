@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { expect } from 'chai';
 import { Connection, Lifecycle, Messages, SfProject } from '@salesforce/core';
-import { SaveResult } from 'jsforce';
+import { QueryResult, SaveResult } from 'jsforce';
 import { Duration } from '@salesforce/kit';
 import { PackageVersion, isErrorPackageNotAvailable, isErrorFromSPVQueryRestriction } from '../../src/package';
 import { PackagingSObjects, PackageInstallCreateRequest, PackageInstallOptions } from '../../src/interfaces';
@@ -57,6 +57,7 @@ describe('Package Install', () => {
   let retrieveStub: sinon.SinonStub;
   let lifecycleStub: sinon.SinonStub;
   let queryStub: sinon.SinonStub;
+  let otherQueryStub: sinon.SinonStub;
   let project: SfProject;
 
   Messages.importMessagesDirectory(__dirname);
@@ -158,6 +159,43 @@ describe('Package Install', () => {
     ValidationSkipped: false,
   };
 
+  const subscriberPackageVersion = {
+    done: true,
+    totalSize: 1,
+    records: [
+      {
+        AppExchangeDescription: '',
+        AppExchangeLogoUrl: '',
+        AppExchangePackageName: '',
+        AppExchangePublisherName: '',
+        BuildNumber: 0,
+        CspTrustedSites: undefined,
+        Dependencies: undefined,
+        Description: '',
+        Id: '',
+        InstallValidationStatus: 'NO_ERRORS_DETECTED',
+        IsBeta: false,
+        IsDeprecated: false,
+        IsManaged: false,
+        IsOrgDependent: false,
+        IsPasswordProtected: false,
+        IsSecurityReviewed: false,
+        MajorVersion: 0,
+        MinorVersion: 0,
+        Name: '',
+        Package2ContainerOptions: '',
+        PatchVersion: 0,
+        PostInstallUrl: '',
+        Profiles: undefined,
+        PublisherName: '',
+        ReleaseNotesUrl: '',
+        ReleaseState: '',
+        RemoteSiteSettings: undefined,
+        SubscriberPackageId: '',
+      },
+    ],
+  };
+
   const stubGetPackageTypeBy04tQuery = (type = 'Unlocked'): sinon.SinonStub => {
     return $$.SANDBOX.stub(connection.tooling, 'query').resolves({
       done: true,
@@ -210,6 +248,9 @@ describe('Package Install', () => {
       .resolves(inProgressPIR)
       .onSecondCall()
       .resolves(inProgressPIR);
+    otherQueryStub = $$.SANDBOX.stub(connection.tooling, 'query')
+      .onFirstCall()
+      .resolves(subscriberPackageVersion as QueryResult<PackagingSObjects.SubscriberPackageVersion>);
     const pkg = new PackageVersion({ idOrAlias: myPackageVersion04t, project, connection });
     const result = await pkg.install(pkgInstallCreateRequest);
 
@@ -238,6 +279,7 @@ describe('Package Install', () => {
   it('should send install request and poll status (sync)', async () => {
     const inProgressPIR = Object.assign({}, pkgInstallRequest, { Status: 'IN_PROGRESS' });
     const successPIR = Object.assign({}, pkgInstallRequest);
+    otherQueryStub?.restore();
     queryStub.restore();
     queryStub = $$.SANDBOX.stub(connection, 'singleRecordQuery')
       .onFirstCall()
@@ -258,14 +300,16 @@ describe('Package Install', () => {
         totalSize: 0,
         records: [{ ContainerOptions: 'Managed' }],
       });
-    queryStub = $$.SANDBOX.stub(connection.tooling, 'query')
+    otherQueryStub = $$.SANDBOX.stub(connection.tooling, 'query')
       .onFirstCall()
+      .resolves(subscriberPackageVersion as QueryResult<PackagingSObjects.SubscriberPackageVersion>)
+      .onSecondCall()
       .resolves({
         done: false,
         totalSize: 0,
         records: [{ InstallValidationStatus: 'PACKAGE_UNAVAILABLE' }],
       })
-      .onSecondCall()
+      .onThirdCall()
       .resolves({
         done: false,
         totalSize: 0,
@@ -302,6 +346,100 @@ describe('Package Install', () => {
     expect(lifecycleStub.args[3][1]).to.deep.equal('PACKAGE_UNAVAILABLE');
     expect(lifecycleStub.args[4][0]).to.equal('Package/install-subscriber-status');
     expect(lifecycleStub.args[4][1]).to.deep.equal('NO_ERRORS_DETECTED');
+
+    // verify expected return json
+    expect(result).to.deep.equal(successPIR);
+  });
+  it('should send install request, wait for publish and poll status (sync)', async () => {
+    const inProgressPIR = Object.assign({}, pkgInstallRequest, { Status: 'IN_PROGRESS' });
+    const successPIR = Object.assign({}, pkgInstallRequest);
+    otherQueryStub?.restore();
+    queryStub.restore();
+    queryStub = $$.SANDBOX.stub(connection, 'singleRecordQuery')
+      .onFirstCall()
+      .resolves({
+        done: false,
+        totalSize: 0,
+        records: [package2],
+      })
+      .onSecondCall()
+      .resolves({
+        done: false,
+        totalSize: 0,
+        records: [package2Version],
+      })
+      .onThirdCall()
+      .resolves({
+        done: false,
+        totalSize: 0,
+        records: [{ ContainerOptions: 'Managed' }],
+      });
+    otherQueryStub = $$.SANDBOX.stub(connection.tooling, 'query')
+      .onFirstCall()
+      .resolves({
+        done: false,
+        totalSize: 0,
+        records: [{ InstallValidationStatus: 'PACKAGE_UNAVAILABLE' }],
+      })
+      .onSecondCall()
+      .resolves({
+        done: false,
+        totalSize: 0,
+        records: [{ InstallValidationStatus: 'NO_ERRORS_DETECTED' }],
+      })
+      .onThirdCall()
+      .resolves({
+        done: false,
+        totalSize: 0,
+        records: [{ InstallValidationStatus: 'PACKAGE_UNAVAILABLE' }],
+      })
+      .onCall(4)
+      .resolves({
+        done: false,
+        totalSize: 0,
+        records: [{ InstallValidationStatus: 'NO_ERRORS_DETECTED' }],
+      });
+    retrieveStub = $$.SANDBOX.stub(connection.tooling, 'retrieve')
+      .onFirstCall()
+      .resolves(inProgressPIR)
+      .onSecondCall()
+      .resolves(inProgressPIR)
+      .onThirdCall()
+      .resolves(successPIR);
+
+    const pkg = new PackageVersion({ idOrAlias: myPackageVersion04t, project, connection });
+    const installOptions: PackageInstallOptions = {
+      publishFrequency: Duration.milliseconds(200),
+      publishTimeout: Duration.seconds(2),
+      pollingFrequency: Duration.seconds(1),
+      pollingTimeout: Duration.seconds(10),
+    };
+    const result = await pkg.install(pkgInstallCreateRequest, installOptions);
+
+    expect(toolingCreateStub.calledOnce).to.be.true;
+
+    // verify we polled
+    expect(retrieveStub.calledThrice).to.be.true;
+    expect(lifecycleStub.callCount).to.equal(9);
+    expect(lifecycleStub.args[0][0]).to.equal('Package/install-subscriber-status');
+    expect(lifecycleStub.args[0][1]).to.deep.equal('PACKAGE_UNAVAILABLE');
+    expect(lifecycleStub.args[1][0]).to.equal('Package/install-subscriber-status');
+    expect(lifecycleStub.args[1][1]).to.deep.equal('PACKAGE_UNAVAILABLE');
+    expect(lifecycleStub.args[2][0]).to.equal('Package/install-subscriber-status');
+    expect(lifecycleStub.args[2][1]).to.deep.equal('NO_ERRORS_DETECTED');
+    expect(lifecycleStub.args[3][0]).to.equal('Package/install-presend');
+    const expectedRequest = Object.assign({}, pkgInstallCreateRequest, pkgInstallCreateRequestDefaults);
+    expect(lifecycleStub.args[3][1]).to.deep.equal(expectedRequest);
+    expect(lifecycleStub.args[4][0]).to.equal('Package/install-postsend');
+    expect(lifecycleStub.args[4][1]).to.deep.equal(pkgCreateRequest);
+    expect(lifecycleStub.args[5][0]).to.equal('Package/install-subscriber-status');
+    expect(lifecycleStub.args[5][1]).to.deep.equal('PACKAGE_UNAVAILABLE');
+    expect(lifecycleStub.args[6][0]).to.equal('Package/install-subscriber-status');
+    expect(lifecycleStub.args[6][1]).to.deep.equal('PACKAGE_UNAVAILABLE');
+    expect(lifecycleStub.args[7][0]).to.equal('Package/install-subscriber-status');
+    expect(lifecycleStub.args[7][1]).to.deep.equal('PACKAGE_UNAVAILABLE');
+    expect(lifecycleStub.args[8][0]).to.equal('Package/install-subscriber-status');
+    expect(lifecycleStub.args[8][1]).to.deep.equal('NO_ERRORS_DETECTED');
 
     // verify expected return json
     expect(result).to.deep.equal(successPIR);
