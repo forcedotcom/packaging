@@ -12,7 +12,7 @@ import { readJSON } from 'fs-extra';
 import { TestSession, execCmd } from '@salesforce/cli-plugins-testkit';
 import { Duration, sleep } from '@salesforce/kit';
 import { ProjectJson } from '@salesforce/core/lib/sfProject';
-import { ConfigAggregator, Lifecycle, Org, SfProject } from '@salesforce/core';
+import { Lifecycle, Org, SfProject } from '@salesforce/core';
 import { uniqid } from '@salesforce/core/lib/testSetup';
 import {
   PackageCreateOptions,
@@ -70,25 +70,30 @@ describe('Integration tests for @salesforce/packaging library', function () {
   let installReqId = '';
   let uninstallReqId = ''; // 06y
   let pkgName = '';
-  let configAggregator: ConfigAggregator;
   let devHubOrg: Org;
   let scratchOrg: Org;
   let project: SfProject;
   before('pkgSetup', async () => {
     process.env.TESTKIT_EXECUTABLE_PATH = 'sfdx';
+    execCmd('config:set restDeploy=false', { cli: 'sfdx' });
+
     // will auth the hub
     session = await TestSession.create({
       project: {
         sourceDir: path.join('test', 'package', 'resources', 'packageProject'),
       },
-      setupCommands: [
-        'sfdx config:set restDeploy=false',
-        `sfdx force:org:create -d 1 -a ${SUB_ORG_ALIAS} -f config/project-scratch-def.json`,
+      devhubAuthStrategy: 'AUTO',
+      scratchOrgs: [
+        {
+          executable: 'sfdx',
+          duration: 1,
+          alias: SUB_ORG_ALIAS,
+          config: path.join('config', 'project-scratch-def.json'),
+        },
       ],
     });
     pkgName = uniqid({ template: 'pnh-dancingbears-', length: 16 });
-    configAggregator = await ConfigAggregator.create();
-    devHubOrg = await Org.create({ aliasOrUsername: configAggregator.getPropertyValue<string>('target-dev-hub') });
+    devHubOrg = await Org.create({ aliasOrUsername: session.hubOrg.username });
     scratchOrg = await Org.create({ aliasOrUsername: SUB_ORG_ALIAS });
     project = await SfProject.resolve();
   });
@@ -490,7 +495,6 @@ describe('ancestry tests', () => {
   };
   let project: SfProject;
   let devHubOrg: Org;
-  let configAggregator: ConfigAggregator;
   let pkgName: string;
   let versions: VersionNumber[];
   let sortedVersions: VersionNumber[];
@@ -500,16 +504,16 @@ describe('ancestry tests', () => {
     const query =
       "SELECT AncestorId, SubscriberPackageVersionId, MajorVersion, MinorVersion, PatchVersion, BuildNumber, Package2Id, Package2.Name, package2.NamespacePrefix FROM Package2Version where package2.containeroptions = 'Managed' AND IsReleased = true";
 
+    execCmd('config:set restDeploy=false', { cli: 'sfdx' });
     process.env.TESTKIT_EXECUTABLE_PATH = 'sfdx';
     // will auth the hub
     session = await TestSession.create({
       project: {
         sourceDir: path.join('test', 'package', 'resources', 'packageProject'),
       },
-      setupCommands: ['sfdx config:set restDeploy=false'],
+      devhubAuthStrategy: 'AUTO',
     });
-    configAggregator = await ConfigAggregator.create();
-    devHubOrg = await Org.create({ aliasOrUsername: configAggregator.getPropertyValue<string>('target-dev-hub') });
+    devHubOrg = await Org.create({ aliasOrUsername: session.hubOrg.username });
     let pvRecords = (await devHubOrg.getConnection().tooling.query<PackageVersionQueryResult>(query)).records;
     // preferred well known package pnhcoverage3, but if it's not available, use the first one
     if (pvRecords.some((pv) => pv.Package2.Name === 'pnhcoverage3')) {
