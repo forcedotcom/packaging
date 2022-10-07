@@ -22,7 +22,6 @@ import {
 import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
 import { Many } from '@salesforce/ts-types';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
-import * as xml2js from 'xml2js';
 import { uniqid } from '../utils/uniqid';
 import * as pkgUtils from '../utils/packageUtils';
 import {
@@ -85,6 +84,7 @@ export async function convertPackage(
   pkg: string,
   connection: Connection,
   options: ConvertPackageOptions,
+  apiVersion: string,
   project?: SfProject
 ): Promise<PackageVersionCreateRequestResult> {
   let maxRetries = 0;
@@ -94,14 +94,14 @@ export async function convertPackage(
   }
 
   const packageId = await findOrCreatePackage2(pkg, connection);
-
   const request = await createPackageVersionCreateRequest(
     {
       installationkey: options.installationKey,
       definitionfile: options.definitionfile,
       buildinstance: options.buildInstance,
     },
-    packageId
+    packageId,
+    apiVersion
   );
 
   // TODO: a lot of this is duplicated from PC, PVC, and PVCR.
@@ -144,7 +144,8 @@ export async function convertPackage(
  */
 export async function createPackageVersionCreateRequest(
   context: { installationkey?: string; definitionfile?: string; buildinstance?: string },
-  packageId: string
+  packageId: string,
+  apiVersion: string
 ): Promise<PackagingSObjects.Package2VersionCreateRequest> {
   const uniqueId = uniqid({ template: `${packageId}-%s` });
   const packageVersTmpRoot = path.join(os.tmpdir(), uniqueId);
@@ -160,6 +161,7 @@ export async function createPackageVersionCreateRequest(
 
   const settingsGenerator = new SettingsGenerator({ asDirectory: true });
   const definitionFile = context.definitionfile;
+
   if (definitionFile) {
     const definitionFilePayload = await fs.promises.readFile(definitionFile, 'utf8');
     const definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo;
@@ -180,40 +182,27 @@ export async function createPackageVersionCreateRequest(
       }
     );
   }
+
   await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
   await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
+  await fs.promises.mkdir(packageVersMetadataFolder, { recursive: true });
 
-  fs.mkdirSync(packageVersMetadataFolder, { recursive: true });
-
-  if (settingsGenerator.hasSettings()) {
-    await settingsGenerator.createDeploy();
-    await settingsGenerator.createDeployPackageContents('54.0');
-    await srcDevUtil.zipDir(
-      `${settingsGenerator.getDestinationPath()}${path.sep}${settingsGenerator.getShapeDirName()}`,
-      settingsZipFile
-    );
-  }
+  await settingsGenerator.createDeploy();
+  await settingsGenerator.createDeployPackageContents(apiVersion);
+  await srcDevUtil.zipDir(
+    `${settingsGenerator.getDestinationPath()}${path.sep}${settingsGenerator.getShapeDirName()}`,
+    settingsZipFile
+  );
 
   const shapeDirectory = `${settingsGenerator.getDestinationPath()}${path.sep}${settingsGenerator.getShapeDirName()}`;
   const currentPackageXml = await fs.promises.readFile(path.join(shapeDirectory, 'package.xml'), 'utf8');
-
-  const packageJson = await xml2js.parseStringPromise(currentPackageXml);
-
-  // Re-write the package.xml in case profiles have been added or removed
-  const xmlBuilder = new xml2js.Builder({
-    xmldec: { version: '1.0', encoding: 'UTF-8' },
-  });
-  const xml = xmlBuilder.buildObject(packageJson);
-
-  await fs.promises.writeFile(path.join(packageVersMetadataFolder, 'package.xml'), xml, 'utf-8');
+  await fs.promises.writeFile(path.join(packageVersMetadataFolder, 'package.xml'), currentPackageXml, 'utf-8');
   // Zip the packageVersMetadataFolder folder and put the zip in {packageVersBlobDirectory}/package.zip
   await srcDevUtil.zipDir(packageVersMetadataFolder, metadataZipFile);
-
   await fs.promises.writeFile(
     path.join(packageVersBlobDirectory, consts.PACKAGE2_DESCRIPTOR_FILE),
     JSON.stringify(packageDescriptorJson, undefined, 2)
   );
-
   // Zip the Version Info and package.zip files into another zip
   await srcDevUtil.zipDir(packageVersBlobDirectory, packageVersBlobZipFile);
 

@@ -4,10 +4,15 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
+
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import { expect } from 'chai';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { Connection, Lifecycle } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
+
 import {
   convertPackage,
   createPackageVersionCreateRequest,
@@ -31,9 +36,27 @@ describe('packageConvert', () => {
   describe('createPackageVersionCreateRequest', () => {
     it('should return a valid request with installationkey and buildinstance', async () => {
       $$.inProject(true);
+      const defFile = {
+        orgName: 'test org name',
+        edition: 'Developer',
+        features: ['EnableSetPasswordInApi', 'PersonAccounts', 'MultiCurrency'],
+        settings: {
+          lightningExperienceSettings: {
+            enableS1DesktopEnabled: true,
+          },
+          languageSettings: {
+            enableTranslationWorkbench: true,
+          },
+        },
+      };
+      const packageVersTmpRoot = path.join(os.tmpdir(), 'config');
+      await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
+      const pathUpdate = path.join(packageVersTmpRoot, 'scratch.json');
+      fs.writeFile(pathUpdate, JSON.stringify(defFile, undefined, 2), () => {});
       const request = await createPackageVersionCreateRequest(
-        { installationkey: '123', buildinstance: 'myInstance' },
-        '0Ho3i000000Gmj6CAC'
+        { installationkey: '123', definitionfile: pathUpdate, buildinstance: 'myInstance' },
+        '0Ho3i000000Gmj6CAC',
+        '54.0'
       );
       expect(request).to.have.all.keys('InstallKey', 'Instance', 'IsConversionRequest', 'Package2Id', 'VersionInfo');
       expect(request.InstallKey).to.equal('123');
@@ -46,7 +69,7 @@ describe('packageConvert', () => {
 
     it('should return a valid request', async () => {
       $$.inProject(true);
-      const request = await createPackageVersionCreateRequest({}, '0Ho3i000000Gmj6CAC');
+      const request = await createPackageVersionCreateRequest({}, '0Ho3i000000Gmj6CAC', '54.0');
       expect(request).to.have.all.keys('InstallKey', 'Instance', 'IsConversionRequest', 'Package2Id', 'VersionInfo');
       expect(request.InstallKey).to.equal(undefined);
       expect(request.Instance).to.equal(undefined);
@@ -161,14 +184,20 @@ describe('packageConvert', () => {
     // @ts-ignore
     $$.SANDBOX.stub(conn.tooling, 'create').resolves({ success: undefined, errors: [new Error('server error')] });
     try {
-      await convertPackage('0334p000000EaIHAA0', conn, {
-        buildInstance: '',
-        installationKey: '',
-        definitionfile: '',
-        installationKeyBypass: true,
-        wait: Duration.minutes(1),
-      });
+      await convertPackage(
+        '0334p000000EaIHAA0',
+        conn,
+        {
+          buildInstance: '',
+          installationKey: '',
+          definitionfile: '',
+          installationKeyBypass: true,
+          wait: Duration.minutes(1),
+        },
+        '54.0'
+      );
     } catch (e) {
+      // console.log('ERROR', e);
       expect((e as Error).message).to.include('Failed to create request : Error: server error');
     }
   });
@@ -237,13 +266,18 @@ describe('packageConvert', () => {
     // @ts-ignore
     $$.SANDBOX.stub(conn.tooling, 'create').resolves({ success: true, errors: undefined, id: '0Ho3i000000Gmj6YYY' });
 
-    const result = await convertPackage('0334p000000EaIHAA0', conn, {
-      buildInstance: '',
-      installationKey: '',
-      definitionfile: '',
-      installationKeyBypass: true,
-      wait: Duration.minutes(1),
-    });
+    const result = await convertPackage(
+      '0334p000000EaIHAA0',
+      conn,
+      {
+        buildInstance: '',
+        installationKey: '',
+        definitionfile: '',
+        installationKeyBypass: true,
+        wait: Duration.minutes(1),
+      },
+      '54.0'
+    );
 
     expect(result).to.deep.equal(successResponse);
   }).timeout(100000);
@@ -272,13 +306,18 @@ describe('packageConvert', () => {
     $$.SANDBOX.stub(conn.tooling, 'create').resolves({ success: true, errors: undefined, id: '0Ho3i000000Gmj6YYY' });
 
     try {
-      await convertPackage('0334p000000EaIHAA0', conn, {
-        buildInstance: '',
-        installationKey: '',
-        definitionfile: '',
-        installationKeyBypass: true,
-        wait: Duration.minutes(1),
-      });
+      await convertPackage(
+        '0334p000000EaIHAA0',
+        conn,
+        {
+          buildInstance: '',
+          installationKey: '',
+          definitionfile: '',
+          installationKeyBypass: true,
+          wait: Duration.minutes(1),
+        },
+        '54.0'
+      );
     } catch (e) {
       const message = (e as Error).message;
       expect(message).to.include('Multiple errors occurred:');
