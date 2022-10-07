@@ -5,13 +5,19 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { Connection, Lifecycle, Logger, Messages, PollingClient, StatusResult } from '@salesforce/core';
-import { isNumber } from '@salesforce/ts-types';
+import { Connection, Lifecycle, Logger, Messages, PollingClient, SfError, StatusResult } from '@salesforce/core';
+import { isString } from '@salesforce/ts-types';
 import { QueryResult } from 'jsforce';
 import { Duration } from '@salesforce/kit';
-import { escapeInstallationKey } from '../utils';
-import { PackagingSObjects, PackageInstallCreateRequest, PackageEvents, PackageType } from '../interfaces';
-
+import { escapeInstallationKey, numberToDuration } from '../utils';
+import {
+  PackagingSObjects,
+  PackageInstallCreateRequest,
+  PackageEvents,
+  PackageType,
+  PackageInstallOptions,
+} from '../interfaces';
+import { consts } from '../constants';
 import SubscriberPackageVersion = PackagingSObjects.SubscriberPackageVersion;
 import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 
@@ -77,12 +83,9 @@ export async function createPackageInstallRequest(
 
 export async function getStatus(
   connection: Connection,
-  subscriberPackageVersion: string
+  packageInstallRequestId: string
 ): Promise<PackageInstallRequest> {
-  return (await connection.tooling.retrieve(
-    'PackageInstallRequest',
-    subscriberPackageVersion
-  )) as PackageInstallRequest;
+  return (await connection.tooling.retrieve('PackageInstallRequest', packageInstallRequestId)) as PackageInstallRequest;
 }
 
 // determines if error is from malformed SubscriberPackageVersion query
@@ -104,25 +107,11 @@ export async function getInstallationStatus(
   installationKey: string,
   connection: Connection
 ): Promise<QueryResult<PackagingSObjects.SubscriberPackageVersion>> {
-  let queryResult;
   const QUERY_NO_KEY = `SELECT Id, SubscriberPackageId, InstallValidationStatus FROM SubscriberPackageVersion WHERE Id ='${subscriberPackageVersionId}'`;
 
-  try {
-    const escapedInstallationKey = installationKey ? escapeInstallationKey(installationKey) : null;
-    const queryWithKey = `${QUERY_NO_KEY} AND InstallationKey ='${escapedInstallationKey}'`;
-    queryResult = await connection.tooling.query<SubscriberPackageVersion>(queryWithKey);
-  } catch (e) {
-    // Check first for Implementation Restriction error that is enforced in 214, before it was possible to query
-    // against InstallationKey, otherwise surface the error.
-    if (e instanceof Error && isErrorFromSPVQueryRestriction(e)) {
-      queryResult = await connection.tooling.query<SubscriberPackageVersion>(QUERY_NO_KEY);
-    } else {
-      if (e instanceof Error && !isErrorPackageNotAvailable(e)) {
-        throw e;
-      }
-    }
-  }
-  return queryResult;
+  const escapedInstallationKey = installationKey ? escapeInstallationKey(installationKey) : null;
+  const queryWithKey = `${QUERY_NO_KEY} AND InstallationKey ='${escapedInstallationKey}'`;
+  return connection.tooling.query<SubscriberPackageVersion>(queryWithKey);
 }
 
 export async function waitForPublish(
@@ -132,11 +121,16 @@ export async function waitForPublish(
   timeout: number | Duration,
   installationKey?: string
 ): Promise<void> {
+  const pollingTimeout = numberToDuration(timeout || 0);
+
+  if (pollingTimeout.milliseconds <= 0) {
+    return;
+  }
   let queryResult: QueryResult<SubscriberPackageVersion>;
   let installValidationStatus: SubscriberPackageVersion['InstallValidationStatus'];
   const pollingOptions: Partial<PollingClient.Options> = {
-    frequency: isNumber(frequency) ? Duration.minutes(frequency) : frequency,
-    timeout: isNumber(timeout) ? Duration.minutes(timeout) : timeout,
+    frequency: numberToDuration(frequency || 0),
+    timeout: pollingTimeout,
     poll: async (): Promise<StatusResult> => {
       queryResult = await getInstallationStatus(subscriberPackageVersionId, installationKey, connection);
 
@@ -171,6 +165,52 @@ export async function waitForPublish(
     error.setData(queryResult?.records[0]);
     if (error.stack && e.stack) {
       // append the original stack to this new error
+      error.stack += `\nDUE TO:\n${(e as Error).stack}`;
+    }
+    throw error;
+  }
+}
+
+export async function pollStatus(
+  connection: Connection,
+  installRequestId: string,
+  options: PackageInstallOptions
+): Promise<PackageInstallRequest> {
+  let packageInstallRequest: PackageInstallRequest;
+
+  const { pollingFrequency, pollingTimeout } = options;
+  const frequency = numberToDuration(pollingFrequency || consts.PACKAGE_INSTALL_POLL_FREQUENCY);
+
+  const timeout = numberToDuration(pollingTimeout || consts.PACKAGE_INSTALL_POLL_TIMEOUT);
+
+  const pollingOptions: Partial<PollingClient.Options> = {
+    frequency,
+    timeout,
+    poll: async (): Promise<StatusResult> => {
+      packageInstallRequest = await getStatus(connection, installRequestId);
+      getLogger().debug(installMsgs.getMessage('packageInstallPolling', [packageInstallRequest?.Status]));
+      await Lifecycle.getInstance().emit(PackageEvents.install.status, packageInstallRequest);
+      if (['SUCCESS', 'ERROR'].includes(packageInstallRequest?.Status)) {
+        return { completed: true, payload: packageInstallRequest };
+      }
+      return { completed: false };
+    },
+  };
+
+  const pollingClient = await PollingClient.create(pollingOptions);
+
+  try {
+    getLogger().debug(`Polling for PackageInstallRequest status. Package ID = ${installRequestId}`);
+    getLogger().debug(`Polling frequency (ms): ${pollingOptions.frequency.milliseconds}`);
+    getLogger().debug(`Polling timeout (min): ${pollingOptions.timeout.minutes}`);
+    await pollingClient.subscribe();
+    return packageInstallRequest;
+  } catch (e) {
+    const errMsg = e instanceof Error ? e.message : isString(e) ? e : 'polling timed out';
+    const error = new SfError(errMsg, 'PackageInstallTimeout');
+    error.setData(packageInstallRequest);
+    if (error.stack && e.stack) {
+      // add the original stack to this new error
       error.stack += `\nDUE TO:\n${(e as Error).stack}`;
     }
     throw error;

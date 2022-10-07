@@ -9,6 +9,7 @@ import { Duration } from '@salesforce/kit';
 import { Connection, NamedPackageDir, SfProject } from '@salesforce/core';
 import { SaveResult } from 'jsforce';
 import { Attributes } from 'graphology-types';
+import { Optional } from '@salesforce/ts-types';
 import { PackageProfileApi } from '../package/packageProfileApi';
 import { PackageAncestryNode } from '../package';
 import { PackagingSObjects } from './packagingSObjects';
@@ -257,6 +258,12 @@ export type PackageVersionOptions = {
    */
   idOrAlias: string;
   project: SfProject;
+};
+
+export type SubscriberPackageVersionOptions = {
+  connection: Connection;
+  id: string;
+  password: Optional<string>;
 };
 
 export type ConvertPackageOptions = {

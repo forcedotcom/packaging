@@ -11,3 +11,4 @@ export * from './packageVersionCreateRequest';
 export * from './packageInstalledList';
 export * from './packageVersionCreateRequestReport';
 export * from './packageAncestry';
+export * from './subscriberPackageVersion';

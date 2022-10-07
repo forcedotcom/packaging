@@ -4,50 +4,17 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import * as path from 'path';
-import * as fs from 'fs';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { expect } from 'chai';
-import { Connection, Lifecycle, Messages, SfProject } from '@salesforce/core';
+import { Connection, Lifecycle, Messages } from '@salesforce/core';
 import { QueryResult, SaveResult } from 'jsforce';
 import { Duration } from '@salesforce/kit';
-import { PackageVersion, isErrorPackageNotAvailable, isErrorFromSPVQueryRestriction } from '../../src/package';
+import { isErrorPackageNotAvailable, isErrorFromSPVQueryRestriction } from '../../src/package';
 import { PackagingSObjects, PackageInstallCreateRequest, PackageInstallOptions } from '../../src/interfaces';
-import Package2Version = PackagingSObjects.Package2Version;
+import { SubscriberPackageVersion } from '../../src/package/subscriberPackageVersion';
 import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
-import Package2 = PackagingSObjects.Package2;
 
 const myPackageVersion04t = '04t6A0000000X0UQAU';
-const myPackageVersion05i = '05i6A0000000X0UQAU';
-const myPackage = '0Ho6A0000000X0UQAU';
-
-async function setupProject(setup: (project: SfProject) => void = () => {}) {
-  // @ts-ignore
-  const project: SfProject = new SfProject('a');
-  const packageDirectories = [
-    {
-      path: 'force-app',
-      default: true,
-      package: myPackage,
-    },
-  ];
-  const packageAliases = { myPackage, myPackageVersion: myPackageVersion04t };
-  project.getSfProjectJson().set('packageDirectories', packageDirectories);
-  project.getSfProjectJson().set('packageAliases', packageAliases);
-  setup(project);
-  const projectDir = project.getPath();
-  project
-    .getSfProjectJson()
-    .getContents()
-    .packageDirectories?.forEach((dir) => {
-      if (dir.path) {
-        const packagePath = path.join(projectDir, dir.path);
-        fs.mkdirSync(packagePath, { recursive: true });
-      }
-    });
-
-  return project;
-}
 
 describe('Package Install', () => {
   const $$ = instantiateContext();
@@ -58,7 +25,6 @@ describe('Package Install', () => {
   let lifecycleStub: sinon.SinonStub;
   let queryStub: sinon.SinonStub;
   let otherQueryStub: sinon.SinonStub;
-  let project: SfProject;
 
   Messages.importMessagesDirectory(__dirname);
   const installMsgs = Messages.loadMessages('@salesforce/packaging', 'package_install');
@@ -76,13 +42,13 @@ describe('Package Install', () => {
   };
 
   const pkgInstallRequestId = '0Hf1h0000006runCAA';
-  const pkgCreateRequest: SaveResult = {
+  const pkgInstallRequest: SaveResult = {
     id: pkgInstallRequestId,
     success: true,
     errors: null,
   };
 
-  const pkgInstallRequest: PackageInstallRequest = {
+  const pkgInstallResult: PackageInstallRequest = {
     attributes: {
       type: 'PackageInstallRequest',
       url: `/services/data/v55.0/tooling/sobjects/PackageInstallRequest/${pkgInstallRequestId}`,
@@ -107,58 +73,6 @@ describe('Package Install', () => {
     Errors: null,
   };
 
-  const package2: Package2 = {
-    ContainerOptions: 'Managed',
-    ConvertedFromPackageId: '',
-    CreatedById: '',
-    CreatedDate: 0,
-    Description: '',
-    Id: myPackage,
-    IsDeleted: false,
-    IsDeprecated: false,
-    IsOrgDependent: false,
-    LastModifiedById: '',
-    LastModifiedDate: 0,
-    Name: '',
-    NamespacePrefix: '',
-    PackageErrorUsername: '',
-    SubscriberPackageId: '',
-    SystemModstamp: 0,
-  };
-
-  const package2Version: Package2Version = {
-    AncestorId: '',
-    Branch: '',
-    BuildDurationInSeconds: 0,
-    BuildNumber: 0,
-    CodeCoverage: undefined,
-    CodeCoveragePercentages: undefined,
-    ConvertedFromVersionId: '',
-    CreatedById: '',
-    CreatedDate: 0,
-    Description: '',
-    HasMetadataRemoved: false,
-    HasPassedCodeCoverageCheck: false,
-    Id: myPackageVersion05i,
-    InstallKey: null,
-    IsDeleted: false,
-    IsDeprecated: false,
-    IsPasswordProtected: false,
-    IsReleased: false,
-    LastModifiedById: '',
-    LastModifiedDate: 0,
-    MajorVersion: 0,
-    MinorVersion: 0,
-    Name: '',
-    Package2Id: myPackage,
-    PatchVersion: 0,
-    ReleaseVersion: 0,
-    SubscriberPackageVersionId: myPackageVersion04t,
-    SystemModstamp: 0,
-    Tag: '',
-    ValidationSkipped: false,
-  };
-
   const subscriberPackageVersion = {
     done: true,
     totalSize: 1,
@@ -172,7 +86,7 @@ describe('Package Install', () => {
         CspTrustedSites: undefined,
         Dependencies: undefined,
         Description: '',
-        Id: '',
+        Id: myPackageVersion04t,
         InstallValidationStatus: 'NO_ERRORS_DETECTED',
         IsBeta: false,
         IsDeprecated: false,
@@ -208,13 +122,11 @@ describe('Package Install', () => {
     stubContext($$);
     await $$.stubAuths(testOrg);
     connection = await testOrg.getConnection();
-    toolingCreateStub = $$.SANDBOX.stub(connection.tooling, 'create').resolves(pkgCreateRequest);
+    toolingCreateStub = $$.SANDBOX.stub(connection.tooling, 'create').resolves(pkgInstallRequest);
     lifecycleStub = $$.SANDBOX.stub(Lifecycle.prototype, 'emit');
 
     // This is for the getPackageTypeBy04t query
     queryStub = stubGetPackageTypeBy04tQuery();
-    $$.inProject(true);
-    project = await setupProject();
   });
 
   afterEach(() => {
@@ -222,36 +134,17 @@ describe('Package Install', () => {
   });
 
   it('should send install request and get status (async)', async () => {
-    const inProgressPIR = Object.assign({}, pkgInstallRequest, { Status: 'IN_PROGRESS' });
-    queryStub.restore();
-    queryStub = $$.SANDBOX.stub(connection, 'singleRecordQuery')
-      .onFirstCall()
-      .resolves({
-        done: false,
-        totalSize: 0,
-        records: [package2],
-      })
-      .onSecondCall()
-      .resolves({
-        done: false,
-        totalSize: 0,
-        records: [package2Version],
-      })
-      .onThirdCall()
-      .resolves({
-        done: false,
-        totalSize: 0,
-        records: [{ ContainerOptions: 'Managed' }],
-      });
+    const inProgressPIR = Object.assign({}, pkgInstallResult, { Status: 'IN_PROGRESS' });
+    queryStub?.restore();
     retrieveStub = $$.SANDBOX.stub(connection.tooling, 'retrieve')
       .onFirstCall()
       .resolves(inProgressPIR)
       .onSecondCall()
       .resolves(inProgressPIR);
-    otherQueryStub = $$.SANDBOX.stub(connection.tooling, 'query')
-      .onFirstCall()
-      .resolves(subscriberPackageVersion as QueryResult<PackagingSObjects.SubscriberPackageVersion>);
-    const pkg = new PackageVersion({ idOrAlias: myPackageVersion04t, project, connection });
+    otherQueryStub = $$.SANDBOX.stub(connection.tooling, 'query').resolves(
+      subscriberPackageVersion as QueryResult<PackagingSObjects.SubscriberPackageVersion>
+    );
+    const pkg = new SubscriberPackageVersion({ id: myPackageVersion04t, connection, password: null });
     const result = await pkg.install(pkgInstallCreateRequest);
 
     // verify correct connection.tooling.create() call
@@ -273,33 +166,14 @@ describe('Package Install', () => {
     expect(lifecycleStub.calledTwice).to.be.true;
     expect(lifecycleStub.args[0][1]).to.deep.equal(expectedRequest);
     expect(lifecycleStub.args[1][0]).to.equal('Package/install-postsend');
-    expect(queryStub.called).to.be.true;
+    expect(otherQueryStub.called).to.be.true;
   });
 
   it('should send install request and poll status (sync)', async () => {
-    const inProgressPIR = Object.assign({}, pkgInstallRequest, { Status: 'IN_PROGRESS' });
-    const successPIR = Object.assign({}, pkgInstallRequest);
+    const inProgressPIR = Object.assign({}, pkgInstallResult, { Status: 'IN_PROGRESS' });
+    const successPIR = Object.assign({}, pkgInstallResult);
     otherQueryStub?.restore();
     queryStub.restore();
-    queryStub = $$.SANDBOX.stub(connection, 'singleRecordQuery')
-      .onFirstCall()
-      .resolves({
-        done: false,
-        totalSize: 0,
-        records: [package2],
-      })
-      .onSecondCall()
-      .resolves({
-        done: false,
-        totalSize: 0,
-        records: [package2Version],
-      })
-      .onThirdCall()
-      .resolves({
-        done: false,
-        totalSize: 0,
-        records: [{ ContainerOptions: 'Managed' }],
-      });
     otherQueryStub = $$.SANDBOX.stub(connection.tooling, 'query')
       .onFirstCall()
       .resolves(subscriberPackageVersion as QueryResult<PackagingSObjects.SubscriberPackageVersion>)
@@ -323,7 +197,7 @@ describe('Package Install', () => {
       .onThirdCall()
       .resolves(successPIR);
 
-    const pkg = new PackageVersion({ idOrAlias: myPackageVersion04t, project, connection });
+    const pkg = new SubscriberPackageVersion({ id: myPackageVersion04t, connection, password: null });
     const installOptions: PackageInstallOptions = {
       pollingFrequency: Duration.seconds(1),
       pollingTimeout: Duration.seconds(10),
@@ -334,71 +208,24 @@ describe('Package Install', () => {
 
     // verify we polled
     expect(retrieveStub.calledThrice).to.be.true;
-    expect(lifecycleStub.callCount).to.equal(5);
+    expect(lifecycleStub.callCount).to.equal(3);
     expect(lifecycleStub.args[0][0]).to.equal('Package/install-presend');
     const expectedRequest = Object.assign({}, pkgInstallCreateRequest, pkgInstallCreateRequestDefaults);
     expect(lifecycleStub.args[0][1]).to.deep.equal(expectedRequest);
     expect(lifecycleStub.args[1][0]).to.equal('Package/install-postsend');
-    expect(lifecycleStub.args[1][1]).to.deep.equal(pkgCreateRequest);
-    expect(lifecycleStub.args[2][0]).to.equal('Package/install-subscriber-status');
-    expect(lifecycleStub.args[2][1]).to.deep.equal('PACKAGE_UNAVAILABLE');
-    expect(lifecycleStub.args[3][0]).to.equal('Package/install-subscriber-status');
-    expect(lifecycleStub.args[3][1]).to.deep.equal('PACKAGE_UNAVAILABLE');
-    expect(lifecycleStub.args[4][0]).to.equal('Package/install-subscriber-status');
-    expect(lifecycleStub.args[4][1]).to.deep.equal('NO_ERRORS_DETECTED');
+    expect(lifecycleStub.args[1][1]).to.deep.equal(pkgInstallRequest);
+    expect(lifecycleStub.args[2][0]).to.equal('Package/install-status');
+    expect(lifecycleStub.args[2][1]).to.deep.equal(pkgInstallResult);
 
     // verify expected return json
     expect(result).to.deep.equal(successPIR);
   });
   it('should send install request, wait for publish and poll status (sync)', async () => {
-    const inProgressPIR = Object.assign({}, pkgInstallRequest, { Status: 'IN_PROGRESS' });
-    const successPIR = Object.assign({}, pkgInstallRequest);
+    const inProgressPIR = Object.assign({}, pkgInstallResult, { Status: 'IN_PROGRESS' });
+    const successPIR = Object.assign({}, pkgInstallResult);
     otherQueryStub?.restore();
     queryStub.restore();
-    queryStub = $$.SANDBOX.stub(connection, 'singleRecordQuery')
-      .onFirstCall()
-      .resolves({
-        done: false,
-        totalSize: 0,
-        records: [package2],
-      })
-      .onSecondCall()
-      .resolves({
-        done: false,
-        totalSize: 0,
-        records: [package2Version],
-      })
-      .onThirdCall()
-      .resolves({
-        done: false,
-        totalSize: 0,
-        records: [{ ContainerOptions: 'Managed' }],
-      });
-    otherQueryStub = $$.SANDBOX.stub(connection.tooling, 'query')
-      .onFirstCall()
-      .resolves({
-        done: false,
-        totalSize: 0,
-        records: [{ InstallValidationStatus: 'PACKAGE_UNAVAILABLE' }],
-      })
-      .onSecondCall()
-      .resolves({
-        done: false,
-        totalSize: 0,
-        records: [{ InstallValidationStatus: 'NO_ERRORS_DETECTED' }],
-      })
-      .onThirdCall()
-      .resolves({
-        done: false,
-        totalSize: 0,
-        records: [{ InstallValidationStatus: 'PACKAGE_UNAVAILABLE' }],
-      })
-      .onCall(4)
-      .resolves({
-        done: false,
-        totalSize: 0,
-        records: [{ InstallValidationStatus: 'NO_ERRORS_DETECTED' }],
-      });
+    queryStub = $$.SANDBOX.stub(connection.tooling, 'query').resolves(subscriberPackageVersion);
     retrieveStub = $$.SANDBOX.stub(connection.tooling, 'retrieve')
       .onFirstCall()
       .resolves(inProgressPIR)
@@ -407,10 +234,14 @@ describe('Package Install', () => {
       .onThirdCall()
       .resolves(successPIR);
 
-    const pkg = new PackageVersion({ idOrAlias: myPackageVersion04t, project, connection });
+    otherQueryStub = $$.SANDBOX.stub(connection, 'singleRecordQuery')
+      .onFirstCall()
+      .resolves(subscriberPackageVersion.records[0]);
+
+    const pkg = new SubscriberPackageVersion({ id: myPackageVersion04t, connection, password: null });
     const installOptions: PackageInstallOptions = {
-      publishFrequency: Duration.milliseconds(200),
-      publishTimeout: Duration.seconds(2),
+      publishFrequency: Duration.milliseconds(5000),
+      publishTimeout: Duration.seconds(10),
       pollingFrequency: Duration.seconds(1),
       pollingTimeout: Duration.seconds(10),
     };
@@ -418,44 +249,37 @@ describe('Package Install', () => {
 
     expect(toolingCreateStub.calledOnce).to.be.true;
 
+    const expectedRequest = Object.assign({}, pkgInstallCreateRequest, pkgInstallCreateRequestDefaults);
+
     // verify we polled
     expect(retrieveStub.calledThrice).to.be.true;
-    expect(lifecycleStub.callCount).to.equal(9);
+    expect(lifecycleStub.callCount).to.equal(5);
     expect(lifecycleStub.args[0][0]).to.equal('Package/install-subscriber-status');
-    expect(lifecycleStub.args[0][1]).to.deep.equal('PACKAGE_UNAVAILABLE');
-    expect(lifecycleStub.args[1][0]).to.equal('Package/install-subscriber-status');
-    expect(lifecycleStub.args[1][1]).to.deep.equal('PACKAGE_UNAVAILABLE');
-    expect(lifecycleStub.args[2][0]).to.equal('Package/install-subscriber-status');
-    expect(lifecycleStub.args[2][1]).to.deep.equal('NO_ERRORS_DETECTED');
-    expect(lifecycleStub.args[3][0]).to.equal('Package/install-presend');
-    const expectedRequest = Object.assign({}, pkgInstallCreateRequest, pkgInstallCreateRequestDefaults);
-    expect(lifecycleStub.args[3][1]).to.deep.equal(expectedRequest);
-    expect(lifecycleStub.args[4][0]).to.equal('Package/install-postsend');
-    expect(lifecycleStub.args[4][1]).to.deep.equal(pkgCreateRequest);
-    expect(lifecycleStub.args[5][0]).to.equal('Package/install-subscriber-status');
-    expect(lifecycleStub.args[5][1]).to.deep.equal('PACKAGE_UNAVAILABLE');
-    expect(lifecycleStub.args[6][0]).to.equal('Package/install-subscriber-status');
-    expect(lifecycleStub.args[6][1]).to.deep.equal('PACKAGE_UNAVAILABLE');
-    expect(lifecycleStub.args[7][0]).to.equal('Package/install-subscriber-status');
-    expect(lifecycleStub.args[7][1]).to.deep.equal('PACKAGE_UNAVAILABLE');
-    expect(lifecycleStub.args[8][0]).to.equal('Package/install-subscriber-status');
-    expect(lifecycleStub.args[8][1]).to.deep.equal('NO_ERRORS_DETECTED');
+    expect(lifecycleStub.args[0][1]).to.deep.equal('NO_ERRORS_DETECTED');
+    expect(lifecycleStub.args[1][0]).to.equal('Package/install-presend');
+    expect(lifecycleStub.args[1][1]).to.deep.equal(expectedRequest);
+    expect(lifecycleStub.args[2][0]).to.equal('Package/install-postsend');
+    expect(lifecycleStub.args[2][1]).to.deep.equal(pkgInstallRequest);
+    expect(lifecycleStub.args[3][0]).to.equal('Package/install-subscriber-status');
+    expect(lifecycleStub.args[3][1]).to.deep.equal('NO_ERRORS_DETECTED');
+    expect(lifecycleStub.args[4][0]).to.equal('Package/install-status');
+    expect(lifecycleStub.args[4][1]).to.deep.equal(pkgInstallResult);
 
     // verify expected return json
     expect(result).to.deep.equal(successPIR);
   });
 
   it('should get install request', async () => {
-    retrieveStub = $$.SANDBOX.stub(connection.tooling, 'retrieve').onFirstCall().resolves(pkgInstallRequest);
+    retrieveStub = $$.SANDBOX.stub(connection.tooling, 'retrieve').onFirstCall().resolves(pkgInstallResult);
 
-    const result = await PackageVersion.getInstallRequest('0Hf1h0000006runCAA', connection);
-    expect(result).to.deep.equal(pkgInstallRequest);
+    const result = await SubscriberPackageVersion.getInstallRequest('0Hf1h0000006runCAA', connection);
+    expect(result).to.deep.equal(pkgInstallResult);
   });
   it('should throw package install request not found error', async () => {
     retrieveStub = $$.SANDBOX.stub(connection.tooling, 'retrieve').onFirstCall().resolves(undefined);
 
     try {
-      await PackageVersion.getInstallRequest('0Hf1h0000006runCAA', connection);
+      await SubscriberPackageVersion.getInstallRequest('0Hf1h0000006runCAA', connection);
       expect.fail('should have thrown');
     } catch (e) {
       expect(e.message).to.include('The provided package install request ID: [0Hf1h0000006runCAA] could not be found');
@@ -465,7 +289,7 @@ describe('Package Install', () => {
     retrieveStub = $$.SANDBOX.stub(connection.tooling, 'retrieve').onFirstCall().resolves(undefined);
 
     try {
-      await PackageVersion.getInstallRequest('04t1h0000006runCAA', connection);
+      await SubscriberPackageVersion.getInstallRequest('04t1h0000006runCAA', connection);
       expect.fail('should have thrown');
     } catch (e) {
       expect(e.message).to.include('The provided package install request ID: [04t1h0000006runCAA] is invalid');
@@ -478,75 +302,42 @@ describe('Package Install', () => {
     const queryError = new Error('Implementation restriction: You can only perform queries of the form Id');
     queryError.name = 'MALFORMED_QUERY';
     queryStub.restore();
-    queryStub = $$.SANDBOX.stub(connection.tooling, 'query')
+    queryStub = $$.SANDBOX.stub(connection, 'singleRecordQuery')
       .onFirstCall()
-      .resolves({
-        done: true,
-        totalSize: 1,
-        records: [package2Version],
-      })
-      .onSecondCall()
-      .throws(queryError)
-      .onThirdCall()
-      .resolves({
-        done: true,
-        totalSize: 1,
-        records: [{ RemoteSiteSettings, CspTrustedSites }],
-      });
+      .resolves({ ...subscriberPackageVersion.records[0], ...{ RemoteSiteSettings, CspTrustedSites } });
 
-    const pkg = new PackageVersion({ idOrAlias: myPackageVersion04t, connection, project });
-    const SubscriberPackageVersionKey = pkgInstallCreateRequest.SubscriberPackageVersionKey;
+    const pkg = new SubscriberPackageVersion({ id: myPackageVersion04t, connection, password: null });
     const externalSites = await pkg.getExternalSites();
 
-    expect(queryStub.calledThrice).to.be.true;
-    expect(queryStub.args[1][0]).to.equal(
-      `SELECT RemoteSiteSettings, CspTrustedSites FROM SubscriberPackageVersion WHERE Id ='${SubscriberPackageVersionKey}' AND InstallationKey ='null'`
-    );
-    expect(queryStub.args[2][0]).to.equal(
-      `SELECT RemoteSiteSettings, CspTrustedSites FROM SubscriberPackageVersion WHERE Id ='${SubscriberPackageVersionKey}'`
-    );
+    expect(queryStub.calledOnce).to.be.true;
     expect(externalSites).to.deep.equal(sites);
   });
 
   it('should return undefined for no external sites', async () => {
     const installKey = '123456';
     queryStub.restore();
-    queryStub = $$.SANDBOX.stub(connection.tooling, 'query')
+    queryStub = $$.SANDBOX.stub(connection, 'singleRecordQuery')
       .onFirstCall()
-      .resolves({
-        done: true,
-        totalSize: 1,
-        records: [package2Version],
-      })
-      .onSecondCall()
-      .resolves({
-        done: true,
-        totalSize: 0,
-        records: null,
-      });
+      .resolves(subscriberPackageVersion.records[0]);
 
-    const pkg = new PackageVersion({ idOrAlias: myPackageVersion04t, connection, project });
-    const SubscriberPackageVersionKey = pkgInstallCreateRequest.SubscriberPackageVersionKey;
-    const externalSites = await pkg.getExternalSites(installKey);
+    const pkg = new SubscriberPackageVersion({ id: myPackageVersion04t, connection, password: installKey });
+    const externalSites = await pkg.getExternalSites();
 
-    expect(queryStub.calledTwice).to.be.true;
-    expect(queryStub.args[1][0]).to.equal(
-      `SELECT RemoteSiteSettings, CspTrustedSites FROM SubscriberPackageVersion WHERE Id ='${SubscriberPackageVersionKey}' AND InstallationKey ='${installKey}'`
-    );
+    expect(queryStub.calledOnce).to.be.true;
     expect(externalSites).to.be.undefined;
   });
 
   it('should emit warnings for UpgradeType and ApexCompileType of non-unlocked package types', async () => {
-    const inProgressPIR = Object.assign({}, pkgInstallRequest, { Status: 'IN_PROGRESS' });
+    const inProgressPIR = Object.assign({}, pkgInstallResult, { Status: 'IN_PROGRESS' });
     retrieveStub = $$.SANDBOX.stub(connection.tooling, 'retrieve')
       .onFirstCall()
       .resolves(inProgressPIR)
       .onSecondCall()
       .resolves(inProgressPIR);
-    $$.SANDBOX.stub(PackageVersion.prototype, 'getPackageType').resolves('Managed');
+    $$.SANDBOX.stub(SubscriberPackageVersion.prototype, 'getPackageType').resolves('Managed');
     const overrides = { UpgradeType: 'deprecate-only', ApexCompileType: 'package' };
     const picRequest = Object.assign({}, pkgInstallCreateRequest, overrides);
-    const pkg = new PackageVersion({ idOrAlias: myPackageVersion04t, connection, project });
+    const pkg = new SubscriberPackageVersion({ id: myPackageVersion04t, connection, password: null });
     const result = await pkg.install(picRequest);
 
     // verify correct connection.tooling.create() call
@@ -580,16 +371,16 @@ describe('Package Install', () => {
   });
 
   it('should NOT emit warnings for UpgradeType and ApexCompileType of unlocked package types', async () => {
-    $$.SANDBOX.stub(PackageVersion.prototype, 'getPackageType').resolves('Unlocked');
+    $$.SANDBOX.stub(SubscriberPackageVersion.prototype, 'getPackageType').resolves('Unlocked');
     const overrides = { UpgradeType: 'deprecate-only', ApexCompileType: 'package' };
-    const inProgressPIR = Object.assign({}, pkgInstallRequest, { Status: 'IN_PROGRESS' }, overrides);
+    const inProgressPIR = Object.assign({}, pkgInstallResult, { Status: 'IN_PROGRESS' }, overrides);
     retrieveStub = $$.SANDBOX.stub(connection.tooling, 'retrieve')
       .onFirstCall()
       .resolves(inProgressPIR)
       .onSecondCall()
       .resolves(inProgressPIR);
     const picRequest = Object.assign({}, pkgInstallCreateRequest, pkgInstallCreateRequestDefaults, overrides);
-    const pkg = new PackageVersion({ idOrAlias: myPackageVersion04t, connection, project });
+    const pkg = new SubscriberPackageVersion({ id: myPackageVersion04t, connection, password: null });
     const result = await pkg.install(picRequest);
 
     // verify correct connection.tooling.create() call
@@ -624,13 +415,19 @@ describe('Package Install', () => {
     const millis5 = Duration.milliseconds(5);
     const millis50 = Duration.milliseconds(50);
 
-    const pkg = new PackageVersion({ idOrAlias: myPackageVersion04t, connection, project });
-    const SubscriberPackageVersionKey = pkgInstallCreateRequest.SubscriberPackageVersionKey;
+    const subscriberPackageVersionKey = pkgInstallCreateRequest.SubscriberPackageVersionKey;
     try {
-      await pkg.getInstallStatus(SubscriberPackageVersionKey, null, {
-        pollingFrequency: millis5,
-        pollingTimeout: millis50,
-      });
+      await SubscriberPackageVersion.installStatus(
+        connection,
+        subscriberPackageVersionKey,
+        pkgInstallCreateRequest.Password,
+        {
+          publishFrequency: millis5,
+          publishTimeout: millis50,
+          pollingFrequency: millis5,
+          pollingTimeout: millis50,
+        }
+      );
       expect(false, 'Expected timeout error to be thrown').to.be.true;
     } catch (err) {
       expect(err.name).to.equal('SubscriberPackageVersionNotPublishedError');

@@ -30,7 +30,8 @@ import {
   VersionNumber,
   PackageVersionEvents,
 } from '../../src/exported';
-import { PackageEvents } from '../../lib/interfaces';
+import { PackageEvents } from '../../src/interfaces';
+import { SubscriberPackageVersion } from '../../src/package/subscriberPackageVersion';
 
 let session: TestSession;
 
@@ -358,32 +359,10 @@ describe('Integration tests for @salesforce/packaging library', function () {
 
   describe('install the package in scratch org', () => {
     it('install package async', async () => {
-      const pkg = new PackageVersion({
-        connection: scratchOrg.getConnection(),
-        idOrAlias: subscriberPkgVersionId,
-        project,
-      });
-      const result = await pkg.install({
-        SubscriberPackageVersionKey: subscriberPkgVersionId,
-        Password: INSTALLATION_KEY,
-      });
-      expect(result).to.have.property('Status', 'IN_PROGRESS');
-      expect(result).to.have.property('Errors', null);
-      expect(result).to.have.property('SubscriberPackageVersionKey', subscriberPkgVersionId);
-      expect(result).to.have.property('Id');
-
-      installReqId = result.Id;
-    });
-
-    it('getInstallStatus until it finishes', async () => {
       let subscriberStatus = false;
       let presend = false;
       let postsend = false;
-      const pkg = new PackageVersion({
-        connection: scratchOrg.getConnection(),
-        idOrAlias: subscriberPkgVersionId,
-        project,
-      });
+
       Lifecycle.getInstance().on(PackageEvents.install['subscriber-status'], async () => {
         subscriberStatus = true;
       });
@@ -393,13 +372,45 @@ describe('Integration tests for @salesforce/packaging library', function () {
       Lifecycle.getInstance().on(PackageEvents.install.postsend, async () => {
         postsend = true;
       });
-      const result = await pkg.getInstallStatus(installReqId, INSTALLATION_KEY, {
-        pollingFrequency: Duration.seconds(30),
-        pollingTimeout: Duration.minutes(30),
+
+      const pkg = new SubscriberPackageVersion({
+        connection: scratchOrg.getConnection(),
+        id: subscriberPkgVersionId,
+        password: INSTALLATION_KEY,
       });
+      const result = await pkg.install(
+        {
+          SubscriberPackageVersionKey: subscriberPkgVersionId,
+          Password: INSTALLATION_KEY,
+        },
+        { publishFrequency: Duration.seconds(30), publishTimeout: Duration.minutes(20) }
+      );
+      expect(result).to.have.property('Status', 'IN_PROGRESS');
+      expect(result).to.have.property('Errors', null);
+      expect(result).to.have.property('SubscriberPackageVersionKey', subscriberPkgVersionId);
+      expect(result).to.have.property('Id');
       expect(subscriberStatus).to.be.true;
       expect(presend).to.be.true;
       expect(postsend).to.be.true;
+
+      installReqId = result.Id;
+    });
+
+    it('check installStatus until it finishes', async () => {
+      let installStatus = false;
+      Lifecycle.getInstance().on(PackageEvents.install.status, async () => {
+        installStatus = true;
+      });
+      const result = await SubscriberPackageVersion.installStatus(
+        scratchOrg.getConnection(),
+        installReqId,
+        INSTALLATION_KEY,
+        {
+          pollingFrequency: Duration.seconds(30),
+          pollingTimeout: Duration.minutes(30),
+        }
+      );
+      expect(installStatus).to.be.true;
       expect(result.Status).to.equal('SUCCESS');
     });
 
@@ -425,10 +436,10 @@ describe('Integration tests for @salesforce/packaging library', function () {
 
   describe('uninstall the package', () => {
     it('uninstallPackage', async () => {
-      const pkg = new PackageVersion({
+      const pkg = new SubscriberPackageVersion({
         connection: scratchOrg.getConnection(),
-        idOrAlias: subscriberPkgVersionId,
-        project,
+        id: subscriberPkgVersionId,
+        password: INSTALLATION_KEY,
       });
       const result = await pkg.uninstall();
 
@@ -449,7 +460,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
         Status: string;
         SubscriberPackageVersionId?: string;
       }> => {
-        const pollResult = await PackageVersion.uninstallReport(uninstallReqId, scratchOrg.getConnection());
+        const pollResult = await SubscriberPackageVersion.uninstallStatus(uninstallReqId, scratchOrg.getConnection());
         if (pollResult.Status === 'InProgress' && counter < MAX_TRIES) {
           return sleep(WAIT_INTERVAL_MS, Duration.Unit.MILLISECONDS).then(() =>
             waitForUninstallRequestAndValidate(counter++)
