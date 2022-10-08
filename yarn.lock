@@ -3481,10 +3481,10 @@ graphology-utils@^2.0.0, graphology-utils@^2.4.2:
   resolved "https://registry.yarnpkg.com/graphology-utils/-/graphology-utils-2.5.2.tgz#4d30d6e567d27c01f105e1494af816742e8d2440"
   integrity sha512-ckHg8MXrXJkOARk56ZaSCM1g1Wihe2d6iTmz1enGOz4W/l831MBCKSayeFQfowgF8wd+PQ4rlch/56Vs/VZLDQ==
 
-graphology@^0.24.1:
-  version "0.24.1"
-  resolved "https://registry.yarnpkg.com/graphology/-/graphology-0.24.1.tgz#035e452e294b01168cf5c85d5dd0a4b7e4837d87"
-  integrity sha512-6lNz1PNTAe9Q6ioHKrXu0Lp047sgvOoHa4qmP/8mnJWCGv2iIZPQkuHPUb2/OWDWCqHpw2hKgJLJ55X/66xmHg==
+graphology@^0.25.0:
+  version "0.25.0"
+  resolved "https://registry.yarnpkg.com/graphology/-/graphology-0.25.0.tgz#c2c85940210730e6a4e1bb9722bff99f38cff173"
+  integrity sha512-z0uwplYrhnQ2iwlqJZyd6CX0Xb9AIVNzK6N0MZouYCQBqMqz36s7YmEqqhuRj0ap7F/LX3dQjeWWRIkTkaGfEA==
   dependencies:
     events "^3.3.0"
     obliterator "^2.0.2"
