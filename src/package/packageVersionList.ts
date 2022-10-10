@@ -6,7 +6,7 @@
  */
 
 import { Logger, Messages } from '@salesforce/core';
-import { QueryResult } from 'jsforce';
+import { QueryResult, Schema } from 'jsforce';
 import { isNumber } from '@salesforce/ts-types';
 import { BY_LABEL, validateId } from '../utils';
 import { PackageVersionListResult, PackageVersionListOptions, ListPackageVersionOptions } from '../interfaces';
@@ -35,8 +35,9 @@ const logger = Logger.childFromRoot('packageVersionList');
 export async function listPackageVersions(
   options: ListPackageVersionOptions
 ): Promise<QueryResult<PackageVersionListResult>> {
-  // TODO: replaces with connection.autoFetchQuery w/ tooling enabled
-  return options.connection.tooling.query<PackageVersionListResult>(constructQuery(options));
+  return options.connection.autoFetchQuery<PackageVersionListResult & Schema>(constructQuery(options), {
+    tooling: true,
+  });
 }
 
 function constructQuery(options: PackageVersionListOptions): string {

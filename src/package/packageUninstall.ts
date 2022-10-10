@@ -79,7 +79,7 @@ export async function uninstallPackage(
         .sobject('SubscriberPackageVersionUninstallRequest')
         .retrieve(uninstallRequest.id)) as UninstallResult;
     } else {
-      return await pollUninstall(uninstallRequest.id, conn, frequency, wait);
+      return pollUninstall(uninstallRequest.id, conn, frequency, wait);
     }
   } catch (err) {
     throw applyErrorAction(massageErrorMessage(err as Error));
