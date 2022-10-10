@@ -188,7 +188,6 @@ export class Package {
    * @returns {Promise<PackageVersionListResult[]>}
    */
   public async getPackageVersions(options?: PackageVersionListOptions): Promise<PackageVersionListResult[]> {
-    // This should be calling PackageVersion.list() here, but that method is not implemented yet.
     const packageOptions = {
       packages: [this.packageId],
     };
