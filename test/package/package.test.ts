@@ -13,6 +13,7 @@ import { Package } from '../../src/package';
 
 async function setupProject(setup: (project: SfProject) => void = () => {}) {
   // @ts-ignore
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const project: SfProject = new SfProject('a');
   const packageDirectories = [
     {
@@ -53,6 +54,7 @@ describe('Package', () => {
   describe('instantiate package', () => {
     it('should fail to create a new package - no package aliases', async () => {
       $$.inProject(true);
+      // eslint-disable-next-line @typescript-eslint/no-shadow
       const project = await setupProject();
       try {
         new Package({ connection: undefined, packageAliasOrId: '0hoasdfsdfasd', project });
@@ -117,13 +119,9 @@ describe('Package', () => {
       });
       const conn = {
         tooling: {
-          sobject: () => {
-            return {
-              retrieve: () => {
-                return { Id: '0Hoasdsadfasdf', ContainerOptions: 'Unlocked' };
-              },
-            };
-          },
+          sobject: () => ({
+            retrieve: () => ({ Id: '0Hoasdsadfasdf', ContainerOptions: 'Unlocked' }),
+          }),
         },
       } as unknown as Connection;
 

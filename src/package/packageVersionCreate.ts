@@ -357,8 +357,10 @@ export class PackageVersionCreate {
 
       ['country', 'edition', 'language', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].forEach(
         (prop) => {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           const propValue = definitionFileJson[prop];
           if (propValue) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             packageDescriptorJson[prop] = propValue;
           }
         }
@@ -438,12 +440,14 @@ export class PackageVersionCreate {
     // metadata exclusions. If necessary, read the existing package.xml and then re-write it.
     const currentPackageXml = await fs.promises.readFile(path.join(packageVersMetadataFolder, 'package.xml'), 'utf8');
     // convert to json
-    const packageJson = await xml2js.parseStringPromise(currentPackageXml);
+    const packageJson = (await xml2js.parseStringPromise(currentPackageXml)) as {
+      Package: { types: Array<{ name: string[]; members: string[] }>; version: string };
+    };
     fs.mkdirSync(packageVersMetadataFolder, { recursive: true });
     fs.mkdirSync(packageVersProfileFolder, { recursive: true });
 
     // Apply any necessary exclusions to typesArr.
-    let typesArr = packageJson.Package.types as Array<{ name: string[]; members: string[] }>;
+    let typesArr = packageJson.Package.types;
     this.apiVersionFromPackageXml = packageJson.Package.version;
 
     const hasUnpackagedMetadata = await this.resolveUnpackagedMetadata(
@@ -473,7 +477,7 @@ export class PackageVersionCreate {
 
     if (excludedProfiles.length > 0) {
       const profileIdx = typesArr.findIndex((e) => e.name[0] === 'Profile');
-      typesArr[profileIdx].members = typesArr[profileIdx].members.filter((e) => excludedProfiles.indexOf(e) === -1);
+      typesArr[profileIdx].members = typesArr[profileIdx].members.filter((e) => !excludedProfiles.includes(e));
     }
 
     packageJson.Package.types = typesArr;
@@ -620,7 +624,7 @@ export class PackageVersionCreate {
   private async resolveUserLicenses(includeUserLicenses: boolean): Promise<PackageProfileApi> {
     const shouldGenerateProfileInformation = logger.shouldLog(LoggerLevel.INFO) || logger.shouldLog(LoggerLevel.DEBUG);
 
-    return await PackageProfileApi.create({
+    return PackageProfileApi.create({
       project: this.project,
       includeUserLicenses,
       generateProfileInformation: shouldGenerateProfileInformation,
@@ -644,6 +648,7 @@ export class PackageVersionCreate {
   /**
    * Cleans invalid attribute(s) from the packageDescriptorJSON
    */
+  // eslint-disable-next-line class-methods-use-this
   private cleanPackageDescriptorJson(packageDescriptorJson: PackageDescriptorJson): PackageDescriptorJson {
     delete packageDescriptorJson.default; // for client-side use only, not needed
     delete packageDescriptorJson.includeProfileUserLicenses; // for client-side use only, not needed
@@ -704,6 +709,7 @@ export class PackageVersionCreate {
     }
   }
 
+  // eslint-disable-next-line class-methods-use-this
   private validateVersionNumber(
     versionNumberString: string,
     supportedBuildNumberToken: string,
@@ -816,13 +822,13 @@ export class PackageVersionCreate {
 
     if (!explicitUseNoAncestor && packageDescriptorJson.ancestorVersion) {
       const regNumbers = new RegExp('^[0-9]+$');
-      const versionNumber = packageDescriptorJson.ancestorVersion.split(VERSION_NUMBER_SEP);
+      const versionNumberSplit = packageDescriptorJson.ancestorVersion.split(VERSION_NUMBER_SEP);
       if (
-        versionNumber.length < 3 ||
-        versionNumber.length > 4 ||
-        !versionNumber[0].match(regNumbers) ||
-        !versionNumber[1].match(regNumbers) ||
-        !versionNumber[2].match(regNumbers)
+        versionNumberSplit.length < 3 ||
+        versionNumberSplit.length > 4 ||
+        !versionNumberSplit[0].match(regNumbers) ||
+        !versionNumberSplit[1].match(regNumbers) ||
+        !versionNumberSplit[2].match(regNumbers)
       ) {
         throw new Error(
           messages.getMessage('errorInvalidAncestorVersionFormat', [packageDescriptorJson.ancestorVersion])
@@ -831,9 +837,9 @@ export class PackageVersionCreate {
 
       const query =
         'SELECT Id, IsReleased FROM Package2Version ' +
-        `WHERE Package2Id = '${packageId}' AND MajorVersion = ${versionNumber[0]} AND MinorVersion = ${versionNumber[1]} AND PatchVersion = ${versionNumber[2]}`;
+        `WHERE Package2Id = '${packageId}' AND MajorVersion = ${versionNumberSplit[0]} AND MinorVersion = ${versionNumberSplit[1]} AND PatchVersion = ${versionNumberSplit[2]}`;
 
-      let queriedAncestorId;
+      let queriedAncestorId: string;
       const ancestorVersionResult = await this.connection.tooling.query<PackagingSObjects.Package2Version>(query);
       if (!ancestorVersionResult || !ancestorVersionResult.totalSize) {
         throw messages.createError('errorNoMatchingAncestor', [packageDescriptorJson.ancestorVersion, packageId]);
@@ -867,6 +873,7 @@ export class PackageVersionCreate {
     );
   }
 
+  // eslint-disable-next-line class-methods-use-this
   private validateAncestorId(
     ancestorId: string,
     highestReleasedVersion: PackagingSObjects.Package2Version,
@@ -915,7 +922,10 @@ export class PackageVersionCreate {
     const versionNumber = versionNumberString.split(VERSION_NUMBER_SEP);
     const isPatch = versionNumber[2] !== '0';
 
-    const result = { finalAncestorId: null, highestReleasedVersion: null };
+    const result: { finalAncestorId: string; highestReleasedVersion: PackagingSObjects.Package2Version } = {
+      finalAncestorId: null,
+      highestReleasedVersion: null,
+    };
 
     if (isPatch && explicitUseHighestRelease) {
       // based on server-side validation, whatever ancestor is specified for a patch is
@@ -944,8 +954,8 @@ export class PackageVersionCreate {
         'ORDER BY MajorVersion Desc, MinorVersion Desc, PatchVersion Desc, BuildNumber Desc LIMIT 1';
       const highestVersionResult = await this.connection.tooling.query<Package2VersionResult>(query);
       const highestVersionRecords = highestVersionResult.records;
-      if (highestVersionRecords && highestVersionRecords[0]) {
-        result.highestReleasedVersion = highestVersionRecords[0];
+      if (highestVersionRecords?.[0]) {
+        result.highestReleasedVersion = highestVersionRecords[0] as PackagingSObjects.Package2Version;
         if (explicitUseHighestRelease) {
           result.finalAncestorId = result.highestReleasedVersion.Id;
         }

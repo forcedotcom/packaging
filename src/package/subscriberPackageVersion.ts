@@ -5,7 +5,7 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { Connection, Messages, SfError, sfdc, Logger } from '@salesforce/core';
+import { Connection, Logger, Messages, sfdc, SfError } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import { Optional } from '@salesforce/ts-types';
 import {
@@ -216,6 +216,7 @@ export class SubscriberPackageVersion implements PackagingSObjects.SubscriberPac
    *
    * @returns The PackageVersionId (05i).
    */
+  // eslint-disable-next-line @typescript-eslint/require-await
   public async getId(): Promise<string> {
     this.Id = this.options.id;
     return this.Id;
@@ -437,7 +438,7 @@ export class SubscriberPackageVersion implements PackagingSObjects.SubscriberPac
         pkgInstallCreateRequest,
         await this.getPackageType()
       );
-      return SubscriberPackageVersion.installStatus(
+      return await SubscriberPackageVersion.installStatus(
         this.connection,
         pkgVersionInstallRequest.Id,
         pkgInstallCreateRequest.Password,
@@ -458,7 +459,7 @@ export class SubscriberPackageVersion implements PackagingSObjects.SubscriberPac
     frequency: Duration = Duration.milliseconds(0),
     wait: Duration = Duration.milliseconds(0)
   ): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest> {
-    return await uninstallPackage(await this.getId(), this.connection, frequency, wait);
+    return uninstallPackage(await this.getId(), this.connection, frequency, wait);
   }
 
   /**
@@ -484,14 +485,13 @@ export class SubscriberPackageVersion implements PackagingSObjects.SubscriberPac
     if (!Reflect.has(this, field)) {
       await this.getData({ includeHighCostFields: highCostQueryFields.includes(field) });
     }
-    return Reflect.get(this, field);
+    return Reflect.get(this, field) as T;
   }
 
   private getFieldsForQuery(options: { force?: boolean; includeHighCostFields?: boolean }): string[] {
-    const queryFields = SubscriberPackageVersionFields.filter(
+    return SubscriberPackageVersionFields.filter(
       (field) => !highCostQueryFields.includes(field) || options.includeHighCostFields
     ).filter((field) => (!this.fieldsRead.has(field) && !options.force) || options.force);
-    return queryFields;
   }
 
   private mapFields(fields: string[]): void {

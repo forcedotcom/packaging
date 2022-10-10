@@ -7,6 +7,7 @@
 import { Connection } from '@salesforce/core';
 import { expect } from 'chai';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
+import { Optional } from '@salesforce/ts-types';
 import { SubscriberPackageVersion } from '../../src/package/subscriberPackageVersion';
 import { PackagingSObjects } from '../../src/interfaces';
 
@@ -45,7 +46,7 @@ const spvRecord: PackagingSObjects.SubscriberPackageVersion = {
 
 describe('subscriberPackageVersion', () => {
   const testOrg = new MockTestOrgData();
-  const password = null;
+  const password: Optional<string> = null;
   let connection: Connection;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -112,8 +113,6 @@ describe('subscriberPackageVersion', () => {
     }
   });
   describe('getQueryFields', () => {
-    let connection: Connection;
-
     const id = oFourT;
     beforeEach(async () => {
       connection = await testOrg.getConnection();

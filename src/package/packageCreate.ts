@@ -87,7 +87,7 @@ export async function createPackage(
     .sobject('Package2')
     .create(request)
     .catch((err) => {
-      const error: Error = isString(err) ? new Error(err) : err;
+      const error = isString(err) ? new Error(err) : (err as Error);
       throw SfError.wrap(applyErrorAction(massageErrorMessage(error)));
     });
 

@@ -134,7 +134,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
       let hasNodes = false;
 
       // We need to keep track of all the members for when we package up the "OtherProfileSettings"
-      let allMembers = [];
+      let allMembers: string[] = [];
       manifest.Package.forEach((element) => {
         const name = element.name;
         const members = element.members;
@@ -206,6 +206,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
           fs.unlinkSync(destFilePath);
         } catch (err) {
           // It is normal for the file to not exist if the profile is in the workspace but not in the directory being packaged.
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           if (err.code !== 'ENOENT') {
             throw err;
           }
@@ -254,7 +255,14 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
     return this.profiles;
   }
 
-  private copyNodes(originalDom, parentElement, childElement, members, appendToNode, profileName): boolean {
+  private copyNodes(
+    originalDom: Document,
+    parentElement: string,
+    childElement: string,
+    members: string[],
+    appendToNode: Element,
+    profileName: string
+  ): boolean {
     let nodesAdded = false;
 
     const nodes = originalDom.getElementsByTagName(parentElement);
@@ -264,20 +272,18 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
 
     // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < nodes.length; i++) {
-      const name = nodes[i].getElementsByTagName(childElement)[0].childNodes[0].nodeValue as string;
-      if (members.indexOf(name) >= 0) {
+      const name = nodes[i].getElementsByTagName(childElement)[0].childNodes[0].nodeValue;
+      if (members.includes(name)) {
         // appendChild will take the passed in node (newNode) and find the parent if it exists and then remove
         // the newNode from the parent.  This causes issues with the way this is copying the nodes, so pass in a clone instead.
         const currentNode = nodes[i].cloneNode(true);
         appendToNode.appendChild(currentNode);
         nodesAdded = true;
-      } else {
+      } else if (this.generateProfileInformation) {
         // Tell the user which profile setting has been removed from the package
-        if (this.generateProfileInformation) {
-          const profile = this.profiles.find(({ ProfileName }) => ProfileName === profileName);
-          if (profile) {
-            profile.appendRemovedSetting(name);
-          }
+        const profile = this.profiles.find(({ ProfileName }) => ProfileName === profileName);
+        if (profile) {
+          profile.appendRemovedSetting(name);
         }
       }
     }
