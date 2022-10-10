@@ -36,7 +36,7 @@ describe('packageConvert', () => {
   describe('createPackageVersionCreateRequest', () => {
     it('should return a valid request with installationkey and buildinstance', async () => {
       $$.inProject(true);
-      const defFile = {
+      const definitionFile = {
         orgName: 'test org name',
         edition: 'Developer',
         features: ['EnableSetPasswordInApi', 'PersonAccounts', 'MultiCurrency'],
@@ -51,10 +51,10 @@ describe('packageConvert', () => {
       };
       const packageVersTmpRoot = path.join(os.tmpdir(), 'config');
       await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
-      const pathUpdate = path.join(packageVersTmpRoot, 'scratch.json');
-      fs.writeFile(pathUpdate, JSON.stringify(defFile, undefined, 2), () => {});
+      const scratchDefPath = path.join(packageVersTmpRoot, 'scratch.json');
+      await fs.promises.writeFile(scratchDefPath, JSON.stringify(definitionFile, undefined, 2));
       const request = await createPackageVersionCreateRequest(
-        { installationkey: '123', definitionfile: pathUpdate, buildinstance: 'myInstance' },
+        { installationkey: '123', definitionfile: scratchDefPath, buildinstance: 'myInstance' },
         '0Ho3i000000Gmj6CAC',
         '54.0'
       );
