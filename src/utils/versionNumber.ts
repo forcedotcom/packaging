@@ -26,6 +26,28 @@ export class VersionNumber {
     public build: string | number
   ) {}
 
+  /**
+   * Separates at major.minor string into {major: Number, minor: Number} object
+   *
+   * @param versionString a string in the format of major.minor like '3.2'
+   */
+  public static parseMajorMinor(versionString: string): { major: number; minor: number } {
+    const versions = versionString?.split('.');
+    if (!versions) {
+      // return nulls so when no version option is provided, the server can infer the correct version
+      return { major: null, minor: null };
+    }
+
+    if (versions.length === 2) {
+      return {
+        major: Number(versions[0]),
+        minor: Number(versions[1]),
+      };
+    } else {
+      throw messages.createError('invalidMajorMinorFormat', [versionString]);
+    }
+  }
+
   public static from(versionString: string): VersionNumber {
     if (!versionString) {
       throw messages.createError('errorMissingVersionNumber');

@@ -12,7 +12,7 @@ import { readJSON } from 'fs-extra';
 import { TestSession, execCmd } from '@salesforce/cli-plugins-testkit';
 import { Duration, sleep } from '@salesforce/kit';
 import { ProjectJson } from '@salesforce/core/lib/sfProject';
-import { ConfigAggregator, Lifecycle, Org, SfProject } from '@salesforce/core';
+import { Lifecycle, Org, SfProject } from '@salesforce/core';
 import { uniqid } from '@salesforce/core/lib/testSetup';
 import {
   PackageCreateOptions,
@@ -70,25 +70,30 @@ describe('Integration tests for @salesforce/packaging library', function () {
   let installReqId = '';
   let uninstallReqId = ''; // 06y
   let pkgName = '';
-  let configAggregator: ConfigAggregator;
   let devHubOrg: Org;
   let scratchOrg: Org;
   let project: SfProject;
   before('pkgSetup', async () => {
     process.env.TESTKIT_EXECUTABLE_PATH = 'sfdx';
+    execCmd('config:set restDeploy=false', { cli: 'sfdx' });
+
     // will auth the hub
     session = await TestSession.create({
       project: {
         sourceDir: path.join('test', 'package', 'resources', 'packageProject'),
       },
-      setupCommands: [
-        'sfdx config:set restDeploy=false',
-        `sfdx force:org:create -d 1 -a ${SUB_ORG_ALIAS} -f config/project-scratch-def.json`,
+      devhubAuthStrategy: 'AUTO',
+      scratchOrgs: [
+        {
+          executable: 'sfdx',
+          duration: 1,
+          alias: SUB_ORG_ALIAS,
+          config: path.join('config', 'project-scratch-def.json'),
+        },
       ],
     });
     pkgName = uniqid({ template: 'pnh-dancingbears-', length: 16 });
-    configAggregator = await ConfigAggregator.create();
-    devHubOrg = await Org.create({ aliasOrUsername: configAggregator.getPropertyValue<string>('target-dev-hub') });
+    devHubOrg = await Org.create({ aliasOrUsername: session.hubOrg.username });
     scratchOrg = await Org.create({ aliasOrUsername: SUB_ORG_ALIAS });
     project = await SfProject.resolve();
   });
@@ -126,8 +131,9 @@ describe('Integration tests for @salesforce/packaging library', function () {
     });
 
     it('package version create', async () => {
-      const pv = new PackageVersion({ project, connection: devHubOrg.getConnection() });
-      const result = await pv.create({
+      const result = await PackageVersion.create({
+        connection: devHubOrg.getConnection(),
+        project,
         packageId: pkgId,
         tag: TAG,
         codecoverage: true,
@@ -146,9 +152,8 @@ describe('Integration tests for @salesforce/packaging library', function () {
       pkgId = result.Package2Id;
     });
 
-    it('get package version create report', async () => {
-      const pv = new PackageVersion({ project, connection: devHubOrg.getConnection() });
-      const result = await pv.getCreateVersionReport(pkgCreateVersionRequestId);
+    it('get package version create status', async () => {
+      const result = await PackageVersion.getCreateStatus(pkgCreateVersionRequestId, devHubOrg.getConnection());
       expect(result).to.include.keys(VERSION_CREATE_RESPONSE_KEYS);
 
       if (result.Status === 'Error') {
@@ -156,8 +161,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
       }
     });
 
-    it('wait for package version create to finish', async () => {
-      const pv = new PackageVersion({ project, connection: devHubOrg.getConnection() });
+    it('poll for package version create to finish', async () => {
       // "enqueued", "in-progress", "success", "error" and "timed-out"
       Lifecycle.getInstance().on(
         PackageVersionEvents.create.enqueued,
@@ -179,10 +183,12 @@ describe('Integration tests for @salesforce/packaging library', function () {
           expect(results.Status).to.equal(PackagingSObjects.Package2VersionStatus.success);
         }
       );
-      const result = await pv.waitForCreateVersion(pkgCreateVersionRequestId, {
-        frequency: Duration.seconds(30),
-        timeout: Duration.minutes(20),
-      });
+      const result = await PackageVersion.pollCreateStatus(
+        pkgCreateVersionRequestId,
+        devHubOrg.getConnection(),
+        project,
+        { frequency: Duration.seconds(30), timeout: Duration.minutes(20) }
+      );
       expect(result).to.include.keys(VERSION_CREATE_RESPONSE_KEYS);
 
       subscriberPkgVersionId = result.SubscriberPackageVersionId;
@@ -204,9 +210,13 @@ describe('Integration tests for @salesforce/packaging library', function () {
       ).to.have.length(1);
     });
 
-    it('force:package:version:report', async () => {
-      const pv = new PackageVersion({ project, connection: devHubOrg.getConnection() });
-      const result = await pv.report(subscriberPkgVersionId);
+    it('package version report', async () => {
+      const pv = new PackageVersion({
+        project,
+        connection: devHubOrg.getConnection(),
+        idOrAlias: subscriberPkgVersionId,
+      });
+      const result = await pv.report();
 
       expect(result).to.not.have.property('Id');
       expect(result.Package2Id).to.equal(
@@ -245,8 +255,12 @@ describe('Integration tests for @salesforce/packaging library', function () {
     });
 
     it('will update the package version with a new branch', async () => {
-      const pv = new PackageVersion({ connection: devHubOrg.getConnection(), project });
-      const result = await pv.update(subscriberPkgVersionId, { Branch: 'superFunBranch' });
+      const pv = new PackageVersion({
+        project,
+        connection: devHubOrg.getConnection(),
+        idOrAlias: subscriberPkgVersionId,
+      });
+      const result = await pv.update({ Branch: 'superFunBranch' });
       expect(result).to.include.keys('id', 'success', 'errors');
       expect(result.id.startsWith('04t')).to.be.true;
       expect(result.success).to.be.true;
@@ -254,8 +268,12 @@ describe('Integration tests for @salesforce/packaging library', function () {
     });
 
     it('will promote the package version', async () => {
-      const pvc = new PackageVersion({ connection: devHubOrg.getConnection(), project });
-      const result = await pvc.promote(subscriberPkgVersionId);
+      const pv = new PackageVersion({
+        project,
+        connection: devHubOrg.getConnection(),
+        idOrAlias: subscriberPkgVersionId,
+      });
+      const result = await pv.promote();
       expect(result).to.have.all.keys('id', 'success', 'errors');
     });
 
@@ -269,8 +287,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
     });
 
     it('will list all of the created package versions', async () => {
-      const pkg = new PackageVersion({ connection: devHubOrg.getConnection(), project });
-      const result = await pkg.createdList();
+      const result = await PackageVersion.createdList(devHubOrg.getConnection());
       expect(result).to.have.length.at.least(1);
       expect(result[0]).to.have.all.keys(
         'Id',
@@ -292,8 +309,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
     });
 
     it('will list all of the created package versions (status = error)', async () => {
-      const pkg = new PackageVersion({ connection: devHubOrg.getConnection(), project });
-      const result = await pkg.createdList({ status: 'Success' });
+      const result = await PackageVersion.createdList(devHubOrg.getConnection(), { status: 'Success' });
       result.map((res) => {
         // we should've filtered to only successful package versions1
         expect(res.Status).to.equal('Success');
@@ -301,8 +317,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
     });
 
     it('will list all of the created package versions (createdLastDays = 3)', async () => {
-      const pkg = new PackageVersion({ connection: devHubOrg.getConnection(), project });
-      const result = await pkg.createdList({ createdlastdays: 3 });
+      const result = await PackageVersion.createdList(devHubOrg.getConnection(), { createdlastdays: 3 });
       expect(result).to.have.length.at.least(1);
       expect(result[0]).to.have.all.keys(
         'Id',
@@ -453,8 +468,12 @@ describe('Integration tests for @salesforce/packaging library', function () {
 
   describe('delete package/version from the devhub', () => {
     it('deletes the package version', async () => {
-      const pv = new PackageVersion({ project, connection: devHubOrg.getConnection() });
-      const result = await pv.delete(subscriberPkgVersionId);
+      const pv = new PackageVersion({
+        project,
+        connection: devHubOrg.getConnection(),
+        idOrAlias: subscriberPkgVersionId,
+      });
+      const result = await pv.delete();
       expect(result.success).to.be.true;
       expect(result.id).to.equal(subscriberPkgVersionId);
     });
@@ -476,7 +495,6 @@ describe('ancestry tests', () => {
   };
   let project: SfProject;
   let devHubOrg: Org;
-  let configAggregator: ConfigAggregator;
   let pkgName: string;
   let versions: VersionNumber[];
   let sortedVersions: VersionNumber[];
@@ -486,16 +504,16 @@ describe('ancestry tests', () => {
     const query =
       "SELECT AncestorId, SubscriberPackageVersionId, MajorVersion, MinorVersion, PatchVersion, BuildNumber, Package2Id, Package2.Name, package2.NamespacePrefix FROM Package2Version where package2.containeroptions = 'Managed' AND IsReleased = true";
 
+    execCmd('config:set restDeploy=false', { cli: 'sfdx' });
     process.env.TESTKIT_EXECUTABLE_PATH = 'sfdx';
     // will auth the hub
     session = await TestSession.create({
       project: {
         sourceDir: path.join('test', 'package', 'resources', 'packageProject'),
       },
-      setupCommands: ['sfdx config:set restDeploy=false'],
+      devhubAuthStrategy: 'AUTO',
     });
-    configAggregator = await ConfigAggregator.create();
-    devHubOrg = await Org.create({ aliasOrUsername: configAggregator.getPropertyValue<string>('target-dev-hub') });
+    devHubOrg = await Org.create({ aliasOrUsername: session.hubOrg.username });
     let pvRecords = (await devHubOrg.getConnection().tooling.query<PackageVersionQueryResult>(query)).records;
     // preferred well known package pnhcoverage3, but if it's not available, use the first one
     if (pvRecords.some((pv) => pv.Package2.Name === 'pnhcoverage3')) {

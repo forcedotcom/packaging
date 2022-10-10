@@ -7,7 +7,7 @@
 import { Connection } from '@salesforce/core';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { expect } from 'chai';
-import { package1Display } from '../../lib/package1';
+import { Package1Version } from '../../src/package1';
 
 describe('Package1 Display', () => {
   const testOrg = new MockTestOrgData();
@@ -43,15 +43,18 @@ describe('Package1 Display', () => {
         },
       ],
     });
-    const result = await package1Display(conn, '04t46000001ZfaXXXX');
+    const pv1 = new Package1Version(conn, '04t46000001ZfaXXXX');
+    const result = await pv1.getPackageVersion();
     expect(result).deep.equal([
       {
         BuildNumber: 1,
+        Id: '04t46000001ZfaXXXX',
+        MajorVersion: 1,
         MetadataPackageId: '03346000000dmo4XXX',
-        MetadataPackageVersionId: '04t46000001ZfaXXXX',
+        MinorVersion: 0,
         Name: 'Summer 22',
+        PatchVersion: 3,
         ReleaseState: 'Beta',
-        Version: '1.0.3',
       },
     ]);
   });
@@ -62,7 +65,8 @@ describe('Package1 Display', () => {
       totalSize: 0,
       records: [],
     });
-    const result = await package1Display(conn, '04t46000001ZfaXXXX');
+    const pv1 = new Package1Version(conn, '04t46000001ZfaXXXX');
+    const result = await pv1.getPackageVersion();
     expect(result).deep.equal([]);
   });
 });

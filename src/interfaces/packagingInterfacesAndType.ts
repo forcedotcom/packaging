@@ -10,7 +10,7 @@ import { Connection, NamedPackageDir, SfProject } from '@salesforce/core';
 import { QueryResult, SaveResult } from 'jsforce';
 import { Attributes } from 'graphology-types';
 import { PackageProfileApi } from '../package/packageProfileApi';
-import { PackageAncestryNode } from '../package/packageAncestry';
+import { PackageAncestryNode } from '../package';
 import { PackagingSObjects } from './packagingSObjects';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
@@ -37,13 +37,7 @@ export interface IPackage {
 }
 
 export interface IPackageVersion1GP {
-  create(): Promise<void>;
-  convert(): Promise<void>;
-  delete(): Promise<void>;
-  install(): Promise<void>;
-  list(): Promise<void>;
-  uninstall(): Promise<void>;
-  update(): Promise<void>;
+  getPackageVersion(id: string): Promise<MetadataPackageVersion[]>;
 }
 
 export interface IPackageVersion2GP {
@@ -261,6 +255,13 @@ export type MDFolderForArtifactOptions = {
 
 export type PackageVersionOptions = {
   connection: Connection;
+  /**
+   * Can be one of:
+   * 1. SubscriberPackageVersionId (04t)
+   * 2. PackageVersionId (05i)
+   * 3. Alias for a 04t or 05i, defined in sfdx-project.json
+   */
+  idOrAlias: string;
   project: SfProject;
 };
 
@@ -272,31 +273,32 @@ export type ConvertPackageOptions = {
   buildInstance: string;
 };
 
-export type PackageVersionCreateOptions = Partial<
-  PackageVersionOptions & {
-    branch: string;
-    buildinstance: string;
-    codecoverage: boolean;
-    definitionfile: string;
-    installationkey: string;
-    installationkeybypass: boolean;
-    packageId: string;
-    postinstallscript: string;
-    postinstallurl: string;
-    preserve: boolean;
-    releasenotesurl: string;
-    skipancestorcheck: boolean;
-    skipvalidation: boolean;
-    sourceorg: string;
-    tag: string;
-    uninstallscript: string;
-    validateschema: boolean;
-    versiondescription: string;
-    versionname: string;
-    versionnumber: string;
-    profileApi: PackageProfileApi;
-  }
->;
+export type PackageVersionCreateOptions = {
+  connection: Connection;
+  project: SfProject;
+} & Partial<{
+  branch: string;
+  buildinstance: string;
+  codecoverage: boolean;
+  definitionfile: string;
+  installationkey: string;
+  installationkeybypass: boolean;
+  packageId: string;
+  postinstallscript: string;
+  postinstallurl: string;
+  preserve: boolean;
+  releasenotesurl: string;
+  skipancestorcheck: boolean;
+  skipvalidation: boolean;
+  sourceorg: string;
+  tag: string;
+  uninstallscript: string;
+  validateschema: boolean;
+  versiondescription: string;
+  versionname: string;
+  versionnumber: string;
+  profileApi: PackageProfileApi;
+}>;
 
 export type PackageVersionCreateRequestQueryOptions = {
   createdlastdays?: number;
@@ -322,11 +324,13 @@ export type PackageVersionCreateReportProgress = PackageVersionCreateRequestResu
   remainingWaitTime: Duration;
 };
 
-export type Package1VersionCreateRequest = Pick<PackagingSObjects.PackageUploadRequest, 'VersionName'> &
+export type Package1VersionCreateRequest = Pick<
+  PackagingSObjects.PackageUploadRequest,
+  'VersionName' | 'MetadataPackageId'
+> &
   Partial<
     Pick<
       PackagingSObjects.PackageUploadRequest,
-      | 'MetadataPackageId'
       | 'Description'
       | 'MajorVersion'
       | 'MinorVersion'
