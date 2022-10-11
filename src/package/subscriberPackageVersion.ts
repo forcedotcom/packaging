@@ -406,13 +406,12 @@ export class SubscriberPackageVersion {
     if (!this.data || !Reflect.has(this.data, field)) {
       await this.getData({ includeHighCostFields: highCostQueryFields.includes(field) });
     }
-    return Reflect.get(this.data, field);
+    return Reflect.get(this.data || {}, field);
   }
 
   private getFieldsForQuery(options: { force?: boolean; includeHighCostFields?: boolean }): string[] {
-    const queryFields = SubscriberPackageVersionFields.filter(
+    return SubscriberPackageVersionFields.filter(
       (field) => !highCostQueryFields.includes(field) || options.includeHighCostFields
     );
-    return queryFields;
   }
 }
