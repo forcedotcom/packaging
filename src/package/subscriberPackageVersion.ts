@@ -101,8 +101,8 @@ export class SubscriberPackageVersion {
     this.connection = this.options.connection;
 
     // validate ID
-    if (!this.options.id.startsWith('04t') || !sfdc.validateSalesforceId(this.options.id)) {
-      throw messages.createError('errorInvalidPackageVersionId', [this.options.id]);
+    if (!this.options?.id?.startsWith('04t') || !sfdc.validateSalesforceId(this.options?.id)) {
+      throw messages.createError('errorInvalidPackageVersionId', [this.options?.id]);
     }
     this.password = this.options.password;
   }
@@ -406,7 +406,7 @@ export class SubscriberPackageVersion {
     if (!this.data || !Reflect.has(this.data, field)) {
       await this.getData({ includeHighCostFields: highCostQueryFields.includes(field) });
     }
-    return Reflect.get(this.data || {}, field);
+    return Reflect.get(this.data || {}, field) as T;
   }
 
   private getFieldsForQuery(options: { force?: boolean; includeHighCostFields?: boolean }): string[] {
