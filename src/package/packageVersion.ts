@@ -335,7 +335,7 @@ export class PackageVersion {
    */
   public async getId(): Promise<string> {
     if (!this.data.Id) {
-      await this.getPackageVersionData();
+      await this.getData();
     }
     return this.data.Id;
   }
@@ -347,18 +347,28 @@ export class PackageVersion {
    */
   public async getSubscriberId(): Promise<string> {
     if (!this.data.SubscriberPackageVersionId) {
-      await this.getPackageVersionData();
+      await this.getData();
     }
     return this.data.SubscriberPackageVersionId;
   }
 
+  /**
+   * Get the package Id for this PackageVersion.
+   *
+   * @returns The PackageId (0Ho).
+   */
   public async getPackageId(): Promise<string> {
     if (!this.data.Package2Id) {
-      await this.getPackageVersionData();
+      await this.getData();
     }
     return this.data.Package2Id;
   }
 
+  /**
+   * Get the package type for this PackageVersion.
+   *
+   * @returns The PackageType (Managed, Unlocked).
+   */
   public async getPackageType(): Promise<PackageType> {
     if (!this.packageType) {
       this.packageType = (
@@ -378,7 +388,7 @@ export class PackageVersion {
    * @param force force a refresh of the package version data.
    * @returns Package2Version
    */
-  public async getPackageVersionData(force = false): Promise<Package2Version> {
+  public async getData(force = false): Promise<Package2Version> {
     if (!this.data.Name || force) {
       let queryConfig: { id: string; clause: string; label1: string; label2: string };
       if (this.data.Id) {
@@ -446,6 +456,9 @@ export class PackageVersion {
     return results[0];
   }
 
+  /**
+   * Promotes this PackageVersion to released state.
+   */
   public async promote(): Promise<PackageSaveResult> {
     const id = await this.getId();
     return this.options.connection.tooling.update('Package2Version', { IsReleased: true, Id: id });

@@ -165,7 +165,7 @@ export class Package {
   /**
    * Returns the package ID of the package.
    *
-   * @returns {string} package ID
+   * @returns {string} package ID (0Ho)
    */
   public getId(): string {
     return this.packageId;

@@ -15,7 +15,13 @@ import {
   PackagingSObjects,
   SubscriberPackageVersionOptions,
 } from '../interfaces';
-import { applyErrorAction, escapeInstallationKey, massageErrorMessage, numberToDuration } from '../utils';
+import {
+  applyErrorAction,
+  escapeInstallationKey,
+  massageErrorMessage,
+  numberToDuration,
+  VersionNumber,
+} from '../utils';
 import { createPackageInstallRequest, getStatus, pollStatus, waitForPublish } from './packageInstall';
 import { getUninstallErrors, uninstallPackage } from './packageUninstall';
 
@@ -74,7 +80,7 @@ export const SubscriberPackageVersionFields = [
 let logger: Logger;
 const getLogger = (): Logger => {
   if (!logger) {
-    logger = Logger.childFromRoot('packageVersion');
+    logger = Logger.childFromRoot('subscriberPackageVersion');
   }
   return logger;
 };
@@ -86,41 +92,10 @@ const allZeroesInstallOptions: PackageInstallOptions = {
   publishTimeout: Duration.minutes(0),
 };
 
-export class SubscriberPackageVersion implements PackagingSObjects.SubscriberPackageVersion {
-  // fields from the SubscriberPackageVersion object
-  public Id: string;
-  public SubscriberPackageId: string;
-  public Name: string;
-  public Description: string;
-  public PublisherName: string;
-  public MajorVersion: number;
-  public MinorVersion: number;
-  public PatchVersion: number;
-  public BuildNumber: number;
-  public ReleaseState: string;
-  public IsManaged: boolean;
-  public IsDeprecated: boolean;
-  public IsPasswordProtected: boolean;
-  public IsBeta: boolean;
-  public Package2ContainerOptions: PackageType;
-  public IsSecurityReviewed: boolean;
-  public IsOrgDependent: boolean;
-  public AppExchangePackageName: string;
-  public AppExchangeDescription: string;
-  public AppExchangePublisherName: string;
-  public AppExchangeLogoUrl: string;
-  public ReleaseNotesUrl: string;
-  public PostInstallUrl: string;
-  public RemoteSiteSettings: PackagingSObjects.SubscriberPackageRemoteSiteSettings;
-  public CspTrustedSites: PackagingSObjects.SubscriberPackageCspTrustedSites;
-  public Profiles: PackagingSObjects.SubscriberPackageProfiles;
-  public Dependencies: PackagingSObjects.SubscriberPackageDependencies;
-  public InstallValidationStatus: PackagingSObjects.InstallValidationStatus;
-  // end of fields from the SubscriberPackageVersion object
+export class SubscriberPackageVersion {
   private readonly password: Optional<string>;
   private readonly connection: Connection;
   private data: PackagingSObjects.SubscriberPackageVersion;
-  private fieldsRead = new Set<string>();
 
   public constructor(private options: SubscriberPackageVersionOptions) {
     this.connection = this.options.connection;
@@ -212,14 +187,12 @@ export class SubscriberPackageVersion implements PackagingSObjects.SubscriberPac
   }
 
   /**
-   * Get the package version ID for this PackageVersion.
+   * Get the package version ID for this SubscriberPackageVersion.
    *
    * @returns The PackageVersionId (05i).
    */
-  // eslint-disable-next-line @typescript-eslint/require-await
-  public async getId(): Promise<string> {
-    this.Id = this.options.id;
-    return this.Id;
+  public getId(): Promise<string> {
+    return Promise.resolve(this.options.id);
   }
 
   /**
@@ -228,153 +201,99 @@ export class SubscriberPackageVersion implements PackagingSObjects.SubscriberPac
    * @returns {PackageType} The package type.
    */
   public async getPackageType(): Promise<PackageType> {
-    this.Package2ContainerOptions = await this.getFieldValue<SPV['Package2ContainerOptions']>(
-      'Package2ContainerOptions'
-    );
-    return this.Package2ContainerOptions;
+    return this.getField<SPV['Package2ContainerOptions']>('Package2ContainerOptions');
   }
 
+  /**
+   * Get the password passed in the constructor
+   *
+   * @returns {string} the password
+   */
   public getPassword(): Optional<string> {
     return this.password;
   }
 
+  /**
+   * Get the subscriber package Id (033) for this SubscriberPackageVersion.
+   *
+   * @returns {string} The subscriber package Id.
+   */
   public async getSubscriberPackageId(): Promise<string> {
-    this.SubscriberPackageId = await this.getFieldValue<SPV['SubscriberPackageId']>('SubscriberPackageId');
-    return this.SubscriberPackageId;
+    return this.getField<SPV['SubscriberPackageId']>('SubscriberPackageId');
   }
 
-  public async getName(): Promise<string> {
-    this.Name = await this.getFieldValue<SPV['Name']>('Name');
-    return this.Name;
+  /**
+   * Get a VersionNumber instance for this SubscriberPackageVersion.
+   *
+   * @returns {VersionNumber} The version number.
+   */
+  public async getVersionNumber(): Promise<VersionNumber> {
+    const majorVersion = await this.getField<SPV['MajorVersion']>('MajorVersion');
+    const minorVersion = await this.getField<SPV['MinorVersion']>('MinorVersion');
+    const patchVersion = await this.getField<SPV['PatchVersion']>('PatchVersion');
+    const buildNumber = await this.getField<SPV['BuildNumber']>('BuildNumber');
+    return new VersionNumber(majorVersion, minorVersion, patchVersion, buildNumber);
   }
 
-  public async getDescription(): Promise<string> {
-    this.Description = await this.getFieldValue<SPV['Description']>('Description');
-    return this.Description;
+  /**
+   * Is the package a managed package?
+   */
+  public async isManaged(): Promise<boolean> {
+    return this.getField<SPV['IsManaged']>('IsManaged');
   }
 
-  public async getPublisherName(): Promise<string> {
-    this.PublisherName = await this.getFieldValue<SPV['PublisherName']>('PublisherName');
-    return this.PublisherName;
+  /**
+   * Is the SubscriberPackageVersion deprecated?
+   *
+   * @returns {boolean} True if the SubscriberPackageVersion is deprecated.
+   */
+  public async isDeprecated(): Promise<boolean> {
+    return this.getField<SPV['IsDeprecated']>('IsDeprecated');
   }
 
-  public async getMajorVersion(): Promise<number> {
-    this.MajorVersion = await this.getFieldValue<SPV['MajorVersion']>('MajorVersion');
-    return this.MajorVersion;
+  /**
+   * Is the SubscriberPackageVersion password protected?
+   *
+   * @returns {boolean} True if the SubscriberPackageVersion is password protected.
+   */
+  public async isPasswordProtected(): Promise<boolean> {
+    return this.getField<SPV['IsPasswordProtected']>('IsPasswordProtected');
   }
 
-  public async getMinorVersion(): Promise<number> {
-    this.MinorVersion = await this.getFieldValue<SPV['MinorVersion']>('MinorVersion');
-    return this.MinorVersion;
+  /**
+   * Is the SubscriberPackageVersion org dependent?
+   *
+   * @returns {boolean} True if the SubscriberPackageVersion is org dependent.
+   */
+  public async isOrgDependent(): Promise<boolean> {
+    return this.getField<SPV['IsOrgDependent']>('IsOrgDependent');
   }
 
-  public async getPatchVersion(): Promise<number> {
-    this.PatchVersion = await this.getFieldValue<SPV['PatchVersion']>('PatchVersion');
-    return this.PatchVersion;
-  }
-
-  public async getBuildNumber(): Promise<number> {
-    this.BuildNumber = await this.getFieldValue<SPV['BuildNumber']>('BuildNumber');
-    return this.BuildNumber;
-  }
-
-  public async getReleaseState(): Promise<string> {
-    this.ReleaseState = await this.getFieldValue<SPV['ReleaseState']>('ReleaseState');
-    return this.ReleaseState;
-  }
-
-  public async getIsManaged(): Promise<boolean> {
-    this.IsManaged = await this.getFieldValue<SPV['IsManaged']>('IsManaged');
-    return this.IsManaged;
-  }
-
-  public async getIsDeprecated(): Promise<boolean> {
-    this.IsDeprecated = await this.getFieldValue<SPV['IsDeprecated']>('IsDeprecated');
-    return this.IsDeprecated;
-  }
-
-  public async getIsPasswordProtected(): Promise<boolean> {
-    this.IsPasswordProtected = await this.getFieldValue<SPV['IsPasswordProtected']>('IsPasswordProtected');
-    return this.IsPasswordProtected;
-  }
-
-  public async getIsBeta(): Promise<boolean> {
-    this.IsBeta = await this.getFieldValue<SPV['IsBeta']>('IsBeta');
-    return this.IsBeta;
-  }
-
-  public async getPackage2ContainerOptions(): Promise<PackageType> {
-    this.Package2ContainerOptions = await this.getFieldValue<SPV['Package2ContainerOptions']>(
-      'Package2ContainerOptions'
-    );
-    return this.Package2ContainerOptions;
-  }
-
-  public async getIsSecurityReviewed(): Promise<boolean> {
-    this.IsSecurityReviewed = await this.getFieldValue<SPV['IsSecurityReviewed']>('IsSecurityReviewed');
-    return this.IsSecurityReviewed;
-  }
-
-  public async getIsOrgDependent(): Promise<boolean> {
-    this.IsOrgDependent = await this.getFieldValue<SPV['IsOrgDependent']>('IsOrgDependent');
-    return this.IsOrgDependent;
-  }
-
-  public async getAppExchangePackageName(): Promise<string> {
-    this.AppExchangePackageName = await this.getFieldValue<SPV['AppExchangePackageName']>('AppExchangePackageName');
-    return this.AppExchangePackageName;
-  }
-
-  public async getAppExchangeDescription(): Promise<string> {
-    this.PatchVersion = await this.getFieldValue<SPV['PatchVersion']>('PatchVersion');
-    return this.AppExchangeDescription;
-  }
-
-  public async getAppExchangePublisherName(): Promise<string> {
-    this.AppExchangePublisherName = await this.getFieldValue<SPV['AppExchangePublisherName']>(
-      'AppExchangePublisherName'
-    );
-    return this.AppExchangePublisherName;
-  }
-
-  public async getAppExchangeLogoUrl(): Promise<string> {
-    this.AppExchangeLogoUrl = await this.getFieldValue<SPV['AppExchangeLogoUrl']>('AppExchangeLogoUrl');
-    return this.AppExchangeLogoUrl;
-  }
-
-  public async getReleaseNotesUrl(): Promise<string> {
-    this.ReleaseNotesUrl = await this.getFieldValue<SPV['ReleaseNotesUrl']>('ReleaseNotesUrl');
-    return this.ReleaseNotesUrl;
-  }
-
-  public async getPostInstallUrl(): Promise<string> {
-    this.PostInstallUrl = await this.getFieldValue<SPV['PostInstallUrl']>('PostInstallUrl');
-    return this.PostInstallUrl;
-  }
-
+  /**
+   * Return remote site settings for the SubscriberPackageVersion.
+   *
+   * @returns {RemoteSiteSettings} The remote site settings.
+   */
   public async getRemoteSiteSettings(): Promise<PackagingSObjects.SubscriberPackageRemoteSiteSettings> {
-    this.RemoteSiteSettings = await this.getFieldValue<SPV['RemoteSiteSettings']>('RemoteSiteSettings');
-    return this.RemoteSiteSettings;
+    return this.getField<SPV['RemoteSiteSettings']>('RemoteSiteSettings');
   }
 
+  /**
+   * Return CSP trusted sites for the SubscriberPackageVersion.
+   *
+   * @returns {CspTrustedSites} The CSP trusted sites.
+   */
   public async getCspTrustedSites(): Promise<PackagingSObjects.SubscriberPackageCspTrustedSites> {
-    this.CspTrustedSites = await this.getFieldValue<SPV['CspTrustedSites']>('CspTrustedSites');
-    return this.CspTrustedSites;
+    return this.getField<SPV['CspTrustedSites']>('CspTrustedSites');
   }
 
-  public async getProfiles(): Promise<PackagingSObjects.SubscriberPackageProfiles> {
-    this.Profiles = await this.getFieldValue<SPV['Profiles']>('Profiles');
-    return this.Profiles;
-  }
-
-  public async getDependencies(): Promise<PackagingSObjects.SubscriberPackageDependencies> {
-    this.Dependencies = await this.getFieldValue<SPV['Dependencies']>('Dependencies');
-    return this.Dependencies;
-  }
-
+  /**
+   * Get the installation validation status for the SubscriberPackageVersion.
+   *
+   * @returns {InstallationValidationStatus} The installation validation status.
+   */
   public async getInstallValidationStatus(): Promise<PackagingSObjects.InstallValidationStatus> {
-    this.InstallValidationStatus = await this.getFieldValue<SPV['InstallValidationStatus']>('InstallValidationStatus');
-    return this.InstallValidationStatus;
+    return this.getField<SPV['InstallValidationStatus']>('InstallValidationStatus');
   }
 
   /**
@@ -401,9 +320,6 @@ export class SubscriberPackageVersion implements PackagingSObjects.SubscriberPac
       } catch (err) {
         throw messages.createError('errorInvalidIdNoRecordFound', [this.options.id], undefined, err as Error);
       }
-
-      // map the fields returned from the query to the class properties
-      this.mapFields(queryFields);
     }
     return this.data;
   }
@@ -481,23 +397,22 @@ export class SubscriberPackageVersion implements PackagingSObjects.SubscriberPac
     return sites.length > 0 ? sites : undefined;
   }
 
-  private async getFieldValue<T>(field: string): Promise<T> {
-    if (!Reflect.has(this, field)) {
+  /**
+   * Return a field value from the SubscriberPackageVersion SObject using the field name.
+   *
+   * @param field
+   */
+  public async getField<T>(field: string): Promise<T> {
+    if (!this.data || !Reflect.has(this.data, field)) {
       await this.getData({ includeHighCostFields: highCostQueryFields.includes(field) });
     }
-    return Reflect.get(this, field) as T;
+    return Reflect.get(this.data, field);
   }
 
   private getFieldsForQuery(options: { force?: boolean; includeHighCostFields?: boolean }): string[] {
-    return SubscriberPackageVersionFields.filter(
+    const queryFields = SubscriberPackageVersionFields.filter(
       (field) => !highCostQueryFields.includes(field) || options.includeHighCostFields
-    ).filter((field) => (!this.fieldsRead.has(field) && !options.force) || options.force);
-  }
-
-  private mapFields(fields: string[]): void {
-    fields.forEach((field) => {
-      Reflect.set(this, field, Reflect.get(this.data, field));
-      this.fieldsRead.add(field);
-    });
+    );
+    return queryFields;
   }
 }
