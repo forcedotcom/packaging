@@ -75,8 +75,7 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
     options: ConvertPackageOptions,
     project?: SfProject
   ): Promise<PackageVersionCreateRequestResult> {
-    const apiVersion = project.getSfProjectJson().get('sourceApiVersion') as string;
-    return await convertPackage(pkgId, this.options.connection, options, apiVersion);
+    return await convertPackage(pkgId, this.options.connection, options, project);
   }
 
   public create(): Promise<void> {

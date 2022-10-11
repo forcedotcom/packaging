@@ -84,7 +84,6 @@ export async function convertPackage(
   pkg: string,
   connection: Connection,
   options: ConvertPackageOptions,
-  apiVersion: string,
   project?: SfProject
 ): Promise<PackageVersionCreateRequestResult> {
   let maxRetries = 0;
@@ -94,6 +93,9 @@ export async function convertPackage(
   }
 
   const packageId = await findOrCreatePackage2(pkg, connection);
+
+  const apiVersion = await pkgUtils.getApiVersion(project);
+
   const request = await createPackageVersionCreateRequest(
     {
       installationkey: options.installationKey,
@@ -211,7 +213,7 @@ export async function createPackageVersionCreateRequest(
 
 async function createRequestObject(
   packageId: string,
-  options: { installationkey?: string; definitionFile?: string; buildinstance?: string },
+  options: { installationkey?: string; buildinstance?: string },
   packageVersTmpRoot: string,
   packageVersBlobZipFile: string
 ): Promise<PackagingSObjects.Package2VersionCreateRequest> {

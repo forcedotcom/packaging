@@ -19,6 +19,7 @@ import {
   findOrCreatePackage2,
 } from '../../src/package/packageConvert';
 import { PackageEvents } from '../../src/interfaces';
+import * as pkgUtils from '../../src/utils/packageUtils';
 
 describe('packageConvert', () => {
   const $$ = instantiateContext();
@@ -182,20 +183,18 @@ describe('packageConvert', () => {
     $$.SANDBOX.stub(conn.tooling, 'query').resolves({ records: [{ Id: '0Ho3i000000Gmj6YYY' }] });
 
     // @ts-ignore
+    $$.SANDBOX.stub(pkgUtils, 'getApiVersion').resolves('54.0');
+
+    // @ts-ignore
     $$.SANDBOX.stub(conn.tooling, 'create').resolves({ success: undefined, errors: [new Error('server error')] });
     try {
-      await convertPackage(
-        '0334p000000EaIHAA0',
-        conn,
-        {
-          buildInstance: '',
-          installationKey: '',
-          definitionfile: '',
-          installationKeyBypass: true,
-          wait: Duration.minutes(1),
-        },
-        '54.0'
-      );
+      await convertPackage('0334p000000EaIHAA0', conn, {
+        buildInstance: '',
+        installationKey: '',
+        definitionfile: '',
+        installationKeyBypass: true,
+        wait: Duration.minutes(1),
+      });
     } catch (e) {
       // console.log('ERROR', e);
       expect((e as Error).message).to.include('Failed to create request : Error: server error');
@@ -266,18 +265,13 @@ describe('packageConvert', () => {
     // @ts-ignore
     $$.SANDBOX.stub(conn.tooling, 'create').resolves({ success: true, errors: undefined, id: '0Ho3i000000Gmj6YYY' });
 
-    const result = await convertPackage(
-      '0334p000000EaIHAA0',
-      conn,
-      {
-        buildInstance: '',
-        installationKey: '',
-        definitionfile: '',
-        installationKeyBypass: true,
-        wait: Duration.minutes(1),
-      },
-      '54.0'
-    );
+    const result = await convertPackage('0334p000000EaIHAA0', conn, {
+      buildInstance: '',
+      installationKey: '',
+      definitionfile: '',
+      installationKeyBypass: true,
+      wait: Duration.minutes(1),
+    });
 
     expect(result).to.deep.equal(successResponse);
   }).timeout(100000);
@@ -306,18 +300,13 @@ describe('packageConvert', () => {
     $$.SANDBOX.stub(conn.tooling, 'create').resolves({ success: true, errors: undefined, id: '0Ho3i000000Gmj6YYY' });
 
     try {
-      await convertPackage(
-        '0334p000000EaIHAA0',
-        conn,
-        {
-          buildInstance: '',
-          installationKey: '',
-          definitionfile: '',
-          installationKeyBypass: true,
-          wait: Duration.minutes(1),
-        },
-        '54.0'
-      );
+      await convertPackage('0334p000000EaIHAA0', conn, {
+        buildInstance: '',
+        installationKey: '',
+        definitionfile: '',
+        installationKeyBypass: true,
+        wait: Duration.minutes(1),
+      });
     } catch (e) {
       const message = (e as Error).message;
       expect(message).to.include('Multiple errors occurred:');

@@ -74,6 +74,12 @@ export function validateId(idObj: Many<IdRegistryValue>, value: string): void {
     ]);
   }
 }
+
+export async function getApiVersion(project: SfProject): Promise<string> {
+  const apiVersion = project.getSfProjectJson().get('sourceApiVersion') as string;
+  return apiVersion;
+}
+
 export function validateIdNoThrow(idObj: Many<IdRegistryValue>, value): IdRegistryValue | false {
   if (!value || (value.length !== 15 && value.length !== 18)) {
     return false;
