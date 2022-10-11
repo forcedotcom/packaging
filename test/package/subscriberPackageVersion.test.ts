@@ -145,25 +145,5 @@ describe('subscriberPackageVersion', () => {
       expect(queryFields).to.not.include('RemoteSiteSettings');
       expect(queryFields).to.include('Id');
     });
-    it('should not query low cost field Id (already read)', async () => {
-      const subscriberPackageVersion = new SubscriberPackageVersion({ connection, id, password });
-      Reflect.set(subscriberPackageVersion, 'fieldsRead', new Set<string>(['Id']));
-      // @ts-ignore
-      const queryFields = subscriberPackageVersion.getFieldsForQuery({});
-      expect(queryFields).to.ok;
-      expect(queryFields.length).to.greaterThan(0);
-      expect(queryFields).to.not.include('RemoteSiteSettings');
-      expect(queryFields).to.not.include('Id');
-    });
-    it('should query low cost field Id (already read) w/force', async () => {
-      const subscriberPackageVersion = new SubscriberPackageVersion({ connection, id, password });
-      Reflect.set(subscriberPackageVersion, 'fieldsRead', new Set<string>(['Id']));
-      // @ts-ignore
-      const queryFields = subscriberPackageVersion.getFieldsForQuery({ force: true });
-      expect(queryFields).to.ok;
-      expect(queryFields.length).to.greaterThan(0);
-      expect(queryFields).to.not.include('RemoteSiteSettings');
-      expect(queryFields).to.include('Id');
-    });
   });
 });

@@ -93,40 +93,9 @@ const allZeroesInstallOptions: PackageInstallOptions = {
 };
 
 export class SubscriberPackageVersion {
-  // fields from the SubscriberPackageVersion object
-  // public Id: string;
-  // public SubscriberPackageId: string;
-  // public Name: string;
-  // public Description: string;
-  // public PublisherName: string;
-  // public MajorVersion: number;
-  // public MinorVersion: number;
-  // public PatchVersion: number;
-  // public BuildNumber: number;
-  // public ReleaseState: string;
-  // public IsManaged: boolean;
-  // public IsDeprecated: boolean;
-  // public IsPasswordProtected: boolean;
-  // public IsBeta: boolean;
-  // public Package2ContainerOptions: PackageType;
-  // public IsSecurityReviewed: boolean;
-  // public IsOrgDependent: boolean;
-  // public AppExchangePackageName: string;
-  // public AppExchangeDescription: string;
-  // public AppExchangePublisherName: string;
-  // public AppExchangeLogoUrl: string;
-  // public ReleaseNotesUrl: string;
-  // public PostInstallUrl: string;
-  // public RemoteSiteSettings: PackagingSObjects.SubscriberPackageRemoteSiteSettings;
-  // public CspTrustedSites: PackagingSObjects.SubscriberPackageCspTrustedSites;
-  // public Profiles: PackagingSObjects.SubscriberPackageProfiles;
-  // public Dependencies: PackagingSObjects.SubscriberPackageDependencies;
-  // public InstallValidationStatus: PackagingSObjects.InstallValidationStatus;
-  // end of fields from the SubscriberPackageVersion object
   private readonly password: Optional<string>;
   private readonly connection: Connection;
   private data: PackagingSObjects.SubscriberPackageVersion;
-  private fieldsRead = new Set<string>();
 
   public constructor(private options: SubscriberPackageVersionOptions) {
     this.connection = this.options.connection;
@@ -351,9 +320,6 @@ export class SubscriberPackageVersion {
       } catch (err) {
         throw messages.createError('errorInvalidIdNoRecordFound', [this.options.id], undefined, err as Error);
       }
-
-      // map the fields returned from the query to the class properties
-      this.mapFields(queryFields);
     }
     return this.data;
   }
@@ -446,14 +412,7 @@ export class SubscriberPackageVersion {
   private getFieldsForQuery(options: { force?: boolean; includeHighCostFields?: boolean }): string[] {
     const queryFields = SubscriberPackageVersionFields.filter(
       (field) => !highCostQueryFields.includes(field) || options.includeHighCostFields
-    ).filter((field) => (!this.fieldsRead.has(field) && !options.force) || options.force);
+    );
     return queryFields;
-  }
-
-  private mapFields(fields: string[]): void {
-    fields.forEach((field) => {
-      Reflect.set(this, field, Reflect.get(this.data, field));
-      this.fieldsRead.add(field);
-    });
   }
 }
