@@ -94,7 +94,7 @@ export async function convertPackage(
 
   const packageId = await findOrCreatePackage2(pkg, connection);
 
-  const apiVersion = await pkgUtils.getApiVersion(project);
+  const apiVersion = await pkgUtils.getSourceApiVersion(project);
 
   const request = await createPackageVersionCreateRequest(
     {
