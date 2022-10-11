@@ -390,7 +390,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
         },
         { publishFrequency: Duration.seconds(30), publishTimeout: Duration.minutes(20) }
       );
-      expect(result).to.have.property('Status', 'IN_PROGRESS');
+      expect(['IN_PROGRESS', 'SUCCESS']).to.include(result.Status);
       expect(result).to.have.property('Errors', null);
       expect(result).to.have.property('SubscriberPackageVersionKey', subscriberPkgVersionId);
       expect(result).to.have.property('Id');
