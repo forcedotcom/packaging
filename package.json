@@ -39,7 +39,7 @@
     "@salesforce/core": "^3.30.8",
     "@salesforce/kit": "^1.6.1",
     "@salesforce/schemas": "^1.2.0",
-    "@salesforce/source-deploy-retrieve": "^6.8.2",
+    "@salesforce/source-deploy-retrieve": "^6.9.1",
     "@salesforce/ts-types": "^1.5.20",
     "@xmldom/xmldom": "^0.8.3",
     "debug": "^4.3.4",
