@@ -2,7 +2,7 @@
 
 The subscriber package version %s is invalid, no subscriber package version record found.
 
-# errorInvalidAliasOrIdError
+# errorInvalidAliasOrId
 
 Invalid alias or ID: %s. Either your alias is invalid or undefined, or the ID (04t) provided is invalid.
 

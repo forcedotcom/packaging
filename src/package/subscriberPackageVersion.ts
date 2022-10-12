@@ -105,7 +105,7 @@ export class SubscriberPackageVersion {
     this.connection = this.options.connection;
 
     if (!this.options?.aliasOrId) {
-      throw messages.createError('errorInvalidAliasOrIdError', [this.options?.aliasOrId]);
+      throw messages.createError('errorInvalidAliasOrId', [this.options?.aliasOrId]);
     }
 
     try {
@@ -117,7 +117,7 @@ export class SubscriberPackageVersion {
 
     // validate ID
     if (!this.id.startsWith('04t') || !sfdc.validateSalesforceId(this.id)) {
-      throw messages.createError('errorInvalidAliasOrIdError', [this.options?.aliasOrId]);
+      throw messages.createError('errorInvalidAliasOrId', [this.options?.aliasOrId]);
     }
 
     this.password = this.options.password;
