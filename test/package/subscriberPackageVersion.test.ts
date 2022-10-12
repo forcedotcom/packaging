@@ -117,7 +117,7 @@ describe('subscriberPackageVersion', () => {
     const id = '05ixxxxxxxxxxxxxxx';
 
     expect(() => new SubscriberPackageVersion({ connection, aliasOrId: id, password })).to.throw(
-      `The provided ID: [${id}] is not a subscriber package version ID (04t).`
+      `Invalid alias or ID: ${id}. Either your alias is invalid or undefined, or the ID (04t) provided is invalid.`
     );
   });
   it('should not instantiate SPV using 05i alias', async () => {
@@ -128,7 +128,7 @@ describe('subscriberPackageVersion', () => {
     connection = await testOrg.getConnection();
 
     expect(() => new SubscriberPackageVersion({ connection, aliasOrId: 'oFiveI', password })).to.throw(
-      'The provided ID: [oFiveI] is not a subscriber package version ID (04t).'
+      'Invalid alias or ID: oFiveI. Either your alias is invalid or undefined, or the ID (04t) provided is invalid.'
     );
   });
   it('should lazily query for the SPV', async () => {
