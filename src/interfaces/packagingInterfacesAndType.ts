@@ -262,7 +262,7 @@ export type PackageVersionOptions = {
 
 export type SubscriberPackageVersionOptions = {
   connection: Connection;
-  id: string;
+  aliasOrId: string;
   password: Optional<string>;
 };
 

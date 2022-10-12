@@ -380,7 +380,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
 
       const pkg = new SubscriberPackageVersion({
         connection: scratchOrg.getConnection(),
-        id: subscriberPkgVersionId,
+        aliasOrId: subscriberPkgVersionId,
         password: INSTALLATION_KEY,
       });
       const result = await pkg.install(
@@ -443,7 +443,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
     it('uninstallPackage', async () => {
       const pkg = new SubscriberPackageVersion({
         connection: scratchOrg.getConnection(),
-        id: subscriberPkgVersionId,
+        aliasOrId: subscriberPkgVersionId,
         password: INSTALLATION_KEY,
       });
       const result = await pkg.uninstall();

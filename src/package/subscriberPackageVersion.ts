@@ -5,7 +5,7 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { Connection, Messages, SfError, sfdc, Logger } from '@salesforce/core';
+import { Connection, Messages, SfError, sfdc, Logger, SfProject } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import { Optional } from '@salesforce/ts-types';
 import {
@@ -92,18 +92,34 @@ const allZeroesInstallOptions: PackageInstallOptions = {
   publishTimeout: Duration.minutes(0),
 };
 
+/**
+ * A class that represents a SubscriberPackageVersion
+ */
 export class SubscriberPackageVersion {
   private readonly password: Optional<string>;
   private readonly connection: Connection;
+  private readonly id: string;
   private data: PackagingSObjects.SubscriberPackageVersion;
 
   public constructor(private options: SubscriberPackageVersionOptions) {
     this.connection = this.options.connection;
 
-    // validate ID
-    if (!this.options?.id?.startsWith('04t') || !sfdc.validateSalesforceId(this.options?.id)) {
-      throw messages.createError('errorInvalidPackageVersionId', [this.options?.id]);
+    if (!this.options?.aliasOrId) {
+      throw messages.createError('errorInvalidPackageVersionId', [this.options?.aliasOrId]);
     }
+
+    try {
+      const project = SfProject.getInstance();
+      this.id = project.getPackageIdFromAlias(this.options.aliasOrId) || this.options.aliasOrId;
+    } catch (e) {
+      // ignore - Using a SubscriberPackageVersion instance within a project is optional
+    }
+
+    // validate ID
+    if (!this.id.startsWith('04t') || !sfdc.validateSalesforceId(this.id)) {
+      throw messages.createError('errorInvalidPackageVersionId', [this.options?.aliasOrId]);
+    }
+
     this.password = this.options.password;
   }
   /**
@@ -189,10 +205,10 @@ export class SubscriberPackageVersion {
   /**
    * Get the package version ID for this SubscriberPackageVersion.
    *
-   * @returns The PackageVersionId (05i).
+   * @returns The SubscriberPackageVersion Id (04t).
    */
   public getId(): Promise<string> {
-    return Promise.resolve(this.options.id);
+    return Promise.resolve(this.id);
   }
 
   /**
@@ -318,7 +334,7 @@ export class SubscriberPackageVersion {
           tooling: true,
         });
       } catch (err) {
-        throw messages.createError('errorInvalidIdNoRecordFound', [this.options.id], undefined, err as Error);
+        throw messages.createError('errorInvalidIdNoRecordFound', [this.options.aliasOrId], undefined, err as Error);
       }
     }
     return this.data;

@@ -144,7 +144,7 @@ describe('Package Install', () => {
     otherQueryStub = $$.SANDBOX.stub(connection.tooling, 'query').resolves(
       subscriberPackageVersion as QueryResult<PackagingSObjects.SubscriberPackageVersion>
     );
-    const pkg = new SubscriberPackageVersion({ id: myPackageVersion04t, connection, password: null });
+    const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: null });
     const result = await pkg.install(pkgInstallCreateRequest);
 
     // verify correct connection.tooling.create() call
@@ -197,7 +197,7 @@ describe('Package Install', () => {
       .onThirdCall()
       .resolves(successPIR);
 
-    const pkg = new SubscriberPackageVersion({ id: myPackageVersion04t, connection, password: null });
+    const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: null });
     const installOptions: PackageInstallOptions = {
       pollingFrequency: Duration.seconds(1),
       pollingTimeout: Duration.seconds(10),
@@ -238,7 +238,7 @@ describe('Package Install', () => {
       .onFirstCall()
       .resolves(subscriberPackageVersion.records[0]);
 
-    const pkg = new SubscriberPackageVersion({ id: myPackageVersion04t, connection, password: null });
+    const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: null });
     const installOptions: PackageInstallOptions = {
       publishFrequency: Duration.milliseconds(5000),
       publishTimeout: Duration.seconds(10),
@@ -306,7 +306,7 @@ describe('Package Install', () => {
       .onFirstCall()
       .resolves({ ...subscriberPackageVersion.records[0], ...{ RemoteSiteSettings, CspTrustedSites } });
 
-    const pkg = new SubscriberPackageVersion({ id: myPackageVersion04t, connection, password: null });
+    const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: null });
     const externalSites = await pkg.getExternalSites();
 
     expect(queryStub.calledOnce).to.be.true;
@@ -320,7 +320,7 @@ describe('Package Install', () => {
       .onFirstCall()
       .resolves(subscriberPackageVersion.records[0]);
 
-    const pkg = new SubscriberPackageVersion({ id: myPackageVersion04t, connection, password: installKey });
+    const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: installKey });
     const externalSites = await pkg.getExternalSites();
 
     expect(queryStub.calledOnce).to.be.true;
@@ -337,7 +337,7 @@ describe('Package Install', () => {
     $$.SANDBOX.stub(SubscriberPackageVersion.prototype, 'getPackageType').resolves('Managed');
     const overrides = { UpgradeType: 'deprecate-only', ApexCompileType: 'package' };
     const picRequest = Object.assign({}, pkgInstallCreateRequest, overrides);
-    const pkg = new SubscriberPackageVersion({ id: myPackageVersion04t, connection, password: null });
+    const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: null });
     const result = await pkg.install(picRequest);
 
     // verify correct connection.tooling.create() call
@@ -380,7 +380,7 @@ describe('Package Install', () => {
       .onSecondCall()
       .resolves(inProgressPIR);
     const picRequest = Object.assign({}, pkgInstallCreateRequest, pkgInstallCreateRequestDefaults, overrides);
-    const pkg = new SubscriberPackageVersion({ id: myPackageVersion04t, connection, password: null });
+    const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: null });
     const result = await pkg.install(picRequest);
 
     // verify correct connection.tooling.create() call
