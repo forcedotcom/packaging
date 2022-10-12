@@ -41,7 +41,7 @@
     "@salesforce/schemas": "^1.2.0",
     "@salesforce/source-deploy-retrieve": "^6.8.2",
     "@salesforce/ts-types": "^1.5.20",
-    "@xmldom/xmldom": "^0.8.2",
+    "@xmldom/xmldom": "^0.8.3",
     "debug": "^4.3.4",
     "globby": "^11",
     "graphology": "^0.25.0",
