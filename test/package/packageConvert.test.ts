@@ -183,7 +183,7 @@ describe('packageConvert', () => {
     $$.SANDBOX.stub(conn.tooling, 'query').resolves({ records: [{ Id: '0Ho3i000000Gmj6YYY' }] });
 
     // @ts-ignore
-    $$.SANDBOX.stub(pkgUtils, 'getSourceApiVersion').resolves('54.0');
+    $$.SANDBOX.stub(pkgUtils, 'getSourceApiVersion').returns('54.0');
 
     // @ts-ignore
     $$.SANDBOX.stub(conn.tooling, 'create').resolves({ success: undefined, errors: [new Error('server error')] });
