@@ -94,7 +94,7 @@ export async function convertPackage(
 
   const packageId = await findOrCreatePackage2(pkg, connection);
 
-  const apiVersion = await pkgUtils.getSourceApiVersion(project);
+  const apiVersion = pkgUtils.getSourceApiVersion(project);
 
   const request = await createPackageVersionCreateRequest(
     {
@@ -163,30 +163,30 @@ export async function createPackageVersionCreateRequest(
 
   const settingsGenerator = new SettingsGenerator({ asDirectory: true });
   const definitionFile = context.definitionfile;
-
-  try {
-    if (definitionFile) {
+  let definitionFileJson: ScratchOrgInfo;
+  if (definitionFile) {
+    try {
       const definitionFilePayload = await fs.promises.readFile(definitionFile, 'utf8');
-      const definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo;
-
-      // Load any settings from the definition
-      await settingsGenerator.extract(definitionFileJson);
-      if (settingsGenerator.hasSettings() && definitionFileJson.orgPreferences) {
-        // this is not allowed, exit with an error
-        throw messages.createError('signupDuplicateSettingsSpecified');
-      }
-
-      ['country', 'edition', 'language', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].forEach(
-        (prop) => {
-          const propValue = definitionFileJson[prop];
-          if (propValue) {
-            packageDescriptorJson[prop] = propValue;
-          }
-        }
-      );
+      definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo;
+    } catch (err) {
+      throw messages.createError('errorReadingDefintionFile', [err as string]);
     }
-  } catch (err) {
-    throw messages.createError('errorReadingDefintionFile', [err as string]);
+
+    // Load any settings from the definition
+    await settingsGenerator.extract(definitionFileJson);
+    if (settingsGenerator.hasSettings() && definitionFileJson.orgPreferences) {
+      // this is not allowed, exit with an error
+      throw messages.createError('signupDuplicateSettingsSpecified');
+    }
+
+    ['country', 'edition', 'language', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].forEach(
+      (prop) => {
+        const propValue = definitionFileJson[prop];
+        if (propValue) {
+          packageDescriptorJson[prop] = propValue;
+        }
+      }
+    );
   }
 
   await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
