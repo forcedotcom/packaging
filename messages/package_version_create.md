@@ -38,6 +38,10 @@ The temp files are located at: %s.
 
 You cannot use 'settings' and 'orgPreferences' in your scratch definition file, please specify one or the other.
 
+# errorReadingDefintionFile
+
+There was an error while reading or parsing the provided scratch definition file: %s
+
 # unpackagedMDDirectoryDoesNotExist
 
 Un-packaged metadata directory %s was specified but does not exist.

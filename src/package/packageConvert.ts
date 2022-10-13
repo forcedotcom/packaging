@@ -164,25 +164,29 @@ export async function createPackageVersionCreateRequest(
   const settingsGenerator = new SettingsGenerator({ asDirectory: true });
   const definitionFile = context.definitionfile;
 
-  if (definitionFile) {
-    const definitionFilePayload = await fs.promises.readFile(definitionFile, 'utf8');
-    const definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo;
+  try {
+    if (definitionFile) {
+      const definitionFilePayload = await fs.promises.readFile(definitionFile, 'utf8');
+      const definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo;
 
-    // Load any settings from the definition
-    await settingsGenerator.extract(definitionFileJson);
-    if (settingsGenerator.hasSettings() && definitionFileJson.orgPreferences) {
-      // this is not allowed, exit with an error
-      throw messages.createError('signupDuplicateSettingsSpecified');
-    }
-
-    ['country', 'edition', 'language', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].forEach(
-      (prop) => {
-        const propValue = definitionFileJson[prop];
-        if (propValue) {
-          packageDescriptorJson[prop] = propValue;
-        }
+      // Load any settings from the definition
+      await settingsGenerator.extract(definitionFileJson);
+      if (settingsGenerator.hasSettings() && definitionFileJson.orgPreferences) {
+        // this is not allowed, exit with an error
+        throw messages.createError('signupDuplicateSettingsSpecified');
       }
-    );
+
+      ['country', 'edition', 'language', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].forEach(
+        (prop) => {
+          const propValue = definitionFileJson[prop];
+          if (propValue) {
+            packageDescriptorJson[prop] = propValue;
+          }
+        }
+      );
+    }
+  } catch (err) {
+    throw messages.createError('errorReadingDefintionFile', [err as string]);
   }
 
   await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
@@ -207,7 +211,6 @@ export async function createPackageVersionCreateRequest(
   );
   // Zip the Version Info and package.zip files into another zip
   await srcDevUtil.zipDir(packageVersBlobDirectory, packageVersBlobZipFile);
-
   return createRequestObject(packageId, context, packageVersTmpRoot, packageVersBlobZipFile);
 }
 
