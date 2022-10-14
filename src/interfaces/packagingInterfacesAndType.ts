@@ -267,6 +267,7 @@ export type PackageVersionOptions = {
 
 export type ConvertPackageOptions = {
   installationKey: string;
+  definitionfile: string;
   installationKeyBypass: boolean;
   wait: Duration;
   buildInstance: string;

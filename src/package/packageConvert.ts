@@ -14,12 +14,14 @@ import {
   Logger,
   Messages,
   PollingClient,
+  ScratchOrgInfo,
   SfError,
   SfProject,
   StatusResult,
 } from '@salesforce/core';
 import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
 import { Many } from '@salesforce/ts-types';
+import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import { uniqid } from '../utils/uniqid';
 import * as pkgUtils from '../utils/packageUtils';
 import {
@@ -92,9 +94,16 @@ export async function convertPackage(
 
   const packageId = await findOrCreatePackage2(pkg, connection);
 
+  const apiVersion = pkgUtils.getSourceApiVersion(project);
+
   const request = await createPackageVersionCreateRequest(
-    { installationkey: options.installationKey, buildinstance: options.buildInstance },
-    packageId
+    {
+      installationkey: options.installationKey,
+      definitionfile: options.definitionfile,
+      buildinstance: options.buildInstance,
+    },
+    packageId,
+    apiVersion
   );
 
   // TODO: a lot of this is duplicated from PC, PVC, and PVCR.
@@ -136,29 +145,72 @@ export async function convertPackage(
  * @private
  */
 export async function createPackageVersionCreateRequest(
-  context: { installationkey?: string; buildinstance?: string },
-  packageId: string
+  context: { installationkey?: string; definitionfile?: string; buildinstance?: string },
+  packageId: string,
+  apiVersion: string
 ): Promise<PackagingSObjects.Package2VersionCreateRequest> {
   const uniqueId = uniqid({ template: `${packageId}-%s` });
   const packageVersTmpRoot = path.join(os.tmpdir(), uniqueId);
+  const packageVersMetadataFolder = path.join(packageVersTmpRoot, 'md-files');
   const packageVersBlobDirectory = path.join(packageVersTmpRoot, 'package-version-info');
+  const settingsZipFile = path.join(packageVersBlobDirectory, 'settings.zip');
+  const metadataZipFile = path.join(packageVersBlobDirectory, 'package.zip');
   const packageVersBlobZipFile = path.join(packageVersTmpRoot, consts.PACKAGE_VERSION_INFO_FILE_ZIP);
 
   const packageDescriptorJson = {
     id: packageId,
   };
 
+  const settingsGenerator = new SettingsGenerator({ asDirectory: true });
+  const definitionFile = context.definitionfile;
+  let definitionFileJson: ScratchOrgInfo;
+  if (definitionFile) {
+    try {
+      const definitionFilePayload = await fs.promises.readFile(definitionFile, 'utf8');
+      definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo;
+    } catch (err) {
+      throw messages.createError('errorReadingDefintionFile', [err as string]);
+    }
+
+    // Load any settings from the definition
+    await settingsGenerator.extract(definitionFileJson);
+    if (settingsGenerator.hasSettings() && definitionFileJson.orgPreferences) {
+      // this is not allowed, exit with an error
+      throw messages.createError('signupDuplicateSettingsSpecified');
+    }
+
+    ['country', 'edition', 'language', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].forEach(
+      (prop) => {
+        const propValue = definitionFileJson[prop];
+        if (propValue) {
+          packageDescriptorJson[prop] = propValue;
+        }
+      }
+    );
+  }
+
   await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
   await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
+  await fs.promises.mkdir(packageVersMetadataFolder, { recursive: true });
 
+  await settingsGenerator.createDeploy();
+  await settingsGenerator.createDeployPackageContents(apiVersion);
+  await srcDevUtil.zipDir(
+    `${settingsGenerator.getDestinationPath()}${path.sep}${settingsGenerator.getShapeDirName()}`,
+    settingsZipFile
+  );
+
+  const shapeDirectory = `${settingsGenerator.getDestinationPath()}${path.sep}${settingsGenerator.getShapeDirName()}`;
+  const currentPackageXml = await fs.promises.readFile(path.join(shapeDirectory, 'package.xml'), 'utf8');
+  await fs.promises.writeFile(path.join(packageVersMetadataFolder, 'package.xml'), currentPackageXml, 'utf-8');
+  // Zip the packageVersMetadataFolder folder and put the zip in {packageVersBlobDirectory}/package.zip
+  await srcDevUtil.zipDir(packageVersMetadataFolder, metadataZipFile);
   await fs.promises.writeFile(
     path.join(packageVersBlobDirectory, consts.PACKAGE2_DESCRIPTOR_FILE),
     JSON.stringify(packageDescriptorJson, undefined, 2)
   );
-
   // Zip the Version Info and package.zip files into another zip
   await srcDevUtil.zipDir(packageVersBlobDirectory, packageVersBlobZipFile);
-
   return createRequestObject(packageId, context, packageVersTmpRoot, packageVersBlobZipFile);
 }
 
