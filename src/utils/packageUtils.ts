@@ -55,15 +55,11 @@ export const DEFAULT_PACKAGE_DIR = {
   default: true,
 };
 
-export const BY_PREFIX = ((): IdRegistry => {
-  return Object.fromEntries(ID_REGISTRY.map((id) => [id.prefix, { prefix: id.prefix, label: id.label }]));
-})();
+export const BY_PREFIX = ((): IdRegistry => Object.fromEntries(ID_REGISTRY.map((id) => [id.prefix, { prefix: id.prefix, label: id.label }])))();
 
-export const BY_LABEL = ((): IdRegistry => {
-  return Object.fromEntries(
+export const BY_LABEL = ((): IdRegistry => Object.fromEntries(
     ID_REGISTRY.map((id) => [id.label.replace(/ /g, '_').toUpperCase(), { prefix: id.prefix, label: id.label }])
-  );
-})();
+  ))();
 
 export function validateId(idObj: Many<IdRegistryValue>, value: string): void {
   if (!validateIdNoThrow(idObj, value)) {
@@ -450,9 +446,7 @@ export async function generatePackageAliasEntry(
 }
 
 export function formatDate(date: Date): string {
-  const pad = (num: number): string => {
-    return num < 10 ? `0${num}` : `${num}`;
-  };
+  const pad = (num: number): string => num < 10 ? `0${num}` : `${num}`;
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(
     date.getMinutes()
   )}`;
