@@ -54,8 +54,6 @@ import { byId } from './packageVersionCreateRequest';
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
 
-const logger = Logger.childFromRoot('packageVersionCreate');
-
 const DESCRIPTOR_FILE = 'package2-descriptor.json';
 
 export class PackageVersionCreate {
@@ -66,10 +64,12 @@ export class PackageVersionCreate {
   private packageType: PackageType;
   private packageId: string;
   private packageAlias: string;
+  private readonly logger: Logger;
 
   public constructor(private options: PackageVersionCreateOptions) {
     this.connection = this.options.connection;
     this.project = this.options.project;
+    this.logger = Logger.childFromRoot('packageVersionCreate');
   }
 
   public createPackageVersion(): Promise<Partial<PackageVersionCreateRequestResult>> {
@@ -210,7 +210,7 @@ export class PackageVersionCreate {
       versionNumber.build = resolvedBuildNumber;
 
       if (buildNumber === BuildNumberToken.LATEST_BUILD_NUMBER_TOKEN) {
-        logger.info(
+        this.logger.info(
           messages.getMessage('buildNumberResolvedForLatest', [
             dependency.package,
             versionNumber.toString(),
@@ -219,7 +219,7 @@ export class PackageVersionCreate {
           ])
         );
       } else if (buildNumber === BuildNumberToken.RELEASED_BUILD_NUMBER_TOKEN) {
-        logger.info(
+        this.logger.info(
           messages.getMessage('buildNumberResolvedForReleased', [
             dependency.package,
             versionNumber.toString(),
@@ -289,7 +289,7 @@ export class PackageVersionCreate {
         location: packageVersTmpRoot,
         message,
       });
-      logger.info(message);
+      this.logger.info(message);
       return requestObject;
     } else {
       return fs.promises.rm(packageVersTmpRoot, { recursive: true, force: true }).then(() => requestObject);
@@ -487,10 +487,10 @@ export class PackageVersionCreate {
     // Log information about the profiles being packaged up
     const profiles = this.options.profileApi.getProfileInformation();
     profiles.forEach((profile) => {
-      if (logger.shouldLog(LoggerLevel.DEBUG)) {
-        logger.debug(profile.logDebug());
-      } else if (logger.shouldLog(LoggerLevel.INFO)) {
-        logger.info(profile.logInfo());
+      if (this.logger.shouldLog(LoggerLevel.DEBUG)) {
+        this.logger.debug(profile.logDebug());
+      } else if (this.logger.shouldLog(LoggerLevel.INFO)) {
+        this.logger.info(profile.logInfo());
       }
     });
 
@@ -606,7 +606,8 @@ export class PackageVersionCreate {
   }
 
   private async resolveUserLicenses(includeUserLicenses: boolean): Promise<PackageProfileApi> {
-    const shouldGenerateProfileInformation = logger.shouldLog(LoggerLevel.INFO) || logger.shouldLog(LoggerLevel.DEBUG);
+    const shouldGenerateProfileInformation =
+      this.logger.shouldLog(LoggerLevel.INFO) || this.logger.shouldLog(LoggerLevel.DEBUG);
 
     return await PackageProfileApi.create({
       project: this.project,
@@ -669,7 +670,7 @@ export class PackageVersionCreate {
               versionNumber.indexOf(pkgUtils.VERSION_NUMBER_SEP + BuildNumberToken.NEXT_BUILD_NUMBER_TOKEN)
             )
           : versionNumber;
-      logger.warn(options, messages.getMessage('defaultVersionName', [packageDescriptorJson.versionName]));
+      this.logger.warn(options, messages.getMessage('defaultVersionName', [packageDescriptorJson.versionName]));
     }
 
     if (options.releasenotesurl) {
