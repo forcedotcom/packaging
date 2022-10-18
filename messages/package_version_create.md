@@ -118,3 +118,7 @@ The package "%s" isn’t defined in the sfdx-project.json file. Add it to the pa
 # errorCouldNotFindPackageUsingPath
 
 Could not find a package in sfdx-project.json file using "path" %s. Add it to the packageDirectories section and add the alias to packageAliases with its 0Ho ID.
+
+# errorCouldNotFindPackageDir
+
+Couldn't find a package directory for package using %s %s. Add it to the packageDirectories section and add the alias to packageAliases with its 0Ho ID.
