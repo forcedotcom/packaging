@@ -585,9 +585,7 @@ export class PackageVersionCreate {
     let packageName: string;
     if (this.options.packageId) {
       const pkg = this.options.packageId;
-      packageName = pkg.startsWith('0Ho')
-        ? this.project.getAliasesFromPackageId(pkg).find((alias) => alias)
-        : this.project.getPackageIdFromAlias(pkg);
+      packageName = pkg.startsWith('0Ho') ? this.project.getAliasesFromPackageId(pkg).find((alias) => alias) : pkg;
       if (!packageName) throw messages.createError('errorMissingPackage', [this.options.packageId]);
       this.packageObject = this.project.findPackage((pkg) => pkg.package === packageName || pkg.name === packageName);
     } else {
@@ -595,6 +593,13 @@ export class PackageVersionCreate {
       this.packageObject = this.project.getPackageFromPath(this.options.path);
       packageName = this.packageObject?.package;
       if (!packageName) throw messages.createError('errorCouldNotFindPackageUsingPath', [this.options.path]);
+    }
+
+    if (!this.packageObject) {
+      throw messages.createError('errorCouldNotFindPackageDir', [
+        this.options.packageId ? 'packageId or alias' : 'path',
+        this.options.packageId || this.options.path,
+      ]);
     }
 
     this.packageId = this.project.getPackageIdFromAlias(packageName) || packageName;
