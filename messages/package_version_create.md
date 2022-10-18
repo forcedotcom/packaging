@@ -106,3 +106,15 @@ No subscriber package was found for seed id: %s
 
 Only one package in a Dev Hub is allowed per converted from first-generation package, but the following were found:
 %s
+
+# errorMissingPackageIdOrPath
+
+You must specify either a package ID or a package path to create a new package version.
+
+# errorMissingPackage
+
+The package "%s" isn’t defined in the sfdx-project.json file. Add it to the packageDirectories section and add the alias to packageAliases with its 0Ho ID.
+
+# errorCouldNotFindPackageUsingPath
+
+Could not find a package in sfdx-project.json file using "path" %s. Add it to the packageDirectories section and add the alias to packageAliases with its 0Ho ID.
