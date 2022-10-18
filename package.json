@@ -48,7 +48,7 @@
     "graphology-traversal": "^0.3.1",
     "graphology-types": "^0.24.4",
     "js2xmlparser": "^4.0.2",
-    "jsforce": "beta",
+    "jsforce": "2.0.0-beta.19",
     "jszip": "^3.10.1",
     "mkdirp": "1.0.4",
     "ts-retry-promise": "^0.7.0",
