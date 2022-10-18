@@ -260,14 +260,14 @@ describe('Package Version Create', () => {
     );
   });
 
-  it('should validate options when package type = unlocked (scripts)', async () => {
+  it('should validate options when package type = unlocked (scripts) - postinstall script', async () => {
     packageTypeQuery.restore();
     // @ts-ignore
     packageTypeQuery = $$.SANDBOX.stub(connection.tooling, 'query')
       .onFirstCall() // @ts-ignore
       .resolves({ records: [{ Id: '05i3i000000Gmj6XXX' }] }) // @ts-ignore
       .resolves({ records: [{ ContainerOptions: 'Unlocked' }] });
-    let pvc = new PackageVersionCreate({
+    const pvc = new PackageVersionCreate({
       connection,
       project,
       postinstallscript: 'myScript.sh',
@@ -280,7 +280,8 @@ describe('Package Version Create', () => {
         'We can’t create the package version. This parameter is available only for second-generation managed packages. Create the package version without the postinstallscript or uninstallscript parameters.'
       );
     }
-
+  });
+  it('should validate options when package type = unlocked (scripts) - uninstall script', async () => {
     packageTypeQuery.restore();
     // @ts-ignore
     packageTypeQuery = $$.SANDBOX.stub(connection.tooling, 'query')
@@ -289,7 +290,7 @@ describe('Package Version Create', () => {
       .resolves({ records: [{ ContainerOptions: 'Unlocked' }] });
 
     // check uninstallscript
-    pvc = new PackageVersionCreate({
+    const pvc = new PackageVersionCreate({
       connection,
       project,
       uninstallscript: 'myScript.sh',

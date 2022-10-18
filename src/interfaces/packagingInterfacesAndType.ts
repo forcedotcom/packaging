@@ -284,6 +284,7 @@ export type PackageVersionCreateOptions = {
   installationkey: string;
   installationkeybypass: boolean;
   packageId: string;
+  path: string;
   postinstallscript: string;
   postinstallurl: string;
   preserve: boolean;
