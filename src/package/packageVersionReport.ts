@@ -31,15 +31,20 @@ const QUERY_VERBOSE =
   "WHERE Id = '%s' AND IsDeprecated != true " +
   'ORDER BY Package2Id, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber';
 
-const logger = Logger.childFromRoot('getPackageVersionReport');
-
+let logger: Logger;
+const getLogger = (): Logger => {
+  if (!logger) {
+    logger = Logger.childFromRoot('getPackageVersionReport');
+  }
+  return logger;
+};
 export async function getPackageVersionReport(options: {
   packageVersionId: string;
   connection: Connection;
   project: SfProject;
   verbose: boolean;
 }): Promise<PackageVersionReportResult[]> {
-  logger.debug(`entering getPackageVersionReport(${util.inspect(options, { depth: null })})`);
+  getLogger().debug(`entering getPackageVersionReport(${util.inspect(options, { depth: null })})`);
   const queryResult = await options.connection.tooling.query<PackageVersionReportResult>(
     util.format(options.verbose ? QUERY_VERBOSE : QUERY, options.packageVersionId)
   );

@@ -44,7 +44,6 @@ import {
   validateId,
   VERSION_NUMBER_SEP,
   copyDir,
-  getPackageAliasesFromId,
   zipDir,
 } from '../utils';
 import { PackageProfileApi } from './packageProfileApi';
@@ -54,8 +53,6 @@ import { Package } from './package';
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
 
-const logger = Logger.childFromRoot('packageVersionCreate');
-
 const DESCRIPTOR_FILE = 'package2-descriptor.json';
 
 export class PackageVersionCreate {
@@ -64,12 +61,13 @@ export class PackageVersionCreate {
   private readonly connection: Connection;
   private packageObject: NamedPackageDir;
   private packageId: string;
-  private packageAlias: string;
   private pkg: Package;
+  private readonly logger: Logger;
 
   public constructor(private options: PackageVersionCreateOptions) {
     this.connection = this.options.connection;
     this.project = this.options.project;
+    this.logger = Logger.childFromRoot('packageVersionCreate');
   }
 
   public createPackageVersion(): Promise<Partial<PackageVersionCreateRequestResult>> {
@@ -210,7 +208,7 @@ export class PackageVersionCreate {
       versionNumber.build = resolvedBuildNumber;
 
       if (buildNumber === BuildNumberToken.LATEST_BUILD_NUMBER_TOKEN) {
-        logger.info(
+        this.logger.info(
           messages.getMessage('buildNumberResolvedForLatest', [
             dependency.package,
             versionNumber.toString(),
@@ -219,7 +217,7 @@ export class PackageVersionCreate {
           ])
         );
       } else if (buildNumber === BuildNumberToken.RELEASED_BUILD_NUMBER_TOKEN) {
-        logger.info(
+        this.logger.info(
           messages.getMessage('buildNumberResolvedForReleased', [
             dependency.package,
             versionNumber.toString(),
@@ -289,7 +287,7 @@ export class PackageVersionCreate {
         location: packageVersTmpRoot,
         message,
       });
-      logger.info(message);
+      this.logger.info(message);
       return requestObject;
     } else {
       return fs.promises.rm(packageVersTmpRoot, { recursive: true, force: true }).then(() => requestObject);
@@ -487,10 +485,10 @@ export class PackageVersionCreate {
     // Log information about the profiles being packaged up
     const profiles = this.options.profileApi.getProfileInformation();
     profiles.forEach((profile) => {
-      if (logger.shouldLog(LoggerLevel.DEBUG)) {
-        logger.debug(profile.logDebug());
-      } else if (logger.shouldLog(LoggerLevel.INFO)) {
-        logger.info(profile.logInfo());
+      if (this.logger.shouldLog(LoggerLevel.DEBUG)) {
+        this.logger.debug(profile.logDebug());
+      } else if (this.logger.shouldLog(LoggerLevel.INFO)) {
+        this.logger.info(profile.logInfo());
       }
     });
 
@@ -578,13 +576,34 @@ export class PackageVersionCreate {
       throw messages.createError('errorEmptyPackageDirs');
     }
 
-    // from the packageDirectories in sfdx-project.json, find the correct package entry either by finding a matching package (name) or path
-    this.packageAlias = getPackageAliasesFromId(this.options.packageId, this.options.project).join();
-    this.packageId = this.options.packageId;
-    // set on the class, so we can access them in other methods without redoing this logic
-    this.packageObject = this.project.findPackage(
-      (pkg) => pkg.package === this.packageAlias || pkg['id'] === this.options.packageId
-    );
+    // either options.packageId or options.path is required
+    if (!this.options.packageId && !this.options.path) {
+      throw messages.createError('errorMissingPackageIdOrPath');
+    }
+
+    // establish the package Id (0ho) and load the package directory
+    let packageName: string;
+    if (this.options.packageId) {
+      const pkg = this.options.packageId;
+      packageName = pkg.startsWith('0Ho') ? this.project.getAliasesFromPackageId(pkg).find((alias) => alias) : pkg;
+      if (!packageName) throw messages.createError('errorMissingPackage', [this.options.packageId]);
+      this.packageObject = this.project.findPackage((pkg) => pkg.package === packageName || pkg.name === packageName);
+    } else {
+      // due to flag validation, we'll either have a package or path flag
+      this.packageObject = this.project.getPackageFromPath(this.options.path);
+      packageName = this.packageObject?.package;
+      if (!packageName) throw messages.createError('errorCouldNotFindPackageUsingPath', [this.options.path]);
+    }
+
+    if (!this.packageObject) {
+      throw messages.createError('errorCouldNotFindPackageDir', [
+        this.options.packageId ? 'packageId or alias' : 'path',
+        this.options.packageId || this.options.path,
+      ]);
+    }
+
+    this.packageId = this.project.getPackageIdFromAlias(packageName) || packageName;
+
     this.options.profileApi = await this.resolveUserLicenses(this.packageObject.includeProfileUserLicenses);
 
     // At this point, the packageIdFromAlias should have been resolved to an Id.  Now, we
@@ -618,7 +637,8 @@ export class PackageVersionCreate {
   }
 
   private async resolveUserLicenses(includeUserLicenses: boolean): Promise<PackageProfileApi> {
-    const shouldGenerateProfileInformation = logger.shouldLog(LoggerLevel.INFO) || logger.shouldLog(LoggerLevel.DEBUG);
+    const shouldGenerateProfileInformation =
+      this.logger.shouldLog(LoggerLevel.INFO) || this.logger.shouldLog(LoggerLevel.DEBUG);
 
     return await PackageProfileApi.create({
       project: this.project,
@@ -679,7 +699,7 @@ export class PackageVersionCreate {
               versionNumber.indexOf(pkgUtils.VERSION_NUMBER_SEP + BuildNumberToken.NEXT_BUILD_NUMBER_TOKEN)
             )
           : versionNumber;
-      logger.warn(options, messages.getMessage('defaultVersionName', [packageDescriptorJson.versionName]));
+      this.logger.warn(options, messages.getMessage('defaultVersionName', [packageDescriptorJson.versionName]));
     }
 
     if (options.releasenotesurl) {

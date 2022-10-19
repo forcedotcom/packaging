@@ -30,7 +30,13 @@ const VERBOSE_SELECT =
 
 export const DEFAULT_ORDER_BY_FIELDS = 'Package2Id, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber';
 
-const logger = Logger.childFromRoot('packageVersionList');
+let logger: Logger;
+const getLogger = (): Logger => {
+  if (!logger) {
+    logger = Logger.childFromRoot('packageVersionList');
+  }
+  return logger;
+};
 
 export async function listPackageVersions(
   options: ListPackageVersionOptions
@@ -53,7 +59,7 @@ export function assembleQueryParts(select: string, where: string[], orderBy?: st
   const wherePart = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
 
   const query = `${select} ${wherePart} ${orderByPart}`;
-  logger.debug(query);
+  getLogger().debug(query);
   return query;
 }
 

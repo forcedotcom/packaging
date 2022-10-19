@@ -268,6 +268,7 @@ export type SubscriberPackageVersionOptions = {
 
 export type ConvertPackageOptions = {
   installationKey: string;
+  definitionfile: string;
   installationKeyBypass: boolean;
   wait: Duration;
   buildInstance: string;
@@ -284,6 +285,7 @@ export type PackageVersionCreateOptions = {
   installationkey: string;
   installationkeybypass: boolean;
   packageId: string;
+  path: string;
   postinstallscript: string;
   postinstallurl: string;
   preserve: boolean;

@@ -4,6 +4,10 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
+
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import { expect } from 'chai';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { Connection, Lifecycle } from '@salesforce/core';
@@ -14,6 +18,7 @@ import {
   findOrCreatePackage2,
 } from '../../src/package/packageConvert';
 import { PackageEvents } from '../../src/interfaces';
+import * as pkgUtils from '../../src/utils/packageUtils';
 
 describe('packageConvert', () => {
   const $$ = instantiateContext();
@@ -31,9 +36,27 @@ describe('packageConvert', () => {
   describe('createPackageVersionCreateRequest', () => {
     it('should return a valid request with installationkey and buildinstance', async () => {
       $$.inProject(true);
+      const definitionFile = {
+        orgName: 'test org name',
+        edition: 'Developer',
+        features: ['EnableSetPasswordInApi', 'PersonAccounts', 'MultiCurrency'],
+        settings: {
+          lightningExperienceSettings: {
+            enableS1DesktopEnabled: true,
+          },
+          languageSettings: {
+            enableTranslationWorkbench: true,
+          },
+        },
+      };
+      const packageVersTmpRoot = path.join(os.tmpdir(), 'config');
+      await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
+      const scratchDefPath = path.join(packageVersTmpRoot, 'scratch.json');
+      await fs.promises.writeFile(scratchDefPath, JSON.stringify(definitionFile, undefined, 2));
       const request = await createPackageVersionCreateRequest(
-        { installationkey: '123', buildinstance: 'myInstance' },
-        '0Ho3i000000Gmj6CAC'
+        { installationkey: '123', definitionfile: scratchDefPath, buildinstance: 'myInstance' },
+        '0Ho3i000000Gmj6CAC',
+        '54.0'
       );
       expect(request).to.have.all.keys('InstallKey', 'Instance', 'IsConversionRequest', 'Package2Id', 'VersionInfo');
       expect(request.InstallKey).to.equal('123');
@@ -46,7 +69,7 @@ describe('packageConvert', () => {
 
     it('should return a valid request', async () => {
       $$.inProject(true);
-      const request = await createPackageVersionCreateRequest({}, '0Ho3i000000Gmj6CAC');
+      const request = await createPackageVersionCreateRequest({}, '0Ho3i000000Gmj6CAC', '54.0');
       expect(request).to.have.all.keys('InstallKey', 'Instance', 'IsConversionRequest', 'Package2Id', 'VersionInfo');
       expect(request.InstallKey).to.equal(undefined);
       expect(request.Instance).to.equal(undefined);
@@ -159,11 +182,15 @@ describe('packageConvert', () => {
     $$.SANDBOX.stub(conn.tooling, 'query').resolves({ records: [{ Id: '0Ho3i000000Gmj6YYY' }] });
 
     // @ts-ignore
+    $$.SANDBOX.stub(pkgUtils, 'getSourceApiVersion').returns('54.0');
+
+    // @ts-ignore
     $$.SANDBOX.stub(conn.tooling, 'create').resolves({ success: undefined, errors: [new Error('server error')] });
     try {
       await convertPackage('0334p000000EaIHAA0', conn, {
         buildInstance: '',
         installationKey: '',
+        definitionfile: '',
         installationKeyBypass: true,
         wait: Duration.minutes(1),
       });
@@ -239,6 +266,7 @@ describe('packageConvert', () => {
     const result = await convertPackage('0334p000000EaIHAA0', conn, {
       buildInstance: '',
       installationKey: '',
+      definitionfile: '',
       installationKeyBypass: true,
       wait: Duration.minutes(1),
     });
@@ -273,6 +301,7 @@ describe('packageConvert', () => {
       await convertPackage('0334p000000EaIHAA0', conn, {
         buildInstance: '',
         installationKey: '',
+        definitionfile: '',
         installationKeyBypass: true,
         wait: Duration.minutes(1),
       });
