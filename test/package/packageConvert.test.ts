@@ -12,6 +12,7 @@ import { expect } from 'chai';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { Connection, Lifecycle } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
+
 import {
   convertPackage,
   createPackageVersionCreateRequest,
@@ -195,6 +196,7 @@ describe('packageConvert', () => {
         wait: Duration.minutes(1),
       });
     } catch (e) {
+      // console.log('ERROR', e);
       expect((e as Error).message).to.include('Failed to create request : Error: server error');
     }
   });

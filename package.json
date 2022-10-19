@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/packaging",
-  "version": "0.0.49",
+  "version": "0.1.8",
   "description": "packing libraries to Salesforce packaging platform",
   "main": "lib/exported",
   "types": "lib/exported.d.ts",
@@ -20,7 +20,7 @@
     "prepare": "sf-install",
     "pretest": "sf-compile-test",
     "test": "sf-test",
-    "test:nuts": "nyc mocha \"**/*.nut.ts\" --slow 4500 --timeout 600000 --parallel"
+    "test:nuts": "nyc mocha \"**/*.nut.ts\" --slow 4500 --timeout 1800000 --parallel"
   },
   "keywords": [
     "force",
@@ -46,9 +46,9 @@
     "globby": "^11",
     "graphology": "^0.25.0",
     "graphology-traversal": "^0.3.1",
-    "graphology-types": "^0.24.4",
+    "graphology-types": "^0.24.5",
     "js2xmlparser": "^4.0.2",
-    "jsforce": "beta",
+    "jsforce": "2.0.0-beta.19",
     "jszip": "^3.10.1",
     "mkdirp": "1.0.4",
     "ts-retry-promise": "^0.7.0",
@@ -56,7 +56,7 @@
   },
   "devDependencies": {
     "@salesforce/cli-plugins-testkit": "^3.2.2",
-    "@salesforce/dev-config": "^3.0.1",
+    "@salesforce/dev-config": "^3.1.0",
     "@salesforce/dev-scripts": "^2.0.4",
     "@salesforce/prettier-config": "^0.0.2",
     "@salesforce/ts-sinon": "^1.4.0",
@@ -64,8 +64,8 @@
     "@types/globby": "^9.1.0",
     "@types/jszip": "^3.4.1",
     "@types/xml2js": "^0.4.11",
-    "@typescript-eslint/eslint-plugin": "^5.39.0",
-    "@typescript-eslint/parser": "5.38.1",
+    "@typescript-eslint/eslint-plugin": "^5.40.0",
+    "@typescript-eslint/parser": "5.40.0",
     "chai": "^4.3.6",
     "commitizen": "^4.2.4",
     "eslint": "^8.24.0",

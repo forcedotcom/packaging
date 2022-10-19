@@ -60,6 +60,7 @@ export class PackageVersionCreate {
   private readonly project: SfProject;
   private readonly connection: Connection;
   private packageObject: NamedPackageDir;
+  private packageType: PackageType;
   private packageId: string;
   private pkg: Package;
   private readonly logger: Logger;
