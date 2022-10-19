@@ -3466,10 +3466,10 @@ graphology-traversal@^0.3.1:
     graphology-indices "^0.17.0"
     graphology-utils "^2.0.0"
 
-graphology-types@^0.24.4:
-  version "0.24.4"
-  resolved "https://registry.yarnpkg.com/graphology-types/-/graphology-types-0.24.4.tgz#299120fb50dcd7915204068715e7cfc9ef8b5e3c"
-  integrity sha512-CSgmycWiviCctMFO86YoUTJN1t4/PLKC5Pos2Hite+7kCUXTr+mGlDUAOgpcKG1IfFaeL9VDmTjFpzs2rTnPWw==
+graphology-types@^0.24.5:
+  version "0.24.5"
+  resolved "https://registry.yarnpkg.com/graphology-types/-/graphology-types-0.24.5.tgz#55b93139047a40657098d308ae7daf0ab9818cc1"
+  integrity sha512-m8FVoj9b6MwIaTN+/AvoxXhcK5n0uSe7ZnhbQNTcjh94vzN6m5hU501LihtCfRjF35QEMVrXYOrTNO0wAR1Gxw==
 
 graphology-utils@^2.0.0, graphology-utils@^2.4.2:
   version "2.5.2"
