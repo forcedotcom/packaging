@@ -110,6 +110,7 @@ export class PackageVersionCreate {
       convertResult.packagePath = outputDirectory;
       return convertResult;
     }
+    return convertResult;
   }
 
   private async validateDependencyValues(dependency: PackageDescriptorJson): Promise<void> {
@@ -324,7 +325,8 @@ export class PackageVersionCreate {
     await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
     const settingsGenerator = new SettingsGenerator({ asDirectory: true });
     // Copy all the metadata from the workspace to a tmp folder
-    await this.generateMDFolderForArtifact(mdOptions);
+    const componentSet = await this.generateMDFolderForArtifact(mdOptions);
+    this.verifyHasSource(componentSet);
     const packageDescriptorJson = this.packageObject as PackageDescriptorJson;
 
     if (packageDescriptorJson.package) {
@@ -419,6 +421,12 @@ export class PackageVersionCreate {
     return this.createRequestObject(preserveFiles, packageVersTmpRoot, packageVersBlobZipFile);
   }
 
+  private verifyHasSource(componentSet: ConvertResult): void {
+    if (componentSet.converted.length === 0) {
+      throw messages.createError('noSourceInRootDirectory', [this.packageObject.path ?? '<unknown>']);
+    }
+  }
+
   private async cleanGeneratedPackage(
     packageVersMetadataFolder: string,
     packageVersProfileFolder: string,
@@ -437,6 +445,12 @@ export class PackageVersionCreate {
     const currentPackageXml = await fs.promises.readFile(path.join(packageVersMetadataFolder, 'package.xml'), 'utf8');
     // convert to json
     const packageJson = await xml2js.parseStringPromise(currentPackageXml);
+    if (!packageJson?.Package) {
+      throw messages.createError('packageXmlDoesNotContainPackage');
+    }
+    if (!packageJson?.Package.types) {
+      throw messages.createError('packageXmlDoesNotContainPackageTypes');
+    }
     fs.mkdirSync(packageVersMetadataFolder, { recursive: true });
     fs.mkdirSync(packageVersProfileFolder, { recursive: true });
 

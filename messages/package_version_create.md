@@ -122,3 +122,15 @@ Could not find a package in sfdx-project.json file using "path" %s. Add it to th
 # errorCouldNotFindPackageDir
 
 Couldn't find a package directory for package using %s %s. Add it to the packageDirectories section and add the alias to packageAliases with its 0Ho ID.
+
+# noSourceInRootDirectory
+
+No matching source was found within the package root directory: %s
+
+# packageXmlDoesNotContainPackage
+
+While preparing package version create request, the calculated package.xml for the package does not contain a <Package> element.
+
+# packageXmlDoesNotContainPackageTypes
+
+While preparing package version create request, the calculated package.xml for the package does not contain a <Package><types> element.
