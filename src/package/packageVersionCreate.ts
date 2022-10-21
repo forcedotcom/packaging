@@ -603,7 +603,7 @@ export class PackageVersionCreate {
       if (!packageName) throw messages.createError('errorMissingPackage', [this.options.packageId]);
       this.packageObject = this.project.findPackage((pkg) => pkg.package === packageName || pkg.name === packageName);
     } else {
-      // due to flag validation, we'll either have a package or path flag
+      // We'll either have a package ID or alias, or a directory path
       this.packageObject = this.project.getPackageFromPath(this.options.path);
       packageName = this.packageObject?.package;
       if (!packageName) throw messages.createError('errorCouldNotFindPackageUsingPath', [this.options.path]);

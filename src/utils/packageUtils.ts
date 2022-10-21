@@ -121,7 +121,7 @@ export function applyErrorAction(err: Error): Error {
     actions.push(messages.getMessage('invalidPackageTypeAction'));
   }
 
-  if (err.name === 'MALFORMED_ID' && err.message === messages.getMessage('malformedPackageIdMessage')) {
+  if (err.name === 'MALFORMED_ID' && err.message === messages.getMessage('malformedPackageIdMessage', [''])) {
     actions.push(messages.getMessage('malformedPackageIdAction'));
   }
 
@@ -184,7 +184,7 @@ export async function getPackageType(packageId: string, connection: Connection):
 
   const queryResult = await connection.tooling.query<Pick<PackagingSObjects.Package2, 'ContainerOptions'>>(query);
   if (queryResult.records.length === 0) {
-    throw messages.createError('errorInvalidPackageId', [packageId]);
+    throw messages.createError('malformedPackageIdMessage', [packageId]);
   }
   return queryResult.records[0].ContainerOptions;
 }
