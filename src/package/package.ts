@@ -75,7 +75,7 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
     options: ConvertPackageOptions,
     project?: SfProject
   ): Promise<PackageVersionCreateRequestResult> {
-    return await convertPackage(pkgId, this.options.connection, options, project);
+    return convertPackage(pkgId, this.options.connection, options, project);
   }
 
   public create(): Promise<void> {
@@ -105,7 +105,7 @@ export class Package extends AsyncCreatable<PackageOptions> implements IPackage 
     id: string,
     wait: Duration
   ): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest> {
-    return await uninstallPackage(id, this.options.connection, wait);
+    return uninstallPackage(id, this.options.connection, wait);
   }
 
   /**
