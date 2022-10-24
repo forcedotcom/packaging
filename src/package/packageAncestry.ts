@@ -21,15 +21,14 @@ import {
 } from '../interfaces';
 import * as pkgUtils from '../utils/packageUtils';
 import { VersionNumber } from '../utils';
+import { PackageVersion } from './packageVersion';
+import { Package } from './package';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_ancestry');
 
 const SELECT_PACKAGE_VERSION =
   'SELECT AncestorId, SubscriberPackageVersionId, MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version';
-const SELECT_PACKAGE_CONTAINER_OPTIONS = 'SELECT ContainerOptions FROM Package2   ';
-
-const SELECT_PACKAGE_VERSION_CONTAINER_OPTIONS = 'SELECT Package2ContainerOptions FROM SubscriberPackageVersion';
 
 // Add this to query calls to only show released package versions in the output
 const releasedOnlyFilter = ' AND IsReleased = true';
@@ -51,9 +50,10 @@ const sortAncestryNodeData = (a: AncestryRepresentationProducer, b: AncestryRepr
 };
 /**
  * A class that represents the package ancestry graph.
+ * Given a package Id (0Ho) or a package version Id (04t), it will build a graph of the package's ancestors.
  */
 export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
-  private _requestedPackageId: string;
+  #requestedPackageId: string;
   private graph: DirectedGraph = new DirectedGraph<PackageAncestryNode, Attributes, Attributes>();
   private roots: PackageAncestryNode[];
   public constructor(private options: PackageAncestryOptions) {
@@ -61,7 +61,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   }
 
   public get requestedPackageId(): string {
-    return this._requestedPackageId;
+    return this.#requestedPackageId;
   }
 
   public async init(): Promise<void> {
@@ -194,7 +194,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
 
   private async getRoots(): Promise<PackageAncestryNode[]> {
     let roots = [];
-    this._requestedPackageId = pkgUtils.getPackageIdFromAlias(this.options.packageId, this.options.project);
+    this.#requestedPackageId = pkgUtils.getPackageIdFromAlias(this.options.packageId, this.options.project);
     switch (this.requestedPackageId.slice(0, 3)) {
       case '0Ho':
         pkgUtils.validateId(pkgUtils.BY_LABEL.PACKAGE_ID, this.requestedPackageId);
@@ -207,21 +207,11 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
       default:
         throw messages.createError('idOrAliasNotFound', [this.requestedPackageId]);
     }
+    await this.validatePackageType();
     return roots;
   }
 
   private async findRootsForPackageVersion(): Promise<PackageAncestryNode[]> {
-    // Check to see if the package version is part of an unlocked package
-    // if so, throw an error since ancestry only applies to managed packages
-    const versionQuery = `${SELECT_PACKAGE_VERSION_CONTAINER_OPTIONS} WHERE Id = '${this.requestedPackageId}'`;
-    const packageVersionTypeResults = await this.options.connection.singleRecordQuery<{
-      Package2ContainerOptions?: PackageType;
-    }>(versionQuery, { tooling: true });
-
-    if (packageVersionTypeResults.Package2ContainerOptions !== 'Managed') {
-      throw messages.createError('unlockedPackageError');
-    }
-
     // Start with the node, and shoot up
     let node = await this.getPackageVersion(this.requestedPackageId);
     while (node.AncestorId !== null) {
@@ -230,6 +220,36 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
       node = ancestor;
     }
     return [node];
+  }
+
+  private async validatePackageType(): Promise<void> {
+    // Check to see if the package version is part of an unlocked package
+    // if so, throw an error since ancestry only applies to managed packages
+    let packageType: PackageType;
+    switch (this.requestedPackageId.slice(0, 3)) {
+      case '04t':
+        // eslint-disable-next-line no-case-declarations
+        const packageVersion = new PackageVersion({
+          idOrAlias: this.requestedPackageId,
+          project: this.options.project,
+          connection: this.options.connection,
+        });
+        packageType = await packageVersion.getPackageType();
+        break;
+      case '0Ho':
+        // eslint-disable-next-line no-case-declarations
+        const pkg = new Package({
+          packageAliasOrId: this.requestedPackageId,
+          project: this.options.project,
+          connection: this.options.connection,
+        });
+        packageType = await pkg.getType();
+        break;
+    }
+
+    if (packageType !== 'Managed') {
+      throw messages.createError('unlockedPackageError');
+    }
   }
 
   private async getPackageVersion(nodeId: string): Promise<PackageAncestryNode> {
@@ -251,15 +271,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   private async findRootsForPackage(): Promise<PackageAncestryNode[]> {
     // Check to see if the package is an unlocked package
     // if so, throw and error since ancestry only applies to managed packages
-    const query = `${SELECT_PACKAGE_CONTAINER_OPTIONS} WHERE Id = '${this.requestedPackageId}'`;
-    const packageTypeResults = await this.options.connection.tooling.query<{ ContainerOptions?: PackageType }>(query);
-
-    if (packageTypeResults?.records?.length === 0) {
-      throw messages.createError('invalidId', [this.requestedPackageId]);
-    } else if (packageTypeResults?.records?.length && packageTypeResults?.records[0].ContainerOptions !== 'Managed') {
-      throw messages.createError('unlockedPackageError');
-    }
-
+    await this.validatePackageType();
     const normalQuery = `${SELECT_PACKAGE_VERSION} WHERE AncestorId = NULL AND Package2Id = '${this.requestedPackageId}' ${releasedOnlyFilter}`;
     const subscriberPackageVersions = (
       await this.options.connection.tooling.query<PackageAncestryNode>(normalQuery)

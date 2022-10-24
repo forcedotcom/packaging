@@ -21,10 +21,7 @@ import {
   AncestryRepresentationProducer,
   AncestryRepresentationProducerOptions,
   PackagingSObjects,
-  createPackage,
-  uninstallPackage,
   packageInstalledList,
-  deletePackage,
   Package,
   PackageVersion,
   AncestryJsonProducer,
@@ -33,6 +30,8 @@ import {
   VersionNumber,
   PackageVersionEvents,
 } from '../../src/exported';
+import { PackageEvents } from '../../src/interfaces';
+import { SubscriberPackageVersion } from '../../src/package/subscriberPackageVersion';
 
 let session: TestSession;
 
@@ -114,9 +113,8 @@ describe('Integration tests for @salesforce/packaging library', function () {
         orgDependent: false,
         errorNotificationUsername: undefined,
       };
-      const result = await createPackage(devHubOrg.getConnection(), project, options);
-
-      pkgId = result.Id;
+      const pkg = await Package.create(devHubOrg.getConnection(), project, options);
+      pkgId = pkg.Id;
       expect(pkgId).to.be.ok;
       expect(pkgId).to.match(new RegExp(PKG2_ID_PREFIX));
 
@@ -128,6 +126,17 @@ describe('Integration tests for @salesforce/packaging library', function () {
       expect(projectFile.packageAliases).to.deep.equal({
         [pkgName]: pkgId,
       });
+    });
+
+    it('should list all packages in the dev hub', async () => {
+      const packages = await Package.list(devHubOrg.getConnection());
+      expect(packages).to.have.length.greaterThan(0);
+    });
+
+    it('should find no package versions for the new package', async () => {
+      const pkg = new Package({ connection: devHubOrg.getConnection(), project, packageAliasOrId: pkgId });
+      const pkgVersions = await pkg.getPackageVersions();
+      expect(pkgVersions).to.be.empty;
     });
 
     it('package version create', async () => {
@@ -198,16 +207,27 @@ describe('Integration tests for @salesforce/packaging library', function () {
       }
     });
 
-    it('verifies packageversionrequest is in hubforce via package:version:create:list', () => {
-      const result = execCmd<[{ Status: string; Id: string }]>('force:package:version:create:list --json').jsonOutput
-        .result;
+    it('verifies the package version create request is in dev hub via PackageVersion.getPackageVersionCreateRequests', async () => {
+      const result = await PackageVersion.getPackageVersionCreateRequests(devHubOrg.getConnection());
 
       expect(result).to.have.length.at.least(1);
-      result.map((item) => expect(item).to.have.all.keys(VERSION_CREATE_RESPONSE_KEYS));
+      result.forEach((item) => expect(item).to.have.all.keys(VERSION_CREATE_RESPONSE_KEYS));
       expect(
         result.filter((item) => item.Id === pkgCreateVersionRequestId),
-        `Did not find Package2CreateVersionRequestId '${pkgCreateVersionRequestId}' in 'force:package:version:create:list' result`
+        `Did not find Package2CreateVersionRequestId '${pkgCreateVersionRequestId}' in 'PackageVersion.getPackageVersionCreateRequests' result`
       ).to.have.length(1);
+    });
+
+    it('package version should be in results of Package#getPackageVersions', async () => {
+      const pkg = new Package({ connection: devHubOrg.getConnection(), project, packageAliasOrId: pkgId });
+      const pkgVersions = await pkg.getPackageVersions();
+      expect(pkgVersions).to.have.length(1);
+      expect(pkgVersions.some((pvlr) => pvlr.SubscriberPackageVersionId === subscriberPkgVersionId)).to.be.true;
+    });
+
+    it('package version should be in results of static Package#listVersions', async () => {
+      const pkgVersions = await Package.listVersions(devHubOrg.getConnection(), project);
+      expect(pkgVersions.some((pvlr) => pvlr.SubscriberPackageVersionId === subscriberPkgVersionId)).to.be.true;
     });
 
     it('package version report', async () => {
@@ -233,11 +253,6 @@ describe('Integration tests for @salesforce/packaging library', function () {
 
       // eslint-disable-next-line no-console
       console.log(`projectFile: ${JSON.stringify(projectFile, undefined, 2)}`);
-
-      expect(result.Description).to.equal(
-        projectFile.packageDirectories[0].versionDescription,
-        `'force:package:version:report' Description mismatch: expected '${projectFile.packageDirectories[0].versionDescription}', got '${result.Description}'`
-      );
 
       expect(result.Name).to.equal(
         projectFile.packageDirectories[0].versionName,
@@ -278,7 +293,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
     });
 
     it('will update the package', async () => {
-      const pkg = new Package({ connection: devHubOrg.getConnection() });
+      const pkg = new Package({ connection: devHubOrg.getConnection(), packageAliasOrId: pkgId, project });
       const result = await pkg.update({ Id: pkgId, Description: 'new package description' });
       expect(result).to.have.all.keys('id', 'success', 'errors');
       expect(result.id.startsWith('0Ho')).to.be.true;
@@ -287,37 +302,41 @@ describe('Integration tests for @salesforce/packaging library', function () {
     });
 
     it('will list all of the created package versions', async () => {
-      const result = await PackageVersion.createdList(devHubOrg.getConnection());
+      const result = await PackageVersion.getPackageVersionCreateRequests(devHubOrg.getConnection());
       expect(result).to.have.length.at.least(1);
-      expect(result[0]).to.have.all.keys(
-        'Id',
-        'Status',
-        'Package2Id',
-        'Package2VersionId',
-        'SubscriberPackageVersionId',
-        'Tag',
-        'Branch',
-        'Error',
-        'CreatedDate',
-        'HasMetadataRemoved',
-        'CreatedBy'
-      );
-      expect(result[0].Id.startsWith('08c')).to.be.true;
-      expect(result[0].Package2Id.startsWith('0Ho')).to.be.true;
-      expect(result[0].Package2VersionId.startsWith('05i')).to.be.true;
-      expect(result[0].SubscriberPackageVersionId.startsWith('04t')).to.be.true;
     });
 
-    it('will list all of the created package versions (status = error)', async () => {
-      const result = await PackageVersion.createdList(devHubOrg.getConnection(), { status: 'Success' });
+    it('will list all of the created package versions (status = Success)', async () => {
+      const result = await PackageVersion.getPackageVersionCreateRequests(devHubOrg.getConnection(), {
+        status: 'Success',
+      });
       result.map((res) => {
         // we should've filtered to only successful package versions1
         expect(res.Status).to.equal('Success');
+        expect(res).to.have.all.keys(
+          'Id',
+          'Status',
+          'Package2Id',
+          'Package2VersionId',
+          'SubscriberPackageVersionId',
+          'Tag',
+          'Branch',
+          'Error',
+          'CreatedDate',
+          'HasMetadataRemoved',
+          'CreatedBy'
+        );
+        expect(res.Id.startsWith('08c')).to.be.true;
+        expect(res.Package2Id.startsWith('0Ho')).to.be.true;
+        expect(res.Package2VersionId.startsWith('05i')).to.be.true;
+        expect(res.SubscriberPackageVersionId.startsWith('04t')).to.be.true;
       });
     });
 
     it('will list all of the created package versions (createdLastDays = 3)', async () => {
-      const result = await PackageVersion.createdList(devHubOrg.getConnection(), { createdlastdays: 3 });
+      const result = await PackageVersion.getPackageVersionCreateRequests(devHubOrg.getConnection(), {
+        createdlastdays: 3,
+      });
       expect(result).to.have.length.at.least(1);
       expect(result[0]).to.have.all.keys(
         'Id',
@@ -345,44 +364,58 @@ describe('Integration tests for @salesforce/packaging library', function () {
 
   describe('install the package in scratch org', () => {
     it('install package async', async () => {
-      const pkg = new Package({ connection: scratchOrg.getConnection() });
-      await pkg.waitForPublish(subscriberPkgVersionId, 10, INSTALLATION_KEY);
-      const result = await pkg.install({
-        SubscriberPackageVersionKey: subscriberPkgVersionId,
-        Password: INSTALLATION_KEY,
+      let subscriberStatus = false;
+      let presend = false;
+      let postsend = false;
+
+      Lifecycle.getInstance().on(PackageEvents.install['subscriber-status'], async () => {
+        subscriberStatus = true;
       });
-      expect(result).to.have.property('Status', 'IN_PROGRESS');
+      Lifecycle.getInstance().on(PackageEvents.install.presend, async () => {
+        presend = true;
+      });
+      Lifecycle.getInstance().on(PackageEvents.install.postsend, async () => {
+        postsend = true;
+      });
+
+      const pkg = new SubscriberPackageVersion({
+        connection: scratchOrg.getConnection(),
+        aliasOrId: subscriberPkgVersionId,
+        password: INSTALLATION_KEY,
+      });
+      const result = await pkg.install(
+        {
+          SubscriberPackageVersionKey: subscriberPkgVersionId,
+          Password: INSTALLATION_KEY,
+        },
+        { publishFrequency: Duration.seconds(30), publishTimeout: Duration.minutes(20) }
+      );
+      expect(['IN_PROGRESS', 'SUCCESS']).to.include(result.Status);
       expect(result).to.have.property('Errors', null);
       expect(result).to.have.property('SubscriberPackageVersionKey', subscriberPkgVersionId);
       expect(result).to.have.property('Id');
+      expect(subscriberStatus).to.be.true;
+      expect(presend).to.be.true;
+      expect(postsend).to.be.true;
 
       installReqId = result.Id;
     });
 
-    it('getInstallStatus until it finishes', async () => {
-      const waitForInstallRequestAndValidate = async (counter = 1): Promise<{ Status: string }> => {
-        const pkg = new Package({ connection: scratchOrg.getConnection() });
-        const pollResult = await pkg.getInstallStatus(installReqId);
-
-        expect(pollResult).to.have.property('Status');
-        expect(pollResult).to.have.property('Id', installReqId);
-        expect(pollResult).to.have.property('Errors', null);
-        expect(pollResult).to.have.property('SubscriberPackageVersionKey', subscriberPkgVersionId);
-
-        if (pollResult.Status === 'IN_PROGRESS' && counter < 80) {
-          return sleep(WAIT_INTERVAL_MS, Duration.Unit.MILLISECONDS).then(() =>
-            waitForInstallRequestAndValidate(counter++)
-          );
-        } else {
-          // break out of recursion, validate pollResult
-          expect(
-            pollResult.Status,
-            `Checked InstallRequest ${counter} time(s) with interval of ${WAIT_INTERVAL_MS} ms and failed test with Status=${pollResult.Status}`
-          ).to.equal('SUCCESS');
-          return pollResult;
+    it('check installStatus until it finishes', async () => {
+      let installStatus = false;
+      Lifecycle.getInstance().on(PackageEvents.install.status, async () => {
+        installStatus = true;
+      });
+      const result = await SubscriberPackageVersion.installStatus(
+        scratchOrg.getConnection(),
+        installReqId,
+        INSTALLATION_KEY,
+        {
+          pollingFrequency: Duration.seconds(30),
+          pollingTimeout: Duration.minutes(30),
         }
-      };
-      const result = await waitForInstallRequestAndValidate();
+      );
+      expect(installStatus).to.be.true;
       expect(result.Status).to.equal('SUCCESS');
     });
 
@@ -408,8 +441,12 @@ describe('Integration tests for @salesforce/packaging library', function () {
 
   describe('uninstall the package', () => {
     it('uninstallPackage', async () => {
-      const conn = scratchOrg.getConnection();
-      const result = await uninstallPackage(subscriberPkgVersionId, conn);
+      const pkg = new SubscriberPackageVersion({
+        connection: scratchOrg.getConnection(),
+        aliasOrId: subscriberPkgVersionId,
+        password: INSTALLATION_KEY,
+      });
+      const result = await pkg.uninstall();
 
       expect(result).to.include.keys(['Status', 'Id', 'SubscriberPackageVersionId']);
       uninstallReqId = result.Id;
@@ -422,15 +459,13 @@ describe('Integration tests for @salesforce/packaging library', function () {
 
     it('runs force:package:uninstall:report to wait for results', async () => {
       const MAX_TRIES = 40;
-      const pkg = new Package({ connection: scratchOrg.getConnection() });
       const waitForUninstallRequestAndValidate = async (
         counter = 1
       ): Promise<{
         Status: string;
         SubscriberPackageVersionId?: string;
       }> => {
-        const pollResult = await pkg.uninstallReport(uninstallReqId);
-
+        const pollResult = await SubscriberPackageVersion.uninstallStatus(uninstallReqId, scratchOrg.getConnection());
         if (pollResult.Status === 'InProgress' && counter < MAX_TRIES) {
           return sleep(WAIT_INTERVAL_MS, Duration.Unit.MILLISECONDS).then(() =>
             waitForUninstallRequestAndValidate(counter++)
@@ -458,10 +493,8 @@ describe('Integration tests for @salesforce/packaging library', function () {
       ]);
     });
 
-    it('gets zero results from package:installed:list', () => {
-      const result = execCmd<[]>(`force:package:installed:list --targetusername ${SUB_ORG_ALIAS} --json`, {
-        ensureExitCode: 0,
-      }).jsonOutput.result;
+    it('gets zero results from packageInstalledList', async () => {
+      const result = await packageInstalledList(scratchOrg.getConnection());
       expect(result).to.have.length(0);
     });
   });
@@ -479,7 +512,8 @@ describe('Integration tests for @salesforce/packaging library', function () {
     });
 
     it('deletes the package', async () => {
-      const result = await deletePackage(pkgId, project, devHubOrg.getConnection(), false);
+      const pkg = new Package({ project, connection: devHubOrg.getConnection(), packageAliasOrId: pkgId });
+      const result = await pkg.delete();
       expect(result.success).to.be.true;
       expect(result.id).to.be.equal(pkgId);
     });

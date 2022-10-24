@@ -185,7 +185,7 @@ export namespace PackagingSObjects {
     IsDeprecated: boolean;
     IsPasswordProtected: boolean;
     IsBeta: boolean;
-    Package2ContainerOptions: string;
+    Package2ContainerOptions: PackageType;
     IsSecurityReviewed: boolean;
     IsOrgDependent: boolean;
     AppExchangePackageName: string;

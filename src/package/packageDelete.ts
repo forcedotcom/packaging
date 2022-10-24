@@ -9,6 +9,7 @@ import { Connection, SfProject } from '@salesforce/core';
 import * as pkgUtils from '../utils/packageUtils';
 import { combineSaveErrors } from '../utils';
 import { PackageSaveResult } from '../interfaces';
+import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
 
 export async function deletePackage(
   idOrAlias: string,
@@ -24,7 +25,9 @@ export async function deletePackage(
   const isUndelete = undelete;
   request.IsDeprecated = !isUndelete;
 
-  const updateResult = await connection.tooling.update('Package2', request);
+  const updateResult = await connection.tooling.update('Package2', request).catch((err) => {
+    throw applyErrorAction(massageErrorMessage(err as Error));
+  });
   if (!updateResult.success) {
     throw combineSaveErrors('Package2', 'update', updateResult.errors);
   }

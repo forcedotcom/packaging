@@ -7,8 +7,9 @@
 import * as os from 'os';
 
 import { Connection, Messages, NamedPackageDir, PackageDir, SfdcUrl, SfError, SfProject } from '@salesforce/core';
-import { Many, Nullable, Optional } from '@salesforce/ts-types';
+import { isNumber, Many, Nullable, Optional } from '@salesforce/ts-types';
 import { SaveError } from 'jsforce';
+import { Duration } from '@salesforce/kit';
 import { PackageType, PackagingSObjects } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
@@ -144,6 +145,31 @@ export function applyErrorAction(err: Error): Error {
 
   return err;
 }
+
+export function massageErrorMessage(err: Error): Error {
+  if (err.name === 'INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST') {
+    err['message'] = messages.getMessage('invalidPackageTypeMessage');
+  }
+
+  if (
+    err.name === 'MALFORMED_ID' &&
+    (err.message.includes('Version ID') || err.message.includes('Version Definition ID'))
+  ) {
+    err['message'] = messages.getMessage('malformedPackageVersionIdMessage');
+  }
+
+  if (err.name === 'MALFORMED_ID' && err.message.includes('Package2 ID')) {
+    err['message'] = messages.getMessage('malformedPackageIdMessage');
+  }
+
+  // remove references to Second Generation
+  if (err.message.includes('Second Generation ')) {
+    err['message'] = err.message.replace('Second Generation ', '');
+  }
+
+  return err;
+}
+
 /**
  * Given a subscriber package version ID (04t) or package version ID (05i), return the package version ID (05i)
  *
@@ -172,22 +198,6 @@ export function escapeInstallationKey(key?: string): Nullable<string> {
   return key ? key.replace(/\\/g, '\\\\').replace(/'/g, "\\'") : null;
 }
 
-/**
- * Given 0Ho the package type type (Managed, Unlocked, Locked(deprecated?))
- *
- * @param packageId the 0Ho
- * @param connection For tooling query
- * @throws Error with message when package2 cannot be found
- */
-export async function getPackageType(packageId: string, connection: Connection): Promise<PackageType> {
-  const query = `SELECT ContainerOptions FROM Package2 WHERE id ='${packageId}'`;
-
-  const queryResult = await connection.tooling.query<Pick<PackagingSObjects.Package2, 'ContainerOptions'>>(query);
-  if (queryResult.records.length === 0) {
-    throw messages.createError('errorInvalidPackageId', [packageId]);
-  }
-  return queryResult.records[0].ContainerOptions;
-}
 /**
  * Get the ContainerOptions for the specified Package2 (0Ho) IDs.
  *
@@ -419,7 +429,7 @@ export function getPackageAliasesFromId(packageId: string, project: SfProject): 
  * @param packageId the 0Ho id
  * @private
  */
-// TODO: SfProjectJson.addPackageAlias
+// TODO: move sfProject
 export async function generatePackageAliasEntry(
   connection: Connection,
   project: SfProject,
@@ -427,13 +437,10 @@ export async function generatePackageAliasEntry(
   packageVersionNumber: string,
   branch: string,
   packageId: string
-): Promise<{ [p: string]: string }> {
-  const configContent = project.getSfProjectJson().getContents();
-  const packageAliases: { [p: string]: string } = configContent.packageAliases || {};
-
+): Promise<[string, string]> {
   const aliasForPackageId = getPackageAliasesFromId(packageId, project);
   let packageName: Optional<string>;
-  if (!aliasForPackageId || aliasForPackageId.length === 0) {
+  if (aliasForPackageId?.length === 0) {
     const query = `SELECT Name FROM Package2 WHERE Id = '${packageId}'`;
     const package2 = await connection.singleRecordQuery<PackagingSObjects.Package2>(query, { tooling: true });
     packageName = package2.Name;
@@ -444,9 +451,8 @@ export async function generatePackageAliasEntry(
   const packageAlias = branch
     ? `${packageName}@${packageVersionNumber}-${branch}`
     : `${packageName}@${packageVersionNumber}`;
-  packageAliases[packageAlias] = packageVersionId;
 
-  return packageAliases;
+  return [packageAlias, packageVersionId];
 }
 
 export function formatDate(date: Date): string {
@@ -464,4 +470,17 @@ export function combineSaveErrors(sObject: string, crudOperation: string, errors
     return `Error: ${error.errorCode} Message: ${error.message} ${fieldsString}`;
   });
   return messages.createError('errorDuringSObjectCRUDOperation', [crudOperation, sObject, errorMessages.join(os.EOL)]);
+}
+
+/**
+ * Returns a Duration object from param duration when it is a number, otherwise return itself
+ *
+ * @param duration = number to be converted to a Duration or Duration object
+ * @param unit = (Default Duration.Unit.MILLISECONDS) Duration unit of number - See @link {Duration.Unit} for valid values
+ */
+export function numberToDuration(
+  duration: number | Duration,
+  unit: Duration.Unit = Duration.Unit.MILLISECONDS
+): Duration {
+  return isNumber(duration) ? new Duration(duration, unit) : duration;
 }

@@ -39,7 +39,6 @@ import {
 import {
   BY_LABEL,
   getPackageIdFromAlias,
-  getPackageType,
   getPackageVersionId,
   getPackageVersionNumber,
   validateId,
@@ -49,6 +48,7 @@ import {
 } from '../utils';
 import { PackageProfileApi } from './packageProfileApi';
 import { byId } from './packageVersionCreateRequest';
+import { Package } from './package';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
@@ -60,8 +60,8 @@ export class PackageVersionCreate {
   private readonly project: SfProject;
   private readonly connection: Connection;
   private packageObject: NamedPackageDir;
-  private packageType: PackageType;
   private packageId: string;
+  private pkg: Package;
   private readonly logger: Logger;
 
   public constructor(private options: PackageVersionCreateOptions) {
@@ -74,7 +74,7 @@ export class PackageVersionCreate {
     try {
       return this.packageVersionCreate();
     } catch (err) {
-      throw pkgUtils.applyErrorAction(this.massageErrorMessage(err as Error));
+      throw pkgUtils.applyErrorAction(pkgUtils.massageErrorMessage(err as Error));
     }
   }
 
@@ -108,7 +108,6 @@ export class PackageVersionCreate {
       }
 
       convertResult.packagePath = outputDirectory;
-      return convertResult;
     }
     return convertResult;
   }
@@ -638,6 +637,18 @@ export class PackageVersionCreate {
     return (await byId(createResult.id, this.connection))[0];
   }
 
+  private async getPackageType(): Promise<PackageType> {
+    // this.packageId should be an 0Ho package Id at this point
+    if (!this.pkg) {
+      this.pkg = new Package({
+        packageAliasOrId: this.packageId,
+        project: this.project,
+        connection: this.connection,
+      });
+    }
+    return this.pkg.getType();
+  }
+
   private async resolveUserLicenses(includeUserLicenses: boolean): Promise<PackageProfileApi> {
     const shouldGenerateProfileInformation =
       this.logger.shouldLog(LoggerLevel.INFO) || this.logger.shouldLog(LoggerLevel.DEBUG);
@@ -650,9 +661,7 @@ export class PackageVersionCreate {
   }
 
   private async validateOptionsForPackageType(): Promise<void> {
-    this.packageType = await pkgUtils.getPackageType(this.packageId, this.connection);
-
-    if (this.packageType === 'Unlocked') {
+    if ((await this.getPackageType()) === 'Unlocked') {
       // Don't allow scripts in unlocked packages
       if (this.options.postinstallscript || this.options.uninstallscript) {
         throw messages.createError('errorScriptsNotApplicableToUnlockedPackage');
@@ -771,30 +780,6 @@ export class PackageVersionCreate {
     }
   }
 
-  private massageErrorMessage(err: Error): Error {
-    if (err.name === 'INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST') {
-      err['message'] = messages.getMessage('invalidPackageTypeMessage');
-    }
-
-    if (
-      err.name === 'MALFORMED_ID' &&
-      (err.message.includes('Version ID') || err.message.includes('Version Definition ID'))
-    ) {
-      err['message'] = messages.getMessage('malformedPackageVersionIdMessage');
-    }
-
-    if (err.name === 'MALFORMED_ID' && err.message.includes('Package2 ID')) {
-      err['message'] = messages.getMessage('malformedPackageIdMessage');
-    }
-
-    // remove references to Second Generation
-    if (err.message.includes('Second Generation ')) {
-      err['message'] = err.message.replace('Second Generation ', '');
-    }
-
-    return err;
-  }
-
   // eslint-disable-next-line complexity
   private async getAncestorId(
     packageDescriptorJson: PackageDescriptorJson,
@@ -806,9 +791,7 @@ export class PackageVersionCreate {
     const packageId = packageDescriptorJson.id ?? getPackageIdFromAlias(packageDescriptorJson.package, project);
 
     // No need to proceed if Unlocked
-    const packageType = await getPackageType(packageId, this.connection);
-
-    if (packageType === 'Unlocked') {
+    if ((await this.getPackageType()) === 'Unlocked') {
       return '';
     }
 

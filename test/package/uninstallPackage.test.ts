@@ -10,7 +10,7 @@ import { expect } from 'chai';
 import { Connection, Lifecycle, SfError } from '@salesforce/core';
 import { assert } from 'sinon';
 import { PackageEvents, PackagingSObjects } from '../../src/interfaces';
-import { uninstallPackage } from '../../src/package';
+import { uninstallPackage } from '../../src/package/packageUninstall';
 
 const packageId = '04t4p000002BaHYXXX';
 
@@ -69,7 +69,7 @@ describe('Package Uninstall', () => {
       }
     );
 
-    const result = await uninstallPackage(packageId, conn, Duration.minutes(3));
+    const result = await uninstallPackage(packageId, conn, Duration.seconds(5), Duration.minutes(3));
     expect(result).deep.equal(successResult);
   });
 
@@ -87,7 +87,7 @@ describe('Package Uninstall', () => {
     });
 
     try {
-      await uninstallPackage(packageId, conn, Duration.minutes(3));
+      await uninstallPackage(packageId, conn, Duration.seconds(5), Duration.minutes(3));
       assert.fail('the above should throw an error from polling');
     } catch (e) {
       const error = e as SfError;
@@ -117,7 +117,7 @@ describe('Package Uninstall', () => {
       }
     );
     try {
-      await uninstallPackage(packageId, conn, Duration.minutes(3));
+      await uninstallPackage(packageId, conn, Duration.seconds(5), Duration.minutes(3));
       assert.fail('the above should throw an error from polling');
     } catch (e) {
       expect((e as SfError).message).to.equal(
@@ -132,7 +132,7 @@ describe('Package Uninstall', () => {
       retrieve: async () => queuedResult,
     });
 
-    const result = await uninstallPackage(packageId, conn, Duration.minutes(0));
+    const result = await uninstallPackage(packageId, conn, Duration.minutes(0), Duration.minutes(0));
     expect(result).deep.equal(queuedResult);
   });
 });

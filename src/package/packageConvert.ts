@@ -260,8 +260,7 @@ async function pollForStatusWithInterval(
                 const record = pkgQueryResult.records[0];
                 return `${record.MajorVersion}.${record.MinorVersion}.${record.PatchVersion}-${record.BuildNumber}`;
               });
-            // TODO SfProjectJson.addPackageAlias
-            const newConfig = await generatePackageAliasEntry(
+            const [alias, id] = await generatePackageAliasEntry(
               connection,
               withProject,
               results[0].SubscriberPackageVersionId,
@@ -269,7 +268,7 @@ async function pollForStatusWithInterval(
               branch,
               packageId
             );
-            withProject.getSfProjectJson().set('packageAliases', newConfig);
+            withProject.getSfProjectJson().addPackageAlias(alias, id);
             await withProject.getSfProjectJson().write();
           }
           await Lifecycle.getInstance().emit(PackageEvents.convert.success, {
