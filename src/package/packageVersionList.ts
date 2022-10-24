@@ -28,6 +28,13 @@ const VERBOSE_SELECT =
   'ConvertedFromVersionId, Package2.IsOrgDependent, ReleaseVersion, BuildDurationInSeconds, HasMetadataRemoved, CreatedById ' +
   'FROM Package2Version';
 
+const VERBOSE_SELECT_57 =
+  'SELECT Id, Package2Id, SubscriberPackageVersionId, Name, Package2.Name, Package2.NamespacePrefix, ' +
+  'Description, Tag, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber, IsReleased, ' +
+  'CreatedDate, LastModifiedDate, IsPasswordProtected, CodeCoverage, HasPassedCodeCoverageCheck, AncestorId, ValidationSkipped, ' +
+  'ConvertedFromVersionId, Package2.IsOrgDependent, ReleaseVersion, BuildDurationInSeconds, HasMetadataRemoved, CreatedById, Language ' +
+  'FROM Package2Version';
+
 export const DEFAULT_ORDER_BY_FIELDS = 'Package2Id, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber';
 
 let logger: Logger;
@@ -48,7 +55,9 @@ function constructQuery(options: PackageVersionListOptions): string {
   // construct custom WHERE clause, if applicable
   const where = constructWhere(options.packages, options.createdLastDays, options.modifiedLastDays, options.isReleased);
 
-  return assembleQueryParts(options.verbose === true ? VERBOSE_SELECT : DEFAULT_SELECT, where, options.orderBy);
+  const verboseSelect = Number(options.connection.version) >= 57 ? VERBOSE_SELECT_57 : VERBOSE_SELECT;
+
+  return assembleQueryParts(options.verbose === true ? verboseSelect : DEFAULT_SELECT, where, options.orderBy);
 }
 
 export function assembleQueryParts(select: string, where: string[], orderBy?: string): string {

@@ -134,6 +134,7 @@ export type PackageVersionListResult = {
   ReleaseVersion?: string;
   BuildDurationInSeconds?: number;
   HasMetadataRemoved?: boolean;
+  Language?: string;
 };
 
 export type PackageInstallCreateRequest = Partial<
@@ -185,6 +186,7 @@ export type PackageDescriptorJson = Partial<NamedPackageDir> &
     subscriberPackageVersionId: string;
     packageId: string;
     versionName: string;
+    language: string;
   }>;
 
 export type PackageVersionCreateRequest = {
@@ -195,6 +197,7 @@ export type PackageVersionCreateRequest = {
   InstallKey: string;
   Instance: string;
   SourceOrg: string;
+  Language: string;
   CalculateCodeCoverage: boolean;
   SkipValidation: boolean;
 };
@@ -207,6 +210,7 @@ export type PackageVersionListOptions = {
   verbose: boolean;
   concise: boolean;
   isReleased: boolean;
+  connection: Connection;
 };
 
 export type PackageVersionUpdateOptions = {
@@ -283,6 +287,7 @@ export type PackageVersionCreateOptions = {
   definitionfile: string;
   installationkey: string;
   installationkeybypass: boolean;
+  language: string;
   packageId: string;
   path: string;
   postinstallscript: string;
