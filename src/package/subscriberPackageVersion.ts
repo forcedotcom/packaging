@@ -111,15 +111,18 @@ export class SubscriberPackageVersion {
     try {
       const project = SfProject.getInstance();
       this.id = project.getPackageIdFromAlias(this.options.aliasOrId) || this.options.aliasOrId;
-    } catch (e) {
-      // ignore - Using a SubscriberPackageVersion instance within a project is optional
+    } catch (error) {
+      // Using a SubscriberPackageVersion instance within a project is optional
+      const err = (error as Error).message;
+      getLogger().debug(err);
     }
 
     // validate ID
-    if (!this.id.startsWith('04t') || !sfdc.validateSalesforceId(this.id)) {
-      throw messages.createError('errorInvalidAliasOrId', [this.options?.aliasOrId]);
+    if (!this.options.aliasOrId.startsWith('04t') || !sfdc.validateSalesforceId(this.options.aliasOrId)) {
+      throw messages.createError('errorInvalidAliasOrId', [this.options.aliasOrId]);
     }
 
+    this.id = this.options.aliasOrId;
     this.password = this.options.password;
   }
   /**
