@@ -21,7 +21,6 @@ describe('Package Version Create', () => {
   let connection: Connection;
   let packageTypeQuery: sinon.SinonStub;
   let packageCreateStub: sinon.SinonStub;
-  // let packageTypeStub: sinon.SinonStub;
   let xml2jsStub: sinon.SinonStub;
   let pvcStub: sinon.SinonStub;
 
@@ -62,7 +61,6 @@ describe('Package Version Create', () => {
     xml2jsStub = $$.SANDBOX.stub(xml2js, 'parseStringPromise').resolves({
       Package: { types: [{ name: ['Apexclass'], members: ['MyApexClass'] }] },
     });
-    // packageTypeStub = $$.SANDBOX.stub(pkgUtils, 'getPackageType').resolves('Managed');
     // @ts-ignore
     pvcStub = $$.SANDBOX.stub(PackageVersionCreate.prototype, 'verifyHasSource').returns(true);
   });
