@@ -229,7 +229,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
     const profilePaths = this.findAllProfiles(excludedDirectories);
 
     // Filter all profiles
-    typesArr = typesArr.filter((kvp) => kvp.name[0] !== 'Profile');
+    typesArr = (typesArr || []).filter((kvp) => kvp.name[0] !== 'Profile');
 
     if (profilePaths) {
       const members: string[] = [];

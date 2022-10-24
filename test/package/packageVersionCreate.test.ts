@@ -21,6 +21,9 @@ describe('Package Version Create', () => {
   let connection: Connection;
   let packageTypeQuery: sinon.SinonStub;
   let packageCreateStub: sinon.SinonStub;
+  // let packageTypeStub: sinon.SinonStub;
+  let xml2jsStub: sinon.SinonStub;
+  let pvcStub: sinon.SinonStub;
 
   let project: SfProject;
 
@@ -56,9 +59,12 @@ describe('Package Version Create', () => {
       success: true,
       errors: undefined,
     });
-    $$.SANDBOX.stub(xml2js, 'parseStringPromise').resolves({
+    xml2jsStub = $$.SANDBOX.stub(xml2js, 'parseStringPromise').resolves({
       Package: { types: [{ name: ['Apexclass'], members: ['MyApexClass'] }] },
     });
+    // packageTypeStub = $$.SANDBOX.stub(pkgUtils, 'getPackageType').resolves('Managed');
+    // @ts-ignore
+    pvcStub = $$.SANDBOX.stub(PackageVersionCreate.prototype, 'verifyHasSource').returns(true);
   });
 
   afterEach(async () => {
@@ -81,6 +87,19 @@ describe('Package Version Create', () => {
       expect(e.message).to.equal(
         'In sfdx-project.json, be sure to specify which package directory (path) is the default. Example: `[{ "path": "packageDirectory1", "default": true }, { "path": "packageDirectory2" }]`'
       );
+    }
+  });
+
+  it('should throw an error when Package entry missing from package.xml', async () => {
+    pvcStub.restore();
+    xml2jsStub.restore();
+    xml2jsStub = $$.SANDBOX.stub(xml2js, 'parseStringPromise').resolves({});
+    const pvc = new PackageVersionCreate({ connection, project, packageId });
+
+    try {
+      await pvc.createPackageVersion();
+    } catch (e) {
+      expect(e.message).to.equal('No matching source was found within the package root directory: force-app');
     }
   });
 
