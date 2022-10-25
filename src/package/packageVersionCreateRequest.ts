@@ -7,6 +7,7 @@
 
 import * as util from 'util';
 import { Connection, Messages } from '@salesforce/core';
+import { Schema } from 'jsforce';
 import {
   PackageVersionCreateRequestResult,
   PackageVersionCreateRequestQueryOptions,
@@ -56,11 +57,11 @@ export async function byId(
 }
 // eslint-disable-next-line @typescript-eslint/no-shadow
 async function query(query: string, connection: Connection): Promise<PackageVersionCreateRequestResult[]> {
-  type QueryRecord = PackagingSObjects.Package2VersionCreateRequest & {
-    Package2Version: Pick<PackagingSObjects.Package2Version, 'HasMetadataRemoved' | 'SubscriberPackageVersionId'>;
-  };
-  // TODO: use connection.autoFetchQuery - tooling enabled
-  const queryResult = await connection.tooling.query<QueryRecord>(query);
+  type QueryRecord = PackagingSObjects.Package2VersionCreateRequest &
+    Schema & {
+      Package2Version: Pick<PackagingSObjects.Package2Version, 'HasMetadataRemoved' | 'SubscriberPackageVersionId'>;
+    };
+  const queryResult = await connection.autoFetchQuery<QueryRecord>(query, { tooling: true });
   return (queryResult.records ? queryResult.records : []).map((record) => ({
     Id: record.Id,
     Status: record.Status,

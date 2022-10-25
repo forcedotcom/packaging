@@ -38,6 +38,10 @@ The temp files are located at: %s.
 
 You cannot use 'settings' and 'orgPreferences' in your scratch definition file, please specify one or the other.
 
+# errorReadingDefintionFile
+
+There was an error while reading or parsing the provided scratch definition file: %s
+
 # unpackagedMDDirectoryDoesNotExist
 
 Un-packaged metadata directory %s was specified but does not exist.
@@ -82,6 +86,10 @@ Can’t create package version because you didn’t specify a package ancestor. 
 
 Can’t create package version. The ancestor version [%s] you specified isn’t the highest released package version. Set the ancestor version to %s, and try creating the package version again. You can also specify --skipancestorcheck to override the ancestry requirement.
 
+# invalidPackageTypeMessage
+
+Invalid package type
+
 # errorInvalidBuildNumberForKeywords
 
 The provided VersionNumber '%s' is invalid. Provide an integer value or use the keyword '%s' or '%s' for the build number.
@@ -98,3 +106,31 @@ No subscriber package was found for seed id: %s
 
 Only one package in a Dev Hub is allowed per converted from first-generation package, but the following were found:
 %s
+
+# errorMissingPackageIdOrPath
+
+You must specify either a package ID or a package path to create a new package version.
+
+# errorMissingPackage
+
+The package "%s" isn’t defined in the sfdx-project.json file. Add it to the packageDirectories section and add the alias to packageAliases with its 0Ho ID.
+
+# errorCouldNotFindPackageUsingPath
+
+Could not find a package in sfdx-project.json file using "path" %s. Add it to the packageDirectories section and add the alias to packageAliases with its 0Ho ID.
+
+# errorCouldNotFindPackageDir
+
+Couldn't find a package directory for package using %s %s. Add it to the packageDirectories section and add the alias to packageAliases with its 0Ho ID.
+
+# noSourceInRootDirectory
+
+No matching source was found within the package root directory: %s
+
+# packageXmlDoesNotContainPackage
+
+While preparing package version create request, the calculated package.xml for the package does not contain a <Package> element.
+
+# packageXmlDoesNotContainPackageTypes
+
+While preparing package version create request, the calculated package.xml for the package does not contain a <Package><types> element.

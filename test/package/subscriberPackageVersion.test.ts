@@ -4,11 +4,13 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import { Connection } from '@salesforce/core';
+import * as path from 'path';
+import * as fs from 'fs';
+import { Connection, SfProject } from '@salesforce/core';
 import { expect } from 'chai';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { Optional } from '@salesforce/ts-types';
-import { SubscriberPackageVersion } from '../../src/package/subscriberPackageVersion';
+import { SubscriberPackageVersion } from '../../src/package';
 import { PackagingSObjects } from '../../src/interfaces';
 
 const oThreeThree = '033xxxxxxxxxxxxxxx';
@@ -44,6 +46,32 @@ const spvRecord: PackagingSObjects.SubscriberPackageVersion = {
   SubscriberPackageId: oThreeThree,
 };
 
+async function setupProject(setup: (project: SfProject) => void = () => {}) {
+  const project = await SfProject.resolve();
+  const packageDirectories = [
+    {
+      path: 'force-app',
+      default: true,
+    },
+  ];
+  const packageAliases = {};
+  project.getSfProjectJson().set('packageDirectories', packageDirectories);
+  project.getSfProjectJson().set('packageAliases', packageAliases);
+  setup(project);
+  const projectDir = project.getPath();
+  project
+    .getSfProjectJson()
+    .getContents()
+    .packageDirectories?.forEach((dir) => {
+      if (dir.path) {
+        const packagePath = path.join(projectDir, dir.path);
+        fs.mkdirSync(packagePath, { recursive: true });
+      }
+    });
+
+  return project;
+}
+
 describe('subscriberPackageVersion', () => {
   const testOrg = new MockTestOrgData();
   const password: Optional<string> = null;
@@ -69,7 +97,18 @@ describe('subscriberPackageVersion', () => {
     connection = await testOrg.getConnection();
 
     const id = oFourT;
-    const subscriberPackageVersion = new SubscriberPackageVersion({ connection, id, password });
+    const subscriberPackageVersion = new SubscriberPackageVersion({ connection, aliasOrId: id, password });
+
+    expect(subscriberPackageVersion).to.be.an.instanceOf(SubscriberPackageVersion);
+  });
+  it('should instantiate SPV using 04t alias', async () => {
+    $$.inProject(true);
+    await setupProject((project) => {
+      project.getSfProjectJson().set('packageAliases', { oFourT });
+    });
+    connection = await testOrg.getConnection();
+
+    const subscriberPackageVersion = new SubscriberPackageVersion({ connection, aliasOrId: 'oFourT', password });
 
     expect(subscriberPackageVersion).to.be.an.instanceOf(SubscriberPackageVersion);
   });
@@ -78,15 +117,26 @@ describe('subscriberPackageVersion', () => {
 
     const id = '05ixxxxxxxxxxxxxxx';
 
-    expect(() => new SubscriberPackageVersion({ connection, id, password })).to.throw(
-      `The provided ID: [${id}] is not a subscriber package version ID (04t).`
+    expect(() => new SubscriberPackageVersion({ connection, aliasOrId: id, password })).to.throw(
+      `Invalid alias or ID: ${id}. Either your alias is invalid or undefined, or the ID (04t) provided is invalid.`
+    );
+  });
+  it('should not instantiate SPV using 05i alias', async () => {
+    $$.inProject(true);
+    await setupProject((project) => {
+      project.getSfProjectJson().set('packageAliases', { oFiveI: '05ixxxxxxxxxxxxxxx' });
+    });
+    connection = await testOrg.getConnection();
+
+    expect(() => new SubscriberPackageVersion({ connection, aliasOrId: 'oFiveI', password })).to.throw(
+      'Invalid alias or ID: oFiveI. Either your alias is invalid or undefined, or the ID (04t) provided is invalid.'
     );
   });
   it('should lazily query for the SPV', async () => {
     connection = await testOrg.getConnection();
 
     const id = oFourT;
-    const subscriberPackageVersion = new SubscriberPackageVersion({ connection, id, password });
+    const subscriberPackageVersion = new SubscriberPackageVersion({ connection, aliasOrId: id, password });
     queryStub = $$.SANDBOX.stub(connection, 'singleRecordQuery').resolves(spvRecord);
     expect(queryStub.called).to.be.false;
     const pkgType = await subscriberPackageVersion.getPackageType();
@@ -97,7 +147,7 @@ describe('subscriberPackageVersion', () => {
     connection = await testOrg.getConnection();
 
     const id = '04txxxxxxxxxxxxxxy';
-    const subscriberPackageVersion = new SubscriberPackageVersion({ connection, id, password });
+    const subscriberPackageVersion = new SubscriberPackageVersion({ connection, aliasOrId: id, password });
     queryStub = $$.SANDBOX.stub(connection, 'singleRecordQuery').throws('No record found');
     expect(queryStub.called).to.be.false;
     try {
@@ -118,7 +168,7 @@ describe('subscriberPackageVersion', () => {
       connection = await testOrg.getConnection();
     });
     it('should only query low cost fields', async () => {
-      const subscriberPackageVersion = new SubscriberPackageVersion({ connection, id, password });
+      const subscriberPackageVersion = new SubscriberPackageVersion({ connection, aliasOrId: id, password });
       // @ts-ignore
       const queryFields = subscriberPackageVersion.getFieldsForQuery({});
       expect(queryFields).to.ok;
@@ -127,7 +177,7 @@ describe('subscriberPackageVersion', () => {
       expect(queryFields).to.include('Id');
     });
     it('should query all fields', async () => {
-      const subscriberPackageVersion = new SubscriberPackageVersion({ connection, id, password });
+      const subscriberPackageVersion = new SubscriberPackageVersion({ connection, aliasOrId: id, password });
       // @ts-ignore
       const queryFields = subscriberPackageVersion.getFieldsForQuery({ includeHighCostFields: true });
       expect(queryFields).to.ok;
@@ -136,27 +186,7 @@ describe('subscriberPackageVersion', () => {
       expect(queryFields).to.include('Id');
     });
     it('should force query of low cost fields', async () => {
-      const subscriberPackageVersion = new SubscriberPackageVersion({ connection, id, password });
-      // @ts-ignore
-      const queryFields = subscriberPackageVersion.getFieldsForQuery({ force: true });
-      expect(queryFields).to.ok;
-      expect(queryFields.length).to.greaterThan(0);
-      expect(queryFields).to.not.include('RemoteSiteSettings');
-      expect(queryFields).to.include('Id');
-    });
-    it('should not query low cost field Id (already read)', async () => {
-      const subscriberPackageVersion = new SubscriberPackageVersion({ connection, id, password });
-      Reflect.set(subscriberPackageVersion, 'fieldsRead', new Set<string>(['Id']));
-      // @ts-ignore
-      const queryFields = subscriberPackageVersion.getFieldsForQuery({});
-      expect(queryFields).to.ok;
-      expect(queryFields.length).to.greaterThan(0);
-      expect(queryFields).to.not.include('RemoteSiteSettings');
-      expect(queryFields).to.not.include('Id');
-    });
-    it('should query low cost field Id (already read) w/force', async () => {
-      const subscriberPackageVersion = new SubscriberPackageVersion({ connection, id, password });
-      Reflect.set(subscriberPackageVersion, 'fieldsRead', new Set<string>(['Id']));
+      const subscriberPackageVersion = new SubscriberPackageVersion({ connection, aliasOrId: id, password });
       // @ts-ignore
       const queryFields = subscriberPackageVersion.getFieldsForQuery({ force: true });
       expect(queryFields).to.ok;

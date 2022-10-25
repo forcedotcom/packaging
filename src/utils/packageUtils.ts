@@ -5,7 +5,6 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import * as os from 'os';
-
 import { Connection, Messages, NamedPackageDir, PackageDir, SfdcUrl, SfError, SfProject } from '@salesforce/core';
 import { isNumber, Many, Nullable, Optional } from '@salesforce/ts-types';
 import { SaveError } from 'jsforce';
@@ -73,6 +72,10 @@ export function validateId(idObj: Many<IdRegistryValue>, value: string): void {
     ]);
   }
 }
+export function getSourceApiVersion(project: SfProject): string {
+  return project?.getSfProjectJson().get('sourceApiVersion') as string;
+}
+
 export function validateIdNoThrow(idObj: Many<IdRegistryValue>, value: string): IdRegistryValue | boolean {
   if (!value || (value.length !== 15 && value.length !== 18)) {
     return false;

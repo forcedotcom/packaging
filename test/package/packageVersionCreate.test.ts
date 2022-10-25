@@ -21,6 +21,8 @@ describe('Package Version Create', () => {
   let connection: Connection;
   let packageTypeQuery: sinon.SinonStub;
   let packageCreateStub: sinon.SinonStub;
+  let xml2jsStub: sinon.SinonStub;
+  let pvcStub: sinon.SinonStub;
 
   let project: SfProject;
 
@@ -56,9 +58,11 @@ describe('Package Version Create', () => {
       success: true,
       errors: undefined,
     });
-    $$.SANDBOX.stub(xml2js, 'parseStringPromise').resolves({
+    xml2jsStub = $$.SANDBOX.stub(xml2js, 'parseStringPromise').resolves({
       Package: { types: [{ name: ['Apexclass'], members: ['MyApexClass'] }] },
     });
+    // @ts-ignore
+    pvcStub = $$.SANDBOX.stub(PackageVersionCreate.prototype, 'verifyHasSource').returns(true);
   });
 
   afterEach(async () => {
@@ -81,6 +85,19 @@ describe('Package Version Create', () => {
       expect(e.message).to.equal(
         'In sfdx-project.json, be sure to specify which package directory (path) is the default. Example: `[{ "path": "packageDirectory1", "default": true }, { "path": "packageDirectory2" }]`'
       );
+    }
+  });
+
+  it('should throw an error when Package entry missing from package.xml', async () => {
+    pvcStub.restore();
+    xml2jsStub.restore();
+    xml2jsStub = $$.SANDBOX.stub(xml2js, 'parseStringPromise').resolves({});
+    const pvc = new PackageVersionCreate({ connection, project, packageId });
+
+    try {
+      await pvc.createPackageVersion();
+    } catch (e) {
+      expect(e.message).to.equal('No matching source was found within the package root directory: force-app');
     }
   });
 
@@ -257,14 +274,14 @@ describe('Package Version Create', () => {
     );
   });
 
-  it('should validate options when package type = unlocked (scripts)', async () => {
+  it('should validate options when package type = unlocked (scripts) - postinstall script', async () => {
     packageTypeQuery.restore();
     // @ts-ignore
     packageTypeQuery = $$.SANDBOX.stub(connection.tooling, 'query')
       .onFirstCall() // @ts-ignore
       .resolves({ records: [{ Id: '05i3i000000Gmj6XXX' }] }) // @ts-ignore
       .resolves({ records: [{ ContainerOptions: 'Unlocked' }] });
-    let pvc = new PackageVersionCreate({
+    const pvc = new PackageVersionCreate({
       connection,
       project,
       postinstallscript: 'myScript.sh',
@@ -277,7 +294,8 @@ describe('Package Version Create', () => {
         'We can’t create the package version. This parameter is available only for second-generation managed packages. Create the package version without the postinstallscript or uninstallscript parameters.'
       );
     }
-
+  });
+  it('should validate options when package type = unlocked (scripts) - uninstall script', async () => {
     packageTypeQuery.restore();
     // @ts-ignore
     packageTypeQuery = $$.SANDBOX.stub(connection.tooling, 'query')
@@ -286,7 +304,7 @@ describe('Package Version Create', () => {
       .resolves({ records: [{ ContainerOptions: 'Unlocked' }] });
 
     // check uninstallscript
-    pvc = new PackageVersionCreate({
+    const pvc = new PackageVersionCreate({
       connection,
       project,
       uninstallscript: 'myScript.sh',

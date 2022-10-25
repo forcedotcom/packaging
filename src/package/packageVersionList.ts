@@ -6,7 +6,7 @@
  */
 
 import { Logger, Messages } from '@salesforce/core';
-import { QueryResult } from 'jsforce';
+import { QueryResult, Schema } from 'jsforce';
 import { isNumber } from '@salesforce/ts-types';
 import { BY_LABEL, validateId } from '../utils';
 import { PackageVersionListResult, PackageVersionListOptions, ListPackageVersionOptions } from '../interfaces';
@@ -30,13 +30,20 @@ const VERBOSE_SELECT =
 
 export const DEFAULT_ORDER_BY_FIELDS = 'Package2Id, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber';
 
-const logger = Logger.childFromRoot('packageVersionList');
+let logger: Logger;
+const getLogger = (): Logger => {
+  if (!logger) {
+    logger = Logger.childFromRoot('packageVersionList');
+  }
+  return logger;
+};
 
 export async function listPackageVersions(
   options: ListPackageVersionOptions
 ): Promise<QueryResult<PackageVersionListResult>> {
-  // TODO: replaces with connection.autoFetchQuery w/ tooling enabled
-  return options.connection.tooling.query<PackageVersionListResult>(constructQuery(options));
+  return options.connection.autoFetchQuery<PackageVersionListResult & Schema>(constructQuery(options), {
+    tooling: true,
+  });
 }
 
 function constructQuery(options: PackageVersionListOptions): string {
@@ -52,7 +59,7 @@ export function assembleQueryParts(select: string, where: string[], orderBy?: st
   const wherePart = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
 
   const query = `${select} ${wherePart} ${orderByPart}`;
-  logger.debug(query);
+  getLogger().debug(query);
   return query;
 }
 
