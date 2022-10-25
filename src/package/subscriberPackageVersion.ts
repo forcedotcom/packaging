@@ -5,7 +5,7 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { Connection, Messages, SfError, sfdc, Logger, SfProject } from '@salesforce/core';
+import { Connection, Logger, Messages, sfdc, SfError, SfProject } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import { Optional } from '@salesforce/ts-types';
 import {
