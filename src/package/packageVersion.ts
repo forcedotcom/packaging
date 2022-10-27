@@ -7,14 +7,14 @@
 
 import { Connection, Lifecycle, Messages, PollingClient, SfProject, StatusResult } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
+import { Optional } from '@salesforce/ts-types';
 import {
   PackageSaveResult,
+  PackageType,
   PackageVersionCreateOptions,
   PackageVersionCreateRequestQueryOptions,
   PackageVersionCreateRequestResult,
   PackageVersionEvents,
-  PackageVersionListOptions,
-  PackageVersionListResult,
   PackageVersionOptions,
   PackageVersionReportResult,
   PackageVersionUpdateOptions,
@@ -26,13 +26,14 @@ import {
   combineSaveErrors,
   getPackageAliasesFromId,
   getPackageIdFromAlias,
+  massageErrorMessage,
   validateId,
 } from '../utils';
 import { PackageVersionCreate } from './packageVersionCreate';
 import { getPackageVersionReport } from './packageVersionReport';
 import { getCreatePackageVersionCreateRequestReport } from './packageVersionCreateRequestReport';
-import { listPackageVersions } from './packageVersionList';
 import { list } from './packageVersionCreateRequest';
+import Package2 = PackagingSObjects.Package2;
 
 type Package2Version = PackagingSObjects.Package2Version;
 
@@ -77,12 +78,13 @@ export class PackageVersion {
   private readonly connection: Connection;
 
   private data: Package2Version;
+  private packageType: Optional<PackageType>;
 
   public constructor(private options: PackageVersionOptions) {
     this.connection = this.options.connection;
     this.project = this.options.project;
     this.data = {} as Package2Version;
-    const id = getPackageIdFromAlias(this.options.idOrAlias, this.project);
+    const id = this.resolveId();
 
     // validate ID
     if (id.startsWith('04t')) {
@@ -119,7 +121,7 @@ export class PackageVersion {
       (err: Error) => {
         // TODO
         // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
-        throw applyErrorAction(err);
+        throw applyErrorAction(massageErrorMessage(err));
       }
     );
   }
@@ -128,6 +130,7 @@ export class PackageVersion {
    * Gets current state of a package version create request.
    *
    * @param createPackageRequestId
+   * @param connection
    */
   public static async getCreateStatus(
     createPackageRequestId: string,
@@ -139,7 +142,7 @@ export class PackageVersion {
     }).catch((err: Error) => {
       // TODO
       // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
-      throw applyErrorAction(err);
+      throw applyErrorAction(massageErrorMessage(err));
     });
   }
 
@@ -150,7 +153,7 @@ export class PackageVersion {
    * @param options PackageVersionCreateRequestQueryOptions
    * @returns the list of package version create requests.
    */
-  public static async createdList(
+  public static async getPackageVersionCreateRequests(
     connection: Connection,
     options?: PackageVersionCreateRequestQueryOptions
   ): Promise<PackageVersionCreateRequestResult[]> {
@@ -231,26 +234,95 @@ export class PackageVersion {
     }
   }
 
-  public static async list(
-    connection: Connection,
-    project: SfProject,
-    options: PackageVersionListOptions
-  ): Promise<PackageVersionListResult[]> {
-    // resolve/verify packages
-    const packages = options.packages.map((pkg) => {
-      const id = getPackageIdFromAlias(pkg, project);
-
-      // validate ID
-      if (id.startsWith('0Ho')) {
-        validateId(BY_LABEL.PACKAGE_ID, id);
-        return id;
-      } else {
-        throw messages.createError('errorInvalidPackageVersionId', [id]);
-      }
+  /**
+   * Gets current state of a package version create request.
+   *
+   * @param createPackageRequestId
+   * @param connection
+   */
+  public static async getCreateVersionReport(
+    createPackageRequestId: string,
+    connection: Connection
+  ): Promise<PackageVersionCreateRequestResult> {
+    return await getCreatePackageVersionCreateRequestReport({
+      createPackageVersionRequestId: createPackageRequestId,
+      connection,
+    }).catch((err: Error) => {
+      // TODO
+      // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
+      throw applyErrorAction(massageErrorMessage(err));
     });
-    options.packages = packages;
-
-    return (await listPackageVersions({ ...options, ...{ connection } })).records;
+  }
+  /**
+   * Convenience function that will wait for a package version to be created.
+   *
+   * This function emits LifeCycle events, "enqueued", "in-progress", "success", "error" and "timed-out" to
+   * progress and current status. Events also carry a payload of type PackageVersionCreateRequestResult.
+   *
+   * @param createPackageVersionRequestId
+   * @param project
+   * @param connection
+   * @param polling frequency and timeout Durations to be used in polling
+   * */
+  public static async waitForCreateVersion(
+    createPackageVersionRequestId: string,
+    project: SfProject,
+    connection: Connection,
+    polling: { frequency: Duration; timeout: Duration }
+  ): Promise<PackageVersionCreateRequestResult> {
+    if (polling.timeout?.milliseconds <= 0) {
+      return PackageVersion.getCreateVersionReport(createPackageVersionRequestId, connection);
+    }
+    let remainingWaitTime: Duration = polling.timeout;
+    let report: PackageVersionCreateRequestResult;
+    const pollingClient = await PollingClient.create({
+      poll: async (): Promise<StatusResult> => {
+        report = await this.getCreateVersionReport(createPackageVersionRequestId, connection);
+        switch (report.Status) {
+          case 'Queued':
+            await Lifecycle.getInstance().emit(PackageVersionEvents.create.enqueued, { ...report, remainingWaitTime });
+            remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
+            return {
+              completed: false,
+              payload: report,
+            };
+          case 'InProgress':
+          case 'Initializing':
+          case 'VerifyingFeaturesAndSettings':
+          case 'VerifyingDependencies':
+          case 'VerifyingMetadata':
+          case 'FinalizingPackageVersion':
+            await Lifecycle.getInstance().emit(PackageVersionEvents.create.progress, {
+              ...report,
+              remainingWaitTime,
+            });
+            remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
+            return {
+              completed: false,
+              payload: report,
+            };
+          case 'Success':
+            await Lifecycle.getInstance().emit(PackageVersionEvents.create.success, report);
+            await new PackageVersion({
+              idOrAlias: report.SubscriberPackageVersionId,
+              project,
+              connection,
+            }).updateProjectWithPackageVersion(report);
+            return { completed: true, payload: report };
+          case 'Error':
+            await Lifecycle.getInstance().emit(PackageVersionEvents.create.error, report);
+            return { completed: true, payload: report };
+        }
+      },
+      frequency: polling.frequency,
+      timeout: polling.timeout,
+    });
+    try {
+      return pollingClient.subscribe<PackageVersionCreateRequestResult>();
+    } catch (err) {
+      await Lifecycle.getInstance().emit(PackageVersionEvents.create['timed-out'], report);
+      throw applyErrorAction(err as Error);
+    }
   }
 
   /**
@@ -260,7 +332,7 @@ export class PackageVersion {
    */
   public async getId(): Promise<string> {
     if (!this.data.Id) {
-      await this.getPackageVersionData();
+      await this.getData();
     }
     return this.data.Id;
   }
@@ -272,9 +344,39 @@ export class PackageVersion {
    */
   public async getSubscriberId(): Promise<string> {
     if (!this.data.SubscriberPackageVersionId) {
-      await this.getPackageVersionData();
+      await this.getData();
     }
     return this.data.SubscriberPackageVersionId;
+  }
+
+  /**
+   * Get the package Id for this PackageVersion.
+   *
+   * @returns The PackageId (0Ho).
+   */
+  public async getPackageId(): Promise<string> {
+    if (!this.data.Package2Id) {
+      await this.getData();
+    }
+    return this.data.Package2Id;
+  }
+
+  /**
+   * Get the package type for this PackageVersion.
+   *
+   * @returns The PackageType (Managed, Unlocked).
+   */
+  public async getPackageType(): Promise<PackageType> {
+    if (!this.packageType) {
+      this.packageType = (
+        await this.connection.singleRecordQuery<Package2>(
+          `select ContainerOptions from Package2 where Id = '${await this.getPackageId()}' limit 1`,
+          { tooling: true }
+        )
+      ).ContainerOptions;
+    }
+
+    return this.packageType;
   }
 
   /**
@@ -283,7 +385,7 @@ export class PackageVersion {
    * @param force force a refresh of the package version data.
    * @returns Package2Version
    */
-  public async getPackageVersionData(force = false): Promise<Package2Version> {
+  public async getData(force = false): Promise<Package2Version> {
     if (!this.data.Name || force) {
       let queryConfig: { id: string; clause: string; label1: string; label2: string };
       if (this.data.Id) {
@@ -346,19 +448,14 @@ export class PackageVersion {
     }).catch((err: Error) => {
       // TODO
       // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
-      throw applyErrorAction(err);
+      throw applyErrorAction(massageErrorMessage(err));
     });
     return results[0];
   }
 
-  public install(): Promise<void> {
-    return Promise.resolve(undefined);
-  }
-
-  public uninstall(): Promise<void> {
-    return Promise.resolve(undefined);
-  }
-
+  /**
+   * Promotes this PackageVersion to released state.
+   */
   public async promote(): Promise<PackageSaveResult> {
     const id = await this.getId();
     return this.options.connection.tooling.update('Package2Version', { IsReleased: true, Id: id });
@@ -386,6 +483,34 @@ export class PackageVersion {
     // Use the 04t ID for the success message
     result.id = await this.getSubscriberId();
     return result;
+  }
+
+  /**
+   * Creates a new package version.
+   *
+   * @param options
+   * @param polling frequency and timeout Durations to be used in polling
+   */
+  public async create(
+    options: PackageVersionCreateOptions,
+    polling: { frequency: Duration; timeout: Duration } = {
+      frequency: Duration.seconds(0),
+      timeout: Duration.seconds(0),
+    }
+  ): Promise<Partial<PackageVersionCreateRequestResult>> {
+    const pvc = new PackageVersionCreate({ ...options, ...this.options });
+    const createResult = await pvc.createPackageVersion();
+
+    if (polling.timeout?.milliseconds > 0) {
+      return await PackageVersion.waitForCreateVersion(createResult.Id, this.project, this.connection, polling).catch(
+        (err: Error) => {
+          // TODO
+          // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
+          throw applyErrorAction(massageErrorMessage(err));
+        }
+      );
+    }
+    return createResult;
   }
 
   private async updateDeprecation(isDeprecated: boolean): Promise<PackageSaveResult> {
@@ -429,5 +554,8 @@ export class PackageVersion {
         results.SubscriberPackageVersionId;
       await this.project.getSfProjectJson().write();
     }
+  }
+  private resolveId(): string {
+    return getPackageIdFromAlias(this.options.idOrAlias, this.project);
   }
 }

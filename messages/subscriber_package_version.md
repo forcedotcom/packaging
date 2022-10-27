@@ -1,10 +1,10 @@
-# errorInvalidIdNoMatchingVersionId
+# errorInvalidIdNoRecordFound
 
-The %s %s is invalid, as a corresponding %s was not found
+The subscriber package version %s is invalid, no subscriber package version record found.
 
-# errorInvalidPackageVersionId
+# errorInvalidAliasOrId
 
-The provided alias or ID: [%s] could not be resolved to a valid package version ID (05i) or subscriber package version ID (04t).
+Invalid alias or ID: %s. Either your alias is invalid or undefined, or the ID (04t) provided is invalid.
 
 # packageVersionInstallRequestIdInvalid
 

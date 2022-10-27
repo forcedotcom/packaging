@@ -14,6 +14,8 @@
  * contact the CLI team at alm-cli@salesforce.com.
  * ----------------------------------------------------------------------------------------------------------------- */
 
+import { Duration } from '@salesforce/kit';
+
 export const consts = {
   DEFAULT_USER_DIR_MODE: '700',
   DEFAULT_USER_FILE_MODE: '600',
@@ -37,4 +39,6 @@ export const consts = {
   PACKAGE2_DESCRIPTOR_FILE: 'package2-descriptor.json',
   PACKAGE_INSTALL_POLL_FREQUENCY: 5000, // 5000ms
   PACKAGE_INSTALL_POLL_TIMEOUT: 5, // 5 minutes
+  PACKAGE_PUBLISH_POLL_FREQUENCY: Duration.milliseconds(0), // 0ms
+  PACKAGE_PUBLISH_POLL_TIMEOUT: Duration.milliseconds(0), // 0ms
 };

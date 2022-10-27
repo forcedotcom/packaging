@@ -9,6 +9,7 @@ import { Connection, Messages, NamedPackageDir, PackageDir, SfError, SfProject }
 import { isString } from '@salesforce/ts-types';
 import * as pkgUtils from '../utils/packageUtils';
 import { PackageCreateOptions, PackagingSObjects } from '../interfaces';
+import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_create');
@@ -31,73 +32,44 @@ export function createPackageRequestFromContext(project: SfProject, options: Pac
 }
 
 /**
- * Generate packageDirectory json entry for this package that can be written to sfdx-project.json
+ * Create packageDirectory json entry for this package that can be written to sfdx-project.json
  *
  * @param project
  * @param packageId the 0Ho id of the package to create the entry for
  * @private
  */
 
-export function generatePackageDirEntry(
-  project: SfProject,
-  options: PackageCreateOptions
-): PackageDir[] | NamedPackageDir[] {
-  // TODO: use SfProjectJson#addPackageDirectory for this maintenance
-  let packageDirs: NamedPackageDir[] = project.getPackageDirectories();
+export function createPackageDirEntry(project: SfProject, options: PackageCreateOptions): PackageDir | NamedPackageDir {
+  let packageDirs: PackageDir[] = project.getSfProjectJson().getContents().packageDirectories;
+  let isNew = false;
   if (!packageDirs) {
     packageDirs = [];
   }
 
-  // add an entry if it doesn't exist
-  // or update an existing entry if it matches path but has no package or id attribute (W-5092620)
-  let packageDir: NamedPackageDir =
-    project.getPackage(options.name) ||
-    project
-      .getPackageDirectories()
-      // TODO: I don't understand where id is coming from, because it is not in sfdx-project.json schema
-      .find((pd: NamedPackageDir & { id: string }) => pd.path === options.path && !pd.id && !pd.package);
+  // see if package exists (exists means it has an id or package)
+  let packageDir: PackageDir = packageDirs.find(
+    (pd: NamedPackageDir & { id: string }) => pd.path === options.path && !pd.id && !pd.package
+  );
 
-  if (packageDir) {
-    // update existing entry
-    packageDir.package = options.name;
-    packageDir.versionName ??= pkgUtils.DEFAULT_PACKAGE_DIR.versionName;
-    packageDir.versionNumber ??= pkgUtils.DEFAULT_PACKAGE_DIR.versionNumber;
-    // set as default if this is the only entry or no other entry is the default
-    if (!Reflect.getOwnPropertyDescriptor(packageDir, 'default')) {
-      packageDir.default = !pkgUtils.getConfigPackageDirectory(packageDirs, 'default', true);
-    }
-  } else {
-    // add new entry
+  if (!packageDir) {
+    // no match - create a new one
+    isNew = true;
     packageDir = pkgUtils.DEFAULT_PACKAGE_DIR as NamedPackageDir;
-    packageDir.package = options.name;
-    // set as default if this is the only entry or no other entry is the default
-    packageDir.default = !pkgUtils.getConfigPackageDirectory(packageDirs, 'default', true);
-    packageDir.path = options.path;
-
-    packageDirs.push(packageDir);
+    packageDir.path = packageDir.path || options.path;
   }
 
-  return packageDirs;
-}
+  if (packageDirs.length === 0) {
+    packageDir.default = true;
+  } else if (isNew) {
+    packageDir.default = !packageDirs.find((pd: PackageDir) => pd.default);
+  }
 
-/**
- * Generate package alias json entry for this package that can be written to sfdx-project.json
- *
- * @param context
- * @param packageId the 0Ho id of the package to create the alias entry for
- * @private
- */
-export function generatePackageAliasEntry(
-  project: SfProject,
-  options: PackageCreateOptions,
-  packageId: string
-): { [key: string]: string } {
-  const packageAliases = project.getSfProjectJson().getContents().packageAliases || {};
+  packageDir.package = packageDir.package || options.name;
+  packageDir.versionName = packageDir.versionName || pkgUtils.DEFAULT_PACKAGE_DIR.versionName;
+  packageDir.versionNumber = packageDir.versionNumber || pkgUtils.DEFAULT_PACKAGE_DIR.versionNumber;
+  packageDir.versionDescription = packageDir.versionDescription || options.description;
 
-  const packageName = options.name;
-  packageAliases[packageName] = packageId;
-
-  return packageAliases;
+  return packageDir;
 }
 
 export async function createPackage(
@@ -115,8 +87,8 @@ export async function createPackage(
     .sobject('Package2')
     .create(request)
     .catch((err) => {
-      const error: string = isString(err) ? err : err.message;
-      throw SfError.wrap(error);
+      const error: Error = isString(err) ? new Error(err) : err;
+      throw SfError.wrap(applyErrorAction(massageErrorMessage(error)));
     });
 
   if (!createResult.success) {
@@ -131,13 +103,10 @@ export async function createPackage(
   const record = queryResult.records[0];
 
   if (!process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE) {
-    const packageDirectory = generatePackageDirEntry(project, options);
-    const packageAliases = generatePackageAliasEntry(project, options, record.Id);
-    const projectJson = project.getSfProjectJson();
-    projectJson.set('packageDirectories', packageDirectory);
-    projectJson.set('packageAliases', packageAliases);
-
-    await projectJson.write();
+    const packageDirectory = createPackageDirEntry(project, options);
+    project.getSfProjectJson().addPackageDirectory(packageDirectory as NamedPackageDir);
+    project.getSfProjectJson().addPackageAlias(options.name, record.Id);
+    await project.getSfProjectJson().write();
   }
 
   return { Id: record.Id };

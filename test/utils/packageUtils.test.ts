@@ -9,6 +9,7 @@ import { assert, expect } from 'chai';
 import { Connection, SfProject } from '@salesforce/core';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { SaveError } from 'jsforce';
+import { Duration } from '@salesforce/kit';
 import {
   applyErrorAction,
   getPackageAliasesFromId,
@@ -16,10 +17,12 @@ import {
   getConfigPackageDirectory,
   getPackageVersionNumber,
   getInClauseItemsCount,
+  massageErrorMessage,
   queryWithInConditionChunking,
   combineSaveErrors,
 } from '../../src/utils';
 import { PackagingSObjects } from '../../src/interfaces';
+import { numberToDuration } from '../../lib/utils';
 
 describe('packageUtils', () => {
   const $$ = instantiateContext();
@@ -128,6 +131,14 @@ describe('packageUtils', () => {
       });
     });
   });
+  describe('massageErrorMessage', () => {
+    it('should return the correct error message', () => {
+      const error = new Error();
+      error.name = 'INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST';
+      const result = massageErrorMessage(error);
+      expect(result.message).to.be.equal('Invalid package type');
+    });
+  });
   describe('queryWithInConditionChunking', () => {
     it('should run the correct query', async () => {
       const testOrg = new MockTestOrgData();
@@ -198,6 +209,24 @@ describe('packageUtils', () => {
       expect(messageLines[1]).to.be.include('Error: errorCode 1 Message: error 1 Fields: [field1, field2]');
       expect(messageLines[2]).to.be.include('Error: errorCode 2 Message: error 2 ');
       expect(messageLines[3]).to.be.include('Error: errorCode 3 Message: error 3 ');
+    });
+  });
+  describe('numberToDuration', () => {
+    it('should covert number 1000 to duration in milliseconds', () => {
+      const result = numberToDuration(1000);
+      expect(result.milliseconds).to.be.equal(Duration.milliseconds(1000).milliseconds);
+    });
+    it('should covert number 1000 to duration in minutes', () => {
+      const result = numberToDuration(1000, Duration.Unit.MINUTES);
+      expect(result.minutes).to.be.equal(Duration.minutes(1000).minutes);
+    });
+    it('should a treat a duration instance as idempotent', () => {
+      const result = numberToDuration(Duration.minutes(1000));
+      expect(result.minutes).to.be.equal(Duration.minutes(1000).minutes);
+    });
+    it('should a treat a undefined number param instance as idempotent', () => {
+      const result = numberToDuration(undefined);
+      expect(result).to.be.not.ok;
     });
   });
 });

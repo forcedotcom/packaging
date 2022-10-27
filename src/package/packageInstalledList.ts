@@ -6,9 +6,14 @@
  */
 import { Connection } from '@salesforce/core';
 import { InstalledPackages } from '../interfaces';
+import { applyErrorAction, massageErrorMessage } from '../utils';
 
 export async function packageInstalledList(conn: Connection): Promise<InstalledPackages[]> {
-  const query =
-    'SELECT Id, SubscriberPackageId, SubscriberPackage.NamespacePrefix, SubscriberPackage.Name, SubscriberPackageVersion.Id, SubscriberPackageVersion.Name, SubscriberPackageVersion.MajorVersion, SubscriberPackageVersion.MinorVersion, SubscriberPackageVersion.PatchVersion, SubscriberPackageVersion.BuildNumber FROM InstalledSubscriberPackage ORDER BY SubscriberPackageId';
-  return (await conn.tooling.query<InstalledPackages>(query)).records;
+  try {
+    const query =
+      'SELECT Id, SubscriberPackageId, SubscriberPackage.NamespacePrefix, SubscriberPackage.Name, SubscriberPackageVersion.Id, SubscriberPackageVersion.Name, SubscriberPackageVersion.MajorVersion, SubscriberPackageVersion.MinorVersion, SubscriberPackageVersion.PatchVersion, SubscriberPackageVersion.BuildNumber FROM InstalledSubscriberPackage ORDER BY SubscriberPackageId';
+    return (await conn.tooling.query<InstalledPackages>(query)).records;
+  } catch (err) {
+    throw applyErrorAction(massageErrorMessage(err as Error));
+  }
 }

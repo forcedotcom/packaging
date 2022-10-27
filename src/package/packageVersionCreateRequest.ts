@@ -7,12 +7,14 @@
 
 import * as util from 'util';
 import { Connection, Messages } from '@salesforce/core';
+import { Schema } from 'jsforce';
 import {
   PackageVersionCreateRequestError,
   PackageVersionCreateRequestResult,
   PackageVersionCreateRequestQueryOptions,
   PackagingSObjects,
 } from '../interfaces';
+import { applyErrorAction, massageErrorMessage } from '../utils';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
@@ -23,7 +25,7 @@ const QUERY =
   'CreatedDate, Package2Version.HasMetadataRemoved, CreatedById ' +
   'FROM Package2VersionCreateRequest ' +
   '%s' + // WHERE, if applicable
-  'ORDER BY CreatedDate';
+  'ORDER BY CreatedDate desc';
 const ERROR_QUERY = "SELECT Message FROM Package2VersionCreateRequestError WHERE ParentRequest.Id = '%s'";
 
 function formatDate(date: Date): string {
@@ -38,26 +40,31 @@ function formatDate(date: Date): string {
 export async function list(
   options?: PackageVersionCreateRequestQueryOptions
 ): Promise<PackageVersionCreateRequestResult[]> {
-  const whereClause = _constructWhere(options);
-  return _query(util.format(QUERY, whereClause), options.connection);
+  try {
+    const whereClause = _constructWhere(options);
+    return await query(util.format(QUERY, whereClause), options.connection);
+  } catch (err) {
+    throw applyErrorAction(massageErrorMessage(err as Error));
+  }
 }
 
 export async function byId(
   packageVersionCreateRequestId: string,
   connection: Connection
 ): Promise<PackageVersionCreateRequestResult[]> {
-  const results = await _query(util.format(QUERY, `WHERE Id = '${packageVersionCreateRequestId}' `), connection);
+  const results = await query(util.format(QUERY, `WHERE Id = '${packageVersionCreateRequestId}' `), connection);
   if (results && results.length === 1 && results[0].Status === STATUS_ERROR) {
     results[0].Error = await _queryErrors(packageVersionCreateRequestId, connection);
   }
 
   return results;
 }
-async function _query(query: string, connection: Connection): Promise<PackageVersionCreateRequestResult[]> {
-  type QueryRecord = PackagingSObjects.Package2VersionCreateRequest & {
-    Package2Version: Pick<PackagingSObjects.Package2Version, 'HasMetadataRemoved' | 'SubscriberPackageVersionId'>;
-  };
-  const queryResult = await connection.tooling.query<QueryRecord>(query);
+async function query(query: string, connection: Connection): Promise<PackageVersionCreateRequestResult[]> {
+  type QueryRecord = PackagingSObjects.Package2VersionCreateRequest &
+    Schema & {
+      Package2Version: Pick<PackagingSObjects.Package2Version, 'HasMetadataRemoved' | 'SubscriberPackageVersionId'>;
+    };
+  const queryResult = await connection.autoFetchQuery<QueryRecord>(query, { tooling: true });
   return (queryResult.records ? queryResult.records : []).map((record) => ({
     Id: record.Id,
     Status: record.Status,
@@ -93,6 +100,9 @@ async function _queryErrors(
 function _constructWhere(options?: PackageVersionCreateRequestQueryOptions): string {
   const where: string[] = [];
 
+  if (options?.id) {
+    where.push(`Id = '${options.id}'`);
+  }
   // filter on created date, days ago: 0 for today, etc
   if (options?.createdlastdays) {
     if (options.createdlastdays < 0) {

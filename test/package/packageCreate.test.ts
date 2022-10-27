@@ -8,8 +8,8 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { expect } from 'chai';
 import { instantiateContext, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
-import { NamedPackageDir, SfProject } from '@salesforce/core';
-import { createPackageRequestFromContext, generatePackageDirEntry } from '../../src/package/packageCreate';
+import { SfProject } from '@salesforce/core';
+import { createPackageRequestFromContext, createPackageDirEntry } from '../../src/package/packageCreate';
 
 async function setupProject(setup: (project: SfProject) => void = () => {}) {
   const project = await SfProject.resolve();
@@ -116,11 +116,14 @@ describe('packageCreate', () => {
         PackageErrorUsername: 'foo@bar.org',
       });
     });
-    describe('_generatePackageDirEntry', () => {
-      it('should return a valid new package directory entry', async () => {
+    describe('createPackageDirEntry', () => {
+      it('should return a valid new package directory entry - no existing entries', async () => {
         $$.inProject(true);
-        const project = await setupProject();
-        const entries = generatePackageDirEntry(project, {
+        const project = await setupProject((project) => {
+          project.getSfProjectJson().set('packageDirectories', []);
+        });
+
+        const packageDirEntry = createPackageDirEntry(project, {
           name: 'test',
           description: 'test description',
           path: 'test/path',
@@ -129,29 +132,50 @@ describe('packageCreate', () => {
           errorNotificationUsername: 'foo@bar.org',
           noNamespace: true,
         });
-        const expectedEntry = entries.map((e) => e as NamedPackageDir).find((e) => e.package === 'test');
-        expect(expectedEntry).to.deep.equal({
-          default: false,
+        expect(packageDirEntry).to.deep.equal({
+          default: true,
           package: 'test',
           path: 'test/path',
+          versionDescription: 'test description',
           versionName: 'ver 0.1',
           versionNumber: '0.1.0.NEXT',
         });
+      });
+      it('should return a valid new package directory entry - existing entries', async () => {
+        $$.inProject(true);
+        const project = await setupProject();
+
+        const packageDirEntry = createPackageDirEntry(project, {
+          name: 'test',
+          description: 'test description',
+          path: 'test/path',
+          packageType: 'Managed',
+          orgDependent: false,
+          errorNotificationUsername: 'foo@bar.org',
+          noNamespace: true,
+        });
+        expect(packageDirEntry).to.deep.equal({
+          default: false,
+          package: 'test',
+          path: 'test/path',
+          versionDescription: 'test description',
+          versionName: 'ver 0.1',
+          versionNumber: '0.1.0.NEXT',
+        });
+        expect(packageDirEntry).to.not.deep.equal(project.getSfProjectJson().getContents().packageDirectories[0]);
       });
       it('should return a valid modified package directory entry', async () => {
         $$.inProject(true);
         const project = await setupProject((project) => {
           const packageDirectories = project.getSfProjectJson().getContents().packageDirectories;
           packageDirectories.push({
-            default: false,
-            package: 'test',
             path: 'test/path',
             versionName: 'ver 0.1',
             versionNumber: '0.1.0.NEXT',
           });
           project.getSfProjectJson().set('packageDirectories', packageDirectories);
         });
-        const entries = generatePackageDirEntry(project, {
+        const packageDirEntry = createPackageDirEntry(project, {
           name: 'test-01',
           description: 'test description',
           path: 'test/path',
@@ -160,8 +184,8 @@ describe('packageCreate', () => {
           errorNotificationUsername: 'foo@bar.org',
           noNamespace: true,
         });
-        const expectedEntry = entries.map((e) => e as NamedPackageDir).find((e) => e.package === 'test-01');
-        expect(expectedEntry).to.to.have.property('package', 'test-01');
+        expect(packageDirEntry).to.to.have.property('package', 'test-01');
+        expect(packageDirEntry.package).to.not.be.true;
       });
     });
   });

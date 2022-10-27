@@ -55,3 +55,7 @@ Your Dev Hub does not have permission to specify a source org for your build org
 # invalidIdOrAlias
 
 The %s: %s isn't defined in the sfdx-project.json. Add it to the packageDirectories section and add the alias to packageAliases with its %s ID.
+
+# errorInvalidPackageId
+
+The provided package ID '%s' is invalid.

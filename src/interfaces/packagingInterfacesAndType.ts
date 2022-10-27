@@ -7,34 +7,15 @@
 
 import { Duration } from '@salesforce/kit';
 import { Connection, NamedPackageDir, SfProject } from '@salesforce/core';
-import { QueryResult, SaveResult } from 'jsforce';
+import { SaveResult } from 'jsforce';
 import { Attributes } from 'graphology-types';
+import { Optional } from '@salesforce/ts-types';
 import { PackageProfileApi } from '../package/packageProfileApi';
 import { PackageAncestryNode } from '../package';
 import { PackagingSObjects } from './packagingSObjects';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 import MetadataPackageVersion = PackagingSObjects.MetadataPackageVersion;
-
-export interface IPackage {
-  create(): Promise<void>;
-  convert(
-    pkgId: string,
-    options: ConvertPackageOptions,
-    project?: SfProject
-  ): Promise<PackageVersionCreateRequestResult>;
-  delete(): Promise<void>;
-  install(
-    pkgInstallCreateRequest: PackageInstallCreateRequest,
-    options?: PackageInstallOptions
-  ): Promise<PackageInstallRequest>;
-  getInstallStatus(installRequestId: string): Promise<PackageInstallRequest>;
-  list(): Promise<QueryResult<PackagingSObjects.Package2>>;
-  uninstall(id: string, wait: Duration): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest>;
-  update(options: PackageUpdateOptions): Promise<PackageSaveResult>;
-  waitForPublish(subscriberPackageVersionKey: string, timeout: number | Duration, installationKey?: string);
-  getExternalSites(subscriberPackageVersionKey: string, installationKey?: string);
-}
 
 export interface IPackageVersion1GP {
   getPackageVersion(id: string): Promise<MetadataPackageVersion[]>;
@@ -52,6 +33,8 @@ export interface IPackageVersion2GP {
 
 export type PackageOptions = {
   connection: Connection;
+  project: SfProject;
+  packageAliasOrId: string;
 };
 
 export type PackageUpdateOptions = {
@@ -232,6 +215,18 @@ export type PackageVersionCreateRequestOptions = {
 
 export type PackageInstallOptions = {
   /**
+   * The frequency to poll the org for package publish status. If providing a number
+   * it is interpreted in milliseconds.
+   */
+
+  publishFrequency?: number | Duration;
+  /**
+   * The amount of time to wait for package publish to complete. If providing a number
+   * it is interpreted in minutes.
+   */
+
+  publishTimeout?: number | Duration;
+  /**
    * The frequency to poll the org for package installation status. If providing a number
    * it is interpreted in milliseconds.
    */
@@ -263,6 +258,12 @@ export type PackageVersionOptions = {
    */
   idOrAlias: string;
   project: SfProject;
+};
+
+export type SubscriberPackageVersionOptions = {
+  connection: Connection;
+  aliasOrId: string;
+  password: Optional<string>;
 };
 
 export type ConvertPackageOptions = {
@@ -305,6 +306,7 @@ export type PackageVersionCreateRequestQueryOptions = {
   createdlastdays?: number;
   connection?: Connection;
   status?: 'Queued' | 'InProgress' | 'Success' | 'Error';
+  id?: string;
 };
 
 export type ProfileApiOptions = {
