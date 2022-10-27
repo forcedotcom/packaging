@@ -3,34 +3,6 @@
 An error occurred during CRUD operation %s on entity %s.
 %s
 
-# errorInvalidPatchNumber
-
-The provided VersionNumber '%s' is not supported. Provide a patch number of 0.
-
-# errorInvalidAncestorVersionFormat
-
-The ancestor versionNumber must be in the format major.minor.patch but the value found is [%s].
-
-# errorNoMatchingMajorMinorForPatch
-
-Can’t create patch version. The specified package ancestor [%s] either isn’t a promoted and released version, or can’t be found. Check the specified ancestor version, and then retry creating the patch version.
-
-# errorNoMatchingAncestor
-
-The ancestorId for ancestorVersion [%s] can't be found. Package ID [%s].
-
-# errorAncestorNotReleased
-
-The ancestor package version [%s] specified in the sfdx-project.json file hasn’t been promoted and released. Release the ancestor package version before specifying it as the ancestor in a new package or patch version.
-
-# errorAncestorIdVersionMismatch
-
-Can’t create package version. The ancestorVersion listed in your sfdx-project.json file doesn’t map to this package. Ensure the ancestor ID is correct, or set the ID to ancestorID:HIGHEST to ensure the highest released package version is used as the ancestor. Then try creating the package version again.
-
-# errorAncestorIdVersionHighestOrNoneMismatch
-
-Can’t create package version. The ancestorId [%s] and ancestorVersion [%s] in your sfdx-project.json file don’t map to the same package version. Remove the incorrect entry, and try creating the package version again.
-
 # errorInvalidIdNoMatchingVersionId
 
 The %s %s is invalid, as a corresponding %s was not found
@@ -61,15 +33,11 @@ Use "sfdx force:package:list" to verify the 0Ho package version ID.
 
 # malformedPackageIdMessage
 
-We can’t find this package ID for this Dev Hub.
+We can’t find this package ID %s for this Dev Hub.
 
 # notFoundMessage
 
 The requested resource does not exist
-
-# versionCreateFailedWithMultipleErrors
-
-Multiple errors occurred:
 
 # itemDoesNotFitWithinMaxLength
 

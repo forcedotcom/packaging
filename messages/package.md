@@ -29,4 +29,3 @@ The project doesn't have any package aliases.
 # package2VersionNotFoundFor04t
 
 Could not find a Package2Version record for SubscriberPackageVersionId %s.
-
