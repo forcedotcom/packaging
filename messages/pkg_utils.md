@@ -11,6 +11,10 @@ The %s %s is invalid, as a corresponding %s was not found
 
 Specify Unlocked or Managed for package type.
 
+# invalidPackageTypeMessage
+
+Invalid package type
+
 # idNotFoundAction
 
 It`s possible that this package was created on a different Dev Hub. Authenticate to the Dev Hub org that owns the package, and reference that Dev Hub when running the command.
