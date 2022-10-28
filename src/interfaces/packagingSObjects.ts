@@ -58,6 +58,7 @@ export namespace PackagingSObjects {
     ReleaseVersion: number;
     BuildDurationInSeconds: number;
     HasMetadataRemoved: boolean;
+    Language: string;
   };
 
   export enum Package2VersionStatus {
@@ -92,6 +93,7 @@ export namespace PackagingSObjects {
     SkipValidation: boolean;
     IsConversionRequest: boolean;
     VersionInfo: string;
+    Language: string;
   };
   export type Package2VersionCreateRequestError = {
     Id: string;
