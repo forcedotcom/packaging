@@ -44,7 +44,7 @@
     "@xmldom/xmldom": "^0.8.3",
     "debug": "^4.3.4",
     "globby": "^11",
-    "graphology": "^0.25.0",
+    "graphology": "^0.25.1",
     "graphology-traversal": "^0.3.1",
     "graphology-types": "^0.24.5",
     "js2xmlparser": "^4.0.2",
