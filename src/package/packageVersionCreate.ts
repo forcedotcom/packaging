@@ -484,7 +484,7 @@ export class PackageVersionCreate {
 
     if (excludedProfiles.length > 0) {
       const profileIdx = typesArr.findIndex((e) => e.name[0] === 'Profile');
-      typesArr[profileIdx].members = typesArr[profileIdx].members.filter((e) => excludedProfiles.indexOf(e) === -1);
+      typesArr[profileIdx].members = typesArr[profileIdx].members.filter((e) => !excludedProfiles.includes(e));
     }
 
     packageJson.Package.types = typesArr;
@@ -662,7 +662,7 @@ export class PackageVersionCreate {
     const shouldGenerateProfileInformation =
       this.logger.shouldLog(LoggerLevel.INFO) || this.logger.shouldLog(LoggerLevel.DEBUG);
 
-    return await PackageProfileApi.create({
+    return PackageProfileApi.create({
       project: this.project,
       includeUserLicenses,
       generateProfileInformation: shouldGenerateProfileInformation,

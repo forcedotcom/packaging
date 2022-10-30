@@ -62,7 +62,7 @@ const SUB_ORG_ALIAS = 'pk2TargetOrg';
 const WAIT_INTERVAL_MS = 8000;
 const INSTALLATION_KEY = '123456';
 
-describe('Integration tests for @salesforce/packaging library', function () {
+describe('Integration tests for @salesforce/packaging library', () => {
   let pkgId = ''; // 0Ho
   let pkgCreateVersionRequestId = ''; // 08c
   let subscriberPkgVersionId = ''; // 04t
@@ -556,9 +556,7 @@ describe('ancestry tests', () => {
       pkgName = pvRecords[0].Package2.Name;
     }
     pvRecords = pvRecords.filter((pv) => pv.Package2.Name === pkgName);
-    versions = pvRecords.map((pv) => {
-      return new VersionNumber(pv.MajorVersion, pv.MinorVersion, pv.PatchVersion, pv.BuildNumber);
-    });
+    versions = pvRecords.map((pv) => new VersionNumber(pv.MajorVersion, pv.MinorVersion, pv.PatchVersion, pv.BuildNumber));
     sortedVersions = [...versions].sort((a, b) => a.compareTo(b));
     project = await SfProject.resolve();
     const pjson = project.getSfProjectJson();

@@ -117,13 +117,9 @@ describe('Package', () => {
       });
       const conn = {
         tooling: {
-          sobject: () => {
-            return {
-              retrieve: () => {
-                return { Id: '0Hoasdsadfasdf', ContainerOptions: 'Unlocked' };
-              },
-            };
-          },
+          sobject: () => ({
+              retrieve: () => ({ Id: '0Hoasdsadfasdf', ContainerOptions: 'Unlocked' }),
+            }),
         },
       } as unknown as Connection;
 

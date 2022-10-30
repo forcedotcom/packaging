@@ -25,18 +25,18 @@ describe('package version list', () => {
     restoreContext($$);
   });
 
-  describe('_getLastDays', function () {
-    it('should return the last days of 7', function () {
+  describe('_getLastDays', () => {
+    it('should return the last days of 7', () => {
       expect(validateDays('seven', 7)).to.equal(7);
     });
-    it('should return the last days of 0', function () {
+    it('should return the last days of 0', () => {
       expect(validateDays('zero', 0)).to.equal(0);
     });
-    it('should throw with negative number as input', function () {
+    it('should throw with negative number as input', () => {
       expect(() => validateDays('negative', -1)).to.throw(/Provide a valid positive number for negative. -1/);
     });
   });
-  describe('_constructWhere', function () {
+  describe('_constructWhere', () => {
     // the following package dirs and aliases were extracted from the Salesforce Dreamhouse LWC repo
     const packageDirectories = [
       {
@@ -52,7 +52,7 @@ describe('package version list', () => {
       DreamhouseLWC: '0Ho3h000000xxxxCAG',
     };
 
-    it('should create where clause contain proper values', async function () {
+    it('should create where clause contain proper values', async () => {
       $$.inProject(true);
       const sfProject = await SfProject.resolve();
       sfProject.getSfProjectJson().set('packageDirectories', packageDirectories);
@@ -65,19 +65,19 @@ describe('package version list', () => {
     });
   });
   describe('_assembleQueryParts', () => {
-    it('should return the proper query', function () {
+    it('should return the proper query', () => {
       const assembly = assembleQueryParts('select foo,bar,baz from foobarbaz', ['foo=1', "bar='2'"], 'foo,bar,baz');
       expect(assembly).to.include('select foo,bar,baz from foobarbaz');
       expect(assembly).to.include("WHERE foo=1 AND bar='2'");
       expect(assembly).to.include('ORDER BY foo,bar,baz');
     });
-    it('should return the proper query when no where parts supplied', function () {
+    it('should return the proper query when no where parts supplied', () => {
       const assembly = assembleQueryParts('select foo,bar,baz from foobarbaz', [], 'foo,bar,baz');
       expect(assembly).to.include('select foo,bar,baz from foobarbaz');
       expect(assembly).not.include("WHERE foo=1 AND bar='2'");
       expect(assembly).to.include('ORDER BY foo,bar,baz');
     });
-    it('should return the proper query when no order by parts supplied', function () {
+    it('should return the proper query when no order by parts supplied', () => {
       const assembly = assembleQueryParts('select foo,bar,baz from foobarbaz', []);
       expect(assembly).to.include('select foo,bar,baz from foobarbaz');
       expect(assembly).not.include("WHERE foo=1 AND bar='2'");

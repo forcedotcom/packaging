@@ -62,12 +62,10 @@ export async function getPackageVersionReport(options: {
       // lookup AncestorVersion value
       const ancestorVersionMap = await pkgUtils.getPackageVersionStrings([record.AncestorId], options.connection);
       record.AncestorVersion = ancestorVersionMap.get(record.AncestorId);
-    } else {
-      if (record.PackageType !== 'Managed') {
+    } else if (record.PackageType !== 'Managed') {
         record.AncestorVersion = null;
         record.AncestorId = null;
       }
-    }
 
     record.HasPassedCodeCoverageCheck =
       record.Package2.IsOrgDependent === true || record.ValidationSkipped === true

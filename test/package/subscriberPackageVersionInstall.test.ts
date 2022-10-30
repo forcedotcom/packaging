@@ -110,13 +110,11 @@ describe('Package Install', () => {
     ],
   };
 
-  const stubGetPackageTypeBy04tQuery = (type = 'Unlocked'): sinon.SinonStub => {
-    return $$.SANDBOX.stub(connection.tooling, 'query').resolves({
+  const stubGetPackageTypeBy04tQuery = (type = 'Unlocked'): sinon.SinonStub => $$.SANDBOX.stub(connection.tooling, 'query').resolves({
       done: true,
       totalSize: 1,
       records: [{ Package2ContainerOptions: type }],
     });
-  };
 
   beforeEach(async () => {
     stubContext($$);

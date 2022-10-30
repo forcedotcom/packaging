@@ -372,7 +372,7 @@ export class SubscriberPackageVersion {
         pkgInstallCreateRequest,
         await this.getPackageType()
       );
-      return SubscriberPackageVersion.installStatus(
+      return await SubscriberPackageVersion.installStatus(
         this.connection,
         pkgVersionInstallRequest.Id,
         pkgInstallCreateRequest.Password,
@@ -393,7 +393,7 @@ export class SubscriberPackageVersion {
     frequency: Duration = Duration.milliseconds(0),
     wait: Duration = Duration.milliseconds(0)
   ): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest> {
-    return await uninstallPackage(await this.getId(), this.connection, frequency, wait);
+    return uninstallPackage(await this.getId(), this.connection, frequency, wait);
   }
 
   /**

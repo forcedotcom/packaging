@@ -29,9 +29,7 @@ const QUERY =
 const ERROR_QUERY = "SELECT Message FROM Package2VersionCreateRequestError WHERE ParentRequest.Id = '%s'";
 
 function formatDate(date: Date): string {
-  const pad = (num: number): string => {
-    return num < 10 ? `0${num}` : `${num}`;
-  };
+  const pad = (num: number): string => num < 10 ? `0${num}` : `${num}`;
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(
     date.getMinutes()
   )}`;

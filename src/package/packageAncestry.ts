@@ -157,7 +157,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
     const paths: PackageAncestryNode[][] = [];
     let path: PackageAncestryNode[] = [];
     let previousDepth = 0;
-    dfsFromNode(this.graph, root, function (node, attr: { node: PackageAncestryNode }, depth) {
+    dfsFromNode(this.graph, root, (node, attr: { node: PackageAncestryNode }, depth) => {
       if (depth === 0) {
         paths.push(path);
         path = [];
