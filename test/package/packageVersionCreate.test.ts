@@ -32,17 +32,32 @@ describe('Package Version Create', () => {
     await project.getSfProjectJson().write({
       packageDirectories: [
         {
+          path: 'pkg',
+          package: 'dep',
+          versionName: 'ver 0.1',
+          versionNumber: '0.1.0.NEXT',
+          default: false,
+          name: 'pkg',
+        },
+        {
           path: 'force-app',
           package: 'TEST',
           versionName: 'ver 0.1',
           versionNumber: '0.1.0.NEXT',
           default: true,
           ancestorId: 'TEST2',
+          dependencies: [
+            {
+              package: 'DEP@0.1.0-1',
+            },
+          ],
         },
       ],
       packageAliases: {
         TEST: packageId,
         TEST2: '05i3i000000Gmj6XXX',
+        DEP: '05i3i000000Gmj6XXX',
+        'DEP@0.1.0-1': '04t3i000002eyYXXXX',
       },
     });
     await fs.promises.mkdir(path.join(project.getPath(), 'force-app'));
@@ -117,6 +132,12 @@ describe('Package Version Create', () => {
       'SubscriberPackageVersionId',
       'Tag'
     );
+
+    expect(project.getSfProjectJson().getContents().packageDirectories[1].dependencies).to.deep.equal([
+      {
+        package: 'DEP@0.1.0-1',
+      },
+    ]);
   });
 
   it('should create the package version create request with codecoverage=true', async () => {

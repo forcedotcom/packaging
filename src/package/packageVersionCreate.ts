@@ -368,7 +368,7 @@ export class PackageVersionCreate {
 
     // All dependencies for the packaging dir should be resolved to an 04t id to be passed to the server.
     // (see _retrieveSubscriberPackageVersionId for details)
-    const dependencies = packageDescriptorJson.dependencies;
+    const dependencies = structuredClone(packageDescriptorJson.dependencies);
 
     // branch can be set via options or descriptor; option takes precedence
     this.options.branch = this.options.branch ?? packageDescriptorJson.branch;
