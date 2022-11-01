@@ -368,7 +368,8 @@ export class PackageVersionCreate {
 
     // All dependencies for the packaging dir should be resolved to an 04t id to be passed to the server.
     // (see _retrieveSubscriberPackageVersionId for details)
-    const dependencies = structuredClone(packageDescriptorJson.dependencies);
+    // can be changed to structuredClone once node18 is the minimum version
+    const dependencies = JSON.parse(JSON.stringify(packageDescriptorJson.dependencies)) as PackageDirDependency[];
 
     // branch can be set via options or descriptor; option takes precedence
     this.options.branch = this.options.branch ?? packageDescriptorJson.branch;
