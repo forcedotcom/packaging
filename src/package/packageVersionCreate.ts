@@ -608,7 +608,7 @@ export class PackageVersionCreate {
         (namedPackageDir) => namedPackageDir.package === packageName || namedPackageDir.name === packageName
       );
     } else {
-      // due to flag validation, we'll either have a package or path flag
+      // We'll either have a package ID or alias, or a directory path
       this.packageObject = this.project.getPackageFromPath(this.options.path);
       packageName = this.packageObject?.package;
       if (!packageName) throw messages.createError('errorCouldNotFindPackageUsingPath', [this.options.path]);
@@ -629,7 +629,16 @@ export class PackageVersionCreate {
     // need to validate that the Id is correct.
     pkgUtils.validateId(pkgUtils.BY_LABEL.PACKAGE_ID, this.packageId);
 
-    await this.validateOptionsForPackageType();
+    try {
+      await this.validateOptionsForPackageType();
+    } catch (error) {
+      const err = error as Error;
+      if (err.name === 'NOT_FOUND') {
+        // this means the 0Ho package was not found in the org. throw a better error.
+        throw messages.createError('errorNoIdInHub', [this.packageId]);
+      }
+      throw err;
+    }
 
     const request = await this.createPackageVersionCreateRequestFromOptions();
     const createResult = await this.connection.tooling.create('Package2VersionCreateRequest', request);

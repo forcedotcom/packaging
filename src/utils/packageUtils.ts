@@ -117,7 +117,7 @@ export function applyErrorAction(err: Error): Error {
     actions.push(messages.getMessage('invalidPackageTypeAction'));
   }
 
-  if (err.name === 'MALFORMED_ID' && err.message === messages.getMessage('malformedPackageIdMessage')) {
+  if (err.name === 'MALFORMED_ID' && err.message === messages.getMessage('malformedPackageIdMessage', [''])) {
     actions.push(messages.getMessage('malformedPackageIdAction'));
   }
 
