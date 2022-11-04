@@ -274,6 +274,25 @@ describe('Package Version Create', () => {
     );
   });
 
+  it('should create the package version create request with language', async () => {
+    const pvc = new PackageVersionCreate({ connection, project, language: 'en_US', packageId });
+    const result = await pvc.createPackageVersion();
+    expect(packageCreateStub.firstCall.args[1].Language).to.equal('en_US');
+    expect(result).to.have.all.keys(
+      'Branch',
+      'CreatedBy',
+      'CreatedDate',
+      'Error',
+      'HasMetadataRemoved',
+      'Id',
+      'Package2Id',
+      'Package2VersionId',
+      'Status',
+      'SubscriberPackageVersionId',
+      'Tag'
+    );
+  });
+
   it('should validate options when package type = unlocked (scripts) - postinstall script', async () => {
     packageTypeQuery.restore();
     // @ts-ignore

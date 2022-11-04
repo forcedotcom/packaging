@@ -279,6 +279,7 @@ export class PackageVersionCreate {
       SourceOrg: this.options.sourceorg,
       CalculateCodeCoverage: this.options.codecoverage || false,
       SkipValidation: this.options.skipvalidation || false,
+      Language: this.options.language,
     };
 
     if (preserveFiles) {
@@ -372,8 +373,9 @@ export class PackageVersionCreate {
     // (see _retrieveSubscriberPackageVersionId for details)
     const dependencies = packageDescriptorJson.dependencies;
 
-    // branch can be set via options or descriptor; option takes precedence
+    // branch & language can be set via options or descriptor; option takes precedence
     this.options.branch = this.options.branch ?? packageDescriptorJson.branch;
+    this.options.language = this.options.language ?? packageDescriptorJson.language;
 
     const resultValues = await Promise.all(
       !dependencies ? [] : dependencies.map((dependency) => this.retrieveSubscriberPackageVersionId(dependency))
