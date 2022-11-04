@@ -86,10 +86,6 @@ Can’t create package version because you didn’t specify a package ancestor. 
 
 Can’t create package version. The ancestor version [%s] you specified isn’t the highest released package version. Set the ancestor version to %s, and try creating the package version again. You can also specify --skipancestorcheck to override the ancestry requirement.
 
-# invalidPackageTypeMessage
-
-Invalid package type
-
 # errorInvalidBuildNumberForKeywords
 
 The provided VersionNumber '%s' is invalid. Provide an integer value or use the keyword '%s' or '%s' for the build number.
@@ -162,3 +158,7 @@ No matching ancestor version found for the given ancestorId (%s)
 # errorNoMatchingMajorMinorForPatch
 
 No matching major.minor version found for the given patch version (%s)
+
+# errorInvalidPackageId
+
+The provided package ID '%s' is invalid.
