@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/packaging",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "description": "packing libraries to Salesforce packaging platform",
   "main": "lib/exported",
   "types": "lib/exported.d.ts",
