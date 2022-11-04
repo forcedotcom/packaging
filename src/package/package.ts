@@ -7,6 +7,7 @@
 import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
 import {
   ConvertPackageOptions,
+  InstalledPackages,
   PackageCreateOptions,
   PackageOptions,
   PackageSaveResult,
@@ -111,6 +112,21 @@ export class Package {
     return (
       await connection.tooling.query<PackagingSObjects.Package2>(`select ${Package2Fields.toString()} from Package2`)
     )?.records;
+  }
+
+  /**
+   * list the packages installed in the org
+   *
+   * @param conn: Connection to the org
+   */
+  public static async installedList(conn: Connection): Promise<InstalledPackages[]> {
+    try {
+      const query =
+        'SELECT Id, SubscriberPackageId, SubscriberPackage.NamespacePrefix, SubscriberPackage.Name, SubscriberPackageVersion.Id, SubscriberPackageVersion.Name, SubscriberPackageVersion.MajorVersion, SubscriberPackageVersion.MinorVersion, SubscriberPackageVersion.PatchVersion, SubscriberPackageVersion.BuildNumber FROM InstalledSubscriberPackage ORDER BY SubscriberPackageId';
+      return (await conn.tooling.query<InstalledPackages>(query)).records;
+    } catch (err) {
+      throw applyErrorAction(massageErrorMessage(err as Error));
+    }
   }
 
   /**

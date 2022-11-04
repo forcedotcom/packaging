@@ -11,7 +11,7 @@ import { SaveResult } from 'jsforce';
 import { Attributes } from 'graphology-types';
 import { Optional } from '@salesforce/ts-types';
 import { PackageProfileApi } from '../package/packageProfileApi';
-import { PackageAncestryNode } from '../package';
+import { PackageAncestryNode } from '../package/packageAncestry';
 import { PackagingSObjects } from './packagingSObjects';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;

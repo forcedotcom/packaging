@@ -5,10 +5,6 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 export * from './package';
-export * from './packageInstall';
 export * from './packageVersion';
-export * from './packageVersionCreateRequest';
-export * from './packageInstalledList';
-export * from './packageVersionCreateRequestReport';
 export * from './packageAncestry';
 export * from './subscriberPackageVersion';
