@@ -163,7 +163,7 @@ export async function waitForPublish(
     // if polling timed out
     const error = installMsgs.createError('subscriberPackageVersionNotPublished');
     error.setData(queryResult?.records[0]);
-    if (error.stack && e.stack) {
+    if (error.stack && (e as Error).stack) {
       // append the original stack to this new error
       error.stack += `\nDUE TO:\n${(e as Error).stack}`;
     }
@@ -209,7 +209,7 @@ export async function pollStatus(
     const errMsg = e instanceof Error ? e.message : isString(e) ? e : 'polling timed out';
     const error = new SfError(errMsg, 'PackageInstallTimeout');
     error.setData(packageInstallRequest);
-    if (error.stack && e.stack) {
+    if (error.stack && (e as Error).stack) {
       // add the original stack to this new error
       error.stack += `\nDUE TO:\n${(e as Error).stack}`;
     }

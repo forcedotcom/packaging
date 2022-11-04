@@ -78,7 +78,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   /**
    * Convenience method to get the json representation of the package ancestry graph.
    */
-  public async getJsonProducer(): Promise<AncestryRepresentationProducer> {
+  public getJsonProducer(): AncestryRepresentationProducer {
     return this.getRepresentationProducer(
       (opts: AncestryRepresentationProducerOptions) => new AncestryJsonProducer(opts),
       this.requestedPackageId
@@ -88,7 +88,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   /**
    * Convenience method to get the CliUx.Tree representation of the package ancestry graph.
    */
-  public async getTreeProducer(verbose: boolean): Promise<AncestryRepresentationProducer> {
+  public getTreeProducer(verbose: boolean): AncestryRepresentationProducer {
     return this.getRepresentationProducer(
       (opts: AncestryRepresentationProducerOptions) => new AncestryTreeProducer({ ...opts, verbose: !!verbose }),
       this.requestedPackageId
@@ -98,7 +98,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   /**
    * Convenience method to get the dot representation of the package ancestry graph.
    */
-  public async getDotProducer(): Promise<AncestryRepresentationProducer> {
+  public getDotProducer(): AncestryRepresentationProducer {
     return this.getRepresentationProducer(
       (opts: AncestryRepresentationProducerOptions) => new AncestryDotProducer(opts),
       this.requestedPackageId
@@ -111,12 +111,15 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
    * @param producerCtor - function that returns a new instance of the producer
    * @param root - the subscriber package version id of the root node
    */
-  public async getRepresentationProducer(
+  public getRepresentationProducer(
     producerCtor: (options?: AncestryRepresentationProducerOptions) => AncestryRepresentationProducer,
     root: string | undefined
-  ): Promise<AncestryRepresentationProducer> {
+  ): AncestryRepresentationProducer {
     const treeRoot = root
-      ? this.graph.findNode((node, attributes) => attributes.node.SubscriberPackageVersionId === root)
+      ? this.graph.findNode(
+          (node, attributes: { node: { SubscriberPackageVersionId: string } }) =>
+            attributes.node.SubscriberPackageVersionId === root
+        )
       : undefined;
 
     const tree = producerCtor();
@@ -152,12 +155,14 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
    *
    * @param subscriberPackageVersionId
    */
-  public async getLeafPathToRoot(subscriberPackageVersionId?: string): Promise<PackageAncestryNode[][]> {
-    const root = this.graph.findNode((node, attributes) => attributes.node.AncestorId === null);
+  public getLeafPathToRoot(subscriberPackageVersionId?: string): PackageAncestryNode[][] {
+    const root = this.graph.findNode(
+      (node, attributes: { node: { AncestorId: string } }) => attributes.node.AncestorId === null
+    );
     const paths: PackageAncestryNode[][] = [];
     let path: PackageAncestryNode[] = [];
     let previousDepth = 0;
-    dfsFromNode(this.graph, root, function (node, attr: { node: PackageAncestryNode }, depth) {
+    dfsFromNode(this.graph, root, (node, attr: { node: PackageAncestryNode }, depth) => {
       if (depth === 0) {
         paths.push(path);
         path = [];
@@ -171,20 +176,25 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
 
     // push remaining path
     paths.push(path);
-    return paths
-      .filter(
-        (path) =>
-          path.length > 0 && // don't care about zero length paths
-          (!subscriberPackageVersionId ||
-            path.some((node) => node.SubscriberPackageVersionId === subscriberPackageVersionId))
-      )
-      .map((path) => path.reverse())
-      .map((path) => {
-        const subscriberPackageVersionIdIndex = path.findIndex(
-          (node) => node.SubscriberPackageVersionId === subscriberPackageVersionId
-        );
-        return path.slice(subscriberPackageVersionIdIndex === -1 ? 0 : subscriberPackageVersionIdIndex);
-      });
+    return (
+      paths
+        .filter(
+          // eslint-disable-next-line @typescript-eslint/no-shadow
+          (path) =>
+            path.length > 0 && // don't care about zero length paths
+            (!subscriberPackageVersionId ||
+              path.some((node) => node.SubscriberPackageVersionId === subscriberPackageVersionId))
+        )
+        // eslint-disable-next-line @typescript-eslint/no-shadow
+        .map((path) => path.reverse())
+        // eslint-disable-next-line @typescript-eslint/no-shadow
+        .map((path) => {
+          const subscriberPackageVersionIdIndex = path.findIndex(
+            (node) => node.SubscriberPackageVersionId === subscriberPackageVersionId
+          );
+          return path.slice(subscriberPackageVersionIdIndex === -1 ? 0 : subscriberPackageVersionIdIndex);
+        })
+    );
   }
 
   private async buildAncestryTree(): Promise<void> {
@@ -193,7 +203,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   }
 
   private async getRoots(): Promise<PackageAncestryNode[]> {
-    let roots = [];
+    let roots: PackageAncestryNode[] = [];
     this.#requestedPackageId = pkgUtils.getPackageIdFromAlias(this.options.packageId, this.options.project);
     switch (this.requestedPackageId.slice(0, 3)) {
       case '0Ho':
@@ -215,6 +225,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
     // Start with the node, and shoot up
     let node = await this.getPackageVersion(this.requestedPackageId);
     while (node.AncestorId !== null) {
+      // eslint-disable-next-line no-await-in-loop
       const ancestor = await this.getPackageVersion(node.AncestorId);
       this.addToGraph(ancestor, node);
       node = ancestor;
@@ -261,7 +272,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
       });
       return new PackageAncestryNode(results);
     } catch (e) {
-      if (e.message.includes('No record found for')) {
+      if ((e as Error).message.includes('No record found for')) {
         throw messages.createError('versionNotFound', [nodeId]);
       }
       throw e;
@@ -288,6 +299,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   private async buildAncestryTreeFromRoots(roots: PackageAncestryNode[]): Promise<void> {
     while (roots.length > 0) {
       const subscriberPackageVersion = roots.shift();
+      // eslint-disable-next-line no-await-in-loop
       const descendants = await this.addDescendantsFromPackageVersion(subscriberPackageVersion);
       roots.push(...descendants);
     }
@@ -535,6 +547,7 @@ export class PackageAncestryNode extends AsyncCreatable<PackageAncestryNodeOptio
   public getVersion(): string {
     return this.#version.toString();
   }
+  // eslint-disable-next-line class-methods-use-this
   protected init(): Promise<void> {
     return Promise.resolve();
   }

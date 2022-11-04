@@ -34,6 +34,7 @@ import { getPackageVersionReport } from './packageVersionReport';
 import { getCreatePackageVersionCreateRequestReport } from './packageVersionCreateRequestReport';
 import { list } from './packageVersionCreateRequest';
 import Package2 = PackagingSObjects.Package2;
+import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
 type Package2Version = PackagingSObjects.Package2Version;
 
@@ -117,7 +118,7 @@ export class PackageVersion {
     const pvc = new PackageVersionCreate({ ...options });
     const createResult = await pvc.createPackageVersion();
 
-    return await PackageVersion.pollCreateStatus(createResult.Id, options.connection, options.project, polling).catch(
+    return PackageVersion.pollCreateStatus(createResult.Id, options.connection, options.project, polling).catch(
       (err: Error) => {
         // TODO
         // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
@@ -136,7 +137,7 @@ export class PackageVersion {
     createPackageRequestId: string,
     connection: Connection
   ): Promise<PackageVersionCreateRequestResult> {
-    return await getCreatePackageVersionCreateRequestReport({
+    return getCreatePackageVersionCreateRequestReport({
       createPackageVersionRequestId: createPackageRequestId,
       connection,
     }).catch((err: Error) => {
@@ -167,6 +168,8 @@ export class PackageVersion {
    * progress and current status. Events also carry a payload of type PackageVersionCreateRequestResult.
    *
    * @param createPackageVersionRequestId
+   * @param connection Connection to the org
+   * @param project SfProject to read/write aliases from
    * @param polling frequency and timeout Durations to be used in polling
    * */
   public static async pollCreateStatus(
@@ -184,19 +187,19 @@ export class PackageVersion {
       poll: async (): Promise<StatusResult> => {
         report = await this.getCreateStatus(createPackageVersionRequestId, connection);
         switch (report.Status) {
-          case 'Queued':
+          case Package2VersionStatus.queued:
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.enqueued, { ...report, remainingWaitTime });
             remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
             return {
               completed: false,
               payload: report,
             };
-          case 'InProgress':
-          case 'Initializing':
-          case 'VerifyingFeaturesAndSettings':
-          case 'VerifyingDependencies':
-          case 'VerifyingMetadata':
-          case 'FinalizingPackageVersion':
+          case Package2VersionStatus.inProgress:
+          case Package2VersionStatus.initializing:
+          case Package2VersionStatus.verifyingFeaturesAndSettings:
+          case Package2VersionStatus.verifyingDependencies:
+          case Package2VersionStatus.verifyingMetadata:
+          case Package2VersionStatus.finalizingPackageVersion:
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.progress, {
               ...report,
               remainingWaitTime,
@@ -206,7 +209,7 @@ export class PackageVersion {
               completed: false,
               payload: report,
             };
-          case 'Success': {
+          case Package2VersionStatus.success: {
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.success, report);
             const packageVersion = new PackageVersion({
               connection,
@@ -216,7 +219,7 @@ export class PackageVersion {
             await packageVersion.updateProjectWithPackageVersion(report);
             return { completed: true, payload: report };
           }
-          case 'Error':
+          case Package2VersionStatus.error:
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.error, report);
             return { completed: true, payload: report };
         }
@@ -227,7 +230,7 @@ export class PackageVersion {
     });
 
     try {
-      return pollingClient.subscribe<PackageVersionCreateRequestResult>();
+      return await pollingClient.subscribe<PackageVersionCreateRequestResult>();
     } catch (err) {
       await Lifecycle.getInstance().emit(PackageVersionEvents.create['timed-out'], report);
       throw applyErrorAction(err as Error);
@@ -244,7 +247,7 @@ export class PackageVersion {
     createPackageRequestId: string,
     connection: Connection
   ): Promise<PackageVersionCreateRequestResult> {
-    return await getCreatePackageVersionCreateRequestReport({
+    return getCreatePackageVersionCreateRequestReport({
       createPackageVersionRequestId: createPackageRequestId,
       connection,
     }).catch((err: Error) => {
@@ -279,19 +282,19 @@ export class PackageVersion {
       poll: async (): Promise<StatusResult> => {
         report = await this.getCreateVersionReport(createPackageVersionRequestId, connection);
         switch (report.Status) {
-          case 'Queued':
+          case Package2VersionStatus.queued:
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.enqueued, { ...report, remainingWaitTime });
             remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
             return {
               completed: false,
               payload: report,
             };
-          case 'InProgress':
-          case 'Initializing':
-          case 'VerifyingFeaturesAndSettings':
-          case 'VerifyingDependencies':
-          case 'VerifyingMetadata':
-          case 'FinalizingPackageVersion':
+          case Package2VersionStatus.inProgress:
+          case Package2VersionStatus.initializing:
+          case Package2VersionStatus.verifyingFeaturesAndSettings:
+          case Package2VersionStatus.verifyingDependencies:
+          case Package2VersionStatus.verifyingMetadata:
+          case Package2VersionStatus.finalizingPackageVersion:
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.progress, {
               ...report,
               remainingWaitTime,
@@ -301,7 +304,7 @@ export class PackageVersion {
               completed: false,
               payload: report,
             };
-          case 'Success':
+          case Package2VersionStatus.success:
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.success, report);
             await new PackageVersion({
               idOrAlias: report.SubscriberPackageVersionId,
@@ -309,7 +312,7 @@ export class PackageVersion {
               connection,
             }).updateProjectWithPackageVersion(report);
             return { completed: true, payload: report };
-          case 'Error':
+          case Package2VersionStatus.error:
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.error, report);
             return { completed: true, payload: report };
         }
@@ -318,7 +321,7 @@ export class PackageVersion {
       timeout: polling.timeout,
     });
     try {
-      return pollingClient.subscribe<PackageVersionCreateRequestResult>();
+      return await pollingClient.subscribe<PackageVersionCreateRequestResult>();
     } catch (err) {
       await Lifecycle.getInstance().emit(PackageVersionEvents.create['timed-out'], report);
       throw applyErrorAction(err as Error);
@@ -502,7 +505,7 @@ export class PackageVersion {
     const createResult = await pvc.createPackageVersion();
 
     if (polling.timeout?.milliseconds > 0) {
-      return await PackageVersion.waitForCreateVersion(createResult.Id, this.project, this.connection, polling).catch(
+      return PackageVersion.waitForCreateVersion(createResult.Id, this.project, this.connection, polling).catch(
         (err: Error) => {
           // TODO
           // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)

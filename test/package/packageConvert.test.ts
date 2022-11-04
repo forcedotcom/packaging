@@ -4,7 +4,6 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -84,9 +83,7 @@ describe('packageConvert', () => {
     it('will error when more than one Package2 found', async () => {
       const conn = {
         tooling: {
-          query: () => {
-            return { records: [{ Id: '0Ho3i000000Gmj6YYY' }, { Id: '0Ho3i000000Gmj6XXX' }] };
-          },
+          query: () => ({ records: [{ Id: '0Ho3i000000Gmj6YYY' }, { Id: '0Ho3i000000Gmj6XXX' }] }),
         },
       } as unknown as Connection;
       try {
@@ -102,9 +99,7 @@ describe('packageConvert', () => {
     it('will return the ID when one is found', async () => {
       const conn = {
         tooling: {
-          query: () => {
-            return { records: [{ Id: '0Ho3i000000Gmj6YYY' }] };
-          },
+          query: () => ({ records: [{ Id: '0Ho3i000000Gmj6YYY' }] }),
         },
       } as unknown as Connection;
 
@@ -113,9 +108,6 @@ describe('packageConvert', () => {
     });
 
     it('will create the Package2', async () => {
-      const testOrg = new MockTestOrgData();
-      const $$ = instantiateContext();
-
       const conn = await testOrg.getConnection();
 
       $$.SANDBOX.stub(conn.tooling, 'query')
@@ -133,8 +125,6 @@ describe('packageConvert', () => {
     });
 
     it('will fail to create the Package2', async () => {
-      const $$ = instantiateContext();
-
       const conn = await testOrg.getConnection();
 
       $$.SANDBOX.stub(conn.tooling, 'query')
@@ -163,9 +153,7 @@ describe('packageConvert', () => {
     it('will error when no Subscriber Package was found', async () => {
       const conn = {
         tooling: {
-          query: () => {
-            return { records: [] };
-          },
+          query: () => ({ records: [] }),
         },
       } as unknown as Connection;
 
@@ -177,7 +165,6 @@ describe('packageConvert', () => {
     });
   });
   it('will throw correct error when create call fails', async () => {
-    const $$ = instantiateContext();
     const conn = await testOrg.getConnection();
     // @ts-ignore
     $$.SANDBOX.stub(conn.tooling, 'query').resolves({ records: [{ Id: '0Ho3i000000Gmj6YYY' }] });
@@ -202,7 +189,6 @@ describe('packageConvert', () => {
   });
 
   it('will convert the package', async () => {
-    const $$ = instantiateContext();
     const conn = await testOrg.getConnection();
 
     const successResponse = {
@@ -275,8 +261,8 @@ describe('packageConvert', () => {
 
     expect(result).to.deep.equal(successResponse);
   }).timeout(100000);
+
   it('will convert the package and handle error on reporting', async () => {
-    const $$ = instantiateContext();
     const conn = await testOrg.getConnection();
 
     Lifecycle.getInstance().on(PackageEvents.convert.error, async (data: { id: string; status: string }) => {

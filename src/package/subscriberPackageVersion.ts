@@ -5,7 +5,7 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { Connection, Messages, SfError, sfdc, Logger, SfProject } from '@salesforce/core';
+import { Connection, Logger, Messages, sfdc, SfError, SfProject } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import { Optional } from '@salesforce/ts-types';
 import {
@@ -372,7 +372,7 @@ export class SubscriberPackageVersion {
         pkgInstallCreateRequest,
         await this.getPackageType()
       );
-      return SubscriberPackageVersion.installStatus(
+      return await SubscriberPackageVersion.installStatus(
         this.connection,
         pkgVersionInstallRequest.Id,
         pkgInstallCreateRequest.Password,
@@ -393,7 +393,7 @@ export class SubscriberPackageVersion {
     frequency: Duration = Duration.milliseconds(0),
     wait: Duration = Duration.milliseconds(0)
   ): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest> {
-    return await uninstallPackage(await this.getId(), this.connection, frequency, wait);
+    return uninstallPackage(await this.getId(), this.connection, frequency, wait);
   }
 
   /**
@@ -427,6 +427,7 @@ export class SubscriberPackageVersion {
     return Reflect.get(this.data || {}, field) as T;
   }
 
+  // eslint-disable-next-line class-methods-use-this
   private getFieldsForQuery(options: { force?: boolean; includeHighCostFields?: boolean }): string[] {
     return SubscriberPackageVersionFields.filter(
       (field) => !highCostQueryFields.includes(field) || options.includeHighCostFields

@@ -56,9 +56,9 @@ export async function findOrCreatePackage2(seedPackage: string, connection: Conn
 
   // Need to create a new Package2
   const subQuery = `SELECT Name, Description, NamespacePrefix FROM SubscriberPackage WHERE Id = '${seedPackage}'`;
-  let subscriberResult;
+  let subscriberResult: PackagingSObjects.SubscriberPackage;
   try {
-    subscriberResult = await connection.singleRecordQuery<PackagingSObjects.SubscriberPackage>(subQuery, {
+    subscriberResult = await connection.singleRecordQuery(subQuery, {
       tooling: true,
     });
   } catch (e) {
@@ -110,8 +110,7 @@ export async function convertPackage(
 
   const createResult = await connection.tooling.create('Package2VersionCreateRequest', request);
   if (!createResult.success) {
-    const errStr =
-      createResult.errors && createResult.errors.length ? createResult.errors.join(', ') : createResult.errors;
+    const errStr = createResult?.errors.length ? createResult.errors.join(', ') : createResult.errors;
     throw messages.createError('failedToCreatePVCRequest', [
       createResult.id ? ` [${createResult.id}]` : '',
       errStr.toString(),
@@ -181,7 +180,7 @@ export async function createPackageVersionCreateRequest(
 
     ['country', 'edition', 'language', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].forEach(
       (prop) => {
-        const propValue = definitionFileJson[prop];
+        const propValue = definitionFileJson[prop] as string | [] | number;
         if (propValue) {
           packageDescriptorJson[prop] = propValue;
         }
@@ -246,9 +245,9 @@ async function pollForStatusWithInterval(
     poll: async (): Promise<StatusResult> => {
       const results: PackageVersionCreateRequestResult[] = await pvcr.byId(id, connection);
 
-      if (_isStatusEqualTo(results, [Package2VersionStatus.success, Package2VersionStatus.error])) {
+      if (isStatusEqualTo(results, [Package2VersionStatus.success, Package2VersionStatus.error])) {
         // complete
-        if (_isStatusEqualTo(results, [Package2VersionStatus.success])) {
+        if (isStatusEqualTo(results, [Package2VersionStatus.success])) {
           // update sfdx-project.json
           let projectUpdated = false;
           if (withProject && !process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE) {
@@ -260,7 +259,7 @@ async function pollForStatusWithInterval(
                 const record = pkgQueryResult.records[0];
                 return `${record.MajorVersion}.${record.MinorVersion}.${record.PatchVersion}-${record.BuildNumber}`;
               });
-            const [alias, id] = await generatePackageAliasEntry(
+            const [alias, writtenId] = await generatePackageAliasEntry(
               connection,
               withProject,
               results[0].SubscriberPackageVersionId,
@@ -268,7 +267,7 @@ async function pollForStatusWithInterval(
               branch,
               packageId
             );
-            withProject.getSfProjectJson().addPackageAlias(alias, id);
+            withProject.getSfProjectJson().addPackageAlias(alias, writtenId);
             await withProject.getSfProjectJson().write();
           }
           await Lifecycle.getInstance().emit(PackageEvents.convert.success, {
@@ -327,6 +326,6 @@ async function pollForStatusWithInterval(
  * @param statuses array of statuses to look for
  * @returns {boolean} if one of the values in status is found.
  */
-function _isStatusEqualTo(results: PackageVersionCreateRequestResult[], statuses?: Package2VersionStatus[]): boolean {
+function isStatusEqualTo(results: PackageVersionCreateRequestResult[], statuses?: Package2VersionStatus[]): boolean {
   return results?.length <= 0 ? false : statuses?.some((status) => results[0].Status === status);
 }

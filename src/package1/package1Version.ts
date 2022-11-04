@@ -126,9 +126,11 @@ export class Package1Version implements IPackageVersion1GP {
 
         return { completed: false, payload: pollingResult };
       default: {
-        if (pollingResult?.Errors?.errors?.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        const errors = pollingResult?.Errors?.errors as Error[];
+        if (errors?.length > 0) {
           throw messages.createError('package1VersionCreateCommandUploadFailure', [
-            (pollingResult.Errors.errors.map((e: Error) => e.message) as string[]).join(os.EOL),
+            errors.map((e: Error) => e.message).join(os.EOL),
           ]);
         } else {
           throw messages.createError('package1VersionCreateCommandUploadFailureDefault');

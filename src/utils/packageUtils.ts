@@ -5,7 +5,6 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import * as os from 'os';
-
 import { Connection, Messages, NamedPackageDir, PackageDir, SfdcUrl, SfError, SfProject } from '@salesforce/core';
 import { isNumber, Many, Nullable, Optional } from '@salesforce/ts-types';
 import { SaveError } from 'jsforce';
@@ -56,15 +55,13 @@ export const DEFAULT_PACKAGE_DIR = {
   default: true,
 };
 
-export const BY_PREFIX = ((): IdRegistry => {
-  return Object.fromEntries(ID_REGISTRY.map((id) => [id.prefix, { prefix: id.prefix, label: id.label }]));
-})();
+export const BY_PREFIX = ((): IdRegistry =>
+  Object.fromEntries(ID_REGISTRY.map((id) => [id.prefix, { prefix: id.prefix, label: id.label }])))();
 
-export const BY_LABEL = ((): IdRegistry => {
-  return Object.fromEntries(
+export const BY_LABEL = ((): IdRegistry =>
+  Object.fromEntries(
     ID_REGISTRY.map((id) => [id.label.replace(/ /g, '_').toUpperCase(), { prefix: id.prefix, label: id.label }])
-  );
-})();
+  ))();
 
 export function validateId(idObj: Many<IdRegistryValue>, value: string): void {
   if (!validateIdNoThrow(idObj, value)) {
@@ -75,13 +72,11 @@ export function validateId(idObj: Many<IdRegistryValue>, value: string): void {
     ]);
   }
 }
-
 export function getSourceApiVersion(project: SfProject): string {
-  const apiVersion = project.getSfProjectJson().get('sourceApiVersion') as string;
-  return apiVersion;
+  return project?.getSfProjectJson().get('sourceApiVersion') as string;
 }
 
-export function validateIdNoThrow(idObj: Many<IdRegistryValue>, value): IdRegistryValue | false {
+export function validateIdNoThrow(idObj: Many<IdRegistryValue>, value: string): IdRegistryValue | boolean {
   if (!value || (value.length !== 15 && value.length !== 18)) {
     return false;
   }
@@ -328,6 +323,7 @@ export async function queryWithInConditionChunking<T = Record<string, unknown>>(
     }
     const itemsStr = `${items.slice(itemsQueried, itemsQueried + chunkCount).join("','")}`;
     const queryChunk = query.replace(replaceToken, itemsStr);
+    // eslint-disable-next-line no-await-in-loop
     const result = await connection.tooling.query<T>(queryChunk);
     if (result && result.records.length > 0) {
       records = records.concat(result.records);
@@ -456,9 +452,7 @@ export async function generatePackageAliasEntry(
 }
 
 export function formatDate(date: Date): string {
-  const pad = (num: number): string => {
-    return num < 10 ? `0${num}` : `${num}`;
-  };
+  const pad = (num: number): string => (num < 10 ? `0${num}` : `${num}`);
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(
     date.getMinutes()
   )}`;

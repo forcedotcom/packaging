@@ -70,7 +70,7 @@ export function constructWhere(
   lastModLastDays: number,
   isReleased: boolean
 ): string[] {
-  const where = [];
+  const where: string[] = [];
 
   // filter on given package ids
   if (packageIds?.length > 0) {
