@@ -728,7 +728,10 @@ export class PackageVersionCreate {
               versionNumber.indexOf(pkgUtils.VERSION_NUMBER_SEP + BuildNumberToken.NEXT_BUILD_NUMBER_TOKEN)
             )
           : versionNumber;
-      this.logger.warn(options, messages.getMessage('defaultVersionName', [packageDescriptorJson.versionName]));
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { connection: c, project: p, profileApi: a, ...warnOptions } = options;
+      this.logger.warn(warnOptions, messages.getMessage('defaultVersionName', [packageDescriptorJson.versionName]));
     }
 
     if (options.releasenotesurl) {
