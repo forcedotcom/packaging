@@ -9,7 +9,7 @@ import { Connection, Lifecycle, Logger, Messages, PollingClient, SfError, Status
 import { isString } from '@salesforce/ts-types';
 import { QueryResult } from 'jsforce';
 import { Duration } from '@salesforce/kit';
-import { escapeInstallationKey, numberToDuration } from '../utils';
+import { escapeInstallationKey, numberToDuration } from '../utils/packageUtils';
 import {
   PackagingSObjects,
   PackageInstallCreateRequest,

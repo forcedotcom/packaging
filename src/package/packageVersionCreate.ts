@@ -23,9 +23,8 @@ import { ComponentSetBuilder, ConvertResult, MetadataConverter } from '@salesfor
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import * as xml2js from 'xml2js';
 import { PackageDirDependency } from '@salesforce/core/lib/sfProject';
-import { uniqid } from '../utils/uniqid';
+import { genUniqueString } from '@salesforce/cli-plugins-testkit';
 import * as pkgUtils from '../utils/packageUtils';
-import { BuildNumberToken, VersionNumber } from '../utils';
 import {
   MDFolderForArtifactOptions,
   PackageDescriptorJson,
@@ -38,17 +37,17 @@ import {
 } from '../interfaces';
 import {
   BY_LABEL,
-  getPackageIdFromAlias,
   getPackageVersionId,
   getPackageVersionNumber,
   validateId,
   VERSION_NUMBER_SEP,
   copyDir,
   zipDir,
-} from '../utils';
+} from '../utils/packageUtils';
 import { PackageProfileApi } from './packageProfileApi';
 import { byId } from './packageVersionCreateRequest';
 import { Package } from './package';
+import { BuildNumberToken, VersionNumber } from './versionNumber';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
@@ -123,7 +122,9 @@ export class PackageVersionCreate {
       throw messages.createError('errorPackageAndPackageIdCollision', []);
     }
 
-    const packageIdFromAlias = pkgUtils.getPackageIdFromAlias(dependency.packageId || dependency.package, this.project);
+    const packageIdFromAlias =
+      this.project.getPackageIdFromAlias(dependency.packageId || dependency.package) ??
+      (dependency.packageId || dependency.package);
 
     // If valid 04t package, just return it to be used straight away.
     if (pkgUtils.validateIdNoThrow(pkgUtils.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, packageIdFromAlias)) {
@@ -302,7 +303,7 @@ export class PackageVersionCreate {
    */
   private async createPackageVersionCreateRequestFromOptions(): Promise<PackageVersionCreateRequest> {
     const preserveFiles = !!(this.options.preserve || process.env.SFDX_PACKAGE2_VERSION_CREATE_PRESERVE);
-    const uniqueHash = uniqid({ template: `${this.packageId}-%s` });
+    const uniqueHash = genUniqueString(`${this.packageId}-%s`);
     const packageVersTmpRoot = path.join(os.tmpdir(), `${uniqueHash}`);
     const packageVersMetadataFolder = path.join(packageVersTmpRoot, 'md-files');
     const unpackagedMetadataFolder = path.join(packageVersTmpRoot, 'unpackaged-md-files');
@@ -621,7 +622,7 @@ export class PackageVersionCreate {
       ]);
     }
 
-    this.packageId = this.project.getPackageIdFromAlias(packageName) || packageName;
+    this.packageId = this.project.getPackageIdFromAlias(packageName) ?? packageName;
 
     this.options.profileApi = await this.resolveUserLicenses(this.packageObject.includeProfileUserLicenses);
 
@@ -808,7 +809,10 @@ export class PackageVersionCreate {
     skipAncestorCheck: boolean
   ): Promise<string> {
     // If an id property is present, use it.  Otherwise, look up the package id from the package property.
-    const packageId = packageDescriptorJson.id ?? getPackageIdFromAlias(packageDescriptorJson.package, project);
+    const packageId =
+      packageDescriptorJson.id ??
+      project.getPackageIdFromAlias(packageDescriptorJson.package) ??
+      packageDescriptorJson.package;
 
     // No need to proceed if Unlocked
     if ((await this.getPackageType()) === 'Unlocked') {
@@ -862,7 +866,7 @@ export class PackageVersionCreate {
     // highestReleasedVersion should be null only if skipAncestorCheck or if there is no existing released package version
 
     if (!explicitUseNoAncestor && packageDescriptorJson.ancestorId) {
-      ancestorId = getPackageIdFromAlias(packageDescriptorJson.ancestorId, project);
+      ancestorId = project.getPackageIdFromAlias(packageDescriptorJson.ancestorId) ?? packageDescriptorJson.ancestorId;
       validateId([BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, BY_LABEL.PACKAGE_VERSION_ID], ancestorId);
       ancestorId = await getPackageVersionId(ancestorId, this.connection);
     }

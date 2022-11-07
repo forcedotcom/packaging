@@ -7,3 +7,4 @@
 export * from './package';
 export * from './packageVersion';
 export * from './subscriberPackageVersion';
+export { VersionNumber } from './versionNumber';

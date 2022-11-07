@@ -26,8 +26,8 @@ import {
 } from '../../src/exported';
 import { PackageEvents } from '../../src/interfaces';
 import { SubscriberPackageVersion } from '../../src/package';
-import { VersionNumber } from '../../src/utils';
 import { AncestryJsonProducer, AncestryTreeProducer, PackageAncestry } from '../../src/package/packageAncestry';
+import { VersionNumber } from '../../src/package/versionNumber';
 
 let session: TestSession;
 

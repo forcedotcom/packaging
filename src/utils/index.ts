@@ -4,6 +4,4 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-export * from './packageUtils';
-export * from './srcDevUtils';
-export * from './versionNumber';
+export { INSTALL_URL_BASE, getContainerOptions, getPackageVersionStrings } from './packageUtils';

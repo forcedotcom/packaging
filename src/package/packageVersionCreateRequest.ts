@@ -13,7 +13,7 @@ import {
   PackageVersionCreateRequestQueryOptions,
   PackagingSObjects,
 } from '../interfaces';
-import { applyErrorAction, massageErrorMessage } from '../utils';
+import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');

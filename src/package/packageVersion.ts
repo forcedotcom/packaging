@@ -20,15 +20,7 @@ import {
   PackageVersionUpdateOptions,
   PackagingSObjects,
 } from '../interfaces';
-import {
-  applyErrorAction,
-  BY_LABEL,
-  combineSaveErrors,
-  getPackageAliasesFromId,
-  getPackageIdFromAlias,
-  massageErrorMessage,
-  validateId,
-} from '../utils';
+import { applyErrorAction, BY_LABEL, combineSaveErrors, massageErrorMessage, validateId } from '../utils/packageUtils';
 import { PackageVersionCreate } from './packageVersionCreate';
 import { getPackageVersionReport } from './packageVersionReport';
 import { getCreatePackageVersionCreateRequestReport } from './packageVersionCreateRequestReport';
@@ -560,7 +552,7 @@ export class PackageVersion {
           `SELECT Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version WHERE SubscriberPackageVersionId='${results.SubscriberPackageVersionId}'`
         )
       ).records[0];
-      const version = `${getPackageAliasesFromId(results.Package2Id, this.project).join()}@${
+      const version = `${this.project.getAliasesFromPackageId(results.Package2Id).join()}@${
         versionResult.MajorVersion ?? 0
       }.${versionResult.MinorVersion ?? 0}.${versionResult.PatchVersion ?? 0}`;
       const build = versionResult.BuildNumber ? `-${versionResult.BuildNumber}` : '';
@@ -572,6 +564,6 @@ export class PackageVersion {
     }
   }
   private resolveId(): string {
-    return getPackageIdFromAlias(this.options.idOrAlias, this.project);
+    return this.project.getPackageIdFromAlias(this.options.idOrAlias) ?? this.options.idOrAlias;
   }
 }

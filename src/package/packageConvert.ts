@@ -22,7 +22,7 @@ import {
 import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
 import { Many } from '@salesforce/ts-types';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
-import { uniqid } from '../utils/uniqid';
+import { genUniqueString } from '@salesforce/cli-plugins-testkit';
 import * as pkgUtils from '../utils/packageUtils';
 import {
   PackagingSObjects,
@@ -31,8 +31,7 @@ import {
   PackageVersionCreateEventData,
   PackageEvents,
 } from '../interfaces';
-import * as srcDevUtil from '../utils/srcDevUtils';
-import { generatePackageAliasEntry } from '../utils';
+import { generatePackageAliasEntry } from '../utils/packageUtils';
 import { byId } from './packageVersionCreateRequest';
 import * as pvcr from './packageVersionCreateRequest';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
@@ -106,7 +105,6 @@ export async function convertPackage(
   );
 
   // TODO: a lot of this is duplicated from PC, PVC, and PVCR.
-
   const createResult = await connection.tooling.create('Package2VersionCreateRequest', request);
   if (!createResult.success) {
     const errStr = createResult?.errors.length ? createResult.errors.join(', ') : createResult.errors;
@@ -147,7 +145,7 @@ export async function createPackageVersionCreateRequest(
   packageId: string,
   apiVersion: string
 ): Promise<PackagingSObjects.Package2VersionCreateRequest> {
-  const uniqueId = uniqid({ template: `${packageId}-%s` });
+  const uniqueId = genUniqueString(`${packageId}-%s`);
   const packageVersTmpRoot = path.join(os.tmpdir(), uniqueId);
   const packageVersMetadataFolder = path.join(packageVersTmpRoot, 'md-files');
   const packageVersBlobDirectory = path.join(packageVersTmpRoot, 'package-version-info');
@@ -193,7 +191,7 @@ export async function createPackageVersionCreateRequest(
 
   await settingsGenerator.createDeploy();
   await settingsGenerator.createDeployPackageContents(apiVersion);
-  await srcDevUtil.zipDir(
+  await pkgUtils.zipDir(
     `${settingsGenerator.getDestinationPath()}${path.sep}${settingsGenerator.getShapeDirName()}`,
     settingsZipFile
   );
@@ -202,13 +200,13 @@ export async function createPackageVersionCreateRequest(
   const currentPackageXml = await fs.promises.readFile(path.join(shapeDirectory, 'package.xml'), 'utf8');
   await fs.promises.writeFile(path.join(packageVersMetadataFolder, 'package.xml'), currentPackageXml, 'utf-8');
   // Zip the packageVersMetadataFolder folder and put the zip in {packageVersBlobDirectory}/package.zip
-  await srcDevUtil.zipDir(packageVersMetadataFolder, metadataZipFile);
+  await pkgUtils.zipDir(packageVersMetadataFolder, metadataZipFile);
   await fs.promises.writeFile(
     path.join(packageVersBlobDirectory, 'package2-descriptor.json'),
     JSON.stringify(packageDescriptorJson, undefined, 2)
   );
   // Zip the Version Info and package.zip files into another zip
-  await srcDevUtil.zipDir(packageVersBlobDirectory, packageVersBlobZipFile);
+  await pkgUtils.zipDir(packageVersBlobDirectory, packageVersBlobZipFile);
   return createRequestObject(packageId, context, packageVersTmpRoot, packageVersBlobZipFile);
 }
 
@@ -235,7 +233,7 @@ async function pollForStatusWithInterval(
   retries: number,
   packageId: string,
   branch: string,
-  withProject: SfProject,
+  project: SfProject,
   connection: Connection,
   interval: Duration
 ): Promise<PackageVersionCreateRequestResult> {
@@ -249,7 +247,7 @@ async function pollForStatusWithInterval(
         if (isStatusEqualTo(results, [Package2VersionStatus.success])) {
           // update sfdx-project.json
           let projectUpdated = false;
-          if (withProject && !process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE) {
+          if (project && !process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE) {
             projectUpdated = true;
             const query = `SELECT MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version WHERE Id = '${results[0].Package2VersionId}'`;
             const packageVersionVersionString: string = await connection.tooling
@@ -260,14 +258,14 @@ async function pollForStatusWithInterval(
               });
             const [alias, writtenId] = await generatePackageAliasEntry(
               connection,
-              withProject,
+              project,
               results[0].SubscriberPackageVersionId,
               packageVersionVersionString,
               branch,
               packageId
             );
-            withProject.getSfProjectJson().addPackageAlias(alias, writtenId);
-            await withProject.getSfProjectJson().write();
+            project.getSfProjectJson().addPackageAlias(alias, writtenId);
+            await project.getSfProjectJson().write();
           }
           await Lifecycle.getInstance().emit(PackageEvents.convert.success, {
             id,

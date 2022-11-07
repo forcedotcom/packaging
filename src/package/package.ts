@@ -18,16 +18,8 @@ import {
   PackageVersionListResult,
   PackagingSObjects,
 } from '../interfaces';
-import {
-  applyErrorAction,
-  BY_LABEL,
-  getPackageAliasesFromId,
-  getPackageIdFromAlias,
-  massageErrorMessage,
-  validateId,
-} from '../utils';
+import { applyErrorAction, BY_LABEL, massageErrorMessage, validateId } from '../utils/packageUtils';
 import { createPackage } from './packageCreate';
-
 import { convertPackage } from './packageConvert';
 import { listPackageVersions } from './packageVersionList';
 import { deletePackage } from './packageDelete';
@@ -73,7 +65,8 @@ export class Package {
   public constructor(private options: PackageOptions) {
     let packageId = this.options.packageAliasOrId;
     if (!packageId.startsWith(packagePrefixes.PackageId)) {
-      packageId = getPackageIdFromAlias(this.options.packageAliasOrId, this.options.project);
+      packageId =
+        this.options.project.getPackageIdFromAlias(this.options.packageAliasOrId) ?? this.options.packageAliasOrId;
       if (packageId === this.options.packageAliasOrId) {
         throw messages.createError('packageAliasNotFound', [this.options.packageAliasOrId]);
       }
@@ -144,7 +137,7 @@ export class Package {
   ): Promise<PackageVersionListResult[]> {
     // resolve/verify packages
     const packages = options?.packages?.map((pkg) => {
-      const id = getPackageIdFromAlias(pkg, project);
+      const id = project.getPackageIdFromAlias(pkg) ?? pkg;
 
       // validate ID
       if (id.startsWith('0Ho')) {
@@ -266,7 +259,7 @@ export class Package {
   }
 
   private verifyAliasForId(): void {
-    if (getPackageAliasesFromId(this.packageId, this.options.project).length === 0) {
+    if (this.options.project.getAliasesFromPackageId(this.packageId).length === 0) {
       throw new SfError(messages.getMessage('couldNotFindAliasForId', [this.packageId]));
     }
   }

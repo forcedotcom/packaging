@@ -5,24 +5,27 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import { assert, expect } from 'chai';
 import { Connection, SfProject } from '@salesforce/core';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { SaveError } from 'jsforce';
 import { Duration } from '@salesforce/kit';
+import * as JSZIP from 'jszip';
 import {
   applyErrorAction,
-  getPackageAliasesFromId,
-  getPackageIdFromAlias,
-  getConfigPackageDirectory,
   getPackageVersionNumber,
   getInClauseItemsCount,
   massageErrorMessage,
   queryWithInConditionChunking,
   combineSaveErrors,
-} from '../../src/utils';
+  getConfigPackageDirectory,
+  zipDir,
+  numberToDuration,
+} from '../../src/utils/packageUtils';
 import { PackagingSObjects } from '../../src/interfaces';
-import { numberToDuration } from '../../lib/utils';
 
 describe('packageUtils', () => {
   const $$ = instantiateContext();
@@ -35,41 +38,6 @@ describe('packageUtils', () => {
     restoreContext($$);
   });
 
-  describe('getPackageAliasesFromId', () => {
-    it('should return an empty array if the packageId is not valid', async () => {
-      $$.inProject(true);
-      const project = await SfProject.resolve();
-      const result = getPackageAliasesFromId('', project);
-      expect(result).to.have.lengthOf(0);
-    });
-    it('should return an alias from valid id', async () => {
-      $$.inProject(true);
-      const project = await SfProject.resolve();
-      const pjson = project.getSfProjectJson().getContents();
-      pjson.packageAliases = { myPackage: 'myPackageId' };
-      project.getSfProjectJson().setContents(pjson);
-      const result = getPackageAliasesFromId('myPackageId', project);
-      expect(result).to.have.lengthOf(1);
-      expect(result).to.deep.equal(['myPackage']);
-    });
-  });
-  describe('getPackageIdFromAlias', () => {
-    it('should return an empty string if the packageAlias is not valid', async () => {
-      $$.inProject(true);
-      const project = await SfProject.resolve();
-      const result = getPackageIdFromAlias('', project);
-      expect(result).to.equal('');
-    });
-    it('should return an id from valid alias', async () => {
-      $$.inProject(true);
-      const project = await SfProject.resolve();
-      const pjson = project.getSfProjectJson().getContents();
-      pjson.packageAliases = { myPackage: 'myPackageId' };
-      project.getSfProjectJson().setContents(pjson);
-      const result = getPackageIdFromAlias('myPackage', project);
-      expect(result).to.equal('myPackageId');
-    });
-  });
   describe('getConfigPackageDirectory', () => {
     it('should through if "packageDirectories" is not present or empty', async () => {
       $$.inProject(true);
@@ -227,6 +195,49 @@ describe('packageUtils', () => {
     it('should a treat a undefined number param instance as idempotent', () => {
       const result = numberToDuration(undefined);
       expect(result).to.be.not.ok;
+    });
+  });
+  describe('zipDir', () => {
+    let tmpZipDir: string;
+    let tmpSrcDir: string;
+    beforeEach(() => {
+      tmpZipDir = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
+      tmpSrcDir = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
+      fs.mkdirSync(path.join(tmpSrcDir, 'empty-dir'), { recursive: true });
+      fs.mkdirSync(path.join(tmpSrcDir, 'not-empty-dir', 'empty-sub-dir'), { recursive: true });
+      fs.mkdirSync(path.join(tmpSrcDir, 'not-empty-dir', 'sub-dir'), { recursive: true });
+      fs.writeFileSync(path.join(tmpSrcDir, 'file1.txt'), 'file contents');
+      fs.writeFileSync(path.join(tmpSrcDir, 'file2.txt'), 'file contents');
+      fs.writeFileSync(path.join(tmpSrcDir, 'not-empty-dir', 'sub-dir', 'file4.txt'), 'file contents');
+      fs.writeFileSync(path.join(tmpSrcDir, 'not-empty-dir', 'file3.txt'), 'file contents');
+    });
+    afterEach(() => {
+      fs.rmSync(tmpZipDir, { recursive: true });
+      fs.rmSync(tmpSrcDir, { recursive: true });
+    });
+
+    it('should be defined', async () => {
+      const entries = [
+        'file1.txt',
+        'file2.txt',
+        'not-empty-dir/',
+        'not-empty-dir/file3.txt',
+        'not-empty-dir/sub-dir/',
+        'not-empty-dir/sub-dir/file4.txt',
+      ];
+      await zipDir(path.resolve(tmpSrcDir), path.join(tmpZipDir, 'test.zip'));
+      try {
+        const stat = fs.statSync(path.join(tmpZipDir, 'test.zip'));
+        expect(stat.size).to.be.greaterThan(0);
+      } catch (e) {
+        assert.fail((e as Error).message);
+      }
+
+      const zip = await JSZIP.loadAsync(await fs.promises.readFile(path.join(tmpZipDir, 'test.zip')));
+      expect(Object.keys(zip.files)).to.have.lengthOf(entries.length);
+      zip.forEach((file) => {
+        expect(entries.includes(file)).to.be.true;
+      });
     });
   });
 });

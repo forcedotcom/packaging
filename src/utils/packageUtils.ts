@@ -5,10 +5,17 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import * as os from 'os';
+import * as fs from 'fs';
+import { join } from 'path';
+import { pipeline as cbPipeline } from 'stream';
+import { promisify } from 'util';
 import { Connection, Messages, NamedPackageDir, PackageDir, SfdcUrl, SfError, SfProject } from '@salesforce/core';
 import { isNumber, Many, Nullable, Optional } from '@salesforce/ts-types';
 import { SaveError } from 'jsforce';
 import { Duration } from '@salesforce/kit';
+import { Logger } from '@salesforce/core';
+import * as globby from 'globby';
+import * as JSZIP from 'jszip';
 import { PackageType, PackagingSObjects } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
@@ -377,41 +384,13 @@ export function getPackageVersionNumber(package2VersionObj: PackagingSObjects.Pa
   return version.slice(0, version.lastIndexOf('.'));
 }
 
-// TODO: replace with sfProject.getPackageDirectoryWithProperty()
+// TODO: replace with sfProject.getPackageDirectoryWithProperty(), still needs to be moved
 export function getConfigPackageDirectory(
   packageDirs: NamedPackageDir[] | PackageDir[],
   lookupProperty: string,
   lookupValue: unknown
 ): NamedPackageDir | PackageDir | undefined {
   return packageDirs?.find((pkgDir) => pkgDir[lookupProperty] === lookupValue);
-}
-/**
- * Given a packageAlias, attempt to return the associated id from the config
- *
- * @param packageAlias string representing a package alias
- * @param project for obtaining the project config
- * @returns the associated id or the arg given.
- */
-// TODO: replace with SfProject.getPackageIdFromAlias()
-export function getPackageIdFromAlias(packageAlias: string, project: SfProject): string {
-  const packageAliases = project.getSfProjectJson().getContents().packageAliases || {};
-  // return alias if it exists, otherwise return what was passed in
-  return packageAliases[packageAlias] || packageAlias;
-}
-/**
- * Given a package id, attempt to return the associated aliases from the config
- *
- * @param packageId string representing a package id
- * @param project for obtaining the project config
- * @returns an array of alias for the given id.
- */
-// TODO: replace with SfProject.getAliasesFromPackageId()
-export function getPackageAliasesFromId(packageId: string, project: SfProject): string[] {
-  const packageAliases = project?.getSfProjectJson().getContents().packageAliases || {};
-  // check for a matching alias
-  return Object.entries(packageAliases)
-    .filter((alias) => alias[1] === packageId)
-    .map((alias) => alias[0]);
 }
 
 /**
@@ -434,7 +413,7 @@ export async function generatePackageAliasEntry(
   branch: string,
   packageId: string
 ): Promise<[string, string]> {
-  const aliasForPackageId = getPackageAliasesFromId(packageId, project);
+  const aliasForPackageId = project.getAliasesFromPackageId(packageId);
   let packageName: Optional<string>;
   if (aliasForPackageId?.length === 0) {
     const query = `SELECT Name FROM Package2 WHERE Id = '${packageId}'`;
@@ -477,4 +456,56 @@ export function numberToDuration(
   unit: Duration.Unit = Duration.Unit.MILLISECONDS
 ): Duration {
   return isNumber(duration) ? new Duration(duration, unit) : duration;
+}
+
+const pipeline = promisify(cbPipeline);
+
+/**
+ * Zips directory to given zipfile.
+ *
+ * https://github.com/archiverjs/node-archiver
+ *
+ * @param dir to zip
+ * @param zipfile
+ */
+export async function zipDir(dir: string, zipfile: string): Promise<void> {
+  const logger = Logger.childFromRoot('srcDevUtils#zipDir');
+
+  const timer = process.hrtime();
+  const globbyResult: string[] = await globby('**/*', { expandDirectories: true, cwd: dir });
+  const zip = new JSZIP();
+  // add files tp zip
+  for (const file of globbyResult) {
+    zip.file(file, fs.readFileSync(join(dir, file)));
+  }
+  // write zip to file
+  const zipStream = zip.generateNodeStream({
+    type: 'nodebuffer',
+    streamFiles: true,
+    compression: 'DEFLATE',
+    compressionOptions: {
+      level: 3,
+    },
+  });
+  await pipeline(zipStream, fs.createWriteStream(zipfile));
+  const stat = fs.statSync(zipfile);
+  logger.debug(`${stat.size} bytes written to ${zipfile} in ${getElapsedTime(timer)}ms`);
+  return;
+}
+
+export function getElapsedTime(timer: [number, number]): string {
+  const elapsed = process.hrtime(timer);
+  return (elapsed[0] * 1000 + elapsed[1] / 1000000).toFixed(3);
+}
+
+export function copyDir(src: string, dest: string): void {
+  fs.mkdirSync(dest, { recursive: true });
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+
+  entries.map((entry) => {
+    const srcPath = join(src, entry.name);
+    const destPath = join(dest, entry.name);
+
+    return entry.isDirectory() ? copyDir(srcPath, destPath) : fs.copyFileSync(srcPath, destPath);
+  });
 }

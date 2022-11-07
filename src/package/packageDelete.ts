@@ -6,10 +6,8 @@
  */
 
 import { Connection, SfProject } from '@salesforce/core';
-import * as pkgUtils from '../utils/packageUtils';
-import { combineSaveErrors } from '../utils';
+import { combineSaveErrors, applyErrorAction, massageErrorMessage, validateId, BY_LABEL } from '../utils/packageUtils';
 import { PackageSaveResult } from '../interfaces';
-import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
 
 export async function deletePackage(
   idOrAlias: string,
@@ -17,8 +15,8 @@ export async function deletePackage(
   connection: Connection,
   undelete: boolean
 ): Promise<PackageSaveResult> {
-  const packageId = pkgUtils.getPackageIdFromAlias(idOrAlias, project);
-  pkgUtils.validateId(pkgUtils.BY_LABEL.PACKAGE_ID, packageId);
+  const packageId = project.getPackageIdFromAlias(idOrAlias) ?? idOrAlias;
+  validateId(BY_LABEL.PACKAGE_ID, packageId);
 
   const request = {} as { Id: string; IsDeprecated: boolean };
   request.Id = packageId;

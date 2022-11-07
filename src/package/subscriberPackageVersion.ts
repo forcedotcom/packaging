@@ -15,15 +15,10 @@ import {
   PackagingSObjects,
   SubscriberPackageVersionOptions,
 } from '../interfaces';
-import {
-  applyErrorAction,
-  escapeInstallationKey,
-  massageErrorMessage,
-  numberToDuration,
-  VersionNumber,
-} from '../utils';
+import { applyErrorAction, escapeInstallationKey, massageErrorMessage, numberToDuration } from '../utils/packageUtils';
 import { createPackageInstallRequest, getStatus, pollStatus, waitForPublish } from './packageInstall';
 import { getUninstallErrors, uninstallPackage } from './packageUninstall';
+import { VersionNumber } from './versionNumber';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'subscriber_package_version');
@@ -110,7 +105,7 @@ export class SubscriberPackageVersion {
 
     try {
       const project = SfProject.getInstance();
-      this.id = project.getPackageIdFromAlias(this.options.aliasOrId) || this.options.aliasOrId;
+      this.id = project.getPackageIdFromAlias(this.options.aliasOrId) ?? this.options.aliasOrId;
     } catch (error) {
       const err = (error as Error).message;
       getLogger().debug(err);
