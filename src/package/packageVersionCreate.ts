@@ -23,6 +23,7 @@ import { ComponentSetBuilder, ConvertResult, MetadataConverter } from '@salesfor
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import * as xml2js from 'xml2js';
 import { PackageDirDependency } from '@salesforce/core/lib/sfProject';
+import { cloneJson } from '@salesforce/kit';
 import { uniqid } from '../utils/uniqid';
 import * as pkgUtils from '../utils/packageUtils';
 import { BuildNumberToken, VersionNumber } from '../utils';
@@ -368,8 +369,7 @@ export class PackageVersionCreate {
 
     // All dependencies for the packaging dir should be resolved to an 04t id to be passed to the server.
     // (see _retrieveSubscriberPackageVersionId for details)
-    // can be changed to structuredClone once node18 is the minimum version
-    const dependencies = JSON.parse(JSON.stringify(packageDescriptorJson.dependencies)) as PackageDirDependency[];
+    const dependencies = cloneJson(packageDescriptorJson.dependencies);
 
     // branch can be set via options or descriptor; option takes precedence
     this.options.branch = this.options.branch ?? packageDescriptorJson.branch;
@@ -485,7 +485,7 @@ export class PackageVersionCreate {
 
     if (excludedProfiles.length > 0) {
       const profileIdx = typesArr.findIndex((e) => e.name[0] === 'Profile');
-      typesArr[profileIdx].members = typesArr[profileIdx].members.filter((e) => excludedProfiles.indexOf(e) === -1);
+      typesArr[profileIdx].members = typesArr[profileIdx].members.filter((e) => !excludedProfiles.includes(e));
     }
 
     packageJson.Package.types = typesArr;
@@ -663,7 +663,7 @@ export class PackageVersionCreate {
     const shouldGenerateProfileInformation =
       this.logger.shouldLog(LoggerLevel.INFO) || this.logger.shouldLog(LoggerLevel.DEBUG);
 
-    return await PackageProfileApi.create({
+    return PackageProfileApi.create({
       project: this.project,
       includeUserLicenses,
       generateProfileInformation: shouldGenerateProfileInformation,
