@@ -31,7 +31,6 @@ import {
   PackageVersionCreateEventData,
   PackageEvents,
 } from '../interfaces';
-import { consts } from '../constants';
 import * as srcDevUtil from '../utils/srcDevUtils';
 import { generatePackageAliasEntry } from '../utils';
 import { byId } from './packageVersionCreateRequest';
@@ -154,7 +153,7 @@ export async function createPackageVersionCreateRequest(
   const packageVersBlobDirectory = path.join(packageVersTmpRoot, 'package-version-info');
   const settingsZipFile = path.join(packageVersBlobDirectory, 'settings.zip');
   const metadataZipFile = path.join(packageVersBlobDirectory, 'package.zip');
-  const packageVersBlobZipFile = path.join(packageVersTmpRoot, consts.PACKAGE_VERSION_INFO_FILE_ZIP);
+  const packageVersBlobZipFile = path.join(packageVersTmpRoot, 'package-version-info.zip');
 
   const packageDescriptorJson = {
     id: packageId,
@@ -205,7 +204,7 @@ export async function createPackageVersionCreateRequest(
   // Zip the packageVersMetadataFolder folder and put the zip in {packageVersBlobDirectory}/package.zip
   await srcDevUtil.zipDir(packageVersMetadataFolder, metadataZipFile);
   await fs.promises.writeFile(
-    path.join(packageVersBlobDirectory, consts.PACKAGE2_DESCRIPTOR_FILE),
+    path.join(packageVersBlobDirectory, 'package2-descriptor.json'),
     JSON.stringify(packageDescriptorJson, undefined, 2)
   );
   // Zip the Version Info and package.zip files into another zip

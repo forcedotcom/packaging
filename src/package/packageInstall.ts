@@ -17,7 +17,6 @@ import {
   PackageType,
   PackageInstallOptions,
 } from '../interfaces';
-import { consts } from '../constants';
 import SubscriberPackageVersion = PackagingSObjects.SubscriberPackageVersion;
 import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 
@@ -179,9 +178,9 @@ export async function pollStatus(
   let packageInstallRequest: PackageInstallRequest;
 
   const { pollingFrequency, pollingTimeout } = options;
-  const frequency = numberToDuration(pollingFrequency || consts.PACKAGE_INSTALL_POLL_FREQUENCY);
+  const frequency = numberToDuration(pollingFrequency || 5000);
 
-  const timeout = numberToDuration(pollingTimeout || consts.PACKAGE_INSTALL_POLL_TIMEOUT);
+  const timeout = numberToDuration(pollingTimeout || 300000);
 
   const pollingOptions: Partial<PollingClient.Options> = {
     frequency,

@@ -6,5 +6,4 @@
  */
 export * from './package';
 export * from './packageVersion';
-export * from './packageAncestry';
 export * from './subscriberPackageVersion';
