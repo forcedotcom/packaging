@@ -92,7 +92,7 @@ export async function convertPackage(
 
   const packageId = await findOrCreatePackage2(pkg, connection);
 
-  const apiVersion = pkgUtils.getSourceApiVersion(project);
+  const apiVersion = project?.getSfProjectJson()?.get('sourceApiVersion') as string;
 
   const request = await createPackageVersionCreateRequest(
     {

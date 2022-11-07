@@ -9,19 +9,15 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { assert, expect } from 'chai';
-import { Connection, SfProject } from '@salesforce/core';
-import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
+import { instantiateContext, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { SaveError } from 'jsforce';
 import { Duration } from '@salesforce/kit';
 import * as JSZIP from 'jszip';
 import {
   applyErrorAction,
   getPackageVersionNumber,
-  getInClauseItemsCount,
   massageErrorMessage,
-  queryWithInConditionChunking,
   combineSaveErrors,
-  getConfigPackageDirectory,
   zipDir,
   numberToDuration,
 } from '../../src/utils/packageUtils';
@@ -38,25 +34,6 @@ describe('packageUtils', () => {
     restoreContext($$);
   });
 
-  describe('getConfigPackageDirectory', () => {
-    it('should through if "packageDirectories" is not present or empty', async () => {
-      $$.inProject(true);
-      const project = await SfProject.resolve();
-      expect(() => getConfigPackageDirectory(project.getPackageDirectories(), 'default', true)).to.throw;
-    });
-    it('should return default package directory', async () => {
-      const result = getConfigPackageDirectory(
-        [
-          { name: 'foo', default: true, path: 'default', fullPath: 'fullPath' },
-          { name: 'bar', path: 'default', fullPath: 'fullPath' },
-        ],
-        'default',
-        true
-      );
-      expect(result).to.have.property('path', 'default');
-      expect(result).to.have.property('fullPath', 'fullPath');
-    });
-  });
   describe('getPackage2VersionNumber', () => {
     it('should return the correct version number', () => {
       const version = {
@@ -67,24 +44,6 @@ describe('packageUtils', () => {
       } as PackagingSObjects.Package2Version;
       const result = getPackageVersionNumber(version);
       expect(result).to.be.equal('1.2.3');
-    });
-  });
-  describe('getInClauseItemsCount', () => {
-    it("should return count 1 when each formatted element's length is equal to max length", () => {
-      const items = ['foo', 'bar', 'baz'];
-      while (items.length !== 0) {
-        const result = getInClauseItemsCount(items, 0, 6);
-        expect(result).to.be.equal(1);
-        items.pop();
-      }
-    });
-    it("should return count 0 when each formatted element's length is greater than max length", () => {
-      const items = ['foox', 'barx', 'bazx'];
-      while (items.length !== 0) {
-        const result = getInClauseItemsCount(items, 0, 6);
-        expect(result).to.be.equal(0);
-        items.pop();
-      }
     });
   });
   describe('applyErrorAction', () => {
@@ -107,43 +66,8 @@ describe('packageUtils', () => {
       expect(result.message).to.be.equal('Invalid package type');
     });
   });
-  describe('queryWithInConditionChunking', () => {
-    it('should run the correct query', async () => {
-      const testOrg = new MockTestOrgData();
-      await $$.stubAuths(testOrg);
-      const connection = await testOrg.getConnection();
-      const result = await queryWithInConditionChunking(
-        'select id from Package2Version where id %ID%',
-        ['foox', 'barx', 'bazx'],
-        '%ID%',
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-        connection as Connection
-      );
-      expect(result).to.be.ok;
-    });
-    it('should fail for item being too large', async () => {
-      const testOrg = new MockTestOrgData();
-      await $$.stubAuths(testOrg);
-      const connection = await testOrg.getConnection();
-      try {
-        await queryWithInConditionChunking(
-          'select id from Package2Version where id %ID%',
-          ['f'.repeat(4000), 'barx', 'bazx'],
-          '%ID%',
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-          connection as Connection
-        );
-        assert.fail('should have thrown');
-      } catch (e) {
-        expect(e.message).to.be.include('When calculating the number of items to be included in query');
-      }
-    });
-  });
   describe('getPackageVersionStrings', () => {
     it.skip('should return the correct version strings', () => {});
-  });
-  describe('getHasMetadataRemoved', () => {
-    it.skip('should return the correct value', () => {});
   });
   describe('getContainerOptions', () => {
     it.skip('should return the correct value', () => {});

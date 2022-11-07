@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import { join } from 'path';
 import { pipeline as cbPipeline } from 'stream';
 import { promisify } from 'util';
-import { Connection, Messages, NamedPackageDir, PackageDir, SfdcUrl, SfError, SfProject } from '@salesforce/core';
+import { Connection, Messages, SfdcUrl, SfError, SfProject } from '@salesforce/core';
 import { isNumber, Many, Nullable, Optional } from '@salesforce/ts-types';
 import { SaveError } from 'jsforce';
 import { Duration } from '@salesforce/kit';
@@ -42,15 +42,15 @@ const ID_REGISTRY = [
   },
 ];
 
-export type IdRegistryValue = { prefix: string; label: string };
-export type IdRegistry = {
+type IdRegistryValue = { prefix: string; label: string };
+type IdRegistry = {
   [key: string]: IdRegistryValue;
 };
 
 export const INSTALL_URL_BASE = new SfdcUrl('https://login.salesforce.com/packaging/installPackage.apexp?p0=');
 
 // https://developer.salesforce.com/docs/atlas.en-us.salesforce_app_limits_cheatsheet.meta/salesforce_app_limits_cheatsheet/salesforce_app_limits_platform_soslsoql.htm
-export const SOQL_WHERE_CLAUSE_MAX_LENGTH = 4000;
+const SOQL_WHERE_CLAUSE_MAX_LENGTH = 4000;
 
 export const POLL_INTERVAL_SECONDS = 30;
 
@@ -61,9 +61,6 @@ export const DEFAULT_PACKAGE_DIR = {
   versionNumber: '0.1.0.NEXT',
   default: true,
 };
-
-export const BY_PREFIX = ((): IdRegistry =>
-  Object.fromEntries(ID_REGISTRY.map((id) => [id.prefix, { prefix: id.prefix, label: id.label }])))();
 
 export const BY_LABEL = ((): IdRegistry =>
   Object.fromEntries(
@@ -78,9 +75,6 @@ export function validateId(idObj: Many<IdRegistryValue>, value: string): void {
       Array.isArray(idObj) ? idObj.map((e) => e.prefix).join(' or ') : idObj.prefix,
     ]);
   }
-}
-export function getSourceApiVersion(project: SfProject): string {
-  return project?.getSfProjectJson().get('sourceApiVersion') as string;
 }
 
 export function validateIdNoThrow(idObj: Many<IdRegistryValue>, value: string): IdRegistryValue | boolean {
@@ -230,27 +224,6 @@ export async function getContainerOptions(
   return new Map<string, PackageType>();
 }
 /**
- * Return the Package2Version.HasMetadataRemoved field value for the given Id (05i)
- *
- * @param packageVersionId package version ID (05i)
- * @param connection For tooling query
- */
-export async function getHasMetadataRemoved(packageVersionId: string, connection: Connection): Promise<boolean> {
-  const query = `SELECT HasMetadataRemoved FROM Package2Version WHERE Id = '${packageVersionId}'`;
-
-  const queryResult = await connection.tooling.query<Pick<PackagingSObjects.Package2Version, 'HasMetadataRemoved'>>(
-    query
-  );
-  if (!queryResult || queryResult.records === null || queryResult.records.length === 0) {
-    throw messages.createError('errorInvalidIdNoMatchingVersionId', [
-      BY_LABEL.PACKAGE_VERSION_ID.label,
-      packageVersionId,
-      BY_LABEL.PACKAGE_VERSION_ID.label,
-    ]);
-  }
-  return queryResult.records[0].HasMetadataRemoved;
-}
-/**
  * Given a list of subscriber package version IDs (04t), return the associated version strings (e.g., Major.Minor.Patch.Build)
  *
  * @return Map of subscriberPackageVersionId to versionString
@@ -303,7 +276,7 @@ export async function getPackageVersionStrings(
  * @param replaceToken A placeholder in the query's IN condition that will be replaced with the chunked items
  * @param connection For tooling query
  */
-export async function queryWithInConditionChunking<T = Record<string, unknown>>(
+async function queryWithInConditionChunking<T = Record<string, unknown>>(
   query: string,
   items: string[],
   replaceToken: string,
@@ -343,7 +316,7 @@ export async function queryWithInConditionChunking<T = Record<string, unknown>>(
  * Returns the number of items that can be included in a quoted comma-separated string (e.g., "'item1','item2'") not exceeding maxLength
  */
 // TODO: this function cannot handle a single item that is longer than maxLength - what to do, since this could be the root cause of an infinite loop?
-export function getInClauseItemsCount(items: string[], startIndex: number, maxLength: number): number {
+function getInClauseItemsCount(items: string[], startIndex: number, maxLength: number): number {
   let resultLength = 0;
   let includedCount = 0;
 
@@ -365,7 +338,7 @@ export function getInClauseItemsCount(items: string[], startIndex: number, maxLe
 /**
  * Return a version string in Major.Minor.Patch.Build format, using 0 for any empty part
  */
-export function concatVersion(
+function concatVersion(
   major: string | number,
   minor: string | number,
   patch: string | number,
@@ -382,15 +355,6 @@ export function getPackageVersionNumber(package2VersionObj: PackagingSObjects.Pa
     undefined
   );
   return version.slice(0, version.lastIndexOf('.'));
-}
-
-// TODO: replace with sfProject.getPackageDirectoryWithProperty(), still needs to be moved
-export function getConfigPackageDirectory(
-  packageDirs: NamedPackageDir[] | PackageDir[],
-  lookupProperty: string,
-  lookupValue: unknown
-): NamedPackageDir | PackageDir | undefined {
-  return packageDirs?.find((pkgDir) => pkgDir[lookupProperty] === lookupValue);
 }
 
 /**
@@ -428,13 +392,6 @@ export async function generatePackageAliasEntry(
     : `${packageName}@${packageVersionNumber}`;
 
   return [packageAlias, packageVersionId];
-}
-
-export function formatDate(date: Date): string {
-  const pad = (num: number): string => (num < 10 ? `0${num}` : `${num}`);
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(
-    date.getMinutes()
-  )}`;
 }
 
 export function combineSaveErrors(sObject: string, crudOperation: string, errors: SaveError[]): SfError {
@@ -493,7 +450,7 @@ export async function zipDir(dir: string, zipfile: string): Promise<void> {
   return;
 }
 
-export function getElapsedTime(timer: [number, number]): string {
+function getElapsedTime(timer: [number, number]): string {
   const elapsed = process.hrtime(timer);
   return (elapsed[0] * 1000 + elapsed[1] / 1000000).toFixed(3);
 }
