@@ -42,6 +42,7 @@ async function setupProject(setup: (project: SfProject) => void = () => {}) {
 describe('Package', () => {
   const $$ = instantiateContext();
   let project: SfProject;
+  const pkgId = '0Hoasdsadfasdfa';
 
   beforeEach(() => {
     stubContext($$);
@@ -78,25 +79,25 @@ describe('Package', () => {
     it('should create a new package - from alias', async () => {
       $$.inProject(true);
       project = await setupProject((p) => {
-        p.getSfProjectJson().set('packageAliases', { mypkgalias: '0Hoasdsadfasdf' });
+        p.getSfProjectJson().set('packageAliases', { mypkgalias: pkgId });
       });
       const pkg = new Package({ connection: undefined, packageAliasOrId: 'mypkgalias', project });
-      expect(pkg.getId()).to.equal('0Hoasdsadfasdf');
+      expect(pkg.getId()).to.equal(pkgId);
     });
     it('should create a new package - from 0Ho', async () => {
       $$.inProject(true);
       project = await setupProject((p) => {
-        p.getSfProjectJson().set('packageAliases', { mypkgalias: '0Hoasdsadfasdf' });
+        p.getSfProjectJson().set('packageAliases', { mypkgalias: pkgId });
       });
-      const pkg = new Package({ connection: undefined, packageAliasOrId: '0Hoasdsadfasdf', project });
-      expect(pkg.getId()).to.equal('0Hoasdsadfasdf');
+      const pkg = new Package({ connection: undefined, packageAliasOrId: pkgId, project });
+      expect(pkg.getId()).to.equal(pkgId);
     });
     it('should not create a new package - from 04t', async () => {
       $$.inProject(true);
       project = await setupProject((p) => {
         p.getSfProjectJson().set('packageAliases', {
           'mypkgalias@1.0.0': '04tasdsadfasdf',
-          mypkgalias: '0Hoasdsadfasdf',
+          mypkgalias: pkgId,
         });
       });
 
@@ -115,19 +116,19 @@ describe('Package', () => {
     it('should create a new package - from 0Ho', async () => {
       $$.inProject(true);
       project = await setupProject((p) => {
-        p.getSfProjectJson().set('packageAliases', { mypkgalias: '0Hoasdsadfasdf' });
+        p.getSfProjectJson().set('packageAliases', { mypkgalias: pkgId });
       });
       const conn = {
         tooling: {
           sobject: () => ({
-            retrieve: () => ({ Id: '0Hoasdsadfasdf', ContainerOptions: 'Unlocked' }),
+            retrieve: () => ({ Id: pkgId, ContainerOptions: 'Unlocked' }),
           }),
         },
       } as unknown as Connection;
 
-      const pkg = new Package({ connection: conn, packageAliasOrId: '0Hoasdsadfasdf', project });
+      const pkg = new Package({ connection: conn, packageAliasOrId: pkgId, project });
       expect(pkg['packageData']).to.not.be.ok;
-      expect(pkg.getId()).to.equal('0Hoasdsadfasdf');
+      expect(pkg.getId()).to.equal(pkgId);
       expect(await pkg.getType()).to.equal('Unlocked');
       expect(pkg['packageData']).to.be.ok;
     });

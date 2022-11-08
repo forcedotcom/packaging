@@ -8,7 +8,7 @@
 import { Logger, Messages } from '@salesforce/core';
 import { QueryResult, Schema } from 'jsforce';
 import { isNumber } from '@salesforce/ts-types';
-import { BY_LABEL, validateId } from '../utils';
+import { BY_LABEL, validateId } from '../utils/packageUtils';
 import { PackageVersionListResult, PackageVersionListOptions, ListPackageVersionOptions } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);

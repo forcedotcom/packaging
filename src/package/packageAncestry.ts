@@ -20,9 +20,9 @@ import {
   PackageType,
 } from '../interfaces';
 import * as pkgUtils from '../utils/packageUtils';
-import { VersionNumber } from '../utils';
 import { PackageVersion } from './packageVersion';
 import { Package } from './package';
+import { VersionNumber } from './versionNumber';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_ancestry');
@@ -204,7 +204,8 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
 
   private async getRoots(): Promise<PackageAncestryNode[]> {
     let roots: PackageAncestryNode[] = [];
-    this.#requestedPackageId = pkgUtils.getPackageIdFromAlias(this.options.packageId, this.options.project);
+    this.#requestedPackageId =
+      this.options.project.getPackageIdFromAlias(this.options.packageId) ?? this.options.packageId;
     switch (this.requestedPackageId.slice(0, 3)) {
       case '0Ho':
         pkgUtils.validateId(pkgUtils.BY_LABEL.PACKAGE_ID, this.requestedPackageId);

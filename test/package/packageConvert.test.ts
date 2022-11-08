@@ -11,14 +11,12 @@ import { expect } from 'chai';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { Connection, Lifecycle } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
-
 import {
   convertPackage,
   createPackageVersionCreateRequest,
   findOrCreatePackage2,
 } from '../../src/package/packageConvert';
 import { PackageEvents } from '../../src/interfaces';
-import * as pkgUtils from '../../src/utils/packageUtils';
 
 describe('packageConvert', () => {
   const $$ = instantiateContext();
@@ -168,9 +166,6 @@ describe('packageConvert', () => {
     const conn = await testOrg.getConnection();
     // @ts-ignore
     $$.SANDBOX.stub(conn.tooling, 'query').resolves({ records: [{ Id: '0Ho3i000000Gmj6YYY' }] });
-
-    // @ts-ignore
-    $$.SANDBOX.stub(pkgUtils, 'getSourceApiVersion').returns('54.0');
 
     // @ts-ignore
     $$.SANDBOX.stub(conn.tooling, 'create').resolves({ success: undefined, errors: [new Error('server error')] });

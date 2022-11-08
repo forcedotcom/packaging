@@ -8,7 +8,6 @@ import * as os from 'os';
 import * as path from 'path';
 import { expect } from 'chai';
 import { readJSON } from 'fs-extra';
-
 import { TestSession, execCmd } from '@salesforce/cli-plugins-testkit';
 import { Duration, sleep } from '@salesforce/kit';
 import { ProjectJson } from '@salesforce/core/lib/sfProject';
@@ -21,17 +20,14 @@ import {
   AncestryRepresentationProducer,
   AncestryRepresentationProducerOptions,
   PackagingSObjects,
-  packageInstalledList,
   Package,
   PackageVersion,
-  AncestryJsonProducer,
-  PackageAncestry,
-  AncestryTreeProducer,
-  VersionNumber,
   PackageVersionEvents,
 } from '../../src/exported';
 import { PackageEvents } from '../../src/interfaces';
-import { SubscriberPackageVersion } from '../../src/package/subscriberPackageVersion';
+import { SubscriberPackageVersion } from '../../src/package';
+import { AncestryJsonProducer, AncestryTreeProducer, PackageAncestry } from '../../src/package/packageAncestry';
+import { VersionNumber } from '../../src/package/versionNumber';
 
 let session: TestSession;
 
@@ -423,7 +419,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
 
     it('packageInstalledList returns the correct information', async () => {
       const connection = scratchOrg.getConnection();
-      const result = await packageInstalledList(connection);
+      const result = await SubscriberPackageVersion.installedList(connection);
       const foundRecord = result.filter((item) => item.SubscriberPackageVersion.Id === subscriberPkgVersionId);
 
       expect(result).to.have.length.at.least(1);
@@ -496,7 +492,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
     });
 
     it('gets zero results from packageInstalledList', async () => {
-      const result = await packageInstalledList(scratchOrg.getConnection());
+      const result = await SubscriberPackageVersion.installedList(scratchOrg.getConnection());
       expect(result).to.have.length(0);
     });
   });

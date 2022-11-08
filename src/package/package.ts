@@ -17,19 +17,12 @@ import {
   PackageVersionListResult,
   PackagingSObjects,
 } from '../interfaces';
-import {
-  applyErrorAction,
-  BY_LABEL,
-  getPackageAliasesFromId,
-  getPackageIdFromAlias,
-  massageErrorMessage,
-  validateId,
-} from '../utils';
+import { applyErrorAction, BY_LABEL, massageErrorMessage, validateId } from '../utils/packageUtils';
 import { createPackage } from './packageCreate';
-
 import { convertPackage } from './packageConvert';
 import { listPackageVersions } from './packageVersionList';
 import { deletePackage } from './packageDelete';
+import { PackageAncestry } from './packageAncestry';
 
 const packagePrefixes = {
   PackageId: '0Ho',
@@ -72,7 +65,8 @@ export class Package {
   public constructor(private options: PackageOptions) {
     let packageId = this.options.packageAliasOrId;
     if (!packageId.startsWith(packagePrefixes.PackageId)) {
-      packageId = getPackageIdFromAlias(this.options.packageAliasOrId, this.options.project);
+      packageId =
+        this.options.project.getPackageIdFromAlias(this.options.packageAliasOrId) ?? this.options.packageAliasOrId;
       if (packageId === this.options.packageAliasOrId) {
         throw messages.createError('packageAliasNotFound', [this.options.packageAliasOrId]);
       }
@@ -128,7 +122,7 @@ export class Package {
   ): Promise<PackageVersionListResult[]> {
     // resolve/verify packages
     const packages = options?.packages?.map((pkg) => {
-      const id = getPackageIdFromAlias(pkg, project);
+      const id = project.getPackageIdFromAlias(pkg) ?? pkg;
 
       // validate ID
       if (id.startsWith('0Ho')) {
@@ -142,6 +136,25 @@ export class Package {
     opts.packages = packages || [];
 
     return (await listPackageVersions({ ...opts, ...{ connection } })).records;
+  }
+
+  /**
+   * create a PackageAncestry instance
+   *
+   * @param packageId to get version information for
+   * @param project SfProject instance
+   * @param connection Hub Org Connection
+   */
+  public static async getAncestry(
+    packageId: string,
+    project: SfProject,
+    connection: Connection
+  ): Promise<PackageAncestry> {
+    return PackageAncestry.create({
+      packageId,
+      project,
+      connection,
+    });
   }
 
   /**
@@ -250,7 +263,7 @@ export class Package {
   }
 
   private verifyAliasForId(): void {
-    if (getPackageAliasesFromId(this.packageId, this.options.project).length === 0) {
+    if (this.options.project.getAliasesFromPackageId(this.packageId).length === 0) {
       throw new SfError(messages.getMessage('couldNotFindAliasForId', [this.packageId]));
     }
   }

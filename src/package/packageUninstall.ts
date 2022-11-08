@@ -8,7 +8,7 @@ import * as os from 'os';
 import { Connection, Lifecycle, Messages, PollingClient, SfError } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import { PackageEvents, PackagingSObjects } from '../interfaces';
-import { applyErrorAction, massageErrorMessage } from '../utils';
+import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_uninstall');
