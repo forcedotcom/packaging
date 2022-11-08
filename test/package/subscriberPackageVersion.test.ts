@@ -9,6 +9,7 @@ import * as fs from 'fs';
 import { Connection, SfProject } from '@salesforce/core';
 import { expect } from 'chai';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
+import { Optional } from '@salesforce/ts-types';
 import { SubscriberPackageVersion } from '../../src/package';
 import { PackagingSObjects } from '../../src/interfaces';
 
@@ -73,7 +74,7 @@ async function setupProject(setup: (project: SfProject) => void = () => {}) {
 
 describe('subscriberPackageVersion', () => {
   const testOrg = new MockTestOrgData();
-  const password = null;
+  const password: Optional<string> = null;
   let connection: Connection;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -102,7 +103,7 @@ describe('subscriberPackageVersion', () => {
   });
   it('should instantiate SPV using 04t alias', async () => {
     $$.inProject(true);
-    setupProject((project) => {
+    await setupProject((project) => {
       project.getSfProjectJson().set('packageAliases', { oFourT });
     });
     connection = await testOrg.getConnection();
@@ -122,7 +123,7 @@ describe('subscriberPackageVersion', () => {
   });
   it('should not instantiate SPV using 05i alias', async () => {
     $$.inProject(true);
-    setupProject((project) => {
+    await setupProject((project) => {
       project.getSfProjectJson().set('packageAliases', { oFiveI: '05ixxxxxxxxxxxxxxx' });
     });
     connection = await testOrg.getConnection();
@@ -162,8 +163,6 @@ describe('subscriberPackageVersion', () => {
     }
   });
   describe('getQueryFields', () => {
-    let connection: Connection;
-
     const id = oFourT;
     beforeEach(async () => {
       connection = await testOrg.getConnection();

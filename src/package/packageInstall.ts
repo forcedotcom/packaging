@@ -9,7 +9,7 @@ import { Connection, Lifecycle, Logger, Messages, PollingClient, SfError, Status
 import { isString } from '@salesforce/ts-types';
 import { QueryResult } from 'jsforce';
 import { Duration } from '@salesforce/kit';
-import { escapeInstallationKey, numberToDuration } from '../utils';
+import { escapeInstallationKey, numberToDuration } from '../utils/packageUtils';
 import {
   PackagingSObjects,
   PackageInstallCreateRequest,
@@ -17,7 +17,6 @@ import {
   PackageType,
   PackageInstallOptions,
 } from '../interfaces';
-import { consts } from '../constants';
 import SubscriberPackageVersion = PackagingSObjects.SubscriberPackageVersion;
 import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 
@@ -163,7 +162,7 @@ export async function waitForPublish(
     // if polling timed out
     const error = installMsgs.createError('subscriberPackageVersionNotPublished');
     error.setData(queryResult?.records[0]);
-    if (error.stack && e.stack) {
+    if (error.stack && (e as Error).stack) {
       // append the original stack to this new error
       error.stack += `\nDUE TO:\n${(e as Error).stack}`;
     }
@@ -179,9 +178,9 @@ export async function pollStatus(
   let packageInstallRequest: PackageInstallRequest;
 
   const { pollingFrequency, pollingTimeout } = options;
-  const frequency = numberToDuration(pollingFrequency || consts.PACKAGE_INSTALL_POLL_FREQUENCY);
+  const frequency = numberToDuration(pollingFrequency || 5000);
 
-  const timeout = numberToDuration(pollingTimeout || consts.PACKAGE_INSTALL_POLL_TIMEOUT);
+  const timeout = numberToDuration(pollingTimeout || 300000);
 
   const pollingOptions: Partial<PollingClient.Options> = {
     frequency,
@@ -209,7 +208,7 @@ export async function pollStatus(
     const errMsg = e instanceof Error ? e.message : isString(e) ? e : 'polling timed out';
     const error = new SfError(errMsg, 'PackageInstallTimeout');
     error.setData(packageInstallRequest);
-    if (error.stack && e.stack) {
+    if (error.stack && (e as Error).stack) {
       // add the original stack to this new error
       error.stack += `\nDUE TO:\n${(e as Error).stack}`;
     }

@@ -9,9 +9,9 @@ import { expect } from 'chai';
 import { Connection, Lifecycle, Messages } from '@salesforce/core';
 import { QueryResult, SaveResult } from 'jsforce';
 import { Duration } from '@salesforce/kit';
-import { isErrorPackageNotAvailable, isErrorFromSPVQueryRestriction } from '../../src/package';
+import { isErrorFromSPVQueryRestriction, isErrorPackageNotAvailable } from '../../src/package/packageInstall';
 import { PackagingSObjects, PackageInstallCreateRequest, PackageInstallOptions } from '../../src/interfaces';
-import { SubscriberPackageVersion } from '../../src/package/subscriberPackageVersion';
+import { SubscriberPackageVersion } from '../../src/package';
 import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 
 const myPackageVersion04t = '04t6A0000000X0UQAU';
@@ -110,13 +110,12 @@ describe('Package Install', () => {
     ],
   };
 
-  const stubGetPackageTypeBy04tQuery = (type = 'Unlocked'): sinon.SinonStub => {
-    return $$.SANDBOX.stub(connection.tooling, 'query').resolves({
+  const stubGetPackageTypeBy04tQuery = (type = 'Unlocked'): sinon.SinonStub =>
+    $$.SANDBOX.stub(connection.tooling, 'query').resolves({
       done: true,
       totalSize: 1,
       records: [{ Package2ContainerOptions: type }],
     });
-  };
 
   beforeEach(async () => {
     stubContext($$);

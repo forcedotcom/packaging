@@ -5,11 +5,19 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import * as os from 'os';
-
-import { Connection, Messages, NamedPackageDir, PackageDir, SfdcUrl, SfError, SfProject } from '@salesforce/core';
+import * as fs from 'fs';
+import { join } from 'path';
+import { pipeline as cbPipeline } from 'stream';
+import { promisify } from 'util';
+import { randomBytes } from 'crypto';
+import * as util from 'util';
+import { Connection, Messages, SfdcUrl, SfError, SfProject } from '@salesforce/core';
 import { isNumber, Many, Nullable, Optional } from '@salesforce/ts-types';
 import { SaveError } from 'jsforce';
 import { Duration } from '@salesforce/kit';
+import { Logger } from '@salesforce/core';
+import * as globby from 'globby';
+import * as JSZIP from 'jszip';
 import { PackageType, PackagingSObjects } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
@@ -44,7 +52,7 @@ export type IdRegistry = {
 export const INSTALL_URL_BASE = new SfdcUrl('https://login.salesforce.com/packaging/installPackage.apexp?p0=');
 
 // https://developer.salesforce.com/docs/atlas.en-us.salesforce_app_limits_cheatsheet.meta/salesforce_app_limits_cheatsheet/salesforce_app_limits_platform_soslsoql.htm
-export const SOQL_WHERE_CLAUSE_MAX_LENGTH = 4000;
+const SOQL_WHERE_CLAUSE_MAX_LENGTH = 4000;
 
 export const POLL_INTERVAL_SECONDS = 30;
 
@@ -56,15 +64,32 @@ export const DEFAULT_PACKAGE_DIR = {
   default: true,
 };
 
-export const BY_PREFIX = ((): IdRegistry => {
-  return Object.fromEntries(ID_REGISTRY.map((id) => [id.prefix, { prefix: id.prefix, label: id.label }]));
-})();
-
-export const BY_LABEL = ((): IdRegistry => {
-  return Object.fromEntries(
+export const BY_LABEL = ((): IdRegistry =>
+  Object.fromEntries(
     ID_REGISTRY.map((id) => [id.label.replace(/ /g, '_').toUpperCase(), { prefix: id.prefix, label: id.label }])
-  );
-})();
+  ))();
+
+/**
+ * A function to generate a unique id and return it in the context of a template, if supplied.
+ *
+ * A template is a string that can contain `${%s}` to be replaced with a unique id.
+ * If the template contains the "%s" placeholder, it will be replaced with the unique id otherwise the id will be appended to the template.
+ *
+ * @param options an object with the following properties:
+ * - template: a template string.
+ * - length: the length of the unique id as presented in hexadecimal.
+ */
+export function uniqid(options?: { template?: string; length?: number }): string {
+  const uniqueString = randomBytes(Math.ceil((options?.length ?? 32) / 2.0))
+    .toString('hex')
+    .slice(0, options?.length ?? 32);
+  if (!options?.template) {
+    return uniqueString;
+  }
+  return options.template.includes('%s')
+    ? util.format(options.template, uniqueString)
+    : `${options.template}${uniqueString}`;
+}
 
 export function validateId(idObj: Many<IdRegistryValue>, value: string): void {
   if (!validateIdNoThrow(idObj, value)) {
@@ -76,12 +101,7 @@ export function validateId(idObj: Many<IdRegistryValue>, value: string): void {
   }
 }
 
-export function getSourceApiVersion(project: SfProject): string {
-  const apiVersion = project.getSfProjectJson().get('sourceApiVersion') as string;
-  return apiVersion;
-}
-
-export function validateIdNoThrow(idObj: Many<IdRegistryValue>, value): IdRegistryValue | false {
+export function validateIdNoThrow(idObj: Many<IdRegistryValue>, value: string): IdRegistryValue | boolean {
   if (!value || (value.length !== 15 && value.length !== 18)) {
     return false;
   }
@@ -228,27 +248,6 @@ export async function getContainerOptions(
   return new Map<string, PackageType>();
 }
 /**
- * Return the Package2Version.HasMetadataRemoved field value for the given Id (05i)
- *
- * @param packageVersionId package version ID (05i)
- * @param connection For tooling query
- */
-export async function getHasMetadataRemoved(packageVersionId: string, connection: Connection): Promise<boolean> {
-  const query = `SELECT HasMetadataRemoved FROM Package2Version WHERE Id = '${packageVersionId}'`;
-
-  const queryResult = await connection.tooling.query<Pick<PackagingSObjects.Package2Version, 'HasMetadataRemoved'>>(
-    query
-  );
-  if (!queryResult || queryResult.records === null || queryResult.records.length === 0) {
-    throw messages.createError('errorInvalidIdNoMatchingVersionId', [
-      BY_LABEL.PACKAGE_VERSION_ID.label,
-      packageVersionId,
-      BY_LABEL.PACKAGE_VERSION_ID.label,
-    ]);
-  }
-  return queryResult.records[0].HasMetadataRemoved;
-}
-/**
  * Given a list of subscriber package version IDs (04t), return the associated version strings (e.g., Major.Minor.Patch.Build)
  *
  * @return Map of subscriberPackageVersionId to versionString
@@ -301,7 +300,7 @@ export async function getPackageVersionStrings(
  * @param replaceToken A placeholder in the query's IN condition that will be replaced with the chunked items
  * @param connection For tooling query
  */
-export async function queryWithInConditionChunking<T = Record<string, unknown>>(
+async function queryWithInConditionChunking<T = Record<string, unknown>>(
   query: string,
   items: string[],
   replaceToken: string,
@@ -328,6 +327,7 @@ export async function queryWithInConditionChunking<T = Record<string, unknown>>(
     }
     const itemsStr = `${items.slice(itemsQueried, itemsQueried + chunkCount).join("','")}`;
     const queryChunk = query.replace(replaceToken, itemsStr);
+    // eslint-disable-next-line no-await-in-loop
     const result = await connection.tooling.query<T>(queryChunk);
     if (result && result.records.length > 0) {
       records = records.concat(result.records);
@@ -340,7 +340,7 @@ export async function queryWithInConditionChunking<T = Record<string, unknown>>(
  * Returns the number of items that can be included in a quoted comma-separated string (e.g., "'item1','item2'") not exceeding maxLength
  */
 // TODO: this function cannot handle a single item that is longer than maxLength - what to do, since this could be the root cause of an infinite loop?
-export function getInClauseItemsCount(items: string[], startIndex: number, maxLength: number): number {
+function getInClauseItemsCount(items: string[], startIndex: number, maxLength: number): number {
   let resultLength = 0;
   let includedCount = 0;
 
@@ -362,7 +362,7 @@ export function getInClauseItemsCount(items: string[], startIndex: number, maxLe
 /**
  * Return a version string in Major.Minor.Patch.Build format, using 0 for any empty part
  */
-export function concatVersion(
+function concatVersion(
   major: string | number,
   minor: string | number,
   patch: string | number,
@@ -379,43 +379,6 @@ export function getPackageVersionNumber(package2VersionObj: PackagingSObjects.Pa
     undefined
   );
   return version.slice(0, version.lastIndexOf('.'));
-}
-
-// TODO: replace with sfProject.getPackageDirectoryWithProperty()
-export function getConfigPackageDirectory(
-  packageDirs: NamedPackageDir[] | PackageDir[],
-  lookupProperty: string,
-  lookupValue: unknown
-): NamedPackageDir | PackageDir | undefined {
-  return packageDirs?.find((pkgDir) => pkgDir[lookupProperty] === lookupValue);
-}
-/**
- * Given a packageAlias, attempt to return the associated id from the config
- *
- * @param packageAlias string representing a package alias
- * @param project for obtaining the project config
- * @returns the associated id or the arg given.
- */
-// TODO: replace with SfProject.getPackageIdFromAlias()
-export function getPackageIdFromAlias(packageAlias: string, project: SfProject): string {
-  const packageAliases = project.getSfProjectJson().getContents().packageAliases || {};
-  // return alias if it exists, otherwise return what was passed in
-  return packageAliases[packageAlias] || packageAlias;
-}
-/**
- * Given a package id, attempt to return the associated aliases from the config
- *
- * @param packageId string representing a package id
- * @param project for obtaining the project config
- * @returns an array of alias for the given id.
- */
-// TODO: replace with SfProject.getAliasesFromPackageId()
-export function getPackageAliasesFromId(packageId: string, project: SfProject): string[] {
-  const packageAliases = project?.getSfProjectJson().getContents().packageAliases || {};
-  // check for a matching alias
-  return Object.entries(packageAliases)
-    .filter((alias) => alias[1] === packageId)
-    .map((alias) => alias[0]);
 }
 
 /**
@@ -438,7 +401,7 @@ export async function generatePackageAliasEntry(
   branch: string,
   packageId: string
 ): Promise<[string, string]> {
-  const aliasForPackageId = getPackageAliasesFromId(packageId, project);
+  const aliasForPackageId = project.getAliasesFromPackageId(packageId);
   let packageName: Optional<string>;
   if (aliasForPackageId?.length === 0) {
     const query = `SELECT Name FROM Package2 WHERE Id = '${packageId}'`;
@@ -453,15 +416,6 @@ export async function generatePackageAliasEntry(
     : `${packageName}@${packageVersionNumber}`;
 
   return [packageAlias, packageVersionId];
-}
-
-export function formatDate(date: Date): string {
-  const pad = (num: number): string => {
-    return num < 10 ? `0${num}` : `${num}`;
-  };
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(
-    date.getMinutes()
-  )}`;
 }
 
 export function combineSaveErrors(sObject: string, crudOperation: string, errors: SaveError[]): SfError {
@@ -483,4 +437,56 @@ export function numberToDuration(
   unit: Duration.Unit = Duration.Unit.MILLISECONDS
 ): Duration {
   return isNumber(duration) ? new Duration(duration, unit) : duration;
+}
+
+const pipeline = promisify(cbPipeline);
+
+/**
+ * Zips directory to given zipfile.
+ *
+ * https://github.com/archiverjs/node-archiver
+ *
+ * @param dir to zip
+ * @param zipfile
+ */
+export async function zipDir(dir: string, zipfile: string): Promise<void> {
+  const logger = Logger.childFromRoot('srcDevUtils#zipDir');
+
+  const timer = process.hrtime();
+  const globbyResult: string[] = await globby('**/*', { expandDirectories: true, cwd: dir });
+  const zip = new JSZIP();
+  // add files tp zip
+  for (const file of globbyResult) {
+    zip.file(file, fs.readFileSync(join(dir, file)));
+  }
+  // write zip to file
+  const zipStream = zip.generateNodeStream({
+    type: 'nodebuffer',
+    streamFiles: true,
+    compression: 'DEFLATE',
+    compressionOptions: {
+      level: 3,
+    },
+  });
+  await pipeline(zipStream, fs.createWriteStream(zipfile));
+  const stat = fs.statSync(zipfile);
+  logger.debug(`${stat.size} bytes written to ${zipfile} in ${getElapsedTime(timer)}ms`);
+  return;
+}
+
+function getElapsedTime(timer: [number, number]): string {
+  const elapsed = process.hrtime(timer);
+  return (elapsed[0] * 1000 + elapsed[1] / 1000000).toFixed(3);
+}
+
+export function copyDir(src: string, dest: string): void {
+  fs.mkdirSync(dest, { recursive: true });
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+
+  entries.map((entry) => {
+    const srcPath = join(src, entry.name);
+    const destPath = join(dest, entry.name);
+
+    return entry.isDirectory() ? copyDir(srcPath, destPath) : fs.copyFileSync(srcPath, destPath);
+  });
 }

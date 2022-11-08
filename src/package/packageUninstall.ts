@@ -8,7 +8,7 @@ import * as os from 'os';
 import { Connection, Lifecycle, Messages, PollingClient, SfError } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import { PackageEvents, PackagingSObjects } from '../interfaces';
-import { applyErrorAction, massageErrorMessage } from '../utils';
+import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_uninstall');
@@ -29,7 +29,7 @@ export async function pollUninstall(
   frequency: Duration,
   wait: Duration
 ): Promise<UninstallResult> {
-  const poll = async (id: string, conn: Connection): Promise<{ completed: boolean; payload: UninstallResult }> => {
+  const poll = async (id: string): Promise<{ completed: boolean; payload: UninstallResult }> => {
     const uninstallRequest = (await conn.tooling
       .sobject('SubscriberPackageVersionUninstallRequest')
       .retrieve(id)) as UninstallResult;
@@ -56,7 +56,7 @@ export async function pollUninstall(
     }
   };
   const pollingClient = await PollingClient.create({
-    poll: () => poll(uninstallRequestId, conn),
+    poll: () => poll(uninstallRequestId),
     frequency,
     timeout: wait,
   });
@@ -79,7 +79,7 @@ export async function uninstallPackage(
         .sobject('SubscriberPackageVersionUninstallRequest')
         .retrieve(uninstallRequest.id)) as UninstallResult;
     } else {
-      return pollUninstall(uninstallRequest.id, conn, frequency, wait);
+      return await pollUninstall(uninstallRequest.id, conn, frequency, wait);
     }
   } catch (err) {
     throw applyErrorAction(massageErrorMessage(err as Error));

@@ -8,7 +8,6 @@ import * as os from 'os';
 import * as path from 'path';
 import { expect } from 'chai';
 import { readJSON } from 'fs-extra';
-
 import { TestSession, execCmd } from '@salesforce/cli-plugins-testkit';
 import { Duration, sleep } from '@salesforce/kit';
 import { ProjectJson } from '@salesforce/core/lib/sfProject';
@@ -21,17 +20,14 @@ import {
   AncestryRepresentationProducer,
   AncestryRepresentationProducerOptions,
   PackagingSObjects,
-  packageInstalledList,
   Package,
   PackageVersion,
-  AncestryJsonProducer,
-  PackageAncestry,
-  AncestryTreeProducer,
-  VersionNumber,
   PackageVersionEvents,
 } from '../../src/exported';
 import { PackageEvents } from '../../src/interfaces';
-import { SubscriberPackageVersion } from '../../src/package/subscriberPackageVersion';
+import { SubscriberPackageVersion } from '../../src/package';
+import { AncestryJsonProducer, AncestryTreeProducer, PackageAncestry } from '../../src/package/packageAncestry';
+import { VersionNumber } from '../../src/package/versionNumber';
 
 let session: TestSession;
 
@@ -62,7 +58,7 @@ const SUB_ORG_ALIAS = 'pk2TargetOrg';
 const WAIT_INTERVAL_MS = 8000;
 const INSTALLATION_KEY = '123456';
 
-describe('Integration tests for @salesforce/packaging library', function () {
+describe('Integration tests for @salesforce/packaging library', () => {
   let pkgId = ''; // 0Ho
   let pkgCreateVersionRequestId = ''; // 08c
   let subscriberPkgVersionId = ''; // 04t
@@ -119,6 +115,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
       expect(pkgId).to.match(new RegExp(PKG2_ID_PREFIX));
 
       // verify update to project.json packageDiretory using fs
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       const projectFile = (await readJSON(path.join(session.project.dir, 'sfdx-project.json'))) as ProjectJson;
       expect(projectFile).to.have.property('packageDirectories').with.length(1);
       expect(projectFile.packageDirectories[0]).to.include.keys(['package', 'versionName', 'versionNumber']);
@@ -249,6 +246,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
       );
 
       // TODO: PVC command writes new version to sfdx-project.json
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       const projectFile = (await readJSON(path.join(session.project.dir, 'sfdx-project.json'))) as ProjectJson;
 
       // eslint-disable-next-line no-console
@@ -421,7 +419,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
 
     it('packageInstalledList returns the correct information', async () => {
       const connection = scratchOrg.getConnection();
-      const result = await packageInstalledList(connection);
+      const result = await SubscriberPackageVersion.installedList(connection);
       const foundRecord = result.filter((item) => item.SubscriberPackageVersion.Id === subscriberPkgVersionId);
 
       expect(result).to.have.length.at.least(1);
@@ -494,7 +492,7 @@ describe('Integration tests for @salesforce/packaging library', function () {
     });
 
     it('gets zero results from packageInstalledList', async () => {
-      const result = await packageInstalledList(scratchOrg.getConnection());
+      const result = await SubscriberPackageVersion.installedList(scratchOrg.getConnection());
       expect(result).to.have.length(0);
     });
   });
@@ -556,9 +554,9 @@ describe('ancestry tests', () => {
       pkgName = pvRecords[0].Package2.Name;
     }
     pvRecords = pvRecords.filter((pv) => pv.Package2.Name === pkgName);
-    versions = pvRecords.map((pv) => {
-      return new VersionNumber(pv.MajorVersion, pv.MinorVersion, pv.PatchVersion, pv.BuildNumber);
-    });
+    versions = pvRecords.map(
+      (pv) => new VersionNumber(pv.MajorVersion, pv.MinorVersion, pv.PatchVersion, pv.BuildNumber)
+    );
     sortedVersions = [...versions].sort((a, b) => a.compareTo(b));
     project = await SfProject.resolve();
     const pjson = project.getSfProjectJson();
@@ -573,7 +571,7 @@ describe('ancestry tests', () => {
         pv.SubscriberPackageVersionId,
       ]),
       [pkgName, pvRecords[0].Package2Id],
-    ]);
+    ]) as { [alias: string]: string };
     pjson.set('packageAliases', aliases);
     pjson.set('namespace', pvRecords[0].Package2.NamespacePrefix);
     pjson.writeSync();
@@ -589,7 +587,7 @@ describe('ancestry tests', () => {
   it('should produce a json representation of the ancestor tree from package name (0Ho)', async () => {
     const pa = await PackageAncestry.create({ packageId: pkgName, project, connection: devHubOrg.getConnection() });
     expect(pa).to.be.ok;
-    const jsonProducer = await pa.getRepresentationProducer(
+    const jsonProducer = pa.getRepresentationProducer(
       (opts: AncestryRepresentationProducerOptions) => new AncestryJsonProducer(opts),
       undefined
     );
@@ -607,9 +605,12 @@ describe('ancestry tests', () => {
         super(options);
       }
     }
-    const treeProducer = await pa.getRepresentationProducer(
+    const treeProducer = pa.getRepresentationProducer(
       (opts: AncestryRepresentationProducerOptions) =>
-        new TestAncestryTreeProducer({ ...opts, logger: (text) => (TestAncestryTreeProducer.treeAsText = text) }),
+        new TestAncestryTreeProducer({
+          ...opts,
+          logger: (text: string) => (TestAncestryTreeProducer.treeAsText = text),
+        }),
       undefined
     );
     expect(treeProducer).to.be.ok;
@@ -626,11 +627,11 @@ describe('ancestry tests', () => {
         super(options);
       }
     }
-    const treeProducer = await pa.getRepresentationProducer(
+    const treeProducer = pa.getRepresentationProducer(
       (opts: AncestryRepresentationProducerOptions) =>
         new TestAncestryTreeProducer({
           ...opts,
-          logger: (text) => (TestAncestryTreeProducer.treeAsText = text),
+          logger: (text: string) => (TestAncestryTreeProducer.treeAsText = text),
           verbose: true,
         }),
       undefined
@@ -645,11 +646,11 @@ describe('ancestry tests', () => {
     expect(pa).to.be.ok;
     const graph = pa.getAncestryGraph();
     const root = graph.findNode((n) => graph.inDegree(n) === 0);
-    const subIds: string[] = Object.values(project.getSfProjectJson().get('packageAliases')).filter((id) =>
+    const subIds: string[] = Object.values(project.getSfProjectJson().get('packageAliases')).filter((id: string) =>
       id.startsWith('04t')
-    );
+    ) as string[];
     const leaf = subIds[subIds.length - 1];
-    const pathsToRoots = await pa.getLeafPathToRoot(leaf);
+    const pathsToRoots = pa.getLeafPathToRoot(leaf);
     expect(pathsToRoots).to.be.ok;
     expect(pathsToRoots).to.have.lengthOf(1);
     expect(pathsToRoots[0][0].SubscriberPackageVersionId).to.equal(leaf);

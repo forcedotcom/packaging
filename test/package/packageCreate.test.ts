@@ -72,8 +72,8 @@ describe('packageCreate', () => {
     });
     it('should return a valid request for a namespace', async () => {
       $$.inProject(true);
-      const project = await setupProject((project) => {
-        project.getSfProjectJson().set('namespace', 'testNamespace');
+      const project = await setupProject((proj) => {
+        proj.getSfProjectJson().set('namespace', 'testNamespace');
       });
       const request = createPackageRequestFromContext(project, {
         name: 'test',
@@ -95,8 +95,8 @@ describe('packageCreate', () => {
     });
     it('should return a valid no namespace request for a namespaced package', async () => {
       $$.inProject(true);
-      const project = await setupProject((project) => {
-        project.getSfProjectJson().set('namespace', 'testNamespace');
+      const project = await setupProject((proj) => {
+        proj.getSfProjectJson().set('namespace', 'testNamespace');
       });
       const request = createPackageRequestFromContext(project, {
         name: 'test',
@@ -119,8 +119,8 @@ describe('packageCreate', () => {
     describe('createPackageDirEntry', () => {
       it('should return a valid new package directory entry - no existing entries', async () => {
         $$.inProject(true);
-        const project = await setupProject((project) => {
-          project.getSfProjectJson().set('packageDirectories', []);
+        const project = await setupProject((proj) => {
+          proj.getSfProjectJson().set('packageDirectories', []);
         });
 
         const packageDirEntry = createPackageDirEntry(project, {
@@ -166,14 +166,14 @@ describe('packageCreate', () => {
       });
       it('should return a valid modified package directory entry', async () => {
         $$.inProject(true);
-        const project = await setupProject((project) => {
-          const packageDirectories = project.getSfProjectJson().getContents().packageDirectories;
+        const project = await setupProject((proj) => {
+          const packageDirectories = proj.getSfProjectJson().getContents().packageDirectories;
           packageDirectories.push({
             path: 'test/path',
             versionName: 'ver 0.1',
             versionNumber: '0.1.0.NEXT',
           });
-          project.getSfProjectJson().set('packageDirectories', packageDirectories);
+          proj.getSfProjectJson().set('packageDirectories', packageDirectories);
         });
         const packageDirEntry = createPackageDirEntry(project, {
           name: 'test-01',

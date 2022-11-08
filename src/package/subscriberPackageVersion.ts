@@ -5,25 +5,21 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { Connection, Messages, SfError, sfdc, Logger, SfProject } from '@salesforce/core';
+import { Connection, Logger, Messages, sfdc, SfError, SfProject } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import { Optional } from '@salesforce/ts-types';
 import {
+  InstalledPackages,
   PackageInstallCreateRequest,
   PackageInstallOptions,
   PackageType,
   PackagingSObjects,
   SubscriberPackageVersionOptions,
 } from '../interfaces';
-import {
-  applyErrorAction,
-  escapeInstallationKey,
-  massageErrorMessage,
-  numberToDuration,
-  VersionNumber,
-} from '../utils';
+import { applyErrorAction, escapeInstallationKey, massageErrorMessage, numberToDuration } from '../utils/packageUtils';
 import { createPackageInstallRequest, getStatus, pollStatus, waitForPublish } from './packageInstall';
 import { getUninstallErrors, uninstallPackage } from './packageUninstall';
+import { VersionNumber } from './versionNumber';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'subscriber_package_version');
@@ -110,7 +106,7 @@ export class SubscriberPackageVersion {
 
     try {
       const project = SfProject.getInstance();
-      this.id = project.getPackageIdFromAlias(this.options.aliasOrId) || this.options.aliasOrId;
+      this.id = project.getPackageIdFromAlias(this.options.aliasOrId) ?? this.options.aliasOrId;
     } catch (error) {
       const err = (error as Error).message;
       getLogger().debug(err);
@@ -154,6 +150,21 @@ export class SubscriberPackageVersion {
         installationKey
       );
       return pollStatus(connection, id, options);
+    }
+  }
+
+  /**
+   * list the packages installed in the org
+   *
+   * @param conn: Connection to the org
+   */
+  public static async installedList(conn: Connection): Promise<InstalledPackages[]> {
+    try {
+      const query =
+        'SELECT Id, SubscriberPackageId, SubscriberPackage.NamespacePrefix, SubscriberPackage.Name, SubscriberPackageVersion.Id, SubscriberPackageVersion.Name, SubscriberPackageVersion.MajorVersion, SubscriberPackageVersion.MinorVersion, SubscriberPackageVersion.PatchVersion, SubscriberPackageVersion.BuildNumber FROM InstalledSubscriberPackage ORDER BY SubscriberPackageId';
+      return (await conn.tooling.query<InstalledPackages>(query)).records;
+    } catch (err) {
+      throw applyErrorAction(massageErrorMessage(err as Error));
     }
   }
 
@@ -372,7 +383,7 @@ export class SubscriberPackageVersion {
         pkgInstallCreateRequest,
         await this.getPackageType()
       );
-      return SubscriberPackageVersion.installStatus(
+      return await SubscriberPackageVersion.installStatus(
         this.connection,
         pkgVersionInstallRequest.Id,
         pkgInstallCreateRequest.Password,
@@ -393,7 +404,7 @@ export class SubscriberPackageVersion {
     frequency: Duration = Duration.milliseconds(0),
     wait: Duration = Duration.milliseconds(0)
   ): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest> {
-    return await uninstallPackage(await this.getId(), this.connection, frequency, wait);
+    return uninstallPackage(await this.getId(), this.connection, frequency, wait);
   }
 
   /**
@@ -427,6 +438,7 @@ export class SubscriberPackageVersion {
     return Reflect.get(this.data || {}, field) as T;
   }
 
+  // eslint-disable-next-line class-methods-use-this
   private getFieldsForQuery(options: { force?: boolean; includeHighCostFields?: boolean }): string[] {
     return SubscriberPackageVersionFields.filter(
       (field) => !highCostQueryFields.includes(field) || options.includeHighCostFields
