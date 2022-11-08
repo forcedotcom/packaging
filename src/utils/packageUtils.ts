@@ -9,6 +9,8 @@ import * as fs from 'fs';
 import { join } from 'path';
 import { pipeline as cbPipeline } from 'stream';
 import { promisify } from 'util';
+import { randomBytes } from 'crypto';
+import * as util from 'util';
 import { Connection, Messages, SfdcUrl, SfError, SfProject } from '@salesforce/core';
 import { isNumber, Many, Nullable, Optional } from '@salesforce/ts-types';
 import { SaveError } from 'jsforce';
@@ -42,8 +44,8 @@ const ID_REGISTRY = [
   },
 ];
 
-type IdRegistryValue = { prefix: string; label: string };
-type IdRegistry = {
+export type IdRegistryValue = { prefix: string; label: string };
+export type IdRegistry = {
   [key: string]: IdRegistryValue;
 };
 
@@ -66,6 +68,28 @@ export const BY_LABEL = ((): IdRegistry =>
   Object.fromEntries(
     ID_REGISTRY.map((id) => [id.label.replace(/ /g, '_').toUpperCase(), { prefix: id.prefix, label: id.label }])
   ))();
+
+/**
+ * A function to generate a unique id and return it in the context of a template, if supplied.
+ *
+ * A template is a string that can contain `${%s}` to be replaced with a unique id.
+ * If the template contains the "%s" placeholder, it will be replaced with the unique id otherwise the id will be appended to the template.
+ *
+ * @param options an object with the following properties:
+ * - template: a template string.
+ * - length: the length of the unique id as presented in hexadecimal.
+ */
+export function uniqid(options?: { template?: string; length?: number }): string {
+  const uniqueString = randomBytes(Math.ceil((options?.length ?? 32) / 2.0))
+    .toString('hex')
+    .slice(0, options?.length ?? 32);
+  if (!options?.template) {
+    return uniqueString;
+  }
+  return options.template.includes('%s')
+    ? util.format(options.template, uniqueString)
+    : `${options.template}${uniqueString}`;
+}
 
 export function validateId(idObj: Many<IdRegistryValue>, value: string): void {
   if (!validateIdNoThrow(idObj, value)) {

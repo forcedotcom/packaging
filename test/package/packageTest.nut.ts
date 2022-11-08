@@ -419,7 +419,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
 
     it('packageInstalledList returns the correct information', async () => {
       const connection = scratchOrg.getConnection();
-      const result = await Package.installedList(connection);
+      const result = await SubscriberPackageVersion.installedList(connection);
       const foundRecord = result.filter((item) => item.SubscriberPackageVersion.Id === subscriberPkgVersionId);
 
       expect(result).to.have.length.at.least(1);
@@ -492,7 +492,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
     });
 
     it('gets zero results from packageInstalledList', async () => {
-      const result = await Package.installedList(scratchOrg.getConnection());
+      const result = await SubscriberPackageVersion.installedList(scratchOrg.getConnection());
       expect(result).to.have.length(0);
     });
   });

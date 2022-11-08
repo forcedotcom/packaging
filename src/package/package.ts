@@ -7,7 +7,6 @@
 import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
 import {
   ConvertPackageOptions,
-  InstalledPackages,
   PackageCreateOptions,
   PackageOptions,
   PackageSaveResult,
@@ -23,6 +22,7 @@ import { createPackage } from './packageCreate';
 import { convertPackage } from './packageConvert';
 import { listPackageVersions } from './packageVersionList';
 import { deletePackage } from './packageDelete';
+import { PackageAncestry } from './packageAncestry';
 
 const packagePrefixes = {
   PackageId: '0Ho',
@@ -108,21 +108,6 @@ export class Package {
   }
 
   /**
-   * list the packages installed in the org
-   *
-   * @param conn: Connection to the org
-   */
-  public static async installedList(conn: Connection): Promise<InstalledPackages[]> {
-    try {
-      const query =
-        'SELECT Id, SubscriberPackageId, SubscriberPackage.NamespacePrefix, SubscriberPackage.Name, SubscriberPackageVersion.Id, SubscriberPackageVersion.Name, SubscriberPackageVersion.MajorVersion, SubscriberPackageVersion.MinorVersion, SubscriberPackageVersion.PatchVersion, SubscriberPackageVersion.BuildNumber FROM InstalledSubscriberPackage ORDER BY SubscriberPackageId';
-      return (await conn.tooling.query<InstalledPackages>(query)).records;
-    } catch (err) {
-      throw applyErrorAction(massageErrorMessage(err as Error));
-    }
-  }
-
-  /**
    * Returns the package versions in the org.
    * See {@link PackageVersionListOptions} for list options
    *
@@ -151,6 +136,25 @@ export class Package {
     opts.packages = packages || [];
 
     return (await listPackageVersions({ ...opts, ...{ connection } })).records;
+  }
+
+  /**
+   * create a PackageAncestry instance
+   *
+   * @param packageId to get version information for
+   * @param project SfProject instance
+   * @param connection Hub Org Connection
+   */
+  public static async getAncestry(
+    packageId: string,
+    project: SfProject,
+    connection: Connection
+  ): Promise<PackageAncestry> {
+    return PackageAncestry.create({
+      packageId,
+      project,
+      connection,
+    });
   }
 
   /**

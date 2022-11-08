@@ -22,7 +22,6 @@ import {
 import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
 import { Many } from '@salesforce/ts-types';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
-import { genUniqueString } from '@salesforce/cli-plugins-testkit';
 import * as pkgUtils from '../utils/packageUtils';
 import {
   PackagingSObjects,
@@ -31,7 +30,7 @@ import {
   PackageVersionCreateEventData,
   PackageEvents,
 } from '../interfaces';
-import { generatePackageAliasEntry } from '../utils/packageUtils';
+import { generatePackageAliasEntry, uniqid } from '../utils/packageUtils';
 import { byId } from './packageVersionCreateRequest';
 import * as pvcr from './packageVersionCreateRequest';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
@@ -145,7 +144,7 @@ export async function createPackageVersionCreateRequest(
   packageId: string,
   apiVersion: string
 ): Promise<PackagingSObjects.Package2VersionCreateRequest> {
-  const uniqueId = genUniqueString(`${packageId}-%s`);
+  const uniqueId = uniqid({ template: `${packageId}-%s` });
   const packageVersTmpRoot = path.join(os.tmpdir(), uniqueId);
   const packageVersMetadataFolder = path.join(packageVersTmpRoot, 'md-files');
   const packageVersBlobDirectory = path.join(packageVersTmpRoot, 'package-version-info');

@@ -25,7 +25,6 @@ import { PackageVersionCreate } from './packageVersionCreate';
 import { getPackageVersionReport } from './packageVersionReport';
 import { getCreatePackageVersionCreateRequestReport } from './packageVersionCreateRequestReport';
 import { list } from './packageVersionCreateRequest';
-import { PackageAncestry } from './packageAncestry';
 import Package2 = PackagingSObjects.Package2;
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
@@ -90,18 +89,6 @@ export class PackageVersion {
     } else {
       throw messages.createError('errorInvalidPackageVersionId', [this.options.idOrAlias]);
     }
-  }
-
-  public static async getAncestry(
-    packageId: string,
-    project: SfProject,
-    connection: Connection
-  ): Promise<PackageAncestry> {
-    return PackageAncestry.create({
-      packageId,
-      project,
-      connection,
-    });
   }
 
   /**

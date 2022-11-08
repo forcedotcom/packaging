@@ -23,7 +23,6 @@ import { ComponentSetBuilder, ConvertResult, MetadataConverter } from '@salesfor
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import * as xml2js from 'xml2js';
 import { PackageDirDependency } from '@salesforce/core/lib/sfProject';
-import { genUniqueString } from '@salesforce/cli-plugins-testkit';
 import * as pkgUtils from '../utils/packageUtils';
 import {
   MDFolderForArtifactOptions,
@@ -41,6 +40,7 @@ import {
   getPackageVersionNumber,
   validateId,
   VERSION_NUMBER_SEP,
+  uniqid,
   copyDir,
   zipDir,
 } from '../utils/packageUtils';
@@ -303,7 +303,7 @@ export class PackageVersionCreate {
    */
   private async createPackageVersionCreateRequestFromOptions(): Promise<PackageVersionCreateRequest> {
     const preserveFiles = !!(this.options.preserve || process.env.SFDX_PACKAGE2_VERSION_CREATE_PRESERVE);
-    const uniqueHash = genUniqueString(`${this.packageId}-%s`);
+    const uniqueHash = uniqid({ template: `${this.packageId}-%s` });
     const packageVersTmpRoot = path.join(os.tmpdir(), `${uniqueHash}`);
     const packageVersMetadataFolder = path.join(packageVersTmpRoot, 'md-files');
     const unpackagedMetadataFolder = path.join(packageVersTmpRoot, 'unpackaged-md-files');

@@ -9,6 +9,7 @@ import { Connection, Logger, Messages, sfdc, SfError, SfProject } from '@salesfo
 import { Duration } from '@salesforce/kit';
 import { Optional } from '@salesforce/ts-types';
 import {
+  InstalledPackages,
   PackageInstallCreateRequest,
   PackageInstallOptions,
   PackageType,
@@ -149,6 +150,21 @@ export class SubscriberPackageVersion {
         installationKey
       );
       return pollStatus(connection, id, options);
+    }
+  }
+
+  /**
+   * list the packages installed in the org
+   *
+   * @param conn: Connection to the org
+   */
+  public static async installedList(conn: Connection): Promise<InstalledPackages[]> {
+    try {
+      const query =
+        'SELECT Id, SubscriberPackageId, SubscriberPackage.NamespacePrefix, SubscriberPackage.Name, SubscriberPackageVersion.Id, SubscriberPackageVersion.Name, SubscriberPackageVersion.MajorVersion, SubscriberPackageVersion.MinorVersion, SubscriberPackageVersion.PatchVersion, SubscriberPackageVersion.BuildNumber FROM InstalledSubscriberPackage ORDER BY SubscriberPackageId';
+      return (await conn.tooling.query<InstalledPackages>(query)).records;
+    } catch (err) {
+      throw applyErrorAction(massageErrorMessage(err as Error));
     }
   }
 
