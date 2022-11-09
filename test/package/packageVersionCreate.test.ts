@@ -32,17 +32,35 @@ describe('Package Version Create', () => {
     await project.getSfProjectJson().write({
       packageDirectories: [
         {
+          path: 'pkg',
+          package: 'dep',
+          versionName: 'ver 0.1',
+          versionNumber: '0.1.0.NEXT',
+          default: false,
+          name: 'pkg',
+        },
+        {
           path: 'force-app',
           package: 'TEST',
           versionName: 'ver 0.1',
           versionNumber: '0.1.0.NEXT',
           default: true,
           ancestorId: 'TEST2',
+          unpackagedMetadata: {
+            path: 'unpackaged',
+          },
+          dependencies: [
+            {
+              package: 'DEP@0.1.0-1',
+            },
+          ],
         },
       ],
       packageAliases: {
         TEST: packageId,
         TEST2: '05i3i000000Gmj6XXX',
+        DEP: '05i3i000000Gmj6XXX',
+        'DEP@0.1.0-1': '04t3i000002eyYXXXX',
       },
     });
     await fs.promises.mkdir(path.join(project.getPath(), 'force-app'));
@@ -117,10 +135,22 @@ describe('Package Version Create', () => {
       'SubscriberPackageVersionId',
       'Tag'
     );
+
+    expect(project.getSfProjectJson().getContents().packageDirectories[1].dependencies).to.deep.equal([
+      {
+        package: 'DEP@0.1.0-1',
+      },
+    ]);
   });
 
   it('should create the package version create request with codecoverage=true', async () => {
     const pvc = new PackageVersionCreate({ connection, project, codecoverage: true, packageId });
+    // @ts-ignore
+    const hasUnpackagedMdSpy = $$.SANDBOX.spy(pvc, 'resolveUnpackagedMetadata');
+    // @ts-ignore
+    $$.SANDBOX.stub(pvc, 'generateMDFolderForArtifact').resolves();
+    $$.SANDBOX.stub(fs, 'existsSync').returns(true);
+    $$.SANDBOX.stub(fs.promises, 'readFile').resolves();
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].CalculateCodeCoverage).to.equal(true);
     expect(result).to.have.all.keys(
@@ -136,6 +166,11 @@ describe('Package Version Create', () => {
       'SubscriberPackageVersionId',
       'Tag'
     );
+    const unpackagedMD = (hasUnpackagedMdSpy.firstCall.args.at(0) as { unpackagedMetadata: Record<string, string> })
+      .unpackagedMetadata;
+    expect(unpackagedMD).to.deep.equal({
+      path: 'unpackaged',
+    });
   });
 
   it('should create the package version create request with codecoverage=false', async () => {
