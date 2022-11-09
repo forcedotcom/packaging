@@ -328,7 +328,7 @@ export class PackageVersionCreate {
     // Copy all the metadata from the workspace to a tmp folder
     const componentSet = await this.generateMDFolderForArtifact(mdOptions);
     this.verifyHasSource(componentSet);
-    const packageDescriptorJson = this.packageObject as PackageDescriptorJson;
+    const packageDescriptorJson = cloneJson(this.packageObject) as PackageDescriptorJson;
 
     if (packageDescriptorJson.package) {
       delete packageDescriptorJson.package;
@@ -563,7 +563,7 @@ export class PackageVersionCreate {
     codeCoverage: boolean
   ): Promise<boolean> {
     // Add the Unpackaged Metadata, if any, to the output directory, only when code coverage is specified
-    if (codeCoverage && packageDescriptorJson.unpackagedMetadata && packageDescriptorJson.unpackagedMetadata.path) {
+    if (codeCoverage && packageDescriptorJson.unpackagedMetadata?.path) {
       const unpackagedPath = path.join(process.cwd(), packageDescriptorJson.unpackagedMetadata.path);
       if (!fs.existsSync(unpackagedPath)) {
         throw messages.createError('unpackagedMDDirectoryDoesNotExist', [

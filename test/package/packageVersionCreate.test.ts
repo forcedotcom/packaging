@@ -46,6 +46,9 @@ describe('Package Version Create', () => {
           versionNumber: '0.1.0.NEXT',
           default: true,
           ancestorId: 'TEST2',
+          unpackagedMetadata: {
+            path: 'unpackaged',
+          },
           dependencies: [
             {
               package: 'DEP@0.1.0-1',
@@ -142,6 +145,12 @@ describe('Package Version Create', () => {
 
   it('should create the package version create request with codecoverage=true', async () => {
     const pvc = new PackageVersionCreate({ connection, project, codecoverage: true, packageId });
+    // @ts-ignore
+    const hasUnpackagedMdSpy = $$.SANDBOX.spy(pvc, 'resolveUnpackagedMetadata');
+    // @ts-ignore
+    $$.SANDBOX.stub(pvc, 'generateMDFolderForArtifact').resolves();
+    $$.SANDBOX.stub(fs, 'existsSync').returns(true);
+    $$.SANDBOX.stub(fs.promises, 'readFile').resolves();
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].CalculateCodeCoverage).to.equal(true);
     expect(result).to.have.all.keys(
@@ -157,6 +166,11 @@ describe('Package Version Create', () => {
       'SubscriberPackageVersionId',
       'Tag'
     );
+    const unpackagedMD = (hasUnpackagedMdSpy.firstCall.args.at(0) as { unpackagedMetadata: Record<string, string> })
+      .unpackagedMetadata;
+    expect(unpackagedMD).to.deep.equal({
+      path: 'unpackaged',
+    });
   });
 
   it('should create the package version create request with codecoverage=false', async () => {
