@@ -27,7 +27,7 @@
 1.  Get all latest changes: `git pull`
 1.  Download NPM dependencies: `yarn install`. If it's been a while since you last did this you may want to run `yarn clean-all` before this step.
 1.  Build and lint the code: `yarn build`
-1.  Create a branch off main for new work: `git checkout -b <branch_name>` _Suggestion: use branch_name format of <initials>/work-title_ For external contributors, please fork the main branch of the repo instead and PR the fork to the main branch.
+1.  Create a branch off main for new work: `git checkout -b <branch_name>` _Suggestion: use branch_name format of initials/work-title_. For external contributors, please fork the main branch of the repo instead and PR the fork to the main branch.
 1.  Make code changes and build: `yarn build`
 1.  Write tests and run: `yarn test` (unit) and/or `yarn test:nuts` (NUTs)
 1.  Show all changed files: `git status`
