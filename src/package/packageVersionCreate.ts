@@ -19,13 +19,17 @@ import {
   SfdcUrl,
   SfProject,
 } from '@salesforce/core';
-import { ComponentSetBuilder, ConvertResult, MetadataConverter } from '@salesforce/source-deploy-retrieve';
+import {
+  ComponentSet,
+  ComponentSetBuilder,
+  ConvertResult,
+  MetadataConverter,
+} from '@salesforce/source-deploy-retrieve';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import * as xml2js from 'xml2js';
 import { PackageDirDependency } from '@salesforce/core/lib/sfProject';
-import { uniqid } from '../utils/uniqid';
+import { cloneJson } from '@salesforce/kit';
 import * as pkgUtils from '../utils/packageUtils';
-import { BuildNumberToken, VersionNumber } from '../utils';
 import {
   MDFolderForArtifactOptions,
   PackageDescriptorJson,
@@ -38,17 +42,18 @@ import {
 } from '../interfaces';
 import {
   BY_LABEL,
-  getPackageIdFromAlias,
   getPackageVersionId,
   getPackageVersionNumber,
   validateId,
   VERSION_NUMBER_SEP,
+  uniqid,
   copyDir,
   zipDir,
-} from '../utils';
+} from '../utils/packageUtils';
 import { PackageProfileApi } from './packageProfileApi';
 import { byId } from './packageVersionCreateRequest';
 import { Package } from './package';
+import { BuildNumberToken, VersionNumber } from './versionNumber';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
@@ -78,6 +83,29 @@ export class PackageVersionCreate {
     }
   }
 
+  /**
+   * Extracted into a method for UT purposes
+   *
+   * @param componentSet CS to convert
+   * @param outputDirectory where to place the converted MD
+   * @param packageName the packagename related to the CS
+   * @private
+   */
+  // eslint-disable-next-line class-methods-use-this
+  private async convertMetadata(
+    componentSet: ComponentSet,
+    outputDirectory: string,
+    packageName: string
+  ): Promise<ConvertResult> {
+    const converter = new MetadataConverter();
+    return converter.convert(componentSet, 'metadata', {
+      type: 'directory',
+      outputDirectory,
+      packageName,
+      genUniqueDir: false,
+    });
+  }
+
   // convert source to mdapi format and copy to tmp dir packaging up
   private async generateMDFolderForArtifact(options: MDFolderForArtifactOptions): Promise<ConvertResult> {
     const sourcepath = options.sourcePaths ?? [options.sourceDir];
@@ -87,13 +115,7 @@ export class PackageVersionCreate {
     });
     const packageName = options.packageName;
     const outputDirectory = path.resolve(options.deploydir);
-    const converter = new MetadataConverter();
-    const convertResult = await converter.convert(componentSet, 'metadata', {
-      type: 'directory',
-      outputDirectory,
-      packageName,
-      genUniqueDir: false,
-    });
+    const convertResult = await this.convertMetadata(componentSet, outputDirectory, packageName);
 
     if (packageName) {
       // SDR will build an output path like /output/directory/packageName/package.xml
@@ -123,7 +145,9 @@ export class PackageVersionCreate {
       throw messages.createError('errorPackageAndPackageIdCollision', []);
     }
 
-    const packageIdFromAlias = pkgUtils.getPackageIdFromAlias(dependency.packageId || dependency.package, this.project);
+    const packageIdFromAlias =
+      this.project.getPackageIdFromAlias(dependency.packageId || dependency.package) ??
+      (dependency.packageId || dependency.package);
 
     // If valid 04t package, just return it to be used straight away.
     if (pkgUtils.validateIdNoThrow(pkgUtils.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, packageIdFromAlias)) {
@@ -323,10 +347,10 @@ export class PackageVersionCreate {
     const clientSideInfo = new Map<string, string>();
     await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
     const settingsGenerator = new SettingsGenerator({ asDirectory: true });
+    const packageDescriptorJson = cloneJson(this.packageObject) as PackageDescriptorJson;
     // Copy all the metadata from the workspace to a tmp folder
     const componentSet = await this.generateMDFolderForArtifact(mdOptions);
     this.verifyHasSource(componentSet);
-    const packageDescriptorJson = this.packageObject as PackageDescriptorJson;
 
     if (packageDescriptorJson.package) {
       delete packageDescriptorJson.package;
@@ -561,7 +585,7 @@ export class PackageVersionCreate {
     codeCoverage: boolean
   ): Promise<boolean> {
     // Add the Unpackaged Metadata, if any, to the output directory, only when code coverage is specified
-    if (codeCoverage && packageDescriptorJson.unpackagedMetadata && packageDescriptorJson.unpackagedMetadata.path) {
+    if (codeCoverage && packageDescriptorJson.unpackagedMetadata?.path) {
       const unpackagedPath = path.join(process.cwd(), packageDescriptorJson.unpackagedMetadata.path);
       if (!fs.existsSync(unpackagedPath)) {
         throw messages.createError('unpackagedMDDirectoryDoesNotExist', [
@@ -621,7 +645,7 @@ export class PackageVersionCreate {
       ]);
     }
 
-    this.packageId = this.project.getPackageIdFromAlias(packageName) || packageName;
+    this.packageId = this.project.getPackageIdFromAlias(packageName) ?? packageName;
 
     this.options.profileApi = await this.resolveUserLicenses(this.packageObject.includeProfileUserLicenses);
 
@@ -808,7 +832,10 @@ export class PackageVersionCreate {
     skipAncestorCheck: boolean
   ): Promise<string> {
     // If an id property is present, use it.  Otherwise, look up the package id from the package property.
-    const packageId = packageDescriptorJson.id ?? getPackageIdFromAlias(packageDescriptorJson.package, project);
+    const packageId =
+      packageDescriptorJson.id ??
+      project.getPackageIdFromAlias(packageDescriptorJson.package) ??
+      packageDescriptorJson.package;
 
     // No need to proceed if Unlocked
     if ((await this.getPackageType()) === 'Unlocked') {
@@ -862,7 +889,7 @@ export class PackageVersionCreate {
     // highestReleasedVersion should be null only if skipAncestorCheck or if there is no existing released package version
 
     if (!explicitUseNoAncestor && packageDescriptorJson.ancestorId) {
-      ancestorId = getPackageIdFromAlias(packageDescriptorJson.ancestorId, project);
+      ancestorId = project.getPackageIdFromAlias(packageDescriptorJson.ancestorId) ?? packageDescriptorJson.ancestorId;
       validateId([BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, BY_LABEL.PACKAGE_VERSION_ID], ancestorId);
       ancestorId = await getPackageVersionId(ancestorId, this.connection);
     }

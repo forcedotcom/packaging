@@ -11,14 +11,12 @@ import { expect } from 'chai';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { Connection, Lifecycle } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
-
 import {
   convertPackage,
   createPackageVersionCreateRequest,
   findOrCreatePackage2,
 } from '../../src/package/packageConvert';
 import { PackageEvents } from '../../src/interfaces';
-import * as pkgUtils from '../../src/utils/packageUtils';
 
 describe('packageConvert', () => {
   const $$ = instantiateContext();
@@ -170,9 +168,6 @@ describe('packageConvert', () => {
     $$.SANDBOX.stub(conn.tooling, 'query').resolves({ records: [{ Id: '0Ho3i000000Gmj6YYY' }] });
 
     // @ts-ignore
-    $$.SANDBOX.stub(pkgUtils, 'getSourceApiVersion').returns('54.0');
-
-    // @ts-ignore
     $$.SANDBOX.stub(conn.tooling, 'create').resolves({ success: undefined, errors: [new Error('server error')] });
     try {
       await convertPackage('0334p000000EaIHAA0', conn, {
@@ -223,7 +218,7 @@ describe('packageConvert', () => {
           Tag: undefined,
         },
         timeRemaining: {
-          quantity: 60,
+          quantity: 2,
           unit: 2,
         },
       });
@@ -257,10 +252,11 @@ describe('packageConvert', () => {
       definitionfile: '',
       installationKeyBypass: true,
       wait: Duration.minutes(1),
+      frequency: Duration.seconds(1),
     });
 
     expect(result).to.deep.equal(successResponse);
-  }).timeout(100000);
+  });
 
   it('will convert the package and handle error on reporting', async () => {
     const conn = await testOrg.getConnection();
@@ -299,5 +295,5 @@ describe('packageConvert', () => {
       expect(message).to.include('(1) Server polling error 1');
       expect(message).to.include('(2) server error 2');
     }
-  }).timeout(100000);
+  });
 });

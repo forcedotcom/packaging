@@ -5,7 +5,7 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import { expect } from 'chai';
-import { VersionNumber } from '../../src/utils/versionNumber';
+import { VersionNumber } from '../../src/package/versionNumber';
 
 describe('VersionNumber', () => {
   it('should be able to parse a version number', () => {
