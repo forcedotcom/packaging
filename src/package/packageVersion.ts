@@ -539,9 +539,14 @@ export class PackageVersion {
           `SELECT Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version WHERE SubscriberPackageVersionId='${results.SubscriberPackageVersionId}'`
         )
       ).records[0];
-      const version = `${this.project.getAliasesFromPackageId(results.Package2Id).join()}@${
-        versionResult.MajorVersion ?? 0
-      }.${versionResult.MinorVersion ?? 0}.${versionResult.PatchVersion ?? 0}`;
+
+      const aliases = this.project.getAliasesFromPackageId(results.Package2Id);
+      if (aliases.length === 0) {
+        throw messages.createError('packageAliasNotFound', [results.Package2Id]);
+      }
+      const version = `${aliases[0]}@${versionResult.MajorVersion ?? 0}.${versionResult.MinorVersion ?? 0}.${
+        versionResult.PatchVersion ?? 0
+      }`;
       const build = versionResult.BuildNumber ? `-${versionResult.BuildNumber}` : '';
       const branch = versionResult.Branch ? `-${versionResult.Branch}` : '';
       // set packageAliases entry '<package>@<major>.<minor>.<patch>-<build>-<branch>: <result.subscriberPackageVersionId>'
