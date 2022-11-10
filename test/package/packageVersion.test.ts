@@ -19,11 +19,6 @@ describe('Package Version', () => {
   const uniquePackageId = '0Ho3i000000Gmj7XXX';
   const idOrAlias = '04t4p000001ztuFAAQ';
   let connection: Connection;
-  // let packageVersionQuery: sinon.SinonStub;
-  // let packageCreateStub: sinon.SinonStub;
-  // let xml2jsStub: sinon.SinonStub;
-  // let pvcStub: sinon.SinonStub;
-
   let project: SfProject;
 
   beforeEach(async () => {
