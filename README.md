@@ -6,7 +6,7 @@
 
 ## Description
 
-A JavaScript library for packaging metadata in your Salesforce project. This library supports both First-Generation packaging (1GP) and Second-Generation packaging (2GP).
+A TypeScript library for packaging metadata in your Salesforce project. This library supports both First-Generation packaging (1GP) and Second-Generation packaging (2GP).
 
 ## Usage
 
