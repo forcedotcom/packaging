@@ -272,6 +272,7 @@ export type ConvertPackageOptions = {
   installationKeyBypass: boolean;
   wait: Duration;
   buildInstance: string;
+  frequency?: Duration;
 };
 
 export type PackageVersionCreateOptions = {
