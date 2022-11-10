@@ -122,7 +122,7 @@ export async function convertPackage(
       branch,
       project,
       connection,
-      new Duration(pkgUtils.POLL_INTERVAL_SECONDS, Duration.Unit.SECONDS)
+      options.frequency ?? Duration.seconds(pkgUtils.POLL_INTERVAL_SECONDS)
     );
   } else {
     results = await byId(packageId, connection);

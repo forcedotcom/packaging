@@ -19,7 +19,12 @@ import {
   SfdcUrl,
   SfProject,
 } from '@salesforce/core';
-import { ComponentSetBuilder, ConvertResult, MetadataConverter } from '@salesforce/source-deploy-retrieve';
+import {
+  ComponentSet,
+  ComponentSetBuilder,
+  ConvertResult,
+  MetadataConverter,
+} from '@salesforce/source-deploy-retrieve';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import * as xml2js from 'xml2js';
 import { PackageDirDependency } from '@salesforce/core/lib/sfProject';
@@ -78,6 +83,29 @@ export class PackageVersionCreate {
     }
   }
 
+  /**
+   * Extracted into a method for UT purposes
+   *
+   * @param componentSet CS to convert
+   * @param outputDirectory where to place the converted MD
+   * @param packageName the packagename related to the CS
+   * @private
+   */
+  // eslint-disable-next-line class-methods-use-this
+  private async convertMetadata(
+    componentSet: ComponentSet,
+    outputDirectory: string,
+    packageName: string
+  ): Promise<ConvertResult> {
+    const converter = new MetadataConverter();
+    return converter.convert(componentSet, 'metadata', {
+      type: 'directory',
+      outputDirectory,
+      packageName,
+      genUniqueDir: false,
+    });
+  }
+
   // convert source to mdapi format and copy to tmp dir packaging up
   private async generateMDFolderForArtifact(options: MDFolderForArtifactOptions): Promise<ConvertResult> {
     const sourcepath = options.sourcePaths ?? [options.sourceDir];
@@ -87,13 +115,7 @@ export class PackageVersionCreate {
     });
     const packageName = options.packageName;
     const outputDirectory = path.resolve(options.deploydir);
-    const converter = new MetadataConverter();
-    const convertResult = await converter.convert(componentSet, 'metadata', {
-      type: 'directory',
-      outputDirectory,
-      packageName,
-      genUniqueDir: false,
-    });
+    const convertResult = await this.convertMetadata(componentSet, outputDirectory, packageName);
 
     if (packageName) {
       // SDR will build an output path like /output/directory/packageName/package.xml
@@ -325,10 +347,10 @@ export class PackageVersionCreate {
     const clientSideInfo = new Map<string, string>();
     await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
     const settingsGenerator = new SettingsGenerator({ asDirectory: true });
+    const packageDescriptorJson = cloneJson(this.packageObject) as PackageDescriptorJson;
     // Copy all the metadata from the workspace to a tmp folder
     const componentSet = await this.generateMDFolderForArtifact(mdOptions);
     this.verifyHasSource(componentSet);
-    const packageDescriptorJson = cloneJson(this.packageObject) as PackageDescriptorJson;
 
     if (packageDescriptorJson.package) {
       delete packageDescriptorJson.package;

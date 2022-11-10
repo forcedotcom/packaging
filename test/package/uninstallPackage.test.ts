@@ -99,7 +99,7 @@ describe('Package Uninstall', () => {
       expect(error.message).to.include('(2) this is a second error message');
       expect(error.actions).to.deep.equal(['Verify installed package ID and resolve errors, then try again.']);
     }
-  }).timeout(10000);
+  });
 
   it('should send the uninstall request, and handle errors appropriately (0 error messages)', async () => {
     sobjectStub.onSecondCall().returns({
@@ -125,7 +125,7 @@ describe('Package Uninstall', () => {
       );
       expect((e as SfError).actions).to.deep.equal(['Verify installed package ID and resolve errors, then try again.']);
     }
-  }).timeout(10000);
+  });
 
   it('should send the uninstall request, retrieve the status and return', async () => {
     sobjectStub.onSecondCall().returns({
