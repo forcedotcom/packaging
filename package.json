@@ -16,7 +16,7 @@
     "format": "sf-format",
     "lint": "sf-lint",
     "lint-fix": "yarn sf-lint --fix",
-    "postcompile": "tsc -p test && tsc -p typedocExamples",
+    "postcompile": "tsc -p test",
     "prepack": "sf-prepack",
     "prepare": "sf-install",
     "pretest": "sf-compile-test",
