@@ -110,7 +110,7 @@ export type PackageVersionListResult = {
   CreatedById: string;
   CodeCoverage?: {
     [key: string]: unknown;
-    ApexCodeCoveragePercentage: number;
+    apexCodeCoveragePercentage: number;
   };
   HasPassedCodeCoverageCheck?: boolean;
   ConvertedFromVersionId?: string;
