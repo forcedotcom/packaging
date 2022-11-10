@@ -1,10 +1,11 @@
 {
   "name": "@salesforce/packaging",
   "version": "0.1.20",
-  "description": "packing libraries to Salesforce packaging platform",
+  "description": "Packaging library for the Salesforce packaging platform",
   "main": "lib/exported",
   "types": "lib/exported.d.ts",
   "license": "BSD-3-Clause",
+  "repository": "forcedotcom/packaging",
   "scripts": {
     "build": "sf-build",
     "ci-docs": "yarn sf-ci-docs",
@@ -26,7 +27,8 @@
     "force",
     "salesforce",
     "sfdx",
-    "salesforcedx"
+    "salesforcedx",
+    "packaging"
   ],
   "files": [
     "docs",
@@ -86,7 +88,6 @@
     "ts-node": "^10.9.1",
     "typescript": "4.8.4"
   },
-  "repository": "forcedotcom/packaging",
   "publishConfig": {
     "access": "public"
   }
