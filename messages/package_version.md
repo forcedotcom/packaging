@@ -17,3 +17,7 @@ The provided package uninstall request ID: [%s] is invalid. It must be a 15 or 1
 # packageVersionInstallRequestNotFound
 
 The provided package install request ID: [%s] could not be found.
+
+# packageAliasNotFound
+
+The provided package id: [%s] could not be resolved to an alias.
