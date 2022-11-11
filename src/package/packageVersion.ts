@@ -66,6 +66,24 @@ export const Package2VersionFields = [
   'HasMetadataRemoved',
 ];
 
+/**
+ * Provides the ability to create, update, delete, and promote 2nd
+ * generation package versions.
+ *
+ * **Examples**
+ *
+ * Create a new instance and get the ID (05i):
+ *
+ * `const id = new PackageVersion({connection, project, idOrAlias}).getId();`
+ *
+ * Create a new package version in the org:
+ *
+ * `const myPkgVersion = await PackageVersion.create(options, pollingOptions);`
+ *
+ * Promote a package version:
+ *
+ * `new PackageVersion({connection, project, idOrAlias}).promote();`
+ */
 export class PackageVersion {
   private readonly project: SfProject;
   private readonly connection: Connection;
