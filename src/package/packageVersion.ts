@@ -66,6 +66,24 @@ export const Package2VersionFields = [
   'HasMetadataRemoved',
 ];
 
+/**
+ * Provides the ability to create, update, delete, and promote 2nd
+ * generation package versions.
+ *
+ * **Examples**
+ *
+ * Create a new instance and get the ID (05i):
+ *
+ * `const id = new PackageVersion({connection, project, idOrAlias}).getId();`
+ *
+ * Create a new package version in the org:
+ *
+ * `const myPkgVersion = await PackageVersion.create(options, pollingOptions);`
+ *
+ * Promote a package version:
+ *
+ * `new PackageVersion({connection, project, idOrAlias}).promote();`
+ */
 export class PackageVersion {
   private readonly project: SfProject;
   private readonly connection: Connection;
@@ -478,34 +496,6 @@ export class PackageVersion {
     // Use the 04t ID for the success message
     result.id = await this.getSubscriberId();
     return result;
-  }
-
-  /**
-   * Creates a new package version.
-   *
-   * @param options
-   * @param polling frequency and timeout Durations to be used in polling
-   */
-  public async create(
-    options: PackageVersionCreateOptions,
-    polling: { frequency: Duration; timeout: Duration } = {
-      frequency: Duration.seconds(0),
-      timeout: Duration.seconds(0),
-    }
-  ): Promise<Partial<PackageVersionCreateRequestResult>> {
-    const pvc = new PackageVersionCreate({ ...options, ...this.options });
-    const createResult = await pvc.createPackageVersion();
-
-    if (polling.timeout?.milliseconds > 0) {
-      return PackageVersion.waitForCreateVersion(createResult.Id, this.project, this.connection, polling).catch(
-        (err: Error) => {
-          // TODO
-          // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
-          throw applyErrorAction(massageErrorMessage(err));
-        }
-      );
-    }
-    return createResult;
   }
 
   private async updateDeprecation(isDeprecated: boolean): Promise<PackageSaveResult> {

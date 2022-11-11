@@ -54,10 +54,22 @@ export const Package2Fields = [
 ];
 
 /**
- * Package class.
+ * Provides the ability to list, create, update, delete, convert, and get version
+ * ancestry for a 2nd generation package.
  *
- * This class provides the base implementation for a package.
- * To create a new instance of a package, use the static async Package.create({connection, project, packageOrAliasId}) method.
+ * **Examples**
+ *
+ * Create a new instance and get the ID (0Ho):
+ *
+ * `const id = new Package({connection, project, packageOrAliasId}).getId();`
+ *
+ * Create a new package in the org:
+ *
+ * `const myPkg = await Package.create(connection, project, options);`
+ *
+ * List all packages in the org:
+ *
+ * `const pkgList = await Package.list(connection);`
  */
 export class Package {
   private readonly packageId: string;

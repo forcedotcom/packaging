@@ -19,9 +19,19 @@ Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package1Version');
 
 /**
- * Package1Version class - Class to be used with 1st generation package versions
+ * Provides the ability to get, list, and create 1st generation package versions.
  *
- * implementation examples can be seen here: https://github.com/salesforcecli/plugin-packaging/tree/main/src/commands/force/package1/
+ * **Examples**
+ *
+ * List all 1GP package versions in the org:
+ *
+ * `const pkgList = await Package1Version.list(connection);`
+ *
+ * Create a new 1GP package vesion in the org:
+ *
+ * `const myPkg = await Package1Version.create(connection, options, pollingOptions);`
+ *
+ * More implementation examples are in the plugin here: https://github.com/salesforcecli/plugin-packaging/tree/main/src/commands/force/package1/
  */
 export class Package1Version implements IPackageVersion1GP {
   /**

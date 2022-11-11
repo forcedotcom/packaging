@@ -89,7 +89,18 @@ const allZeroesInstallOptions: PackageInstallOptions = {
 };
 
 /**
- * A class that represents a SubscriberPackageVersion
+ * Provides the ability to get, list, install, and uninstall 2nd
+ * generation subscriber package versions.
+ *
+ * **Examples**
+ *
+ * List all 2GP installed packages in the org:
+ *
+ * `const installedPkgs = await SubscriberPackageVersion.installedList(connection);`
+ *
+ * Install a 2GP subscriber package version:
+ *
+ * `const installStatus = await new SubscriberPackageVersion(options).install(request, options);`
  */
 export class SubscriberPackageVersion {
   private readonly password: Optional<string>;

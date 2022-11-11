@@ -1,7 +1,5 @@
 # Salesforce Packaging
 
-> :warning: **This module is under heavy development, please do not use in production.**
-
 [![NPM](https://img.shields.io/npm/v/@salesforce/packaging.svg?label=@salesforce/packaging)](https://www.npmjs.com/package/@salesforce/packaging) [![Downloads/week](https://img.shields.io/npm/dw/@salesforce/packaging.svg)](https://npmjs.org/package/@salesforce/packaging) [![License](https://img.shields.io/badge/License-BSD%203--Clause-brightgreen.svg)](https://raw.githubusercontent.com/forcedotcom/packaging/main/LICENSE.txt)
 
 ## Description
@@ -12,12 +10,12 @@ A TypeScript library for packaging metadata in your Salesforce project. This lib
 
 There are 4 main classes to use from this library:
 
-1. `Package1Version` - Work with 1st generation package versions.
-1. `Package` - Work with 2nd generation packages.
-1. `PackageVersion` - Work with 2nd generation package versions.
-1. `SubscriberPackageVersion` - Work with 2nd generation subscriber package versions.
+1. [Package1Version](https://forcedotcom.github.io/packaging/classes/package1_package1Version.Package1Version.html) - Work with 1st generation package versions.
+1. [Package](https://forcedotcom.github.io/packaging/classes/package_package.Package.html) - Work with 2nd generation packages.
+1. [PackageVersion](https://forcedotcom.github.io/packaging/classes/package_packageVersion.PackageVersion.html) - Work with 2nd generation package versions.
+1. [SubscriberPackageVersion](https://forcedotcom.github.io/packaging/classes/package_subscriberPackageVersion.SubscriberPackageVersion.html) - Work with 2nd generation subscriber package versions.
 
-Please see the [API Documentation](https://forcedotcom.github.io/packaging/) for details.
+Please reference the [API Documentation](https://forcedotcom.github.io/packaging/) for complete details of code and types.
 
 ## Contributing
 
