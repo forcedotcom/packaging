@@ -498,34 +498,6 @@ export class PackageVersion {
     return result;
   }
 
-  /**
-   * Creates a new package version.
-   *
-   * @param options
-   * @param polling frequency and timeout Durations to be used in polling
-   */
-  public async create(
-    options: PackageVersionCreateOptions,
-    polling: { frequency: Duration; timeout: Duration } = {
-      frequency: Duration.seconds(0),
-      timeout: Duration.seconds(0),
-    }
-  ): Promise<Partial<PackageVersionCreateRequestResult>> {
-    const pvc = new PackageVersionCreate({ ...options, ...this.options });
-    const createResult = await pvc.createPackageVersion();
-
-    if (polling.timeout?.milliseconds > 0) {
-      return PackageVersion.waitForCreateVersion(createResult.Id, this.project, this.connection, polling).catch(
-        (err: Error) => {
-          // TODO
-          // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
-          throw applyErrorAction(massageErrorMessage(err));
-        }
-      );
-    }
-    return createResult;
-  }
-
   private async updateDeprecation(isDeprecated: boolean): Promise<PackageSaveResult> {
     const id = await this.getId();
 
