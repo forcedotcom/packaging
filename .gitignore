@@ -25,6 +25,9 @@ test_session**
 # generated docs
 docs
 
+# history for repl script
+.repl_history
+
 # -- CLEAN ALL
 node_modules
 
