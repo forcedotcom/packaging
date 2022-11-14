@@ -5,6 +5,11 @@
 [One-time Setup](#one-time-setup)</br>
 [Quick Start](#quick-start)</br>
 [Testing](#testing)</br>
+
+- [Manual Testing](#manual-testing-with-repl)</br>
+- [Unit Testing](#unit-tests)</br>
+- [NUTs Testing](#nuts-non-unit-tests)
+
 [Debugging](#debugging)</br>
 [Linking to the Packaging Plugin](#linking-to-the-packaging-plugin)</br>
 [TypeScript Module Conflicts](#typescript-module-conflicts)</br>
@@ -38,7 +43,13 @@
 
 ## Testing
 
-All changes must have associated tests. This library uses a combination of unit testing and NUTs (non-unit tests).
+All changes must have associated tests. This library uses a combination of unit testing and NUTs (non-unit tests). You can also manually test the library using the REPL script.
+
+### Manual Testing with REPL
+
+To manually test your changes you can simply run `yarn repl` and send input to any of the 4 main library classes; `Package`, `PackageVersion`, `SubscriberPackageVersion`, and `Package1Version`. "REPL" is an acronym for Read-Evaluate-Print-Loop, and provides a convenient way to quickly test JavaScript code. Most methods on the 4 classes require at least an org `Connection` so use the `getConnection(username)` function and pass the username or alias of an existing, CLI-authed target org. If the API you're calling also requires a DX project, get an instance of `SfProject` to use in the REPL by providing the absolute path to your project directory.
+
+The REPL script also starts a debugger process you can attach to with your preferred editor. See the [Debugging section](#debugging) for details of how to attach to the REPL debugger process.
 
 ### Unit tests
 
@@ -50,7 +61,7 @@ Non-unit tests are run with `yarn test:nuts` and use the [cli-plugin-testkit](ht
 
 ## Debugging
 
-If you need to debug library code or tests you should refer to the excellent documentation on this topic in the [Plugin Developer Guide](https://github.com/salesforcecli/cli/wiki/Debug-Your-Plugin).
+If you need to debug library code or tests you should refer to the excellent documentation on this topic in the [Plugin Developer Guide](https://github.com/salesforcecli/cli/wiki/Debug-Your-Plugin). It may be easiest to use the [REPL script](#manual-testing-with-repl) with your debugger.
 
 ## Linking to the packaging plugin
 
