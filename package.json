@@ -20,6 +20,7 @@
     "prepack": "sf-prepack",
     "prepare": "sf-install",
     "pretest": "sf-compile-test",
+    "repl": "node --inspect ./scripts/repl.js",
     "test": "sf-test",
     "test:nuts": "nyc mocha \"**/*.nut.ts\" --slow 4500 --timeout 1800000 --parallel"
   },
