@@ -14,19 +14,40 @@ import { PackageVersionListResult, PackageVersionListOptions, ListPackageVersion
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
 
-// Stripping CodeCoverage, HasPassedCodeCoverageCheck as they are causing a perf issue in 47.0+ W-6997762
-const DEFAULT_SELECT =
-  'SELECT Id, Package2Id, SubscriberPackageVersionId, Name, Package2.Name, Package2.NamespacePrefix, Package2.IsOrgDependent, ' +
-  'Description, Tag, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber, IsReleased, ' +
-  'CreatedDate, LastModifiedDate, IsPasswordProtected, AncestorId, ValidationSkipped, CreatedById ' +
-  'FROM Package2Version';
+const defaultFields = [
+  'Id',
+  'Package2Id',
+  'SubscriberPackageVersionId',
+  'Name',
+  'Package2.Name',
+  'Package2.NamespacePrefix',
+  'Package2.IsOrgDependent',
+  'Description',
+  'Tag',
+  'Branch',
+  'MajorVersion',
+  'MinorVersion',
+  'PatchVersion',
+  'BuildNumber',
+  'IsReleased',
+  'CreatedDate',
+  'LastModifiedDate',
+  'IsPasswordProtected',
+  'AncestorId',
+  'ValidationSkipped',
+  'CreatedById',
+];
 
-const VERBOSE_SELECT =
-  'SELECT Id, Package2Id, SubscriberPackageVersionId, Name, Package2.Name, Package2.NamespacePrefix, ' +
-  'Description, Tag, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber, IsReleased, ' +
-  'CreatedDate, LastModifiedDate, IsPasswordProtected, CodeCoverage, HasPassedCodeCoverageCheck, AncestorId, ValidationSkipped, ' +
-  'ConvertedFromVersionId, Package2.IsOrgDependent, ReleaseVersion, BuildDurationInSeconds, HasMetadataRemoved, CreatedById ' +
-  'FROM Package2Version';
+const verboseFields = [
+  'CodeCoverage',
+  'HasPassedCodeCoverageCheck',
+  'ConvertedFromVersionId',
+  'ReleaseVersion',
+  'BuildDurationInSeconds',
+  'HasMetadataRemoved',
+];
+
+const verbose57Fields = ['Language'];
 
 export const DEFAULT_ORDER_BY_FIELDS = 'Package2Id, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber';
 
@@ -50,7 +71,16 @@ function constructQuery(options: PackageVersionListOptions): string {
   // construct custom WHERE clause, if applicable
   const where = constructWhere(options.packages, options.createdLastDays, options.modifiedLastDays, options.isReleased);
 
-  return assembleQueryParts(options.verbose === true ? VERBOSE_SELECT : DEFAULT_SELECT, where, options.orderBy);
+  let queryFields = defaultFields;
+  if (options.verbose) {
+    queryFields = [...queryFields, ...verboseFields];
+    if (Number(options.connection.version) >= 57) {
+      queryFields = [...queryFields, ...verbose57Fields];
+    }
+  }
+  const query = `SELECT ${queryFields.toString()} FROM Package2Version`;
+
+  return assembleQueryParts(query, where, options.orderBy);
 }
 
 export function assembleQueryParts(select: string, where: string[], orderBy?: string): string {
