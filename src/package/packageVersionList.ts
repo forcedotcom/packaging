@@ -9,7 +9,7 @@ import { Logger, Messages } from '@salesforce/core';
 import { QueryResult, Schema } from 'jsforce';
 import { isNumber } from '@salesforce/ts-types';
 import { BY_LABEL, validateId } from '../utils/packageUtils';
-import { PackageVersionListResult, PackageVersionListOptions, ListPackageVersionOptions } from '../interfaces';
+import { PackageVersionListResult, ListPackageVersionOptions } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
@@ -67,7 +67,7 @@ export async function listPackageVersions(
   });
 }
 
-function constructQuery(options: PackageVersionListOptions): string {
+function constructQuery(options: ListPackageVersionOptions): string {
   // construct custom WHERE clause, if applicable
   const where = constructWhere(options.packages, options.createdLastDays, options.modifiedLastDays, options.isReleased);
 
