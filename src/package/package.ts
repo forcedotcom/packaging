@@ -74,6 +74,7 @@ export const Package2Fields = [
 export class Package {
   private readonly packageId: string;
   private packageData: PackagingSObjects.Package2;
+
   public constructor(private options: PackageOptions) {
     let packageId = this.options.packageAliasOrId;
     if (!packageId.startsWith(packagePrefixes.PackageId)) {
@@ -115,7 +116,9 @@ export class Package {
    */
   public static async list(connection: Connection): Promise<PackagingSObjects.Package2[]> {
     return (
-      await connection.tooling.query<PackagingSObjects.Package2>(`select ${Package2Fields.toString()} from Package2`)
+      await connection.tooling.query<PackagingSObjects.Package2>(
+        `select ${Package2Fields.toString()} from Package2 WHERE IsDeprecated != true ORDER BY NamespacePrefix, Name`
+      )
     )?.records;
   }
 
