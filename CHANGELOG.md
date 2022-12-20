@@ -1,3 +1,12 @@
+## [1.1.2](https://github.com/forcedotcom/packaging/compare/1.1.1...1.1.2) (2022-12-20)
+
+
+### Bug Fixes
+
+* exclude deleted packages from list ([#162](https://github.com/forcedotcom/packaging/issues/162)) ([e5e4799](https://github.com/forcedotcom/packaging/commit/e5e479949cd192a7c634bd1201489d207ce105e7))
+
+
+
 ## [1.1.1](https://github.com/forcedotcom/packaging/compare/1.1.0...1.1.1) (2022-12-17)
 
 
