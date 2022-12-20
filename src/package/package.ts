@@ -117,7 +117,7 @@ export class Package {
   public static async list(connection: Connection): Promise<PackagingSObjects.Package2[]> {
     return (
       await connection.tooling.query<PackagingSObjects.Package2>(
-        `select ${Package2Fields.toString()} from Package2 WHERE IsDeprecated != true ORDER BY NamespacePrefix, Name`
+        `select ${Package2Fields.toString()} from Package2 ORDER BY NamespacePrefix, Name`
       )
     )?.records;
   }
