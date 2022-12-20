@@ -515,10 +515,6 @@ describe('Integration tests for @salesforce/packaging library', () => {
       expect(result.success).to.be.true;
       expect(result.id).to.be.equal(pkgId);
     });
-    it('verify package is no longer included in list', async () => {
-      const packages = await Package.list(devHubOrg.getConnection());
-      expect(packages.find((pkg) => pkg.Id === pkgId)).to.not.be.ok;
-    });
   });
 });
 describe('ancestry tests', () => {
