@@ -1,3 +1,12 @@
+## [1.1.3](https://github.com/forcedotcom/packaging/compare/1.1.2...1.1.3) (2022-12-22)
+
+
+### Bug Fixes
+
+* remove unused messages and add missing messages ([e8280e3](https://github.com/forcedotcom/packaging/commit/e8280e31e35f467856daffcc7cadd2f0a252f34e))
+
+
+
 ## [1.1.2](https://github.com/forcedotcom/packaging/compare/1.1.1...1.1.2) (2022-12-20)
 
 
