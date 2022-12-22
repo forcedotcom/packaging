@@ -23,6 +23,7 @@ import { VersionNumber } from './versionNumber';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'subscriber_package_version');
+const pkgMessages = Messages.load('@salesforce/packaging', 'package', ['action', 'defaultErrorMessage']);
 
 type SPV = PackagingSObjects.SubscriberPackageVersion;
 // these fields have been identified as requiring additional serverside resources in order to calculate their values
@@ -200,9 +201,9 @@ export class SubscriberPackageVersion {
       const errorDetails = await getUninstallErrors(connection, id);
       const errors = errorDetails.map((record, index) => `(${index + 1}) ${record.Message}`);
       const errHeader = errors.length > 0 ? `\n=== Errors\n${errors.join('\n')}` : '';
-      const err = messages.getMessage('defaultErrorMessage', [id, result.Id]);
+      const err = pkgMessages.getMessage('defaultErrorMessage', [id, result.Id]);
 
-      throw new SfError(`${err}${errHeader}`, 'UNINSTALL_ERROR', [messages.getMessage('action')]);
+      throw new SfError(`${err}${errHeader}`, 'UNINSTALL_ERROR', [pkgMessages.getMessage('action')]);
     }
     return result;
   }

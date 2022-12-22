@@ -148,7 +148,7 @@ export class Package {
         validateId(BY_LABEL.PACKAGE_ID, id);
         return id;
       } else {
-        throw messages.createError('errorInvalidPackageVersionId', [id]);
+        throw messages.createError('invalidPackageId', [id, '0Ho']);
       }
     });
     const opts = options || ({} as PackageVersionListOptions);
