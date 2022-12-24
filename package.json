@@ -58,7 +58,7 @@
     "xml2js": "^0.4.23"
   },
   "devDependencies": {
-    "@salesforce/cli-plugins-testkit": "^3.2.12",
+    "@salesforce/cli-plugins-testkit": "^3.2.14",
     "@salesforce/dev-config": "^3.1.0",
     "@salesforce/dev-scripts": "^3.1.0",
     "@salesforce/prettier-config": "^0.0.2",
