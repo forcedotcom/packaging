@@ -87,7 +87,6 @@ export class Package {
 
     if (packageId.startsWith(packagePrefixes.PackageId)) {
       this.packageId = packageId;
-      this.verifyAliasForId();
     } else {
       throw messages.createError('invalidPackageId', [this.options.packageAliasOrId, packagePrefixes.PackageId]);
     }
@@ -279,11 +278,5 @@ export class Package {
         .retrieve(this.packageId)) as PackagingSObjects.Package2;
     }
     return this.packageData;
-  }
-
-  private verifyAliasForId(): void {
-    if (this.options.project.getAliasesFromPackageId(this.packageId).length === 0) {
-      throw new SfError(messages.getMessage('couldNotFindAliasForId', [this.packageId]));
-    }
   }
 }
