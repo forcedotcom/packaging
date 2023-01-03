@@ -1,3 +1,12 @@
+## [1.1.6](https://github.com/forcedotcom/packaging/compare/1.1.5...1.1.6) (2023-01-03)
+
+
+### Bug Fixes
+
+* remove alias requirement when constructing a Package ([8e2ec0f](https://github.com/forcedotcom/packaging/commit/8e2ec0fcf44e2d9750d4136a456aad862e609979))
+
+
+
 ## [1.1.5](https://github.com/forcedotcom/packaging/compare/1.1.4...1.1.5) (2022-12-31)
 
 
