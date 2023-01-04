@@ -1,3 +1,12 @@
+## [1.1.7](https://github.com/forcedotcom/packaging/compare/1.1.6...1.1.7) (2023-01-04)
+
+
+### Bug Fixes
+
+* **deps:** bump json5 from 1.0.1 to 1.0.2 ([10826cb](https://github.com/forcedotcom/packaging/commit/10826cb77b8534292b4d8ab006b3d9b0422e60f7))
+
+
+
 ## [1.1.6](https://github.com/forcedotcom/packaging/compare/1.1.5...1.1.6) (2023-01-03)
 
 
