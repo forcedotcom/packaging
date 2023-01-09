@@ -1,3 +1,12 @@
+## [1.1.9](https://github.com/forcedotcom/packaging/compare/1.1.8...1.1.9) (2023-01-09)
+
+
+### Bug Fixes
+
+* search for pkg dir by pkg id ([6a469bc](https://github.com/forcedotcom/packaging/commit/6a469bca374b6decaca9462e13d0dc4699932b6a))
+
+
+
 ## [1.1.8](https://github.com/forcedotcom/packaging/compare/1.1.7...1.1.8) (2023-01-07)
 
 
