@@ -630,7 +630,7 @@ export class PackageVersionCreate {
     let packageName: string;
     if (this.options.packageId) {
       const pkg = this.options.packageId;
-      // for backward compatibility allow for package dir property to have an id instead of an alias
+      // for backward compatibility allow for a packageDirectory package property to be an id (0Ho) instead of an alias.
       packageName = (await this.getPackageDirFromId(pkg))?.package;
       if (!packageName) {
         packageName = pkg.startsWith('0Ho') ? this.project.getAliasesFromPackageId(pkg).find((alias) => alias) : pkg;
