@@ -15,6 +15,7 @@ import {
   LoggerLevel,
   Messages,
   NamedPackageDir,
+  PackageDir,
   ScratchOrgInfo,
   SfdcUrl,
   SfProject,
@@ -607,6 +608,7 @@ export class PackageVersionCreate {
     return false;
   }
 
+  // eslint-disable-next-line complexity
   private async packageVersionCreate(): Promise<Partial<PackageVersionCreateRequestResult>> {
     // For the first rollout of validating sfdx-project.json data against schema, make it optional and defaulted
     // to false. Validation only occurs if the optional validateschema option has been specified.
@@ -628,8 +630,12 @@ export class PackageVersionCreate {
     let packageName: string;
     if (this.options.packageId) {
       const pkg = this.options.packageId;
-      packageName = pkg.startsWith('0Ho') ? this.project.getAliasesFromPackageId(pkg).find((alias) => alias) : pkg;
-      if (!packageName) throw messages.createError('errorMissingPackage', [this.options.packageId]);
+      // for backward compatibility allow for a packageDirectory package property to be an id (0Ho) instead of an alias.
+      packageName = (await this.getPackageDirFromId(pkg))?.package;
+      if (!packageName) {
+        packageName = pkg.startsWith('0Ho') ? this.project.getAliasesFromPackageId(pkg).find((alias) => alias) : pkg;
+        if (!packageName) throw messages.createError('errorMissingPackage', [this.options.packageId]);
+      }
       this.packageObject = this.project.findPackage(
         (namedPackageDir) => namedPackageDir.package === packageName || namedPackageDir.name === packageName
       );
@@ -676,6 +682,17 @@ export class PackageVersionCreate {
       ]);
     }
     return (await byId(createResult.id, this.connection))[0];
+  }
+
+  private async getPackageDirFromId(pkg: string): Promise<PackageDir> {
+    let dir: PackageDir[];
+    if (pkg.startsWith('0Ho')) {
+      dir = (await this.project.getSfProjectJson().getPackageDirectories()).filter((p) => p.package === pkg);
+      if (dir.length === 1) {
+        return dir[0];
+      }
+    }
+    return;
   }
 
   private async getPackageType(): Promise<PackageType> {
