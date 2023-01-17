@@ -309,8 +309,7 @@ export class PackageVersionCreate {
 
     // Ensure we only include the Language property for a connection api version
     // of v57.0 or higher.
-    const apiVersion = this.connection.getApiVersion();
-    if (apiVersion && apiVersion < '57.0') {
+    if (this.connection.getApiVersion() < '57.0') {
       if (requestObject.Language) {
         this.logger.warn(
           `The language option is only valid for API version 57.0 and higher. Ignoring ${requestObject.Language}`
