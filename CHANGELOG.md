@@ -1,3 +1,12 @@
+## [1.1.11](https://github.com/forcedotcom/packaging/compare/1.1.10...1.1.11) (2023-01-17)
+
+
+### Bug Fixes
+
+* do not add language from org descriptor to pvc request object ([c8b0bc8](https://github.com/forcedotcom/packaging/commit/c8b0bc866523d61c390a005ad8192db81e435f69))
+
+
+
 ## [1.1.10](https://github.com/forcedotcom/packaging/compare/1.1.9...1.1.10) (2023-01-14)
 
 
