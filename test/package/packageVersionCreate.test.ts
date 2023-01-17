@@ -331,10 +331,31 @@ describe('Package Version Create', () => {
     );
   });
 
-  it('should create the package version create request with language', async () => {
+  it('should create the package version create request with language and API version >= 57.0', async () => {
+    $$.SANDBOX.stub(connection, 'getApiVersion').returns('57.0');
     const pvc = new PackageVersionCreate({ connection, project, language: 'en_US', packageId });
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].Language).to.equal('en_US');
+    expect(result).to.have.all.keys(
+      'Branch',
+      'CreatedBy',
+      'CreatedDate',
+      'Error',
+      'HasMetadataRemoved',
+      'Id',
+      'Package2Id',
+      'Package2VersionId',
+      'Status',
+      'SubscriberPackageVersionId',
+      'Tag'
+    );
+  });
+
+  it('should NOT create the package version create request with language and API version < 57.0', async () => {
+    $$.SANDBOX.stub(connection, 'getApiVersion').returns('56.0');
+    const pvc = new PackageVersionCreate({ connection, project, language: 'en_US', packageId });
+    const result = await pvc.createPackageVersion();
+    expect(packageCreateStub.firstCall.args[1].Language).to.be.undefined;
     expect(result).to.have.all.keys(
       'Branch',
       'CreatedBy',
