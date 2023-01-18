@@ -58,7 +58,6 @@ import { BuildNumberToken, VersionNumber } from './versionNumber';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
-
 const DESCRIPTOR_FILE = 'package2-descriptor.json';
 
 export class PackageVersionCreate {
@@ -82,57 +81,6 @@ export class PackageVersionCreate {
     } catch (err) {
       throw pkgUtils.applyErrorAction(pkgUtils.massageErrorMessage(err as Error));
     }
-  }
-
-  /**
-   * Extracted into a method for UT purposes
-   *
-   * @param componentSet CS to convert
-   * @param outputDirectory where to place the converted MD
-   * @param packageName the packagename related to the CS
-   * @private
-   */
-  // eslint-disable-next-line class-methods-use-this
-  private async convertMetadata(
-    componentSet: ComponentSet,
-    outputDirectory: string,
-    packageName: string
-  ): Promise<ConvertResult> {
-    const converter = new MetadataConverter();
-    return converter.convert(componentSet, 'metadata', {
-      type: 'directory',
-      outputDirectory,
-      packageName,
-      genUniqueDir: false,
-    });
-  }
-
-  // convert source to mdapi format and copy to tmp dir packaging up
-  private async generateMDFolderForArtifact(options: MDFolderForArtifactOptions): Promise<ConvertResult> {
-    const sourcepath = options.sourcePaths ?? [options.sourceDir];
-    const componentSet = await ComponentSetBuilder.build({
-      sourceapiversion: this.project.getSfProjectJson().get('sourceApiVersion') as string,
-      sourcepath,
-    });
-    const packageName = options.packageName;
-    const outputDirectory = path.resolve(options.deploydir);
-    const convertResult = await this.convertMetadata(componentSet, outputDirectory, packageName);
-
-    if (packageName) {
-      // SDR will build an output path like /output/directory/packageName/package.xml
-      // this was breaking from toolbelt, so to revert it we copy the directory up a level and delete the original
-      copyDir(convertResult.packagePath, outputDirectory);
-      try {
-        fs.rmSync(convertResult.packagePath, { recursive: true });
-      } catch (e) {
-        // rmdirSync is being deprecated and emits a warning
-        // but rmSync is introduced in node 14 so fall back to rmdirSync
-        fs.rmdirSync(convertResult.packagePath, { recursive: true });
-      }
-
-      convertResult.packagePath = outputDirectory;
-    }
-    return convertResult;
   }
 
   private async validateDependencyValues(dependency: PackageDescriptorJson): Promise<void> {
@@ -332,10 +280,12 @@ export class PackageVersionCreate {
     const packageVersTmpRoot = path.join(os.tmpdir(), `${uniqueHash}`);
     const packageVersMetadataFolder = path.join(packageVersTmpRoot, 'md-files');
     const unpackagedMetadataFolder = path.join(packageVersTmpRoot, 'unpackaged-md-files');
+    const seedMetadataFolder = path.join(packageVersTmpRoot, 'seed-md-files');
     const packageVersProfileFolder = path.join(packageVersMetadataFolder, 'profiles');
     const packageVersBlobDirectory = path.join(packageVersTmpRoot, 'package-version-info');
     const metadataZipFile = path.join(packageVersBlobDirectory, 'package.zip');
     const unpackagedMetadataZipFile = path.join(packageVersBlobDirectory, 'unpackaged-metadata-package.zip');
+    const seedMetadataZipFile = path.join(packageVersBlobDirectory, 'seed-metadata-package.zip');
     const settingsZipFile = path.join(packageVersBlobDirectory, 'settings.zip');
     const packageVersBlobZipFile = path.join(packageVersTmpRoot, 'package-version-info.zip');
     const sourceBaseDir = path.join(this.project.getPath(), this.packageObject.path ?? '');
@@ -343,6 +293,7 @@ export class PackageVersionCreate {
     const mdOptions = {
       deploydir: packageVersMetadataFolder,
       sourceDir: sourceBaseDir,
+      sourceApiVersion: this.project?.getSfProjectJson()?.get('sourceApiVersion') as string,
     };
 
     // Stores any additional client side info that might be needed later on in the process
@@ -351,7 +302,7 @@ export class PackageVersionCreate {
     const settingsGenerator = new SettingsGenerator({ asDirectory: true });
     const packageDescriptorJson = cloneJson(this.packageObject) as PackageDescriptorJson;
     // Copy all the metadata from the workspace to a tmp folder
-    const componentSet = await this.generateMDFolderForArtifact(mdOptions);
+    const componentSet = await PackageVersionCreateUtil.generateMDFolderForArtifact(mdOptions);
     this.verifyHasSource(componentSet);
 
     if (packageDescriptorJson.package) {
@@ -437,11 +388,13 @@ export class PackageVersionCreate {
       packageVersMetadataFolder,
       packageVersProfileFolder,
       unpackagedMetadataFolder,
+      seedMetadataFolder,
       metadataZipFile,
       settingsZipFile,
       packageVersBlobDirectory,
       packageVersBlobZipFile,
       unpackagedMetadataZipFile,
+      seedMetadataZipFile,
       clientSideInfo,
       settingsGenerator
     );
@@ -450,7 +403,7 @@ export class PackageVersionCreate {
   }
 
   private verifyHasSource(componentSet: ConvertResult): void {
-    if (componentSet.converted.length === 0) {
+    if (componentSet?.converted.length === 0) {
       throw messages.createError('noSourceInRootDirectory', [this.packageObject.path ?? '<unknown>']);
     }
   }
@@ -459,11 +412,13 @@ export class PackageVersionCreate {
     packageVersMetadataFolder: string,
     packageVersProfileFolder: string,
     unpackagedMetadataFolder: string,
+    seedMetadataFolder: string,
     metadataZipFile: string,
     settingsZipFile: string,
     packageVersBlobDirectory: string,
     packageVersBlobZipFile: string,
     unpackagedMetadataZipFile: string,
+    seedMetadataZipFile: string,
     clientSideInfo: Map<string, string>,
     settingsGenerator: SettingsGenerator
   ): Promise<void> {
@@ -488,18 +443,28 @@ export class PackageVersionCreate {
     let typesArr = packageJson.Package.types;
     this.apiVersionFromPackageXml = packageJson.Package.version;
 
-    const hasUnpackagedMetadata = await this.resolveUnpackagedMetadata(
-      this.packageObject,
-      unpackagedMetadataFolder,
-      clientSideInfo,
-      this.options.codecoverage
+    const sourceApiVersion = this.project?.getSfProjectJson()?.get('sourceApiVersion') as string;
+    const hasSeedMetadata = await PackageVersionCreateUtil.resolveMetadata(
+      (this.packageObject as PackageDescriptorJson).seedMetadata?.path,
+      seedMetadataFolder,
+      'seedMDDirectoryDoesNotExist',
+      sourceApiVersion
     );
+
+    let hasUnpackagedMetadata = false;
+    const unpackagedMetadataPath = (this.packageObject as PackageDescriptorJson).unpackagedMetadata?.path;
+    if (this.options.codecoverage) {
+      hasUnpackagedMetadata = await PackageVersionCreateUtil.resolveMetadata(
+        unpackagedMetadataPath,
+        unpackagedMetadataFolder,
+        'unpackagedMDDirectoryDoesNotExist',
+        sourceApiVersion
+      );
+    }
 
     // if we're using unpackaged metadata, don't package the profiles located there
     if (hasUnpackagedMetadata) {
-      typesArr = this.options.profileApi.filterAndGenerateProfilesForManifest(typesArr, [
-        clientSideInfo.get('UnpackagedMetadataPath'),
-      ]);
+      typesArr = this.options.profileApi.filterAndGenerateProfilesForManifest(typesArr, [unpackagedMetadataPath]);
     } else {
       typesArr = this.options.profileApi.filterAndGenerateProfilesForManifest(typesArr);
     }
@@ -510,7 +475,7 @@ export class PackageVersionCreate {
       {
         Package: typesArr,
       },
-      [clientSideInfo.get('UnpackagedMetadataPath')]
+      [unpackagedMetadataPath]
     );
 
     if (excludedProfiles.length > 0) {
@@ -539,6 +504,10 @@ export class PackageVersionCreate {
     await fs.promises.writeFile(path.join(packageVersMetadataFolder, 'package.xml'), xml, 'utf-8');
     // Zip the packageVersMetadataFolder folder and put the zip in {packageVersBlobDirectory}/package.zip
     await zipDir(packageVersMetadataFolder, metadataZipFile);
+    if (hasSeedMetadata) {
+      // Zip the seedMetadataFolder folder and put the zip in {packageVersBlobDirectory}/{seedMetadataZipFile}
+      await zipDir(seedMetadataFolder, seedMetadataZipFile);
+    }
     if (hasUnpackagedMetadata) {
       // Zip the unpackagedMetadataFolder folder and put the zip in {packageVersBlobDirectory}/{unpackagedMetadataZipFile}
       await zipDir(unpackagedMetadataFolder, unpackagedMetadataZipFile);
@@ -579,33 +548,6 @@ export class PackageVersionCreate {
     }
 
     delete packageDescriptorJson.apexTestAccess;
-  }
-
-  private async resolveUnpackagedMetadata(
-    packageDescriptorJson: PackageDescriptorJson,
-    unpackagedMetadataFolder: string,
-    clientSideInfo: Map<string, string>,
-    codeCoverage: boolean
-  ): Promise<boolean> {
-    // Add the Unpackaged Metadata, if any, to the output directory, only when code coverage is specified
-    if (codeCoverage && packageDescriptorJson.unpackagedMetadata?.path) {
-      const unpackagedPath = path.join(process.cwd(), packageDescriptorJson.unpackagedMetadata.path);
-      if (!fs.existsSync(unpackagedPath)) {
-        throw messages.createError('unpackagedMDDirectoryDoesNotExist', [
-          packageDescriptorJson.unpackagedMetadata.path,
-        ]);
-      }
-
-      fs.mkdirSync(unpackagedMetadataFolder, { recursive: true });
-      await this.generateMDFolderForArtifact({
-        deploydir: unpackagedMetadataFolder,
-        sourceDir: unpackagedPath,
-      });
-      // Set which package is the "unpackaged" package
-      clientSideInfo.set('UnpackagedMetadataPath', packageDescriptorJson.unpackagedMetadata.path);
-      return true;
-    }
-    return false;
   }
 
   // eslint-disable-next-line complexity
@@ -740,6 +682,7 @@ export class PackageVersionCreate {
     delete packageDescriptorJson.default; // for client-side use only, not needed
     delete packageDescriptorJson.includeProfileUserLicenses; // for client-side use only, not needed
     delete packageDescriptorJson.unpackagedMetadata; // for client-side use only, not needed
+    delete packageDescriptorJson.seedMetadata; // for client-side use only, not needed
     delete packageDescriptorJson.branch; // for client-side use only, not needed
     delete packageDescriptorJson.fullPath; // for client-side use only, not needed
     delete packageDescriptorJson.name; // for client-side use only, not needed
@@ -1058,5 +1001,81 @@ export class PackageVersionCreate {
       }
     }
     return result;
+  }
+}
+
+export namespace PackageVersionCreateUtil {
+  /**
+   * Extracted into a method for UT purposes
+   *
+   * @param componentSet CS to convert
+   * @param outputDirectory where to place the converted MD
+   * @param packageName the packagename related to the CS
+   * @private
+   */
+  // eslint-disable-next-line class-methods-use-this
+  export async function convertMetadata(
+    componentSet: ComponentSet,
+    outputDirectory: string,
+    packageName: string
+  ): Promise<ConvertResult> {
+    const converter = new MetadataConverter();
+    return converter.convert(componentSet, 'metadata', {
+      type: 'directory',
+      outputDirectory,
+      packageName,
+      genUniqueDir: false,
+    });
+  }
+
+  // convert source to mdapi format and copy to tmp dir packaging up
+  export async function generateMDFolderForArtifact(options: MDFolderForArtifactOptions): Promise<ConvertResult> {
+    const sourcepath = options.sourcePaths ?? [options.sourceDir];
+    const componentSet = await ComponentSetBuilder.build({
+      sourceapiversion: options.sourceApiVersion,
+      sourcepath,
+    });
+    const packageName = options.packageName;
+    const outputDirectory = path.resolve(options.deploydir);
+    const convertResult = await PackageVersionCreateUtil.convertMetadata(componentSet, outputDirectory, packageName);
+
+    if (packageName) {
+      // SDR will build an output path like /output/directory/packageName/package.xml
+      // this was breaking from toolbelt, so to revert it we copy the directory up a level and delete the original
+      copyDir(convertResult.packagePath, outputDirectory);
+      try {
+        fs.rmSync(convertResult.packagePath, { recursive: true });
+      } catch (e) {
+        // rmdirSync is being deprecated and emits a warning
+        // but rmSync is introduced in node 14 so fall back to rmdirSync
+        fs.rmdirSync(convertResult.packagePath, { recursive: true });
+      }
+
+      convertResult.packagePath = outputDirectory;
+    }
+    return convertResult;
+  }
+
+  export async function resolveMetadata(
+    metadataRelativePath: string,
+    metadataOutputPath: string,
+    errorMessageLabel: string,
+    sourceApiVersion?: string
+  ): Promise<boolean> {
+    if (metadataRelativePath) {
+      const metadataFullPath = path.join(process.cwd(), metadataRelativePath);
+      if (!fs.existsSync(metadataFullPath)) {
+        throw messages.createError(errorMessageLabel, [metadataRelativePath]);
+      }
+
+      fs.mkdirSync(metadataOutputPath, { recursive: true });
+      await PackageVersionCreateUtil.generateMDFolderForArtifact({
+        deploydir: metadataOutputPath,
+        sourceDir: metadataFullPath,
+        sourceApiVersion,
+      });
+      return true;
+    }
+    return false;
   }
 }

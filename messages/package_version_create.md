@@ -20,6 +20,8 @@ Dependency on package %s was resolved to version number %s, branch %s, %s.
 
 # buildNumberResolvedForReleased
 
+export type PackageVersionCreateOptions = {
+
 Dependency on package %s was resolved to the released version number %s, %s.
 
 # noReleaseVersionFound
@@ -41,6 +43,10 @@ You cannot use 'settings' and 'orgPreferences' in your scratch definition file, 
 # errorReadingDefintionFile
 
 There was an error while reading or parsing the provided scratch definition file: %s
+
+# seedMDDirectoryDoesNotExist
+
+Seed metadata directory %s was specified but does not exist.
 
 # unpackagedMDDirectoryDoesNotExist
 

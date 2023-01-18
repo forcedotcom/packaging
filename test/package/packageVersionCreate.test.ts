@@ -10,8 +10,7 @@ import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from
 import { expect } from 'chai';
 import { Connection, SfProject } from '@salesforce/core';
 import * as xml2js from 'xml2js';
-import { stubMethod } from '@salesforce/ts-sinon';
-import { PackageVersionCreate } from '../../src/package/packageVersionCreate';
+import { PackageVersionCreate, PackageVersionCreateUtil } from '../../src/package/packageVersionCreate';
 import { PackagingSObjects } from '../../src/interfaces';
 
 describe('Package Version Create', () => {
@@ -26,13 +25,14 @@ describe('Package Version Create', () => {
   let project: SfProject;
 
   // we can't stub all converts in the before each because each test has a unique PVC with different options
-  const stubConvert = (pvc: PackageVersionCreate): void => {
+  const stubConvert = (): void => {
     $$.SANDBOX.stub(fs, 'existsSync').returns(true);
     $$.SANDBOX.stub(fs.promises, 'readFile').resolves();
-    stubMethod($$.SANDBOX, pvc, 'convertMetadata').resolves({
+    $$.SANDBOX.stub(PackageVersionCreateUtil, 'convertMetadata').resolves({
       packagePath: '/var/folders/lc/yk0hz4l50kq0vs79yb3m_lmm0000gp/T/0Ho3i000000Gmj6XXX-TESTING/md-files',
       converted: [],
     });
+    $$.SANDBOX.stub(PackageVersionCreateUtil, 'generateMDFolderForArtifact').resolves();
   };
 
   beforeEach(async () => {
@@ -57,6 +57,9 @@ describe('Package Version Create', () => {
           ancestorId: 'TEST2',
           unpackagedMetadata: {
             path: 'unpackaged',
+          },
+          seedMetadata: {
+            path: 'seed',
           },
           dependencies: [
             {
@@ -119,7 +122,6 @@ describe('Package Version Create', () => {
     xml2jsStub.restore();
     xml2jsStub = $$.SANDBOX.stub(xml2js, 'parseStringPromise').resolves({});
     const pvc = new PackageVersionCreate({ connection, project, packageId });
-    stubConvert(pvc);
 
     try {
       await pvc.createPackageVersion();
@@ -130,7 +132,7 @@ describe('Package Version Create', () => {
 
   it('should create the package version create request', async () => {
     const pvc = new PackageVersionCreate({ connection, project, packageId });
-    stubConvert(pvc);
+    stubConvert();
 
     const result = await pvc.createPackageVersion();
     expect(result).to.have.all.keys(
@@ -157,11 +159,8 @@ describe('Package Version Create', () => {
   it('should create the package version create request with codecoverage=true', async () => {
     const pvc = new PackageVersionCreate({ connection, project, codecoverage: true, packageId });
     // @ts-ignore
-    const hasUnpackagedMdSpy = $$.SANDBOX.spy(pvc, 'resolveUnpackagedMetadata');
-    // @ts-ignore
-    $$.SANDBOX.stub(pvc, 'generateMDFolderForArtifact').resolves();
-    $$.SANDBOX.stub(fs, 'existsSync').returns(true);
-    $$.SANDBOX.stub(fs.promises, 'readFile').resolves();
+    const hasUnpackagedMdSpy = $$.SANDBOX.spy(PackageVersionCreateUtil, 'resolveMetadata');
+    stubConvert();
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].CalculateCodeCoverage).to.equal(true);
     expect(result).to.have.all.keys(
@@ -177,16 +176,14 @@ describe('Package Version Create', () => {
       'SubscriberPackageVersionId',
       'Tag'
     );
-    const unpackagedMD = (hasUnpackagedMdSpy.firstCall.args.at(0) as { unpackagedMetadata: Record<string, string> })
-      .unpackagedMetadata;
-    expect(unpackagedMD).to.deep.equal({
-      path: 'unpackaged',
-    });
+    const unpackagedMD = hasUnpackagedMdSpy.secondCall.args[0];
+    expect(unpackagedMD).to.equal('unpackaged');
   });
 
   it('should create the package version create request with codecoverage=false', async () => {
     const pvc = new PackageVersionCreate({ connection, project, codecoverage: false, packageId });
-    stubConvert(pvc);
+    const hasSeedMdSpy = $$.SANDBOX.spy(PackageVersionCreateUtil, 'resolveMetadata');
+    stubConvert();
 
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].CalculateCodeCoverage).to.equal(false);
@@ -203,6 +200,8 @@ describe('Package Version Create', () => {
       'SubscriberPackageVersionId',
       'Tag'
     );
+    const hasSeedMd = hasSeedMdSpy.firstCall.args[0];
+    expect(hasSeedMd).to.equal('seed');
   });
 
   it('should create the package version create request with tag info', async () => {
@@ -212,7 +211,7 @@ describe('Package Version Create', () => {
       tag: 'DancingBears',
       packageId,
     });
-    stubConvert(pvc);
+    stubConvert();
 
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].Tag).to.equal('DancingBears');
@@ -239,7 +238,7 @@ describe('Package Version Create', () => {
       packageId,
       skipancestorcheck: true,
     });
-    stubConvert(pvc);
+    stubConvert();
 
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].skipancestorcheck).to.equal(undefined);
@@ -265,7 +264,7 @@ describe('Package Version Create', () => {
       skipvalidation: true,
       packageId,
     });
-    stubConvert(pvc);
+    stubConvert();
 
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].SkipValidation).to.equal(true);
@@ -291,7 +290,7 @@ describe('Package Version Create', () => {
       installationkey: 'guessMyPassword',
       packageId,
     });
-    stubConvert(pvc);
+    stubConvert();
 
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].InstallKey).to.equal('guessMyPassword');
@@ -313,7 +312,7 @@ describe('Package Version Create', () => {
 
   it('should create the package version create request with branch', async () => {
     const pvc = new PackageVersionCreate({ connection, project, branch: 'main', packageId });
-    stubConvert(pvc);
+    stubConvert();
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].Branch).to.equal('main');
     expect(result).to.have.all.keys(
@@ -333,6 +332,7 @@ describe('Package Version Create', () => {
 
   it('should create the package version create request with language', async () => {
     const pvc = new PackageVersionCreate({ connection, project, language: 'en_US', packageId });
+    stubConvert();
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].Language).to.equal('en_US');
     expect(result).to.have.all.keys(
@@ -363,7 +363,7 @@ describe('Package Version Create', () => {
       postinstallscript: 'myScript.sh',
       packageId,
     });
-    stubConvert(pvc);
+    stubConvert();
 
     try {
       await pvc.createPackageVersion();
@@ -388,7 +388,7 @@ describe('Package Version Create', () => {
       uninstallscript: 'myScript.sh',
       packageId,
     });
-    stubConvert(pvc);
+    stubConvert();
 
     try {
       await pvc.createPackageVersion();
@@ -466,7 +466,7 @@ describe('Package Version Create', () => {
       validateschema: true,
       packageId,
     });
-    stubConvert(pvc);
+    stubConvert();
 
     const result = await pvc.createPackageVersion();
     expect(validationSpy.callCount).to.equal(1);
