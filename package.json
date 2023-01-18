@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/packaging",
-  "version": "1.1.9",
+  "version": "1.1.11",
   "description": "Packaging library for the Salesforce packaging platform",
   "main": "lib/exported",
   "types": "lib/exported.d.ts",
@@ -38,7 +38,7 @@
     "!lib/**/*.map"
   ],
   "dependencies": {
-    "@oclif/core": "^1.23.1",
+    "@oclif/core": "^1.24.0",
     "@salesforce/core": "^3.32.11",
     "@salesforce/kit": "^1.8.0",
     "@salesforce/schemas": "^1.4.0",
@@ -68,11 +68,11 @@
     "@types/jszip": "^3.4.1",
     "@types/xml2js": "^0.4.11",
     "@typescript-eslint/eslint-plugin": "^5.40.1",
-    "@typescript-eslint/parser": "5.48.0",
+    "@typescript-eslint/parser": "5.48.1",
     "chai": "^4.3.7",
     "commitizen": "^4.2.6",
     "eslint": "^8.31.0",
-    "eslint-config-prettier": "^8.5.0",
+    "eslint-config-prettier": "^8.6.0",
     "eslint-config-salesforce": "^1.1.0",
     "eslint-config-salesforce-license": "^0.1.6",
     "eslint-config-salesforce-typescript": "^1.1.1",
