@@ -37,7 +37,7 @@
 1.  Write tests and run: `yarn test` (unit) and/or `yarn test:nuts` (NUTs)
 1.  Show all changed files: `git status`
 1.  Add all files to staging: `git add .`
-1.  Commit staged files with helpful commit message: `git commit`
+1.  Commit staged files with helpful commit message: `git commit`. New features should prepend the commit message with "feat:". Bug fixes should prepend, "fix:".
 1.  Push commit(s) to remote: `git push -u origin <branch_name>`
 1.  Create a pull request (PR) using the GitHub UI [here](https://github.com/forcedotcom/packaging).
 
