@@ -42,6 +42,10 @@ You cannot use 'settings' and 'orgPreferences' in your scratch definition file, 
 
 There was an error while reading or parsing the provided scratch definition file: %s
 
+# seedMDDirectoryDoesNotExist
+
+Seed metadata directory %s was specified but does not exist.
+
 # unpackagedMDDirectoryDoesNotExist
 
 Un-packaged metadata directory %s was specified but does not exist.

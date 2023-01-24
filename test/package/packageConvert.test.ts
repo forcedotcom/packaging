@@ -17,6 +17,7 @@ import {
   findOrCreatePackage2,
 } from '../../src/package/packageConvert';
 import { PackageEvents } from '../../src/interfaces';
+import { PackageVersionCreateUtil } from '../../src/package/packageVersionCreate';
 
 describe('packageConvert', () => {
   const $$ = instantiateContext();
@@ -71,6 +72,24 @@ describe('packageConvert', () => {
       expect(request).to.have.all.keys('InstallKey', 'Instance', 'IsConversionRequest', 'Package2Id', 'VersionInfo');
       expect(request.InstallKey).to.equal(undefined);
       expect(request.Instance).to.equal(undefined);
+      expect(request.IsConversionRequest).to.equal(true);
+      expect(request.Package2Id).to.equal('0Ho3i000000Gmj6CAC');
+      // the most we can assert about VersionInfo because it is a zip file string representation, which changes with time
+      expect(typeof request.VersionInfo).to.equal('string');
+    });
+
+    it('should return a valid request including seed metadata', async () => {
+      $$.inProject(true);
+      $$.SANDBOX.stub(PackageVersionCreateUtil, 'resolveMetadata').resolves(true);
+
+      const request = await createPackageVersionCreateRequest(
+        { installationkey: '123', buildinstance: 'myInstance', seedmetadata: 'seed' },
+        '0Ho3i000000Gmj6CAC',
+        '54.0'
+      );
+      expect(request).to.have.all.keys('InstallKey', 'Instance', 'IsConversionRequest', 'Package2Id', 'VersionInfo');
+      expect(request.InstallKey).to.equal('123');
+      expect(request.Instance).to.equal('myInstance');
       expect(request.IsConversionRequest).to.equal(true);
       expect(request.Package2Id).to.equal('0Ho3i000000Gmj6CAC');
       // the most we can assert about VersionInfo because it is a zip file string representation, which changes with time

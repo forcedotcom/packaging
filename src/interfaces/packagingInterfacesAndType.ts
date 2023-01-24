@@ -162,6 +162,7 @@ export type PackageDescriptorJson = Partial<NamedPackageDir> &
     orgPreferences: string[];
     snapshot: string;
     unpackagedMetadata: NamedPackageDir;
+    seedMetadata: NamedPackageDir;
     apexTestAccess: { permissionSets: string[] | string; permissionSetLicenses: string[] | string };
     permissionSetNames: string[];
     permissionSetLicenseDeveloperNames: string[];
@@ -249,6 +250,7 @@ export type MDFolderForArtifactOptions = {
   sourcePaths?: string[];
   metadataPaths?: string[];
   deploydir?: string;
+  sourceApiVersion?: string;
 };
 
 export type PackageVersionOptions = {
@@ -276,6 +278,7 @@ export type ConvertPackageOptions = {
   wait: Duration;
   buildInstance: string;
   frequency?: Duration;
+  seedMetadata?: string;
 };
 
 export type PackageVersionCreateOptions = {

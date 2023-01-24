@@ -33,6 +33,7 @@ import {
 import { generatePackageAliasEntry, uniqid } from '../utils/packageUtils';
 import { byId } from './packageVersionCreateRequest';
 import * as pvcr from './packageVersionCreateRequest';
+import { PackageVersionCreateUtil } from './packageVersionCreate';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
 Messages.importMessagesDirectory(__dirname);
@@ -98,6 +99,7 @@ export async function convertPackage(
       installationkey: options.installationKey,
       definitionfile: options.definitionfile,
       buildinstance: options.buildInstance,
+      seedmetadata: options.seedMetadata,
     },
     packageId,
     apiVersion
@@ -140,14 +142,16 @@ export async function convertPackage(
  * @private
  */
 export async function createPackageVersionCreateRequest(
-  context: { installationkey?: string; definitionfile?: string; buildinstance?: string },
+  context: { installationkey?: string; definitionfile?: string; buildinstance?: string; seedmetadata?: string },
   packageId: string,
   apiVersion: string
 ): Promise<PackagingSObjects.Package2VersionCreateRequest> {
   const uniqueId = uniqid({ template: `${packageId}-%s` });
   const packageVersTmpRoot = path.join(os.tmpdir(), uniqueId);
   const packageVersMetadataFolder = path.join(packageVersTmpRoot, 'md-files');
+  const seedMetadataFolder = path.join(packageVersTmpRoot, 'seed-md-files');
   const packageVersBlobDirectory = path.join(packageVersTmpRoot, 'package-version-info');
+  const seedMetadataZipFile = path.join(packageVersBlobDirectory, 'seed-metadata-package.zip');
   const settingsZipFile = path.join(packageVersBlobDirectory, 'settings.zip');
   const metadataZipFile = path.join(packageVersBlobDirectory, 'package.zip');
   const packageVersBlobZipFile = path.join(packageVersTmpRoot, 'package-version-info.zip');
@@ -187,6 +191,19 @@ export async function createPackageVersionCreateRequest(
   await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
   await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
   await fs.promises.mkdir(packageVersMetadataFolder, { recursive: true });
+
+  const hasSeedMetadata = await PackageVersionCreateUtil.resolveMetadata(
+    context.seedmetadata,
+    seedMetadataFolder,
+    'seedMDDirectoryDoesNotExist',
+    apiVersion
+  );
+
+  if (hasSeedMetadata) {
+    // Zip the seedMetadataFolder folder and put the zip in {packageVersBlobDirectory}/{seedMetadataZipFile}
+    process.stdout.write('hasSeed');
+    await pkgUtils.zipDir(seedMetadataFolder, seedMetadataZipFile);
+  }
 
   await settingsGenerator.createDeploy();
   await settingsGenerator.createDeployPackageContents(apiVersion);
