@@ -17,6 +17,7 @@ import {
   findOrCreatePackage2,
 } from '../../src/package/packageConvert';
 import { PackageEvents } from '../../src/interfaces';
+import { MetadataResolver } from '../../src/package/packageVersionCreate';
 
 describe('packageConvert', () => {
   const $$ = instantiateContext();
@@ -76,7 +77,50 @@ describe('packageConvert', () => {
       // the most we can assert about VersionInfo because it is a zip file string representation, which changes with time
       expect(typeof request.VersionInfo).to.equal('string');
     });
+
+    it('should return a valid request including seed metadata', async () => {
+      $$.inProject(true);
+      const hasSeedMdSpy = $$.SANDBOX.spy(MetadataResolver.prototype, 'resolveMetadata');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      $$.SANDBOX.stub(MetadataResolver.prototype, 'generateMDFolderForArtifact' as any).resolves();
+      $$.SANDBOX.stub(fs, 'existsSync').returns(true);
+
+      const request = await createPackageVersionCreateRequest(
+        { installationkey: '123', buildinstance: 'myInstance', seedmetadata: 'seed' },
+        '0Ho3i000000Gmj6CAC',
+        '54.0'
+      );
+      expect(request).to.have.all.keys('InstallKey', 'Instance', 'IsConversionRequest', 'Package2Id', 'VersionInfo');
+      expect(request.InstallKey).to.equal('123');
+      expect(request.Instance).to.equal('myInstance');
+      expect(request.IsConversionRequest).to.equal(true);
+      expect(request.Package2Id).to.equal('0Ho3i000000Gmj6CAC');
+      // the most we can assert about VersionInfo because it is a zip file string representation, which changes with time
+      expect(typeof request.VersionInfo).to.equal('string');
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const seedMD = hasSeedMdSpy.firstCall.args[0];
+      expect(seedMD).to.equal('seed');
+    });
+
+    it('should return error stating seed directory does not exist', async () => {
+      $$.inProject(true);
+      $$.SANDBOX.stub(fs, 'existsSync').returns(false);
+
+      try {
+        await createPackageVersionCreateRequest(
+          { installationkey: '123', buildinstance: 'myInstance', seedmetadata: 'non-existent' },
+          '0Ho3i000000Gmj6CAC',
+          '54.0'
+        );
+      } catch (e) {
+        expect((e as Error).message).to.include(
+          'Seed metadata directory non-existent was specified but does not exist'
+        );
+      }
+    });
   });
+
   describe('findOrCreatePackage2', () => {
     it('will error when more than one Package2 found', async () => {
       const conn = {
