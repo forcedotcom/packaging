@@ -33,10 +33,19 @@ import {
 import { generatePackageAliasEntry, uniqid } from '../utils/packageUtils';
 import { byId } from './packageVersionCreateRequest';
 import * as pvcr from './packageVersionCreateRequest';
+import { MetadataResolver } from './packageVersionCreate';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
+
+let logger: Logger;
+const getLogger = (): Logger => {
+  if (!logger) {
+    logger = Logger.childFromRoot('packageConvert');
+  }
+  return logger;
+};
 
 export async function findOrCreatePackage2(seedPackage: string, connection: Connection): Promise<string> {
   const query = `SELECT Id FROM Package2 WHERE ConvertedFromPackageId = '${seedPackage}'`;
@@ -98,6 +107,7 @@ export async function convertPackage(
       installationkey: options.installationKey,
       definitionfile: options.definitionfile,
       buildinstance: options.buildInstance,
+      seedmetadata: options.seedMetadata,
     },
     packageId,
     apiVersion
@@ -140,14 +150,16 @@ export async function convertPackage(
  * @private
  */
 export async function createPackageVersionCreateRequest(
-  context: { installationkey?: string; definitionfile?: string; buildinstance?: string },
+  context: { installationkey?: string; definitionfile?: string; buildinstance?: string; seedmetadata?: string },
   packageId: string,
   apiVersion: string
 ): Promise<PackagingSObjects.Package2VersionCreateRequest> {
   const uniqueId = uniqid({ template: `${packageId}-%s` });
   const packageVersTmpRoot = path.join(os.tmpdir(), uniqueId);
   const packageVersMetadataFolder = path.join(packageVersTmpRoot, 'md-files');
+  const seedMetadataFolder = path.join(packageVersTmpRoot, 'seed-md-files');
   const packageVersBlobDirectory = path.join(packageVersTmpRoot, 'package-version-info');
+  const seedMetadataZipFile = path.join(packageVersBlobDirectory, 'seed-metadata-package.zip');
   const settingsZipFile = path.join(packageVersBlobDirectory, 'settings.zip');
   const metadataZipFile = path.join(packageVersBlobDirectory, 'package.zip');
   const packageVersBlobZipFile = path.join(packageVersTmpRoot, 'package-version-info.zip');
@@ -187,6 +199,19 @@ export async function createPackageVersionCreateRequest(
   await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
   await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
   await fs.promises.mkdir(packageVersMetadataFolder, { recursive: true });
+
+  const hasSeedMetadata = await new MetadataResolver().resolveMetadata(
+    context.seedmetadata,
+    seedMetadataFolder,
+    'seedMDDirectoryDoesNotExist',
+    apiVersion
+  );
+
+  if (hasSeedMetadata) {
+    // Zip the seedMetadataFolder folder and put the zip in {packageVersBlobDirectory}/{seedMetadataZipFile}
+    getLogger().debug(`Including metadata found in '${context.seedmetadata}'.`);
+    await pkgUtils.zipDir(seedMetadataFolder, seedMetadataZipFile);
+  }
 
   await settingsGenerator.createDeploy();
   await settingsGenerator.createDeployPackageContents(apiVersion);
@@ -297,9 +322,8 @@ async function pollForStatusWithInterval(
           message: '',
           timeRemaining: remainingTime,
         } as PackageVersionCreateEventData);
-        const logger = Logger.childFromRoot('packageConvert');
 
-        logger.info(
+        getLogger().info(
           `Request in progress. Sleeping ${interval.seconds} seconds. Will wait a total of ${
             remainingTime.seconds
           } more seconds before timing out. Current Status='${camelCaseToTitleCase(results[0]?.Status)}'`
