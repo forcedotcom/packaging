@@ -1,3 +1,12 @@
+## [1.2.1](https://github.com/forcedotcom/packaging/compare/1.2.0...1.2.1) (2023-01-28)
+
+
+### Bug Fixes
+
+* **deps:** bump graphology-types from 0.24.5 to 0.24.7 ([084c8b0](https://github.com/forcedotcom/packaging/commit/084c8b0575773efebd118714d85d8d2de792d05c))
+
+
+
 # [1.2.0](https://github.com/forcedotcom/packaging/compare/1.1.13...1.2.0) (2023-01-27)
 
 
