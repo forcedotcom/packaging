@@ -68,7 +68,7 @@
     "@types/jszip": "^3.4.1",
     "@types/xml2js": "^0.4.11",
     "@typescript-eslint/eslint-plugin": "^5.40.1",
-    "@typescript-eslint/parser": "5.48.1",
+    "@typescript-eslint/parser": "5.49.0",
     "chai": "^4.3.7",
     "commitizen": "^4.2.6",
     "eslint": "^8.31.0",
