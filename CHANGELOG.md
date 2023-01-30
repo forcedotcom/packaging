@@ -1,3 +1,12 @@
+## [1.2.3](https://github.com/forcedotcom/packaging/compare/1.2.2...1.2.3) (2023-01-30)
+
+
+### Bug Fixes
+
+* expose waitForPublish method on SPV class ([cfcd1b0](https://github.com/forcedotcom/packaging/commit/cfcd1b072da4ce4ebec0cfe4338e2a9687fc2338))
+
+
+
 ## [1.2.2](https://github.com/forcedotcom/packaging/compare/1.2.1...1.2.2) (2023-01-28)
 
 
