@@ -366,6 +366,29 @@ export class SubscriberPackageVersion {
   }
 
   /**
+   * Wait for the subscriber package version to be replicated across instances and available to be queried against
+   *
+   * @param options.publishFrequency - how often to check for the package version to be published
+   * @param options.publishTimeout - how long to wait for the package version to be published
+   * @param options.installationKey - the installation key for the package version
+   */
+  public async waitForPublish(
+    options: {
+      publishFrequency: Duration;
+      publishTimeout: Duration;
+      installationKey?: string;
+    } = { publishFrequency: Duration.seconds(5), publishTimeout: Duration.minutes(5) }
+  ): Promise<void> {
+    await waitForPublish(
+      this.connection,
+      await this.getId(),
+      options.publishFrequency,
+      options.publishTimeout,
+      options.installationKey
+    );
+  }
+
+  /**
    * Installs a package version in a subscriber org.
    *
    * Package Version install emits the following events:
