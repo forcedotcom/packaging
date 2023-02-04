@@ -1,3 +1,12 @@
+## [1.2.5](https://github.com/forcedotcom/packaging/compare/1.2.4...1.2.5) (2023-02-04)
+
+
+### Bug Fixes
+
+* **deps:** bump http-cache-semantics from 4.1.0 to 4.1.1 ([e72a1df](https://github.com/forcedotcom/packaging/commit/e72a1dfb4de3e388f44dbaf004574888ea2894fa))
+
+
+
 ## [1.2.4](https://github.com/forcedotcom/packaging/compare/1.2.3...1.2.4) (2023-02-04)
 
 
