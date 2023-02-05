@@ -1,3 +1,12 @@
+## [1.2.6](https://github.com/forcedotcom/packaging/compare/1.2.5...1.2.6) (2023-02-05)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/kit from 1.8.3 to 1.8.4 ([ba6168c](https://github.com/forcedotcom/packaging/commit/ba6168c25433ccc57e4154c25487781161e35013))
+
+
+
 ## [1.2.5](https://github.com/forcedotcom/packaging/compare/1.2.4...1.2.5) (2023-02-04)
 
 
