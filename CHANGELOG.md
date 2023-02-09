@@ -1,3 +1,12 @@
+## [1.2.7](https://github.com/forcedotcom/packaging/compare/1.2.6...1.2.7) (2023-02-09)
+
+
+### Bug Fixes
+
+* remove warn options from log message ([e43f4c4](https://github.com/forcedotcom/packaging/commit/e43f4c4d8d12b9c2ca0ecd92a44338abd3dca11f))
+
+
+
 ## [1.2.6](https://github.com/forcedotcom/packaging/compare/1.2.5...1.2.6) (2023-02-05)
 
 
