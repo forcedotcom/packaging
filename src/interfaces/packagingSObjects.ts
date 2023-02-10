@@ -267,6 +267,7 @@ export namespace PackagingSObjects {
     EnableRss: boolean;
     UpgradeType: Nullable<'delete-only' | 'deprecate-only' | 'mixed-mode'>;
     ApexCompileType: Nullable<'all' | 'package'>;
+    SkipHandlers: boolean;
     Status: 'ERROR' | 'IN_PROGRESS' | 'SUCCESS' | 'UNKNOWN';
     Errors: Nullable<SubscriberPackageInstallErrors>;
   };
