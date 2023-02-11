@@ -69,6 +69,7 @@ describe('Package Install', () => {
     EnableRss: false,
     UpgradeType: 'mixed-mode',
     ApexCompileType: 'all',
+    SkipHandlers: null,
     Status: 'SUCCESS',
     Errors: null,
   };
