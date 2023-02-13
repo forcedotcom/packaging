@@ -1,3 +1,13 @@
+# [1.3.0](https://github.com/forcedotcom/packaging/compare/1.2.7...1.3.0) (2023-02-13)
+
+
+### Features
+
+* new skiphandler flag populates new PackageInstallRequest field SkipHandlers ([4f71996](https://github.com/forcedotcom/packaging/commit/4f719968e5ed6a41effe125e60635e9a91e2814a))
+* update PackageInstalLRequest shape in tests with SkipHandlers field ([78f1add](https://github.com/forcedotcom/packaging/commit/78f1add24384ee6fd8333e89967d0fe1846c3239))
+
+
+
 ## [1.2.7](https://github.com/forcedotcom/packaging/compare/1.2.6...1.2.7) (2023-02-09)
 
 
