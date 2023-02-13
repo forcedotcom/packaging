@@ -129,6 +129,7 @@ export type PackageInstallCreateRequest = Partial<
     | 'PackageInstallSource'
     | 'Password'
     | 'SecurityType'
+    | 'SkipHandlers'
     | 'UpgradeType'
   >
 > &
