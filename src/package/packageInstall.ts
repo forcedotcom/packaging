@@ -136,7 +136,7 @@ export async function waitForPublish(
     return;
   }
   let queryResult: QueryResult<SubscriberPackageVersion>;
-  let installValidationStatus: SubscriberPackageVersion['InstallValidationStatus'];
+  let installValidationStatus: SubscriberPackageVersion['InstallValidationStatus'] = 'PACKAGE_UNAVAILABLE';
   const pollingOptions: Partial<PollingClient.Options> = {
     frequency: numberToDuration(frequency || 0),
     timeout: pollingTimeout,
@@ -150,8 +150,7 @@ export async function waitForPublish(
       if (queryResult?.records?.length) {
         installValidationStatus = queryResult.records[0].InstallValidationStatus;
       }
-      const tokens = [` Status = ${installValidationStatus || 'null'}`];
-      getLogger().debug(installMsgs.getMessage('publishWaitProgress', tokens));
+      getLogger().debug(installMsgs.getMessage('publishWaitProgress', [` Status = ${installValidationStatus}`]));
       await Lifecycle.getInstance().emit(PackageEvents.install['subscriber-status'], installValidationStatus);
       if (!['PACKAGE_UNAVAILABLE', 'UNINSTALL_IN_PROGRESS'].includes(installValidationStatus)) {
         return { completed: true, payload: installValidationStatus };

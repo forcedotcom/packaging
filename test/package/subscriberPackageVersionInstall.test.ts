@@ -9,8 +9,17 @@ import { expect } from 'chai';
 import { Connection, Lifecycle, Messages } from '@salesforce/core';
 import { QueryResult, SaveResult } from 'jsforce';
 import { Duration } from '@salesforce/kit';
-import { isErrorFromSPVQueryRestriction, isErrorPackageNotAvailable } from '../../src/package/packageInstall';
-import { PackagingSObjects, PackageInstallCreateRequest, PackageInstallOptions } from '../../src/interfaces';
+import {
+  isErrorFromSPVQueryRestriction,
+  isErrorPackageNotAvailable,
+  waitForPublish,
+} from '../../src/package/packageInstall';
+import {
+  PackagingSObjects,
+  PackageInstallCreateRequest,
+  PackageInstallOptions,
+  PackageEvents,
+} from '../../src/interfaces';
 import { SubscriberPackageVersion } from '../../src/package';
 import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 
@@ -267,6 +276,43 @@ describe('Package Install', () => {
 
     // verify expected return json
     expect(result).to.deep.equal(successPIR);
+  });
+
+  // When querying SubscriberPackageVersion for the InstallValidationStatus
+  // (i.e., waitForPublish polling) an error can be thrown.  If the error
+  // is either UNKNOWN_EXCEPTION or PACKAGE_UNAVAILABLE the polling should continue.
+  it('should continue polling publish status on certain query errors', async () => {
+    const publishFrequency = Duration.milliseconds(10);
+    const publishTimeout = Duration.milliseconds(500);
+
+    const unknownExceptionError = new Error();
+    unknownExceptionError.name = 'UNKNOWN_EXCEPTION';
+    const packageUnavailableError = new Error();
+    packageUnavailableError.name = 'PACKAGE_UNAVAILABLE';
+
+    queryStub.restore();
+    const spvQueryStub = $$.SANDBOX.stub(connection.tooling, 'query')
+      .onFirstCall()
+      .rejects(unknownExceptionError)
+      .onSecondCall()
+      .rejects(packageUnavailableError)
+      .onThirdCall()
+      .resolves({
+        done: false,
+        totalSize: 0,
+        records: [{ InstallValidationStatus: 'NO_ERRORS_DETECTED' }],
+      });
+
+    await waitForPublish(connection, myPackageVersion04t, publishFrequency, publishTimeout);
+
+    expect(spvQueryStub.callCount).to.equal(3);
+    expect(lifecycleStub.callCount).to.equal(3);
+    expect(lifecycleStub.args[0][0]).to.equal(PackageEvents.install['subscriber-status']);
+    expect(lifecycleStub.args[0][1]).to.equal('PACKAGE_UNAVAILABLE');
+    expect(lifecycleStub.args[1][0]).to.equal(PackageEvents.install['subscriber-status']);
+    expect(lifecycleStub.args[1][1]).to.equal('PACKAGE_UNAVAILABLE');
+    expect(lifecycleStub.args[2][0]).to.equal(PackageEvents.install['subscriber-status']);
+    expect(lifecycleStub.args[2][1]).to.equal('NO_ERRORS_DETECTED');
   });
 
   it('should get install request', async () => {
