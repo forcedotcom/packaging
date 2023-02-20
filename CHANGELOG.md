@@ -1,3 +1,12 @@
+# [1.4.0](https://github.com/forcedotcom/packaging/compare/1.3.1...1.4.0) (2023-02-20)
+
+
+### Features
+
+* for expandability, PackageInstallRequest shoudl be a string value ([9113068](https://github.com/forcedotcom/packaging/commit/911306866ea78fe1b018036a60369c47c031b9c7))
+
+
+
 ## [1.3.1](https://github.com/forcedotcom/packaging/compare/1.3.0...1.3.1) (2023-02-20)
 
 
