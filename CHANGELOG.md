@@ -1,3 +1,12 @@
+## [1.3.1](https://github.com/forcedotcom/packaging/compare/1.3.0...1.3.1) (2023-02-20)
+
+
+### Bug Fixes
+
+* update query code and error handling ([667cbe0](https://github.com/forcedotcom/packaging/commit/667cbe04cc71b8ba83689a930f15736328cf5088))
+
+
+
 # [1.3.0](https://github.com/forcedotcom/packaging/compare/1.2.7...1.3.0) (2023-02-13)
 
 
