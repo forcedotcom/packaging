@@ -486,7 +486,7 @@ export class PackageVersionCreate {
       {
         Package: typesArr,
       },
-      [unpackagedMetadataPath]
+      [hasUnpackagedMetadata ? unpackagedMetadataPath : null]
     );
 
     if (excludedProfiles.length > 0) {
