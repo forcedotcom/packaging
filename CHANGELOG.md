@@ -1,3 +1,12 @@
+## [1.4.2](https://github.com/forcedotcom/packaging/compare/1.4.1...1.4.2) (2023-02-22)
+
+
+### Bug Fixes
+
+* adds support for seed metadata to both the convert and package version create commands ([26580f0](https://github.com/forcedotcom/packaging/commit/26580f0d0f6870e7e22922ae2baca06d26f23ef8))
+
+
+
 ## [1.4.1](https://github.com/forcedotcom/packaging/compare/1.4.0...1.4.1) (2023-02-21)
 
 
