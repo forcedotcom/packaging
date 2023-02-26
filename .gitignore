@@ -29,6 +29,9 @@ docs
 .repl_history
 
 # -- CLEAN ALL
+*.tsbuildinfo
+.eslintcache
+.wireit
 node_modules
 
 # --
