@@ -375,7 +375,7 @@ describe('Package Version Create', () => {
     );
   });
 
-  it.only("should set the build org language (i.e., package2-descriptor.json's language) from the scratch org definition file's language", async () => {
+  it("should set the build org language (i.e., package2-descriptor.json's language) from the scratch org definition file's language", async () => {
     const scratchOrgDefFileContent = '{ "language": "buildOrgLanguage" }';
     const scratchOrgDefFileName = 'project-scratch-def.json';
     $$.SANDBOX.stub(fs.promises, 'readFile').withArgs(scratchOrgDefFileName).resolves(scratchOrgDefFileContent);
