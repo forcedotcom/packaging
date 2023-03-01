@@ -353,7 +353,7 @@ export class PackageVersionCreate {
         throw messages.createError('signupDuplicateSettingsSpecified');
       }
 
-      // thsee scratch org definition file values will be applied to the build org
+      // these scratch org definition file values will be applied to the build org
       ['country', 'language', 'edition', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].forEach(
         (prop) => {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
