@@ -899,7 +899,7 @@
 
 "@salesforce/cli-plugins-testkit@^3.2.24":
   version "3.2.24"
-  resolved "https://phx-nexus-proxy.internal.salesforce.com/nexus/content/groups/npm-all/@salesforce/cli-plugins-testkit/-/cli-plugins-testkit-3.2.24.tgz#4a57f4ed5549ad908bc13ab05cb8c17e683f1a8a"
+  resolved "https://registry.yarnpkg.com/@salesforce/cli-plugins-testkit/-/cli-plugins-testkit-3.2.24.tgz#4a57f4ed5549ad908bc13ab05cb8c17e683f1a8a"
   integrity sha512-FhP8s0aerfDax8+ZNx0u8BKG1jau+Iyci9jCcdmWlT6gcc06zQWBlRCNsRbjF9rWyiAeSEB1ObTYpVUzVQkFUw==
   dependencies:
     "@salesforce/core" "^3.33.6"
@@ -914,7 +914,7 @@
 
 "@salesforce/core@^3.32.11", "@salesforce/core@^3.32.13", "@salesforce/core@^3.33.6":
   version "3.33.6"
-  resolved "https://phx-nexus-proxy.internal.salesforce.com/nexus/content/groups/npm-all/@salesforce/core/-/core-3.33.6.tgz#48a3e8c708f4a0ed153e5e2d43c343fd5bf2c923"
+  resolved "https://registry.yarnpkg.com/@salesforce/core/-/core-3.33.6.tgz#48a3e8c708f4a0ed153e5e2d43c343fd5bf2c923"
   integrity sha512-HxA0OIt6NSMdZwu2X7wIru8OJN8x8XxNiazXpLNW5MUi9rBupBAWYNROjDMPilxBgnoiBcJ5I84xdl+jWD3vqA==
   dependencies:
     "@salesforce/bunyan" "^2.0.0"
@@ -982,7 +982,7 @@
 
 "@salesforce/kit@^1.8.0", "@salesforce/kit@^1.9.0", "@salesforce/kit@^1.9.2":
   version "1.9.2"
-  resolved "https://phx-nexus-proxy.internal.salesforce.com/nexus/content/groups/npm-all/@salesforce/kit/-/kit-1.9.2.tgz#d232f135428363cdfe2649cb99a94bc2eb0a12fd"
+  resolved "https://registry.yarnpkg.com/@salesforce/kit/-/kit-1.9.2.tgz#d232f135428363cdfe2649cb99a94bc2eb0a12fd"
   integrity sha512-kjZvjFNP6njhAiEa/ErdLXSDWZKafHYJyKCKz1wnSFmDM8TOpKHCCVw5cQo87ZQr8OqxqwUDIAlSBLyMzKi4Lg==
   dependencies:
     "@salesforce/ts-types" "^1.7.3"
@@ -1209,7 +1209,7 @@
 
 "@types/graceful-fs@^4.1.6":
   version "4.1.6"
-  resolved "https://phx-nexus-proxy.internal.salesforce.com/nexus/content/groups/npm-all/@types/graceful-fs/-/graceful-fs-4.1.6.tgz#e14b2576a1c25026b7f02ede1de3b84c3a1efeae"
+  resolved "https://registry.yarnpkg.com/@types/graceful-fs/-/graceful-fs-4.1.6.tgz#e14b2576a1c25026b7f02ede1de3b84c3a1efeae"
   integrity sha512-Sig0SNORX9fdW+bQuTEovKj3uHcUL6LQKbCrrqb1X7J6/ReAbhCXRAhc+SMejhLELFj2QcyuxmUooZ4bt5ReSw==
   dependencies:
     "@types/node" "*"
