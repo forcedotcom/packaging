@@ -254,6 +254,7 @@ export class PackageVersionCreate {
       SourceOrg: this.options.sourceorg,
       CalculateCodeCoverage: this.options.codecoverage || false,
       SkipValidation: this.options.skipvalidation || false,
+      // note: the createRequest's Language corresponds to the AllPackageVersion's language
       Language: this.options.language,
     };
 
@@ -314,6 +315,8 @@ export class PackageVersionCreate {
     await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
     const settingsGenerator = new SettingsGenerator({ asDirectory: true });
     const packageDescriptorJson = cloneJson(this.packageObject) as PackageDescriptorJson;
+    const apvLanguage = packageDescriptorJson.language;
+
     // Copy all the metadata from the workspace to a tmp folder
     const componentSet = await this.metadataResolver.generateMDFolderForArtifact(mdOptions);
     this.verifyHasSource(componentSet);
@@ -321,6 +324,12 @@ export class PackageVersionCreate {
     if (packageDescriptorJson.package) {
       delete packageDescriptorJson.package;
       packageDescriptorJson.id = this.packageId;
+    }
+
+    if (packageDescriptorJson.language) {
+      // the cloneJson() call above added the packageDir's language to the descriptor;
+      // remove that from the descriptor here; it will be set correctly from the definitionFile values below
+      delete packageDescriptorJson.language;
     }
 
     const definitionFile = this.options.definitionfile
@@ -344,14 +353,17 @@ export class PackageVersionCreate {
         throw messages.createError('signupDuplicateSettingsSpecified');
       }
 
-      ['country', 'edition', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].forEach((prop) => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const propValue = definitionFileJson[prop];
-        if (propValue) {
+      // these scratch org definition file values will be applied to the build org
+      ['country', 'language', 'edition', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].forEach(
+        (prop) => {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          packageDescriptorJson[prop] = propValue;
+          const propValue = definitionFileJson[prop];
+          if (propValue) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            packageDescriptorJson[prop] = propValue;
+          }
         }
-      });
+      );
     }
 
     this.resolveApexTestPermissions(packageDescriptorJson);
@@ -360,9 +372,9 @@ export class PackageVersionCreate {
     // (see _retrieveSubscriberPackageVersionId for details)
     const dependencies = packageDescriptorJson.dependencies;
 
-    // branch and language can be set via options or descriptor; option takes precedence
+    // branch and APV language can be set via options or packageDirectory; option takes precedence
     this.options.branch = this.options.branch ?? packageDescriptorJson.branch;
-    this.options.language = this.options.language ?? packageDescriptorJson.language;
+    this.options.language = this.options.language ?? apvLanguage;
 
     const resultValues = await Promise.all(
       !dependencies ? [] : dependencies.map((dependency) => this.retrieveSubscriberPackageVersionId(dependency))

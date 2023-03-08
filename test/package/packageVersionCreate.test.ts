@@ -375,6 +375,36 @@ describe('Package Version Create', () => {
     );
   });
 
+  it("should set the build org language (i.e., package2-descriptor.json's language) from the scratch org definition file's language", async () => {
+    const scratchOrgDefFileContent = '{ "language": "buildOrgLanguage" }';
+    const scratchOrgDefFileName = 'project-scratch-def.json';
+    $$.SANDBOX.stub(fs.promises, 'readFile').withArgs(scratchOrgDefFileName).resolves(scratchOrgDefFileContent);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    $$.SANDBOX.stub(MetadataResolver.prototype, 'generateMDFolderForArtifact' as any).resolves();
+    $$.SANDBOX.stub(fs, 'existsSync').returns(true);
+    const writeFileSpy = $$.SANDBOX.spy(fs.promises, 'writeFile');
+
+    const pvc = new PackageVersionCreate({ connection, project, definitionfile: scratchOrgDefFileName, packageId });
+    const result = await pvc.createPackageVersion();
+    expect(result).to.have.all.keys(
+      'Branch',
+      'CreatedBy',
+      'CreatedDate',
+      'Error',
+      'HasMetadataRemoved',
+      'Id',
+      'Package2Id',
+      'Package2VersionId',
+      'Status',
+      'SubscriberPackageVersionId',
+      'Tag'
+    );
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // package2-descriptor.json contents
+    expect(package2DescriptorJson).to.have.string('buildOrgLanguage');
+  });
+
   it('should validate options when package type = unlocked (scripts) - postinstall script', async () => {
     packageTypeQuery.restore();
     // @ts-ignore
