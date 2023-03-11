@@ -1,3 +1,12 @@
+## [1.4.5](https://github.com/forcedotcom/packaging/compare/1.4.4...1.4.5) (2023-03-11)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/source-deploy-retrieve from 7.7.5 to 7.11.3 ([8d94c03](https://github.com/forcedotcom/packaging/commit/8d94c03d5a3fb2e7d98af48514c8f32876d52baf))
+
+
+
 ## [1.4.4](https://github.com/forcedotcom/packaging/compare/1.4.3...1.4.4) (2023-03-09)
 
 
