@@ -1,3 +1,12 @@
+## [1.4.6](https://github.com/forcedotcom/packaging/compare/1.4.5...1.4.6) (2023-03-18)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/core from 3.33.6 to 3.34.1 ([82d9843](https://github.com/forcedotcom/packaging/commit/82d984348dfaf1fa1fd6d9b99b394ea79d5827d3))
+
+
+
 ## [1.4.5](https://github.com/forcedotcom/packaging/compare/1.4.4...1.4.5) (2023-03-11)
 
 
