@@ -1,3 +1,12 @@
+## [1.4.7](https://github.com/forcedotcom/packaging/compare/1.4.6...1.4.7) (2023-03-25)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/schemas from 1.5.0 to 1.5.1 ([610d9ea](https://github.com/forcedotcom/packaging/commit/610d9ea2023760ecbc3ea79dd7a5f412e3775fc8))
+
+
+
 ## [1.4.6](https://github.com/forcedotcom/packaging/compare/1.4.5...1.4.6) (2023-03-18)
 
 
