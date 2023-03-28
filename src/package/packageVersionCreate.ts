@@ -218,11 +218,11 @@ export class PackageVersionCreate {
     // query for the LATEST or RELEASED build number (excluding deleted versions)
     let branchCondition = '';
     let releasedCondition = '';
-    if (versionNumber[3] === BuildNumberToken.LATEST_BUILD_NUMBER_TOKEN) {
+    if (versionNumber.build === BuildNumberToken.LATEST_BUILD_NUMBER_TOKEN) {
       // respect the branch when querying for LATEST
       const branchString = !branch || branch === '' ? 'null' : `'${branch}'`;
       branchCondition = `AND Branch = ${branchString}`;
-    } else if (versionNumber[3] === BuildNumberToken.RELEASED_BUILD_NUMBER_TOKEN) {
+    } else if (versionNumber.build === BuildNumberToken.RELEASED_BUILD_NUMBER_TOKEN) {
       releasedCondition = 'AND IsReleased = true';
     }
     const query = `SELECT MAX(BuildNumber) FROM Package2Version WHERE Package2Id = '${packageId}' AND IsDeprecated != true AND MajorVersion = ${versionNumber.major} AND MinorVersion = ${versionNumber.minor} AND PatchVersion = ${versionNumber.patch} ${branchCondition} ${releasedCondition}`;
