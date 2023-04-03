@@ -8,14 +8,13 @@ import * as os from 'os';
 import * as fs from 'fs';
 import { join } from 'path';
 import { pipeline as cbPipeline } from 'stream';
+import * as util from 'util';
 import { promisify } from 'util';
 import { randomBytes } from 'crypto';
-import * as util from 'util';
-import { Connection, Messages, SfdcUrl, SfError, SfProject } from '@salesforce/core';
+import { Connection, Logger, Messages, SfdcUrl, SfError, SfProject } from '@salesforce/core';
 import { isNumber, Many, Nullable, Optional } from '@salesforce/ts-types';
 import { SaveError } from 'jsforce';
-import { Duration } from '@salesforce/kit';
-import { Logger } from '@salesforce/core';
+import { Duration, ensureArray } from '@salesforce/kit';
 import * as globby from 'globby';
 import * as JSZIP from 'jszip';
 import { PackageType, PackagingSObjects } from '../interfaces';
@@ -28,20 +27,20 @@ const INVALID_TYPE_REGEX = /[\w]*(sObject type '[A-Za-z]*Package[2]?[A-Za-z]*' i
 const ID_REGISTRY = [
   {
     prefix: '0Ho',
-    label: 'Package Id',
+    label: 'Package Id'
   },
   {
     prefix: '05i',
-    label: 'Package Version Id',
+    label: 'Package Version Id'
   },
   {
     prefix: '08c',
-    label: 'Package Version Create Request Id',
+    label: 'Package Version Create Request Id'
   },
   {
     prefix: '04t',
-    label: 'Subscriber Package Version Id',
-  },
+    label: 'Subscriber Package Version Id'
+  }
 ];
 
 export type IdRegistryValue = { prefix: string; label: string };
@@ -61,7 +60,7 @@ export const DEFAULT_PACKAGE_DIR = {
   package: '',
   versionName: 'ver 0.1',
   versionNumber: '0.1.0.NEXT',
-  default: true,
+  default: true
 };
 
 export const BY_LABEL = ((): IdRegistry =>
@@ -91,12 +90,12 @@ export function uniqid(options?: { template?: string; length?: number }): string
     : `${options.template}${uniqueString}`;
 }
 
-export function validateId(idObj: Many<IdRegistryValue>, value: string): void {
-  if (!validateIdNoThrow(idObj, value)) {
+export function validateId(idObj: Many<IdRegistryValue>, value: string | undefined): void {
+  if (!value || !validateIdNoThrow(idObj, value)) {
     throw messages.createError('invalidIdOrAlias', [
       Array.isArray(idObj) ? idObj.map((e) => e.label).join(' or ') : idObj.label,
       value,
-      Array.isArray(idObj) ? idObj.map((e) => e.prefix).join(' or ') : idObj.prefix,
+      Array.isArray(idObj) ? idObj.map((e) => e.prefix).join(' or ') : idObj.prefix
     ]);
   }
 }
@@ -110,13 +109,13 @@ export function validateIdNoThrow(idObj: Many<IdRegistryValue>, value: string): 
 
 // applies actions to common package errors
 // eslint-disable-next-line complexity
-export function applyErrorAction(err: Error): Error {
+export function applyErrorAction(err: Error & { action?: string }): Error {
   // append when actions already exist
   const actions = [];
 
   // include existing actions
-  if (err['action']) {
-    actions.push(err['action']);
+  if (err.action) {
+    actions.push(err.action);
   }
 
   // TODO: (need to get with packaging team on this)
@@ -196,18 +195,18 @@ export function massageErrorMessage(err: Error): Error {
  * @param versionId The subscriber package version ID
  * @param connection For tooling query
  */
-export async function getPackageVersionId(versionId: string, connection: Connection): Promise<string> {
+export async function getPackageVersionId(versionId: string, connection: Connection): Promise<string | undefined> {
   // if it's already a 05i return it, otherwise query for it
   if (versionId?.startsWith(BY_LABEL.PACKAGE_VERSION_ID.prefix)) {
     return versionId;
   }
   const query = `SELECT Id FROM Package2Version WHERE SubscriberPackageVersionId = '${versionId}'`;
   return connection.tooling.query(query).then((queryResult) => {
-    if (!queryResult || !queryResult.totalSize) {
+    if (!queryResult?.totalSize) {
       throw messages.createError('errorInvalidIdNoMatchingVersionId', [
         BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.label,
         versionId,
-        BY_LABEL.PACKAGE_VERSION_ID.label,
+        BY_LABEL.PACKAGE_VERSION_ID.label
       ]);
     }
     return queryResult.records[0].Id;
@@ -215,7 +214,7 @@ export async function getPackageVersionId(versionId: string, connection: Connect
 }
 
 export function escapeInstallationKey(key?: string): Nullable<string> {
-  return key ? key.replace(/\\/g, '\\\\').replace(/'/g, "\\'") : null;
+  return key ? key.replace(/\\/g, '\\\\').replace(/'/g, '\\\'') : null;
 }
 
 /**
@@ -227,17 +226,18 @@ export function escapeInstallationKey(key?: string): Nullable<string> {
  */
 // eslint-disable-next-line @typescript-eslint/require-await
 export async function getContainerOptions(
-  packageIds: string[],
+  packageIds: string | undefined | Array<string | undefined>,
   connection: Connection
 ): Promise<Map<string, PackageType>> {
-  if (!packageIds || packageIds.length === 0) {
+  const ids = ensureArray(packageIds).filter((id) => id) as string[];
+  if (ids.length === 0) {
     return new Map<string, PackageType>();
   }
-  const query = "SELECT Id, ContainerOptions FROM Package2 WHERE Id IN ('%IDS%')";
+  const query = 'SELECT Id, ContainerOptions FROM Package2 WHERE Id IN (\'%IDS%\')';
 
   const records = await queryWithInConditionChunking<Pick<PackagingSObjects.Package2, 'Id' | 'ContainerOptions'>>(
     query,
-    packageIds,
+    ids,
     '%IDS%',
     connection
   );
@@ -247,6 +247,7 @@ export async function getContainerOptions(
   }
   return new Map<string, PackageType>();
 }
+
 /**
  * Given a list of subscriber package version IDs (04t), return the associated version strings (e.g., Major.Minor.Patch.Build)
  *
@@ -290,6 +291,7 @@ export async function getPackageVersionStrings(
   }
   return results;
 }
+
 /**
  * For queries with an IN condition, determine if the WHERE clause will exceed
  * SOQL's 4000 character limit.  Perform multiple queries as needed to stay below the limit.
@@ -300,7 +302,7 @@ export async function getPackageVersionStrings(
  * @param replaceToken A placeholder in the query's IN condition that will be replaced with the chunked items
  * @param connection For tooling query
  */
-async function queryWithInConditionChunking<T = Record<string, unknown>>(
+async function queryWithInConditionChunking<T extends Record<string, unknown> = Record<string, unknown>>(
   query: string,
   items: string[],
   replaceToken: string,
@@ -322,10 +324,10 @@ async function queryWithInConditionChunking<T = Record<string, unknown>>(
         query,
         items[itemsQueried].slice(0, 20),
         items[itemsQueried].length,
-        inClauseItemsMaxLength,
+        inClauseItemsMaxLength
       ]);
     }
-    const itemsStr = `${items.slice(itemsQueried, itemsQueried + chunkCount).join("','")}`;
+    const itemsStr = `${items.slice(itemsQueried, itemsQueried + chunkCount).join('\',\'')}`;
     const queryChunk = query.replace(replaceToken, itemsStr);
     // eslint-disable-next-line no-await-in-loop
     const result = await connection.tooling.query<T>(queryChunk);
@@ -336,6 +338,7 @@ async function queryWithInConditionChunking<T = Record<string, unknown>>(
   }
   return records;
 }
+
 /**
  * Returns the number of items that can be included in a quoted comma-separated string (e.g., "'item1','item2'") not exceeding maxLength
  */
@@ -366,7 +369,7 @@ function concatVersion(
   major: string | number,
   minor: string | number,
   patch: string | number,
-  build: string | number
+  build: string | number | undefined
 ): string {
   return [major, minor, patch, build].map((part) => (part ? `${part}` : '0')).join('.');
 }
@@ -420,7 +423,7 @@ export async function generatePackageAliasEntry(
 
 export function combineSaveErrors(sObject: string, crudOperation: string, errors: SaveError[]): SfError {
   const errorMessages = errors.map((error) => {
-    const fieldsString = error.fields?.length > 0 ? `Fields: [${error.fields.join(', ')}]` : '';
+    const fieldsString = error.fields?.length ? `Fields: [${error.fields?.join(', ')}]` : '';
     return `Error: ${error.errorCode} Message: ${error.message} ${fieldsString}`;
   });
   return messages.createError('errorDuringSObjectCRUDOperation', [crudOperation, sObject, errorMessages.join(os.EOL)]);
@@ -433,9 +436,12 @@ export function combineSaveErrors(sObject: string, crudOperation: string, errors
  * @param unit = (Default Duration.Unit.MILLISECONDS) Duration unit of number - See @link {Duration.Unit} for valid values
  */
 export function numberToDuration(
-  duration: number | Duration,
+  duration: number | Duration | undefined,
   unit: Duration.Unit = Duration.Unit.MILLISECONDS
 ): Duration {
+  if (duration === undefined) {
+    return new Duration(0, unit);
+  }
   return isNumber(duration) ? new Duration(duration, unit) : duration;
 }
 
@@ -465,8 +471,8 @@ export async function zipDir(dir: string, zipfile: string): Promise<void> {
     streamFiles: true,
     compression: 'DEFLATE',
     compressionOptions: {
-      level: 3,
-    },
+      level: 3
+    }
   });
   await pipeline(zipStream, fs.createWriteStream(zipfile));
   const stat = fs.statSync(zipfile);

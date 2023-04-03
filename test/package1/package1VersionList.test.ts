@@ -18,7 +18,7 @@ const records = [
     MinorVersion: 0,
     PatchVersion: 3,
     ReleaseState: 'Beta',
-    BuildNumber: 1,
+    BuildNumber: 1
   },
   {
     Id: '04t46000001ZfaXXXY',
@@ -28,8 +28,8 @@ const records = [
     MinorVersion: 0,
     PatchVersion: 4,
     ReleaseState: 'Beta',
-    BuildNumber: 1,
-  },
+    BuildNumber: 1
+  }
 ];
 
 const listResult = [
@@ -41,7 +41,7 @@ const listResult = [
     MinorVersion: 0,
     Name: 'Summer 22',
     PatchVersion: 3,
-    ReleaseState: 'Beta',
+    ReleaseState: 'Beta'
   },
   {
     BuildNumber: 1,
@@ -51,8 +51,8 @@ const listResult = [
     MinorVersion: 0,
     Name: 'Summer 22',
     PatchVersion: 4,
-    ReleaseState: 'Beta',
-  },
+    ReleaseState: 'Beta'
+  }
 ];
 
 describe('Package1 Version List', () => {
@@ -76,7 +76,7 @@ describe('Package1 Version List', () => {
     queryStub.resolves({
       done: true,
       totalSize: 1,
-      records,
+      records
     });
     const result = await Package1Version.list(conn);
     expect(result).deep.equal(listResult);
@@ -87,7 +87,7 @@ describe('Package1 Version List', () => {
     queryStub.resolves({
       done: true,
       totalSize: 1,
-      records: [records[0]],
+      records: [records[0]]
     });
     const result = await Package1Version.list(conn, '03346000000dmo4XXX');
     expect(result).deep.equal([listResult[0]]);
@@ -97,7 +97,7 @@ describe('Package1 Version List', () => {
     queryStub.resolves({
       done: true,
       totalSize: 0,
-      records: [],
+      records: []
     });
     const result = await Package1Version.list(conn, '03346000000dmo4XXX');
     expect(result).deep.equal([]);
@@ -107,12 +107,13 @@ describe('Package1 Version List', () => {
     queryStub.resolves({
       done: true,
       totalSize: 0,
-      records: [],
+      records: []
     });
     try {
       await Package1Version.list(conn, '04t46000001ZfaXXXX');
       assert.fail('the above should throw an invalid id error');
     } catch (e) {
+      assert(e instanceof Error);
       expect(e.message).to.equal(
         'Specify a valid package metadata package ID (starts with 033), received 04t46000001ZfaXXXX'
       );

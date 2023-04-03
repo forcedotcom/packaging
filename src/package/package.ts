@@ -73,7 +73,7 @@ export const Package2Fields = [
  */
 export class Package {
   private readonly packageId: string;
-  private packageData: PackagingSObjects.Package2;
+  private packageData: PackagingSObjects.Package2 | undefined;
 
   public constructor(private options: PackageOptions) {
     let packageId = this.options.packageAliasOrId;
@@ -150,8 +150,8 @@ export class Package {
         throw messages.createError('invalidPackageId', [id, '0Ho']);
       }
     });
-    const opts = options || ({} as PackageVersionListOptions);
-    opts.packages = packages || [];
+    const opts = options ?? ({} as PackageVersionListOptions);
+    opts.packages = packages ?? [];
 
     return (await listPackageVersions({ ...opts, ...{ connection } })).records;
   }
@@ -207,8 +207,8 @@ export class Package {
    *
    * @returns {Promise<PackageType>}
    */
-  public async getType(): Promise<PackageType> {
-    return (await this.getPackageData()).ContainerOptions;
+  public async getType(): Promise<PackageType | undefined> {
+    return (await this.getPackageData())?.ContainerOptions;
   }
 
   /**
@@ -252,9 +252,10 @@ export class Package {
    * @param options
    */
   public async update(options: PackageUpdateOptions): Promise<PackageSaveResult> {
+    type Keys = keyof PackageUpdateOptions;
     try {
       // filter out any undefined values and their keys
-      Object.keys(options).forEach((key) => options[key] === undefined && delete options[key]);
+      Object.keys(options).forEach((key) => options[key as Keys] === undefined && delete options[key as Keys]);
 
       const result = await this.options.connection.tooling.update('Package2', options);
       if (!result.success) {
@@ -271,11 +272,14 @@ export class Package {
    *
    * @param force force a refresh of the package data
    */
-  public async getPackageData(force = false): Promise<PackagingSObjects.Package2> {
-    if (!this.packageData || force) {
+  public async getPackageData(force = false): Promise<PackagingSObjects.Package2 | undefined> {
+    if (!this.packageData ?? force) {
       this.packageData = (await this.options.connection.tooling
         .sobject('Package2')
         .retrieve(this.packageId)) as PackagingSObjects.Package2;
+      if (!this.packageData) {
+        throw messages.createError('packageNotFound', [this.packageId]);
+      }
     }
     return this.packageData;
   }

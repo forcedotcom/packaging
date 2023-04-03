@@ -160,7 +160,7 @@ describe('packageConvert', () => {
         // @ts-ignore
         .resolves({ records: [{ Id: '0Ho3i000000Gmj6YYY' }] });
 
-      $$.SANDBOX.stub(conn.tooling, 'create').resolves({ errors: undefined, success: true, id: '0Ho3i000000Gmj6YYY' });
+      $$.SANDBOX.stub(conn.tooling, 'create').resolves({ errors: [], success: true, id: '0Ho3i000000Gmj6YYY' });
 
       const result = await findOrCreatePackage2('0Ho3i000000Gmj6CAC', conn);
       expect(result).to.equal('0Ho3i000000Gmj6YYY');
@@ -176,11 +176,9 @@ describe('packageConvert', () => {
         .onSecondCall()
         // @ts-ignore
         .resolves({ records: [{ Id: '0Ho3i000000Gmj6YYY' }] });
-
       $$.SANDBOX.stub(conn.tooling, 'create').resolves({
-        // @ts-ignore
-        errors: [new Error('server error')],
-        success: undefined,
+        errors: [{ errorCode: 'server error', message: 'server error' }],
+        success: false,
         id: undefined,
       });
 
@@ -188,7 +186,7 @@ describe('packageConvert', () => {
         await findOrCreatePackage2('0Ho3i000000Gmj6CAC', conn);
       } catch (e) {
         expect((e as Error).message).to.include('An error occurred during CRUD operation create on entity Package2');
-        expect((e as Error).message).to.include('Error: undefined Message: server error ');
+        expect((e as Error).message).to.include('Error: server error Message: server error ');
       }
     });
 
@@ -222,7 +220,6 @@ describe('packageConvert', () => {
         wait: Duration.minutes(1),
       });
     } catch (e) {
-      // console.log('ERROR', e);
       expect((e as Error).message).to.include('Failed to create request : Error: server error');
     }
   });
@@ -245,6 +242,8 @@ describe('packageConvert', () => {
     };
 
     Lifecycle.getInstance().on(PackageEvents.convert.progress, async (data) => {
+      // eslint-disable-next-line no-console
+      // @ts-ignore
       expect(data).to.deep.equal({
         id: '0Ho3i000000Gmj6YYY',
         message: '',
@@ -276,19 +275,18 @@ describe('packageConvert', () => {
     });
     $$.SANDBOX.stub(conn.tooling, 'query')
       .onFirstCall()
-      // @ts-ignore
+      // @ts-expect-error: argument not assignable to parameter
       .resolves({ records: [{ Id: '0Ho3i000000Gmj6Yaa' }] })
       .onSecondCall()
-      // @ts-ignore
+      // @ts-expect-error: argument not assignable to parameter
       .resolves({ records: [{ Id: '0Ho3i000000Gmj6YYa', Status: 'inProgress' }] })
       .onThirdCall()
-      // @ts-ignore
+      // @ts-expect-error: argument not assignable to parameter
       .resolves({
         records: [successResponse],
       });
 
-    // @ts-ignore
-    $$.SANDBOX.stub(conn.tooling, 'create').resolves({ success: true, errors: undefined, id: '0Ho3i000000Gmj6YYY' });
+    $$.SANDBOX.stub(conn.tooling, 'create').resolves({ success: true, errors: [], id: '0Ho3i000000Gmj6YYY' });
 
     const result = await convertPackage('0334p000000EaIHAA0', conn, {
       buildInstance: '',
@@ -322,8 +320,7 @@ describe('packageConvert', () => {
       // @ts-ignore
       .resolves({ records: [{ Message: 'Server polling error 1' }, { Message: 'server error 2' }] });
 
-    // @ts-ignore
-    $$.SANDBOX.stub(conn.tooling, 'create').resolves({ success: true, errors: undefined, id: '0Ho3i000000Gmj6YYY' });
+    $$.SANDBOX.stub(conn.tooling, 'create').resolves({ success: true, errors: [], id: '0Ho3i000000Gmj6YYY' });
 
     try {
       await convertPackage('0334p000000EaIHAA0', conn, {

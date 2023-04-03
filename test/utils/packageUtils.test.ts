@@ -15,11 +15,11 @@ import { Duration } from '@salesforce/kit';
 import * as JSZIP from 'jszip';
 import {
   applyErrorAction,
+  combineSaveErrors,
   getPackageVersionNumber,
   massageErrorMessage,
-  combineSaveErrors,
-  zipDir,
   numberToDuration,
+  zipDir
 } from '../../src/utils/packageUtils';
 import { PackagingSObjects } from '../../src/interfaces';
 
@@ -40,7 +40,7 @@ describe('packageUtils', () => {
         Id: 'foo',
         MajorVersion: 1,
         MinorVersion: 2,
-        PatchVersion: 3,
+        PatchVersion: 3
       } as PackagingSObjects.Package2Version;
       const result = getPackageVersionNumber(version);
       expect(result).to.be.equal('1.2.3');
@@ -49,12 +49,11 @@ describe('packageUtils', () => {
   describe('applyErrorAction', () => {
     describe('INVALID_TYPE', () => {
       it('should modify error message if packaging is not enabled', () => {
-        const error = new Error();
+        const error = new Error() as Error & { action: string | undefined };
         error.name = 'INVALID_TYPE';
-        error.message = "sObject type 'Package2Version' is not supported";
-        error['action'] = [];
-        const result = applyErrorAction(error);
-        expect(result['action']).to.be.include('Packaging is not enabled on this org.');
+        error.message = 'sObject type \'Package2Version\' is not supported';
+        const result = applyErrorAction(error) as Error & { action: string | undefined };
+        expect(result.action).to.be.include('Packaging is not enabled on this org.');
       });
     });
   });
@@ -67,32 +66,39 @@ describe('packageUtils', () => {
     });
   });
   describe('getPackageVersionStrings', () => {
-    it.skip('should return the correct version strings', () => {});
+    it.skip('should return the correct version strings', () => {
+    });
   });
   describe('getContainerOptions', () => {
-    it.skip('should return the correct value', () => {});
+    it.skip('should return the correct value', () => {
+    });
   });
   describe('getSubscriberPackageVersionId', () => {
-    it.skip('should return the correct value', () => {});
+    it.skip('should return the correct value', () => {
+    });
   });
   describe('getPackage2TypeBy04type', () => {
-    it.skip('should return the correct value', () => {});
+    it.skip('should return the correct value', () => {
+    });
   });
   describe('getPackage2TypeBy05type', () => {
-    it.skip('should return the correct value', () => {});
+    it.skip('should return the correct value', () => {
+    });
   });
   describe('getPackageVersionId', () => {
-    it.skip('should return the correct value', () => {});
+    it.skip('should return the correct value', () => {
+    });
   });
   describe('validatePatchVersion', () => {
-    it.skip('should return the correct value', () => {});
+    it.skip('should return the correct value', () => {
+    });
   });
   describe('combineSaveErrors', () => {
     it('should combine crud operations errors', () => {
       const errors = [
         { message: 'error 1', errorCode: 'errorCode 1', fields: ['field1', 'field2'] },
         { message: 'error 2', errorCode: 'errorCode 2', fields: [] },
-        { message: 'error 3', errorCode: 'errorCode 3' },
+        { message: 'error 3', errorCode: 'errorCode 3' }
       ] as SaveError[];
       const result = combineSaveErrors('fooObject', 'upsert', errors);
       const messageLines = result.message.split('\n');
@@ -116,9 +122,9 @@ describe('packageUtils', () => {
       const result = numberToDuration(Duration.minutes(1000));
       expect(result.minutes).to.be.equal(Duration.minutes(1000).minutes);
     });
-    it('should a treat a undefined number param instance as idempotent', () => {
+    it('should default an undefined number param instance to 0', () => {
       const result = numberToDuration(undefined);
-      expect(result).to.be.not.ok;
+      expect(result.minutes).to.be.equal(Duration.minutes(0).minutes);
     });
   });
   describe('zipDir', () => {
@@ -147,7 +153,7 @@ describe('packageUtils', () => {
         'not-empty-dir/',
         'not-empty-dir/file3.txt',
         'not-empty-dir/sub-dir/',
-        'not-empty-dir/sub-dir/file4.txt',
+        'not-empty-dir/sub-dir/file4.txt'
       ];
       await zipDir(path.resolve(tmpSrcDir), path.join(tmpZipDir, 'test.zip'));
       try {

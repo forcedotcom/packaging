@@ -23,11 +23,17 @@ export interface IPackageVersion1GP {
 
 export interface IPackageVersion2GP {
   create(): Promise<void>;
+
   convert(): Promise<void>;
+
   delete(): Promise<void>;
+
   install(): Promise<void>;
+
   list(): Promise<void>;
+
   uninstall(): Promise<void>;
+
   update(): Promise<void>;
 }
 
@@ -324,12 +330,19 @@ export type ProfileApiOptions = {
   generateProfileInformation: boolean;
 };
 
-export type PackageVersionReportResult = Partial<PackagingSObjects.Package2Version> & {
-  Package2: Partial<PackagingSObjects.Package2>;
+export type PackageVersionReportResult =
+  Partial<Omit<PackagingSObjects.Package2Version, 'AncestorId' | 'HasPassedCodeCoverageCheck' | 'HasMetadataRemoved'>>
+  & {
+  Package2: Partial<Omit<PackagingSObjects.Package2, 'IsOrgDependent'>> & {
+    IsOrgDependent: boolean | null | undefined;
+  };
   SubscriberPackageVersion?: Pick<PackagingSObjects.SubscriberPackageVersion, 'Dependencies'>;
   Version: string;
-  AncestorVersion?: string;
-  PackageType: PackageType;
+  AncestorVersion: string | null | undefined;
+  AncestorId?: string | null | undefined;
+  PackageType: PackageType | null | undefined;
+  HasPassedCodeCoverageCheck: boolean | null | undefined;
+  HasMetadataRemoved: boolean | null | undefined;
 };
 
 export type PackageVersionCreateReportProgress = PackageVersionCreateRequestResult & {
@@ -377,12 +390,12 @@ export type CodeCoveragePercentages = null | {
 
 export type PackageAncestryNodeOptions = Attributes & {
   AncestorId?: string;
-  SubscriberPackageVersionId?: string;
-  MajorVersion?: string | number;
-  MinorVersion?: string | number;
-  PatchVersion?: string | number;
-  BuildNumber?: string | number;
-  depthCounter?: number;
+  SubscriberPackageVersionId: string;
+  MajorVersion: string | number;
+  MinorVersion: string | number;
+  PatchVersion: string | number;
+  BuildNumber: string | number;
+  depthCounter: number;
 };
 
 export type PackageAncestryData = Omit<PackageAncestryNodeOptions, 'AncestorId'>;
@@ -400,15 +413,17 @@ export type PackageAncestryOptions = {
 
 export type AncestryRepresentationProducerOptions = {
   [key: string]: unknown;
-  node: PackageAncestryNode;
-  depth?: number;
+  packageNode?: PackageAncestryNode;
+  depth: number;
   verbose?: boolean;
 };
 
 export interface AncestryRepresentationProducer {
   label: string;
-  options: AncestryRepresentationProducerOptions;
+  options: AncestryRepresentationProducerOptions | undefined;
+
   addNode(node: AncestryRepresentationProducer): void;
+
   produce<T>(): T | string | void;
 }
 
@@ -416,16 +431,16 @@ export const PackageEvents = {
   convert: {
     success: 'Package/convert-success',
     error: 'Package/convert-error',
-    progress: 'Package/convert-in-progress',
+    progress: 'Package/convert-in-progress'
   },
   install: {
     warning: 'Package/install-warning',
     presend: 'Package/install-presend',
     postsend: 'Package/install-postsend',
     status: 'Package/install-status',
-    'subscriber-status': 'Package/install-subscriber-status',
+    'subscriber-status': 'Package/install-subscriber-status'
   },
-  uninstall: 'Package/uninstall',
+  uninstall: 'Package/uninstall'
 };
 
 export const PackageVersionEvents = {
@@ -435,12 +450,12 @@ export const PackageVersionEvents = {
     success: 'PackageVersion/create-success',
     error: 'PackageVersion/create-error',
     'timed-out': 'PackageVersion/create-timed-out',
-    'preserve-files': 'PackageVersion/create-preserve-files',
-  },
+    'preserve-files': 'PackageVersion/create-preserve-files'
+  }
 };
 
 export const Package1VersionEvents = {
   create: {
-    progress: 'Package1Version/create-progress',
-  },
+    progress: 'Package1Version/create-progress'
+  }
 };

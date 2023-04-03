@@ -24,14 +24,15 @@ export class VersionNumber {
     public minor: string | number,
     public patch: string | number,
     public build: string | number
-  ) {}
+  ) {
+  }
 
   /**
    * Separates at major.minor string into {major: Number, minor: Number} object
    *
    * @param versionString a string in the format of major.minor like '3.2'
    */
-  public static parseMajorMinor(versionString: string): { major: number; minor: number } {
+  public static parseMajorMinor(versionString: string): { major: number | null; minor: number | null } {
     const versions = versionString?.split('.');
     if (!versions) {
       // return nulls so when no version option is provided, the server can infer the correct version
@@ -41,14 +42,14 @@ export class VersionNumber {
     if (versions.length === 2) {
       return {
         major: Number(versions[0]),
-        minor: Number(versions[1]),
+        minor: Number(versions[1])
       };
     } else {
       throw messages.createError('invalidMajorMinorFormat', [versionString]);
     }
   }
 
-  public static from(versionString: string): VersionNumber {
+  public static from(versionString: string | undefined): VersionNumber {
     if (!versionString) {
       throw messages.createError('errorMissingVersionNumber');
     }
@@ -62,7 +63,7 @@ export class VersionNumber {
       if (isNaN(asNumbers[3]) && !(Object.values(BuildNumberToken) as string[]).includes(build)) {
         throw messages.createError('errorInvalidBuildNumberToken', [
           versionString,
-          Object.values(BuildNumberToken).join(', '),
+          Object.values(BuildNumberToken).join(', ')
         ]);
       }
       return new VersionNumber(major, minor, patch, build);
@@ -76,10 +77,16 @@ export class VersionNumber {
     }
   }
 
+  /**
+   * @deprecated use isBuildKeyword instead
+   */
   public isbuildKeyword(): boolean {
-    return Object.values(BuildNumberToken)
-      .map((v) => v.toString())
-      .includes(typeof this.build === 'string' && this.build.toUpperCase());
+    return this.isBuildKeyword();
+  }
+
+  public isBuildKeyword(): boolean {
+    const buildNumberTokenKeys = Object.values(BuildNumberToken);
+    return buildNumberTokenKeys.includes(this.build as BuildNumberToken);
   }
 
   public compareTo(other: VersionNumber): number {

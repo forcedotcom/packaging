@@ -39,7 +39,7 @@ describe('VersionNumber', () => {
   it('should throw if version number build token is invalid', () => {
     expect(() => VersionNumber.from('1.2.3.none')).to.throw(
       Error,
-      "The provided VersionNumber '1.2.3.none' is invalid. Build number token must be a number or one of these tokens 'LATEST, NEXT, RELEASED, HIGHEST, NONE'."
+      'The provided VersionNumber \'1.2.3.none\' is invalid. Build number token must be a number or one of these tokens \'LATEST, NEXT, RELEASED, HIGHEST, NONE\'.'
     );
   });
   it('should throw if version number undefined', () => {
@@ -53,9 +53,17 @@ describe('VersionNumber', () => {
       VersionNumber.from('2.0.2.0'),
       VersionNumber.from('3.0.0.0'),
       VersionNumber.from('3.0.0.3'),
-      VersionNumber.from('3.0.0.NONE'),
+      VersionNumber.from('3.0.0.NONE')
     ];
     const sorted = [...versions].reverse().sort((a, b) => a.compareTo(b));
     expect(sorted).to.deep.equal(versions);
+  });
+  it('should be able to detect a well-known build number', () => {
+    const version = VersionNumber.from('1.2.3.NONE');
+    expect(version.isBuildKeyword()).to.be.true;
+  });
+  it('should be able to detect a numeric build number', () => {
+    const version = VersionNumber.from('1.2.3.4');
+    expect(version.isBuildKeyword()).to.be.false;
   });
 });

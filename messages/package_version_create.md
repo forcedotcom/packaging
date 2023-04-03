@@ -2,6 +2,10 @@
 
 You can’t have both "package" and "packageId" (deprecated) defined as dependencies in sfdx-project.json.
 
+# errorPackageOrPackageIdMissing
+
+You must provide either "package" or "packageId" (deprecated) defined as dependencies in sfdx-project.json.
+
 # errorDependencyPair
 
 Dependency must specify either a subscriberPackageVersionId or both packageId and versionNumber: %s
@@ -12,7 +16,8 @@ No package ID was found in Dev Hub for package ID: %s.
 
 # versionNumberNotFoundInDevHub
 
-No version number was found in Dev Hub for package id %s and branch %s and version number %s that resolved to build number %s.
+No version number was found in Dev Hub for package id %s and branch %s and version number %s that resolved to build
+number %s.
 
 # buildNumberResolvedForLatest
 
@@ -166,3 +171,27 @@ No matching major.minor version found for the given patch version (%s)
 # errorInvalidPackageId
 
 The provided package ID '%s' is invalid.
+
+# packageIdCannotBeUndefined
+
+The package ID cannot be undefined.
+
+# deploydirCannotBeUndefined
+
+The deploy directory cannot be undefined. Supplied options: %s
+
+# packagePathCannotBeUndefined
+
+The package path cannot be undefined.
+
+# errorMissingPackagePath
+
+The package path is missing is undefined. Supplied options: %s
+
+# versionNumberRequired
+
+The version number is required and was not found in the options or in package json descriptor.
+
+# missingConnection
+
+A connection is required.

@@ -15,7 +15,7 @@ import { PackagingSObjects } from '../../src/interfaces';
 
 const oThreeThree = '033xxxxxxxxxxxxxxx';
 const oFourT = '04txxxxxxxxxxxxxxx';
-const spvRecord: PackagingSObjects.SubscriberPackageVersion = {
+const spvRecord: Partial<PackagingSObjects.SubscriberPackageVersion> = {
   AppExchangeDescription: '',
   AppExchangeLogoUrl: '',
   AppExchangePackageName: '',
@@ -43,16 +43,17 @@ const spvRecord: PackagingSObjects.SubscriberPackageVersion = {
   ReleaseNotesUrl: '',
   ReleaseState: '',
   RemoteSiteSettings: undefined,
-  SubscriberPackageId: oThreeThree,
+  SubscriberPackageId: oThreeThree
 };
 
-async function setupProject(setup: (project: SfProject) => void = () => {}) {
+async function setupProject(setup: (project: SfProject) => void = () => {
+}) {
   const project = await SfProject.resolve();
   const packageDirectories = [
     {
       path: 'force-app',
-      default: true,
-    },
+      default: true
+    }
   ];
   const packageAliases = {};
   project.getSfProjectJson().set('packageDirectories', packageDirectories);
@@ -63,18 +64,18 @@ async function setupProject(setup: (project: SfProject) => void = () => {}) {
     .getSfProjectJson()
     .getContents()
     .packageDirectories?.forEach((dir) => {
-      if (dir.path) {
-        const packagePath = path.join(projectDir, dir.path);
-        fs.mkdirSync(packagePath, { recursive: true });
-      }
-    });
+    if (dir.path) {
+      const packagePath = path.join(projectDir, dir.path);
+      fs.mkdirSync(packagePath, { recursive: true });
+    }
+  });
 
   return project;
 }
 
 describe('subscriberPackageVersion', () => {
   const testOrg = new MockTestOrgData();
-  const password: Optional<string> = null;
+  const password: Optional<string> = undefined;
   let connection: Connection;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

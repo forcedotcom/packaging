@@ -6,28 +6,27 @@
  */
 import * as os from 'os';
 import * as path from 'path';
+import * as fs from 'fs/promises';
 import { expect } from 'chai';
-import { readJSON } from 'fs-extra';
-import { TestSession, execCmd } from '@salesforce/cli-plugins-testkit';
+import { execCmd, TestSession } from '@salesforce/cli-plugins-testkit';
 import { Duration, sleep } from '@salesforce/kit';
 import { ProjectJson } from '@salesforce/core/lib/sfProject';
 import { Lifecycle, Org, SfProject } from '@salesforce/core';
 import { uniqid } from '@salesforce/core/lib/testSetup';
 import {
-  PackageCreateOptions,
-  PackageVersionCreateReportProgress,
-  PackageVersionCreateRequestResultInProgressStatuses,
   AncestryRepresentationProducer,
   AncestryRepresentationProducerOptions,
-  PackagingSObjects,
   Package,
+  PackageCreateOptions,
   PackageVersion,
+  PackageVersionCreateReportProgress,
+  PackageVersionCreateRequestResultInProgressStatuses,
   PackageVersionEvents,
+  PackagingSObjects,
 } from '../../src/exported';
 import { PackageEvents } from '../../src/interfaces';
-import { SubscriberPackageVersion } from '../../src/package';
+import { SubscriberPackageVersion, VersionNumber } from '../../src/package';
 import { AncestryJsonProducer, AncestryTreeProducer, PackageAncestry } from '../../src/package/packageAncestry';
-import { VersionNumber } from '../../src/package/versionNumber';
 
 let session: TestSession;
 
@@ -105,9 +104,9 @@ describe('Integration tests for @salesforce/packaging library', () => {
         packageType: 'Unlocked',
         path: 'force-app',
         description: "Don't ease, don't ease, don't ease me in.",
-        noNamespace: undefined,
+        noNamespace: false,
         orgDependent: false,
-        errorNotificationUsername: undefined,
+        errorNotificationUsername: devHubOrg.getUsername() as string,
       };
       const pkg = await Package.create(devHubOrg.getConnection(), project, options);
       pkgId = pkg.Id;
@@ -116,7 +115,8 @@ describe('Integration tests for @salesforce/packaging library', () => {
 
       // verify update to project.json packageDiretory using fs
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      const projectFile = (await readJSON(path.join(session.project.dir, 'sfdx-project.json'))) as ProjectJson;
+      const dxPjsonData = await fs.readFile(path.join(session.project.dir, 'sfdx-project.json'), 'utf8');
+      const projectFile = JSON.parse(dxPjsonData) as ProjectJson;
       expect(projectFile).to.have.property('packageDirectories').with.length(1);
       expect(projectFile.packageDirectories[0]).to.include.keys(['package', 'versionName', 'versionNumber']);
       expect(projectFile.packageDirectories[0].package).to.equal(pkgName);
@@ -154,8 +154,8 @@ describe('Integration tests for @salesforce/packaging library', () => {
         new RegExp(PKG2_VERSION_CREATE_REQUEST_ID_PREFIX),
         `\n${JSON.stringify(result, undefined, 2)}`
       );
-      pkgCreateVersionRequestId = result.Id;
-      pkgId = result.Package2Id;
+      pkgCreateVersionRequestId = result.Id ?? '';
+      pkgId = result.Package2Id ?? '';
     });
 
     it('get package version create status', async () => {
@@ -178,8 +178,6 @@ describe('Integration tests for @salesforce/packaging library', () => {
       Lifecycle.getInstance().on(
         PackageVersionEvents.create.progress,
         async (results: PackageVersionCreateReportProgress) => {
-          // eslint-disable-next-line no-console
-          console.log(`in-progress: ${JSON.stringify(results, undefined, 2)}`);
           expect(PackageVersionCreateRequestResultInProgressStatuses).to.include(results.Status);
         }
       );
@@ -197,7 +195,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
       );
       expect(result).to.include.keys(VERSION_CREATE_RESPONSE_KEYS);
 
-      subscriberPkgVersionId = result.SubscriberPackageVersionId;
+      subscriberPkgVersionId = result.SubscriberPackageVersionId ?? '';
 
       if (result.Status === 'Error') {
         throw new Error(`pv.waitForCreateVersion failed with status Error: ${result.Error.join(';')}`);
@@ -247,24 +245,22 @@ describe('Integration tests for @salesforce/packaging library', () => {
 
       // TODO: PVC command writes new version to sfdx-project.json
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      const projectFile = (await readJSON(path.join(session.project.dir, 'sfdx-project.json'))) as ProjectJson;
-
-      // eslint-disable-next-line no-console
-      console.log(`projectFile: ${JSON.stringify(projectFile, undefined, 2)}`);
+      const dxPjsonData = await fs.readFile(path.join(session.project.dir, 'sfdx-project.json'), 'utf8');
+      const projectFile = JSON.parse(dxPjsonData) as ProjectJson;
 
       expect(result.Name).to.equal(
         projectFile.packageDirectories[0].versionName,
         `'force:package:version:report' Name mismatch: expected '${projectFile.packageDirectories[0].versionName}', got '${result.Name}'`
       );
 
-      const version = projectFile.packageDirectories[0].versionNumber.replace('NEXT', '1');
+      const version = projectFile.packageDirectories[0].versionNumber?.replace('NEXT', '1');
       expect(result.Version).to.equal(
         version,
         `'force:package:version:report' Version mismatch: expected '${version}', got '${result.Version}'`
       );
 
       expect(result.IsReleased, 'Expected IsReleased to be false').to.be.false;
-      expect(Object.values(projectFile.packageAliases).some((id) => id === subscriberPkgVersionId)).to.be.true;
+      expect(Object.values(projectFile.packageAliases ?? []).some((id) => id === subscriberPkgVersionId)).to.be.true;
     });
 
     it('will update the package version with a new branch', async () => {
@@ -275,7 +271,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
       });
       const result = await pv.update({ Branch: 'superFunBranch' });
       expect(result).to.include.keys('id', 'success', 'errors');
-      expect(result.id.startsWith('04t')).to.be.true;
+      expect(result.id?.startsWith('04t')).to.be.true;
       expect(result.success).to.be.true;
       expect(result.errors).to.deep.equal([]);
     });
@@ -294,7 +290,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
       const pkg = new Package({ connection: devHubOrg.getConnection(), packageAliasOrId: pkgId, project });
       const result = await pkg.update({ Id: pkgId, Description: 'new package description' });
       expect(result).to.have.all.keys('id', 'success', 'errors');
-      expect(result.id.startsWith('0Ho')).to.be.true;
+      expect(result.id?.startsWith('0Ho')).to.be.true;
       expect(result.success).to.be.true;
       expect(result.errors).to.deep.equal([]);
     });
@@ -327,7 +323,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
         expect(res.Id.startsWith('08c')).to.be.true;
         expect(res.Package2Id.startsWith('0Ho')).to.be.true;
         expect(res.Package2VersionId.startsWith('05i')).to.be.true;
-        expect(res.SubscriberPackageVersionId.startsWith('04t')).to.be.true;
+        expect(res.SubscriberPackageVersionId?.startsWith('04t')).to.be.true;
       });
     });
 
@@ -420,7 +416,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
     it('packageInstalledList returns the correct information', async () => {
       const connection = scratchOrg.getConnection();
       const result = await SubscriberPackageVersion.installedList(connection);
-      const foundRecord = result.filter((item) => item.SubscriberPackageVersion.Id === subscriberPkgVersionId);
+      const foundRecord = result.filter((item) => item.SubscriberPackageVersion?.Id === subscriberPkgVersionId);
 
       expect(result).to.have.length.at.least(1);
       expect(foundRecord, `Did not find SubscriberPackageVersionId ${subscriberPkgVersionId}`).to.have.length(1);
@@ -599,12 +595,15 @@ describe('ancestry tests', () => {
   it('should produce a graphic representation of the ancestor tree from package name (0Ho)', async () => {
     const pa = await PackageAncestry.create({ packageId: pkgName, project, connection: devHubOrg.getConnection() });
     expect(pa).to.be.ok;
+
     class TestAncestryTreeProducer extends AncestryTreeProducer implements AncestryRepresentationProducer {
       public static treeAsText: string;
+
       public constructor(options?: AncestryRepresentationProducerOptions) {
         super(options);
       }
     }
+
     const treeProducer = pa.getRepresentationProducer(
       (opts: AncestryRepresentationProducerOptions) =>
         new TestAncestryTreeProducer({
@@ -621,12 +620,15 @@ describe('ancestry tests', () => {
   it('should produce a verbose graphic representation of the ancestor tree from package name (0Ho)', async () => {
     const pa = await PackageAncestry.create({ packageId: pkgName, project, connection: devHubOrg.getConnection() });
     expect(pa).to.be.ok;
+
     class TestAncestryTreeProducer extends AncestryTreeProducer implements AncestryRepresentationProducer {
       public static treeAsText: string;
+
       public constructor(options?: AncestryRepresentationProducerOptions) {
         super(options);
       }
     }
+
     const treeProducer = pa.getRepresentationProducer(
       (opts: AncestryRepresentationProducerOptions) =>
         new TestAncestryTreeProducer({
@@ -646,9 +648,9 @@ describe('ancestry tests', () => {
     expect(pa).to.be.ok;
     const graph = pa.getAncestryGraph();
     const root = graph.findNode((n) => graph.inDegree(n) === 0);
-    const subIds: string[] = Object.values(project.getSfProjectJson().get('packageAliases')).filter((id: string) =>
-      id.startsWith('04t')
-    ) as string[];
+    const subIds: string[] = Object.values(project.getSfProjectJson().getContents().packageAliases ?? []).filter(
+      (id: string) => id.startsWith('04t')
+    );
     const leaf = subIds[subIds.length - 1];
     const pathsToRoots = pa.getLeafPathToRoot(leaf);
     expect(pathsToRoots).to.be.ok;

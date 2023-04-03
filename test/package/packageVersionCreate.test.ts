@@ -7,10 +7,10 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
-import { expect } from 'chai';
+import { assert, expect } from 'chai';
 import { Connection, SfProject } from '@salesforce/core';
 import * as xml2js from 'xml2js';
-import { PackageVersionCreate, MetadataResolver } from '../../src/package/packageVersionCreate';
+import { MetadataResolver, PackageVersionCreate } from '../../src/package/packageVersionCreate';
 import { PackagingSObjects } from '../../src/interfaces';
 
 describe('Package Version Create', () => {
@@ -31,7 +31,7 @@ describe('Package Version Create', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     $$.SANDBOX.stub(MetadataResolver.prototype, 'convertMetadata' as any).resolves({
       packagePath: '/var/folders/lc/yk0hz4l50kq0vs79yb3m_lmm0000gp/T/0Ho3i000000Gmj6XXX-TESTING/md-files',
-      converted: [],
+      converted: []
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     $$.SANDBOX.stub(MetadataResolver.prototype, 'generateMDFolderForArtifact' as any).resolves();
@@ -48,7 +48,7 @@ describe('Package Version Create', () => {
           versionName: 'ver 0.1',
           versionNumber: '0.1.0.NEXT',
           default: false,
-          name: 'pkg',
+          name: 'pkg'
         },
         {
           path: 'force-app',
@@ -58,24 +58,24 @@ describe('Package Version Create', () => {
           default: true,
           ancestorId: 'TEST2',
           unpackagedMetadata: {
-            path: 'unpackaged',
+            path: 'unpackaged'
           },
           seedMetadata: {
-            path: 'seed',
+            path: 'seed'
           },
           dependencies: [
             {
-              package: 'DEP@0.1.0-1',
-            },
-          ],
-        },
+              package: 'DEP@0.1.0-1'
+            }
+          ]
+        }
       ],
       packageAliases: {
         TEST: packageId,
         TEST2: '05i3i000000Gmj6XXX',
         DEP: '05i3i000000Gmj6XXX',
-        'DEP@0.1.0-1': '04t3i000002eyYXXXX',
-      },
+        'DEP@0.1.0-1': '04t3i000002eyYXXXX'
+      }
     });
     await fs.promises.mkdir(path.join(project.getPath(), 'force-app'));
     stubContext($$);
@@ -88,10 +88,10 @@ describe('Package Version Create', () => {
     packageCreateStub = $$.SANDBOX.stub(connection.tooling, 'create').resolves({
       id: '123',
       success: true,
-      errors: undefined,
+      errors: []
     });
     xml2jsStub = $$.SANDBOX.stub(xml2js, 'parseStringPromise').resolves({
-      Package: { types: [{ name: ['Apexclass'], members: ['MyApexClass'] }] },
+      Package: { types: [{ name: ['Apexclass'], members: ['MyApexClass'] }] }
     });
     // @ts-ignore
     pvcStub = $$.SANDBOX.stub(PackageVersionCreate.prototype, 'verifyHasSource').returns(true);
@@ -107,12 +107,13 @@ describe('Package Version Create', () => {
   it('should throw an error when no package directories exist in the sfdx-project.json', async () => {
     await project.getSfProjectJson().write({
       packageDirectories: [],
-      packageAliases: {},
+      packageAliases: {}
     });
     const pvc = new PackageVersionCreate({ connection, project, packageId });
     try {
       await pvc.createPackageVersion();
     } catch (e) {
+      assert(e instanceof Error);
       expect(e.message).to.equal(
         'In sfdx-project.json, be sure to specify which package directory (path) is the default. Example: `[{ "path": "packageDirectory1", "default": true }, { "path": "packageDirectory2" }]`'
       );
@@ -128,6 +129,7 @@ describe('Package Version Create', () => {
     try {
       await pvc.createPackageVersion();
     } catch (e) {
+      assert(e instanceof Error);
       expect(e.message).to.equal('No matching source was found within the package root directory: force-app');
     }
   });
@@ -153,8 +155,8 @@ describe('Package Version Create', () => {
 
     expect(project.getSfProjectJson().getContents().packageDirectories[1].dependencies).to.deep.equal([
       {
-        package: 'DEP@0.1.0-1',
-      },
+        package: 'DEP@0.1.0-1'
+      }
     ]);
   });
 
@@ -212,7 +214,7 @@ describe('Package Version Create', () => {
       connection,
       project,
       tag: 'DancingBears',
-      packageId,
+      packageId
     });
     stubConvert();
 
@@ -239,7 +241,7 @@ describe('Package Version Create', () => {
       project,
       tag: 'DancingBears',
       packageId,
-      skipancestorcheck: true,
+      skipancestorcheck: true
     });
     stubConvert();
 
@@ -265,7 +267,7 @@ describe('Package Version Create', () => {
       connection,
       project,
       skipvalidation: true,
-      packageId,
+      packageId
     });
     stubConvert();
 
@@ -291,7 +293,7 @@ describe('Package Version Create', () => {
       connection,
       project,
       installationkey: 'guessMyPassword',
-      packageId,
+      packageId
     });
     stubConvert();
 
@@ -375,7 +377,7 @@ describe('Package Version Create', () => {
     );
   });
 
-  it("should set the build org language (i.e., package2-descriptor.json's language) from the scratch org definition file's language", async () => {
+  it('should set the build org language (i.e., package2-descriptor.json\'s language) from the scratch org definition file\'s language', async () => {
     const scratchOrgDefFileContent = '{ "language": "buildOrgLanguage" }';
     const scratchOrgDefFileName = 'project-scratch-def.json';
     $$.SANDBOX.stub(fs.promises, 'readFile').withArgs(scratchOrgDefFileName).resolves(scratchOrgDefFileContent);
@@ -416,13 +418,14 @@ describe('Package Version Create', () => {
       connection,
       project,
       postinstallscript: 'myScript.sh',
-      packageId,
+      packageId
     });
     stubConvert();
 
     try {
       await pvc.createPackageVersion();
     } catch (e) {
+      assert(e instanceof Error);
       expect(e.message).to.equal(
         'We can’t create the package version. This parameter is available only for second-generation managed packages. Create the package version without the postinstallscript or uninstallscript parameters.'
       );
@@ -441,13 +444,14 @@ describe('Package Version Create', () => {
       connection,
       project,
       uninstallscript: 'myScript.sh',
-      packageId,
+      packageId
     });
     stubConvert();
 
     try {
       await pvc.createPackageVersion();
     } catch (e) {
+      assert(e instanceof Error);
       expect(e.message).to.equal(
         'We can’t create the package version. This parameter is available only for second-generation managed packages. Create the package version without the postinstallscript or uninstallscript parameters.'
       );
@@ -463,12 +467,12 @@ describe('Package Version Create', () => {
           versionName: 'ver 0.1',
           versionNumber: '0.1.0.NEXT',
           default: true,
-          ancestorId: '123',
-        },
+          ancestorId: '123'
+        }
       ],
       packageAliases: {
-        TEST: '0Ho3i000000Gmj6XXX',
-      },
+        TEST: '0Ho3i000000Gmj6XXX'
+      }
     });
     packageTypeQuery.restore();
     packageTypeQuery = $$.SANDBOX.stub(connection.tooling, 'query')
@@ -478,11 +482,12 @@ describe('Package Version Create', () => {
     const pvc = new PackageVersionCreate({
       connection,
       project,
-      packageId,
+      packageId
     });
     try {
       await pvc.createPackageVersion();
     } catch (e) {
+      assert(e instanceof Error);
       expect(e.message).to.equal(
         'Can’t create package version. Specifying an ancestor is available only for second-generation managed packages. Remove the ancestorId or ancestorVersion from your sfdx-project.json file, and then create the package version again.'
       );
@@ -497,16 +502,17 @@ describe('Package Version Create', () => {
           versionName: 'ver 0.1',
           versionNumber: '0.1.0.NEXT',
           default: true,
-          ancestorVersion: '123',
-        },
+          ancestorVersion: '123'
+        }
       ],
       packageAliases: {
-        TEST: '0Ho3i000000Gmj6XXX',
-      },
+        TEST: '0Ho3i000000Gmj6XXX'
+      }
     });
     try {
       await pvc.createPackageVersion();
     } catch (e) {
+      assert(e instanceof Error);
       expect(e.message).to.equal(
         'Can’t create package version. Specifying an ancestor is available only for second-generation managed packages. Remove the ancestorId or ancestorVersion from your sfdx-project.json file, and then create the package version again.'
       );
@@ -519,7 +525,7 @@ describe('Package Version Create', () => {
       connection,
       project,
       validateschema: true,
-      packageId,
+      packageId
     });
     stubConvert();
 
@@ -550,7 +556,7 @@ describe('Package Version Create', () => {
         Id: 'foo',
         MajorVersion: 1,
         MinorVersion: 2,
-        PatchVersion: 3,
+        PatchVersion: 3
       } as PackagingSObjects.Package2Version;
       const explicitUseNoAncestor = true;
       const isPatch = false;
@@ -573,7 +579,7 @@ describe('Package Version Create', () => {
         Id: 'foo',
         MajorVersion: 1,
         MinorVersion: 2,
-        PatchVersion: 3,
+        PatchVersion: 3
       } as PackagingSObjects.Package2Version;
       const explicitUseNoAncestor = false;
       const isPatch = false;
@@ -594,7 +600,7 @@ describe('Package Version Create', () => {
     });
     it('should identify the ancestor as "" when version is the first version', () => {
       const ancestorId = 'ancestorId';
-      const highestReleasedVersion = undefined as PackagingSObjects.Package2Version;
+      const highestReleasedVersion = undefined as unknown as PackagingSObjects.Package2Version;
       const explicitUseNoAncestor = false;
       const isPatch = false;
       const skipAncestorCheck = false;
@@ -611,7 +617,7 @@ describe('Package Version Create', () => {
     });
     it('should identify the correct ancestor as the value passed to the function', () => {
       const ancestorId = 'ancestorId';
-      const highestReleasedVersion = undefined as PackagingSObjects.Package2Version;
+      const highestReleasedVersion = undefined as unknown as PackagingSObjects.Package2Version;
       const explicitUseNoAncestor = false;
       const isPatch = true;
       const skipAncestorCheck = true;

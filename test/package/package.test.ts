@@ -6,20 +6,21 @@
  */
 import * as path from 'path';
 import * as fs from 'fs';
-import { expect } from 'chai';
+import { assert, expect } from 'chai';
 import { instantiateContext, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { Connection, SfProject } from '@salesforce/core';
 import { Package } from '../../src/package';
 
-async function setupProject(setup: (project: SfProject) => void = () => {}) {
+async function setupProject(setup: (project: SfProject) => void = () => {
+}) {
   // @ts-ignore
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const project: SfProject = new SfProject('a');
   const packageDirectories = [
     {
       path: 'force-app',
-      default: true,
-    },
+      default: true
+    }
   ];
   const packageAliases = {};
   project.getSfProjectJson().set('packageDirectories', packageDirectories);
@@ -30,11 +31,11 @@ async function setupProject(setup: (project: SfProject) => void = () => {}) {
     .getSfProjectJson()
     .getContents()
     .packageDirectories?.forEach((dir) => {
-      if (dir.path) {
-        const packagePath = path.join(projectDir, dir.path);
-        fs.mkdirSync(packagePath, { recursive: true });
-      }
-    });
+    if (dir.path) {
+      const packagePath = path.join(projectDir, dir.path);
+      fs.mkdirSync(packagePath, { recursive: true });
+    }
+  });
 
   return project;
 }
@@ -58,9 +59,11 @@ describe('Package', () => {
       // eslint-disable-next-line @typescript-eslint/no-shadow
       const project = await setupProject();
       try {
+        // @ts-expect-error: Type 'undefined' is not assignable to type 'Connection<Schema>'.
         new Package({ connection: undefined, packageAliasOrId: '0hoasdfsdfasd', project });
         expect.fail('Should have thrown an error');
       } catch (e) {
+        assert(e instanceof Error);
         expect(e.message).to.equal('Package alias 0hoasdfsdfasd not found in project.');
       }
     });
@@ -70,9 +73,11 @@ describe('Package', () => {
         p.getSfProjectJson().set('packageAliases', { MyName: 'somePackage' });
       });
       try {
+        // @ts-expect-error: Type 'undefined' is not assignable to type 'Connection<Schema>'.
         new Package({ connection: undefined, packageAliasOrId: 'mypkgalias', project });
         expect.fail('Should have thrown an error');
       } catch (e) {
+        assert(e instanceof Error);
         expect(e.message).to.equal('Package alias mypkgalias not found in project.');
       }
     });
@@ -81,6 +86,7 @@ describe('Package', () => {
       project = await setupProject((p) => {
         p.getSfProjectJson().set('packageAliases', { mypkgalias: pkgId });
       });
+      // @ts-expect-error: Type 'undefined' is not assignable to type 'Connection<Schema>'.
       const pkg = new Package({ connection: undefined, packageAliasOrId: 'mypkgalias', project });
       expect(pkg.getId()).to.equal(pkgId);
     });
@@ -89,6 +95,7 @@ describe('Package', () => {
       project = await setupProject((p) => {
         p.getSfProjectJson().set('packageAliases', { mypkgalias: pkgId });
       });
+      // @ts-expect-error: Type 'undefined' is not assignable to type 'Connection<Schema>'.
       const pkg = new Package({ connection: undefined, packageAliasOrId: pkgId, project });
       expect(pkg.getId()).to.equal(pkgId);
     });
@@ -97,17 +104,19 @@ describe('Package', () => {
       project = await setupProject((p) => {
         p.getSfProjectJson().set('packageAliases', {
           'mypkgalias@1.0.0': '04tasdsadfasdf',
-          mypkgalias: pkgId,
+          mypkgalias: pkgId
         });
       });
 
       try {
         new Package({
+          // @ts-expect-error: Type 'undefined' is not assignable to type 'Connection<Schema>'.
           connection: undefined,
           packageAliasOrId: '04tasdsadfasdf',
-          project,
+          project
         });
       } catch (e) {
+        assert(e instanceof Error);
         expect(e.message).to.equal('Package alias 04tasdsadfasdf not found in project.');
       }
     });
@@ -121,9 +130,9 @@ describe('Package', () => {
       const conn = {
         tooling: {
           sobject: () => ({
-            retrieve: () => ({ Id: pkgId, ContainerOptions: 'Unlocked' }),
-          }),
-        },
+            retrieve: () => ({ Id: pkgId, ContainerOptions: 'Unlocked' })
+          })
+        }
       } as unknown as Connection;
 
       const pkg = new Package({ connection: conn, packageAliasOrId: pkgId, project });

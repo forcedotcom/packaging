@@ -9,11 +9,12 @@ import * as util from 'util';
 import { Connection, Messages } from '@salesforce/core';
 import { Schema } from 'jsforce';
 import {
-  PackageVersionCreateRequestResult,
   PackageVersionCreateRequestQueryOptions,
-  PackagingSObjects,
+  PackageVersionCreateRequestResult,
+  PackagingSObjects
 } from '../interfaces';
 import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
+import Package2VersionCreateRequestError = PackagingSObjects.Package2VersionCreateRequestError;
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
@@ -36,6 +37,10 @@ function formatDate(date: Date): string {
 export async function list(
   options?: PackageVersionCreateRequestQueryOptions
 ): Promise<PackageVersionCreateRequestResult[]> {
+  if (!options?.connection) {
+    throw messages.createError('missingConnection');
+  }
+
   try {
     const whereClause = constructWhere(options);
     return await query(util.format(QUERY, whereClause), options.connection);
@@ -55,12 +60,13 @@ export async function byId(
 
   return results;
 }
+
 // eslint-disable-next-line @typescript-eslint/no-shadow
 async function query(query: string, connection: Connection): Promise<PackageVersionCreateRequestResult[]> {
   type QueryRecord = PackagingSObjects.Package2VersionCreateRequest &
     Schema & {
-      Package2Version: Pick<PackagingSObjects.Package2Version, 'HasMetadataRemoved' | 'SubscriberPackageVersionId'>;
-    };
+    Package2Version: Pick<PackagingSObjects.Package2Version, 'HasMetadataRemoved' | 'SubscriberPackageVersionId'>;
+  };
   const queryResult = await connection.autoFetchQuery<QueryRecord>(query, { tooling: true });
   return (queryResult.records ? queryResult.records : []).map((record) => ({
     Id: record.Id,
@@ -74,16 +80,16 @@ async function query(query: string, connection: Connection): Promise<PackageVers
     Error: [],
     CreatedDate: formatDate(new Date(record.CreatedDate)),
     HasMetadataRemoved: record.Package2Version != null ? record.Package2Version.HasMetadataRemoved : null,
-    CreatedBy: record.CreatedById,
+    CreatedBy: record.CreatedById
   }));
 }
 
-async function queryForErrors(packageVersionCreateRequestId, connection: Connection): Promise<string[]> {
+async function queryForErrors(packageVersionCreateRequestId: string, connection: Connection): Promise<string[]> {
   const errorResults: string[] = [];
 
-  const queryResult = await connection.tooling.query(
+  const queryResult = await connection.tooling.query<Package2VersionCreateRequestError>(
     util.format(
-      "SELECT Message FROM Package2VersionCreateRequestError WHERE ParentRequest.Id = '%s'",
+      'SELECT Message FROM Package2VersionCreateRequestError WHERE ParentRequest.Id = \'%s\'',
       packageVersionCreateRequestId
     )
   );

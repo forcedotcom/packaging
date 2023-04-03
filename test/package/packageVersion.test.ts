@@ -32,7 +32,7 @@ describe('Package Version', () => {
           versionName: 'ver 0.1',
           versionNumber: '0.1.0.NEXT',
           default: false,
-          name: 'pkg',
+          name: 'pkg'
         },
         {
           path: 'force-app',
@@ -42,20 +42,20 @@ describe('Package Version', () => {
           default: true,
           ancestorId: 'TEST2',
           unpackagedMetadata: {
-            path: 'unpackaged',
+            path: 'unpackaged'
           },
           dependencies: [
             {
-              package: 'DEP@0.1.0-1',
-            },
-          ],
-        },
+              package: 'DEP@0.1.0-1'
+            }
+          ]
+        }
       ],
       packageAliases: {
         dupPkg1: packageId,
         dupPkg2: packageId,
-        uniquePkg: uniquePackageId,
-      },
+        uniquePkg: uniquePackageId
+      }
     });
     await fs.promises.mkdir(path.join(project.getPath(), 'force-app'));
     stubContext($$);
@@ -69,9 +69,9 @@ describe('Package Version', () => {
             Branch: null,
             MajorVersion: '1',
             MinorVersion: '2',
-            PatchVersion: '3',
-          },
-        ],
+            PatchVersion: '3'
+          }
+        ]
       });
   });
 
@@ -89,16 +89,16 @@ describe('Package Version', () => {
     // @ts-ignore
     await packageVersion.updateProjectWithPackageVersion({
       Package2Id: uniquePackageId,
-      SubscriberPackageVersionId: idOrAlias,
+      SubscriberPackageVersionId: idOrAlias
     });
-    expect(project.getSfProjectJson().getPackageAliases()['uniquePkg@1.2.3']).to.equal(idOrAlias);
+    expect(project.getSfProjectJson().getPackageAliases()?.['uniquePkg@1.2.3']).to.equal(idOrAlias);
   });
   it('should save alias for unique 0Ho in aliases', async () => {
     // @ts-ignore
     await packageVersion.updateProjectWithPackageVersion({
       Package2Id: packageId,
-      SubscriberPackageVersionId: idOrAlias,
+      SubscriberPackageVersionId: idOrAlias
     });
-    expect(project.getSfProjectJson().getPackageAliases()['dupPkg1@1.2.3']).to.equal(idOrAlias);
+    expect(project.getSfProjectJson().getPackageAliases()?.['dupPkg1@1.2.3']).to.equal(idOrAlias);
   });
 });

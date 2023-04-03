@@ -7,14 +7,14 @@
 
 import { Connection, Logger, Messages, sfdc, SfError, SfProject } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
-import { Optional } from '@salesforce/ts-types';
+import { Nullable, Optional } from '@salesforce/ts-types';
 import {
   InstalledPackages,
   PackageInstallCreateRequest,
   PackageInstallOptions,
   PackageType,
   PackagingSObjects,
-  SubscriberPackageVersionOptions,
+  SubscriberPackageVersionOptions
 } from '../interfaces';
 import { applyErrorAction, escapeInstallationKey, massageErrorMessage, numberToDuration } from '../utils/packageUtils';
 import { createPackageInstallRequest, getStatus, pollStatus, waitForPublish } from './packageInstall';
@@ -40,7 +40,7 @@ const highCostQueryFields = [
   'ReleaseNotesUrl',
   'RemoteSiteSettings',
   //  'InstallValidationStatus', // This requires extra resources on the server, but is commonly used, so let it load as part of the default query
-  'Profiles',
+  'Profiles'
 ];
 
 export const SubscriberPackageVersionFields = [
@@ -71,7 +71,7 @@ export const SubscriberPackageVersionFields = [
   'ReleaseNotesUrl',
   'ReleaseState',
   'RemoteSiteSettings',
-  'SubscriberPackageId',
+  'SubscriberPackageId'
 ];
 
 let logger: Logger;
@@ -86,7 +86,7 @@ const allZeroesInstallOptions: PackageInstallOptions = {
   pollingFrequency: Duration.minutes(0),
   pollingTimeout: Duration.minutes(0),
   publishFrequency: Duration.minutes(0),
-  publishTimeout: Duration.minutes(0),
+  publishTimeout: Duration.minutes(0)
 };
 
 /**
@@ -107,7 +107,7 @@ export class SubscriberPackageVersion {
   private readonly password: Optional<string>;
   private readonly connection: Connection;
   private readonly id: string;
-  private data: PackagingSObjects.SubscriberPackageVersion;
+  private data: PackagingSObjects.SubscriberPackageVersion | undefined;
 
   public constructor(private options: SubscriberPackageVersionOptions) {
     this.connection = this.options.connection;
@@ -132,6 +132,7 @@ export class SubscriberPackageVersion {
 
     this.password = this.options.password;
   }
+
   /**
    * Fetches the status of a package version install request and will wait for the install to complete, if requested
    * Package Version install emits the following events:
@@ -145,20 +146,20 @@ export class SubscriberPackageVersion {
   public static async installStatus(
     connection: Connection,
     packageInstallRequestOrId: string | PackagingSObjects.PackageInstallRequest,
-    installationKey?: string,
+    installationKey?: string | undefined | Nullable<string>,
     options?: PackageInstallOptions
   ): Promise<PackagingSObjects.PackageInstallRequest> {
     const id = typeof packageInstallRequestOrId === 'string' ? packageInstallRequestOrId : packageInstallRequestOrId.Id;
     const packageInstallRequest = await getStatus(connection, id);
-    const pollingTimeout = numberToDuration(options.pollingTimeout) ?? Duration.milliseconds(0);
+    const pollingTimeout = numberToDuration(options?.pollingTimeout);
     if (pollingTimeout.milliseconds <= 0) {
       return packageInstallRequest;
     } else {
       await waitForPublish(
         connection,
         packageInstallRequest.SubscriberPackageVersionKey,
-        options?.publishFrequency || 0,
-        options?.publishTimeout || 0,
+        options?.publishFrequency ?? 0,
+        options?.publishTimeout ?? 0,
         installationKey
       );
       return pollStatus(connection, id, options);
@@ -207,6 +208,7 @@ export class SubscriberPackageVersion {
     }
     return result;
   }
+
   /**
    * Retrieves the package version create request.
    *
@@ -345,7 +347,7 @@ export class SubscriberPackageVersion {
    */
   public async getData(
     options: { force?: boolean; includeHighCostFields?: boolean } = { force: false, includeHighCostFields: false }
-  ): Promise<PackagingSObjects.SubscriberPackageVersion> {
+  ): Promise<PackagingSObjects.SubscriberPackageVersion | undefined> {
     if (!this.data || options.force || options.includeHighCostFields) {
       const queryFields = this.getFieldsForQuery(options);
       if (queryFields.length === 0) {
@@ -356,7 +358,7 @@ export class SubscriberPackageVersion {
         const escapedInstallationKey = this.password ? escapeInstallationKey(this.password) : null;
         const queryWithKey = `${queryNoKey} AND InstallationKey ='${escapedInstallationKey}'`;
         this.data = await this.connection.singleRecordQuery<PackagingSObjects.SubscriberPackageVersion>(queryWithKey, {
-          tooling: true,
+          tooling: true
         });
       } catch (err) {
         throw messages.createError('errorInvalidIdNoRecordFound', [this.options.aliasOrId], undefined, err as Error);
@@ -470,7 +472,7 @@ export class SubscriberPackageVersion {
     if (!this.data || !Reflect.has(this.data, field)) {
       await this.getData({ includeHighCostFields: highCostQueryFields.includes(field) });
     }
-    return Reflect.get(this.data || {}, field) as T;
+    return Reflect.get(this.data ?? {}, field) as T;
   }
 
   // eslint-disable-next-line class-methods-use-this
