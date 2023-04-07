@@ -17,3 +17,7 @@ Could not find an alias for the ID %s.
 # packageAliasNotFound
 
 Package alias %s not found in project.
+
+# packageNotFound
+
+A package with id %s was not found.

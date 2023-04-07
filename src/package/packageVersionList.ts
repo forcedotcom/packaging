@@ -9,7 +9,7 @@ import { Logger, Messages } from '@salesforce/core';
 import { QueryResult, Schema } from 'jsforce';
 import { isNumber } from '@salesforce/ts-types';
 import { BY_LABEL, validateId } from '../utils/packageUtils';
-import { PackageVersionListResult, ListPackageVersionOptions } from '../interfaces';
+import { ListPackageVersionOptions, PackageVersionListResult } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
@@ -139,7 +139,7 @@ export function constructWhere(
 
 export function validateDays(paramName: string, lastDays: number): number {
   if (lastDays < 0) {
-    throw messages.createError('invalidDaysNumber', [paramName, `${lastDays}`]);
+    throw messages.createError('invalidDaysNumber', [paramName, lastDays]);
   }
 
   return lastDays;

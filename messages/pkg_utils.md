@@ -33,7 +33,7 @@ Use "sfdx force:package:list" to verify the 0Ho package version ID.
 
 # malformedPackageIdMessage
 
-We can’t find this package ID %s for this Dev Hub.
+We can’t find the package id in the Dev Hub.
 
 # notFoundMessage
 

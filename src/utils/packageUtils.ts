@@ -27,20 +27,20 @@ const INVALID_TYPE_REGEX = /[\w]*(sObject type '[A-Za-z]*Package[2]?[A-Za-z]*' i
 const ID_REGISTRY = [
   {
     prefix: '0Ho',
-    label: 'Package Id'
+    label: 'Package Id',
   },
   {
     prefix: '05i',
-    label: 'Package Version Id'
+    label: 'Package Version Id',
   },
   {
     prefix: '08c',
-    label: 'Package Version Create Request Id'
+    label: 'Package Version Create Request Id',
   },
   {
     prefix: '04t',
-    label: 'Subscriber Package Version Id'
-  }
+    label: 'Subscriber Package Version Id',
+  },
 ];
 
 export type IdRegistryValue = { prefix: string; label: string };
@@ -60,7 +60,7 @@ export const DEFAULT_PACKAGE_DIR = {
   package: '',
   versionName: 'ver 0.1',
   versionNumber: '0.1.0.NEXT',
-  default: true
+  default: true,
 };
 
 export const BY_LABEL = ((): IdRegistry =>
@@ -95,7 +95,7 @@ export function validateId(idObj: Many<IdRegistryValue>, value: string | undefin
     throw messages.createError('invalidIdOrAlias', [
       Array.isArray(idObj) ? idObj.map((e) => e.label).join(' or ') : idObj.label,
       value,
-      Array.isArray(idObj) ? idObj.map((e) => e.prefix).join(' or ') : idObj.prefix
+      Array.isArray(idObj) ? idObj.map((e) => e.prefix).join(' or ') : idObj.prefix,
     ]);
   }
 }
@@ -141,7 +141,7 @@ export function applyErrorAction(err: Error & { action?: string }): Error {
     actions.push(messages.getMessage('invalidPackageTypeAction'));
   }
 
-  if (err.name === 'MALFORMED_ID' && err.message === messages.getMessage('malformedPackageIdMessage', [''])) {
+  if (err.name === 'MALFORMED_ID' && err.message === messages.getMessage('malformedPackageIdMessage')) {
     actions.push(messages.getMessage('malformedPackageIdAction'));
   }
 
@@ -206,7 +206,7 @@ export async function getPackageVersionId(versionId: string, connection: Connect
       throw messages.createError('errorInvalidIdNoMatchingVersionId', [
         BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.label,
         versionId,
-        BY_LABEL.PACKAGE_VERSION_ID.label
+        BY_LABEL.PACKAGE_VERSION_ID.label,
       ]);
     }
     return queryResult.records[0].Id;
@@ -214,7 +214,7 @@ export async function getPackageVersionId(versionId: string, connection: Connect
 }
 
 export function escapeInstallationKey(key?: string): Nullable<string> {
-  return key ? key.replace(/\\/g, '\\\\').replace(/'/g, '\\\'') : null;
+  return key ? key.replace(/\\/g, '\\\\').replace(/'/g, "\\'") : null;
 }
 
 /**
@@ -233,7 +233,7 @@ export async function getContainerOptions(
   if (ids.length === 0) {
     return new Map<string, PackageType>();
   }
-  const query = 'SELECT Id, ContainerOptions FROM Package2 WHERE Id IN (\'%IDS%\')';
+  const query = "SELECT Id, ContainerOptions FROM Package2 WHERE Id IN ('%IDS%')";
 
   const records = await queryWithInConditionChunking<Pick<PackagingSObjects.Package2, 'Id' | 'ContainerOptions'>>(
     query,
@@ -324,10 +324,10 @@ async function queryWithInConditionChunking<T extends Record<string, unknown> = 
         query,
         items[itemsQueried].slice(0, 20),
         items[itemsQueried].length,
-        inClauseItemsMaxLength
+        inClauseItemsMaxLength,
       ]);
     }
-    const itemsStr = `${items.slice(itemsQueried, itemsQueried + chunkCount).join('\',\'')}`;
+    const itemsStr = `${items.slice(itemsQueried, itemsQueried + chunkCount).join("','")}`;
     const queryChunk = query.replace(replaceToken, itemsStr);
     // eslint-disable-next-line no-await-in-loop
     const result = await connection.tooling.query<T>(queryChunk);
@@ -471,8 +471,8 @@ export async function zipDir(dir: string, zipfile: string): Promise<void> {
     streamFiles: true,
     compression: 'DEFLATE',
     compressionOptions: {
-      level: 3
-    }
+      level: 3,
+    },
   });
   await pipeline(zipStream, fs.createWriteStream(zipfile));
   const stat = fs.statSync(zipfile);

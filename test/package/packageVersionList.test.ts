@@ -10,8 +10,8 @@ import { instantiateContext, restoreContext, stubContext } from '@salesforce/cor
 import {
   assembleQueryParts,
   constructWhere,
-  validateDays,
   DEFAULT_ORDER_BY_FIELDS,
+  validateDays,
 } from '../../src/package/packageVersionList';
 
 describe('package version list', () => {

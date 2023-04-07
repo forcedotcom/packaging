@@ -33,7 +33,7 @@ No released version was found in Dev Hub for package id %s and version number %s
 
 # noReleaseVersionFoundForBranch
 
-No version number was found in Dev Hub for package id $s and branch %s and version number %s.
+No version number was found in Dev Hub for package id %s and branch %s and version number %s.
 
 # tempFileLocation
 
@@ -85,7 +85,7 @@ Multiple errors occurred:
 
 # invalidDaysNumber
 
-Provide a valid positive number for %s.
+Provide a valid positive number for %s. %d
 
 # errorAncestorNoneNotAllowed
 
@@ -146,7 +146,7 @@ Patch version node for version, %s, must be 0 for a Locked package.
 
 # errorAncestorIdVersionHighestOrNoneMismatch
 
-Both ancestorId (%s) and ancestorVersion (%) specified, HIGHEST and/or NONE are used, the values disagree
+Both ancestorId (%s) and ancestorVersion (%s) specified, HIGHEST and/or NONE are used, the values disagree
 
 # errorInvalidAncestorVersionFormat
 
@@ -162,7 +162,7 @@ The given ancestor version (%s) has not been released
 
 # errorAncestorIdVersionMismatch
 
-No matching ancestor version found for the given ancestorId (%s)
+No matching ancestor version (%s) found for the given ancestorId (%s)
 
 # errorNoMatchingMajorMinorForPatch
 

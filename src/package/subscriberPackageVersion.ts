@@ -14,7 +14,7 @@ import {
   PackageInstallOptions,
   PackageType,
   PackagingSObjects,
-  SubscriberPackageVersionOptions
+  SubscriberPackageVersionOptions,
 } from '../interfaces';
 import { applyErrorAction, escapeInstallationKey, massageErrorMessage, numberToDuration } from '../utils/packageUtils';
 import { createPackageInstallRequest, getStatus, pollStatus, waitForPublish } from './packageInstall';
@@ -23,7 +23,7 @@ import { VersionNumber } from './versionNumber';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'subscriber_package_version');
-const pkgMessages = Messages.load('@salesforce/packaging', 'package', ['action', 'defaultErrorMessage']);
+const pkgMessages = Messages.loadMessages('@salesforce/packaging', 'package');
 
 type SPV = PackagingSObjects.SubscriberPackageVersion;
 // these fields have been identified as requiring additional serverside resources in order to calculate their values
@@ -40,7 +40,7 @@ const highCostQueryFields = [
   'ReleaseNotesUrl',
   'RemoteSiteSettings',
   //  'InstallValidationStatus', // This requires extra resources on the server, but is commonly used, so let it load as part of the default query
-  'Profiles'
+  'Profiles',
 ];
 
 export const SubscriberPackageVersionFields = [
@@ -71,7 +71,7 @@ export const SubscriberPackageVersionFields = [
   'ReleaseNotesUrl',
   'ReleaseState',
   'RemoteSiteSettings',
-  'SubscriberPackageId'
+  'SubscriberPackageId',
 ];
 
 let logger: Logger;
@@ -86,7 +86,7 @@ const allZeroesInstallOptions: PackageInstallOptions = {
   pollingFrequency: Duration.minutes(0),
   pollingTimeout: Duration.minutes(0),
   publishFrequency: Duration.minutes(0),
-  publishTimeout: Duration.minutes(0)
+  publishTimeout: Duration.minutes(0),
 };
 
 /**
@@ -358,7 +358,7 @@ export class SubscriberPackageVersion {
         const escapedInstallationKey = this.password ? escapeInstallationKey(this.password) : null;
         const queryWithKey = `${queryNoKey} AND InstallationKey ='${escapedInstallationKey}'`;
         this.data = await this.connection.singleRecordQuery<PackagingSObjects.SubscriberPackageVersion>(queryWithKey, {
-          tooling: true
+          tooling: true,
         });
       } catch (err) {
         throw messages.createError('errorInvalidIdNoRecordFound', [this.options.aliasOrId], undefined, err as Error);
