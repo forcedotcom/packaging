@@ -1,3 +1,12 @@
+## [1.4.8](https://github.com/forcedotcom/packaging/compare/1.4.7...1.4.8) (2023-04-08)
+
+
+### Bug Fixes
+
+* **deps:** bump vm2 from 3.9.11 to 3.9.15 ([e229f75](https://github.com/forcedotcom/packaging/commit/e229f752f8e702cc7508724a01909101c5146635))
+
+
+
 ## [1.4.7](https://github.com/forcedotcom/packaging/compare/1.4.6...1.4.7) (2023-03-25)
 
 
