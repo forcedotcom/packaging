@@ -27,7 +27,7 @@ import { VersionNumber } from './versionNumber';
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_ancestry');
 
-const SELECTpPACKAGEpVERSION =
+const SELECT_PACKAGE_VERSION =
   'SELECT AncestorId, SubscriberPackageVersionId, MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version';
 
 // Add this to query calls to only show released package versions in the output
@@ -66,9 +66,9 @@ const sortAncestryNodeData = (a: AncestryRepresentationProducer, b: AncestryRepr
  * Given a package Id (0Ho) or a package version Id (04t), it will build a graph of the package's ancestors.
  */
 export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
+  private roots: PackageAncestryNode[] = [];
+  private graph: DirectedGraph = new DirectedGraph<PackageAncestryNode, Attributes, Attributes>();
   #requestedPackageId: string;
-  #graph: DirectedGraph = new DirectedGraph<PackageAncestryNode, Attributes, Attributes>();
-  #roots: PackageAncestryNode[] = [];
 
   public constructor(private options: PackageAncestryOptions) {
     super(options);
@@ -79,10 +79,6 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
     return this.#requestedPackageId;
   }
 
-  public get roots(): PackageAncestryNode[] {
-    return this.#roots;
-  }
-
   public async init(): Promise<void> {
     await this.buildAncestryTree();
   }
@@ -91,7 +87,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
    * Returns the internal representation of the requested package ancestry graph.
    */
   public getAncestryGraph(): DirectedGraph<Attributes, Attributes, Attributes> {
-    return this.#graph;
+    return this.graph;
   }
 
   /**
@@ -109,7 +105,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
    */
   public getTreeProducer(verbose: boolean): AncestryRepresentationProducer {
     return this.getRepresentationProducer(
-      (opts: AncestryRepresentationProducerOptions) => new AncestryTreeProducer({ ...opts, verbose: !!verbose }),
+      (opts: AncestryRepresentationProducerOptions) => new AncestryTreeProducer({ ...opts, verbose }),
       this.requestedPackageId
     );
   }
@@ -134,7 +130,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
     producerCtor: (options: AncestryRepresentationProducerOptions) => AncestryRepresentationProducer,
     root: string | undefined
   ): AncestryRepresentationProducer {
-    const treeRoot = root ? (this.#graph.getNodeAttributes(root) as PackageAncestryNode) : undefined;
+    const treeRoot = root ? (this.graph.getNodeAttributes(root) as PackageAncestryNode) : undefined;
 
     const tree = producerCtor({ packageNode: treeRoot, depth: 0 });
     const treeStack: AncestryRepresentationProducer[] = [];
@@ -157,10 +153,10 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
 
     if (treeRoot) {
       // @ts-expect-error: cannot assign PackageAncestryNode to Attributes
-      dfsFromNode(this.#graph, treeRoot, handleNode);
+      dfsFromNode(this.graph, treeRoot, handleNode);
     } else {
       // @ts-expect-error: cannot assign PackageAncestryNode to Attributes
-      dfs(this.#graph, handleNode);
+      dfs(this.graph, handleNode);
     }
     return tree;
   }
@@ -172,7 +168,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
    * @param subscriberPackageVersionId
    */
   public getLeafPathToRoot(subscriberPackageVersionId?: string): PackageAncestryNode[][] {
-    const root = this.#graph.findNode(
+    const root = this.graph.findNode(
       // @ts-expect-error: cannot assign PackageAncestryNode to Attributes
       (node, attributes: { node: PackageAncestryNode }) => attributes.node.AncestorId === null
     );
@@ -180,7 +176,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
     let path: PackageAncestryNode[] = [];
     let previousDepth = 0;
     // @ts-expect-error: cannot assign PackageAncestryNode to Attributes
-    dfsFromNode(this.#graph, root, (node, attr: { node: PackageAncestryNode }, depth) => {
+    dfsFromNode(this.graph, root, (node, attr: { node: PackageAncestryNode }, depth) => {
       if (depth === 0) {
         paths.push(path);
         path = [];
@@ -216,11 +212,11 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   }
 
   private async buildAncestryTree(): Promise<void> {
-    this.#roots = await this.getRoots();
-    await this.buildAncestryTreeFromRoots(this.#roots);
+    (await this.getRootsFromRequestedId()).forEach((root) => this.roots.push(root));
+    await this.buildAncestryTreeFromRoots(this.roots);
   }
 
-  private async getRoots(): Promise<PackageAncestryNode[]> {
+  private async getRootsFromRequestedId(): Promise<PackageAncestryNode[]> {
     let roots: PackageAncestryNode[] = [];
     this.#requestedPackageId =
       this.options.project.getPackageIdFromAlias(this.options.packageId) ?? this.options.packageId;
@@ -293,7 +289,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
     if (!nodeId) {
       throw new Error('nodeId is undefined');
     }
-    const query = `${SELECTpPACKAGEpVERSION} WHERE SubscriberPackageVersionId = '${nodeId}'`;
+    const query = `${SELECT_PACKAGE_VERSION} WHERE SubscriberPackageVersionId = '${nodeId}'`;
 
     try {
       const results = await this.options.connection.singleRecordQuery<PackageAncestryNode>(query, {
@@ -312,7 +308,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
     // Check to see if the package is an unlocked package
     // if so, throw and error since ancestry only applies to managed packages
     await this.validatePackageType();
-    const normalQuery = `${SELECTpPACKAGEpVERSION} WHERE AncestorId = NULL AND Package2Id = '${this.requestedPackageId}' ${releasedOnlyFilter}`;
+    const normalQuery = `${SELECT_PACKAGE_VERSION} WHERE AncestorId = NULL AND Package2Id = '${this.requestedPackageId}' ${releasedOnlyFilter}`;
     const subscriberPackageVersions = (
       await this.options.connection.tooling.query<PackageAncestryNode>(normalQuery)
     ).records?.map((record) => new PackageAncestryNode(record));
@@ -346,14 +342,14 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   }
 
   private addToGraph(ancestor: PackageAncestryNode, descendant: PackageAncestryNode): void {
-    if (!this.#graph.hasNode(ancestor.getVersion())) {
-      this.#graph.addNode(ancestor.getVersion(), { node: ancestor });
+    if (!this.graph.hasNode(ancestor.getVersion())) {
+      this.graph.addNode(ancestor.getVersion(), { node: ancestor });
     }
-    if (!this.#graph.hasNode(descendant.getVersion())) {
-      this.#graph.addNode(descendant.getVersion(), { node: descendant });
+    if (!this.graph.hasNode(descendant.getVersion())) {
+      this.graph.addNode(descendant.getVersion(), { node: descendant });
     }
-    if (!this.#graph.hasEdge(ancestor.getVersion(), descendant.getVersion())) {
-      this.#graph.addDirectedEdgeWithKey(
+    if (!this.graph.hasEdge(ancestor.getVersion(), descendant.getVersion())) {
+      this.graph.addDirectedEdgeWithKey(
         `${ancestor.getVersion()}->${descendant.getVersion()}`,
         ancestor.getVersion(),
         descendant.getVersion(),
@@ -366,7 +362,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   }
 
   private async getDescendants(ancestor: PackageAncestryNode): Promise<PackageAncestryNode[]> {
-    const query = `${SELECTpPACKAGEpVERSION} WHERE AncestorId = '${ancestor.SubscriberPackageVersionId}' ${releasedOnlyFilter}`;
+    const query = `${SELECT_PACKAGE_VERSION} WHERE AncestorId = '${ancestor.SubscriberPackageVersionId}' ${releasedOnlyFilter}`;
     const results = await this.options.connection.tooling.query<PackageAncestryNode>(query);
     return results.records.map((result) => new PackageAncestryNode(result));
   }
