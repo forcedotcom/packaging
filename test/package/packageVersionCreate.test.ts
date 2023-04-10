@@ -11,6 +11,7 @@ import { expect } from 'chai';
 import { Connection, SfProject } from '@salesforce/core';
 import * as xml2js from 'xml2js';
 import { PackageVersionCreate, MetadataResolver } from '../../src/package/packageVersionCreate';
+import { PackageProfileApi } from '../../src/package/packageProfileApi';
 import { PackagingSObjects } from '../../src/interfaces';
 
 describe('Package Version Create', () => {
@@ -382,7 +383,7 @@ describe('Package Version Create', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     $$.SANDBOX.stub(MetadataResolver.prototype, 'generateMDFolderForArtifact' as any).resolves();
     $$.SANDBOX.stub(fs, 'existsSync').returns(true);
-    const writeFileSpy = $$.SANDBOX.spy(fs.promises, 'writeFile');
+    const writeFileSpy = $$.SANDBOX.spy(fs.promises, 'writeFile'); // this is called to write the final package2-descriptor.json file
 
     const pvc = new PackageVersionCreate({ connection, project, definitionfile: scratchOrgDefFileName, packageId });
     const result = await pvc.createPackageVersion();
@@ -399,9 +400,9 @@ describe('Package Version Create', () => {
       'SubscriberPackageVersionId',
       'Tag'
     );
-
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // package2-descriptor.json contents
+    const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // get the package2-descriptor.json contents (args[1])
+    // verfiy that package2-descriptor.json contains the specified lanaguage
     expect(package2DescriptorJson).to.have.string('buildOrgLanguage');
   });
 
@@ -539,6 +540,83 @@ describe('Package Version Create', () => {
       'Tag'
     );
   });
+
+  it('should not package the profiles from unpackaged metadata dirs', async () => {
+    await project.getSfProjectJson().write({
+      packageDirectories: [
+        {
+          path: 'pkg',
+          package: 'dep',
+          versionName: 'ver 0.1',
+          versionNumber: '0.1.0.NEXT',
+          default: false,
+          name: 'pkg',
+          unpackagedMetadata: {
+            path: 'unpackaged-pkg',
+          },
+        },
+        {
+          path: 'force-app',
+          package: 'TEST',
+          versionName: 'ver 0.1',
+          versionNumber: '0.1.0.NEXT',
+          default: true,
+          ancestorId: 'TEST2',
+          unpackagedMetadata: {
+            path: 'unpackaged-force-app',
+          },
+          seedMetadata: {
+            path: 'seed',
+          },
+          dependencies: [
+            {
+              package: 'DEP@0.1.0-1',
+            },
+          ],
+        },
+        {
+          path: 'unpackaged-pkg',
+        },
+        {
+          path: 'unpackaged-force-app',
+        },
+      ],
+      packageAliases: {
+        TEST: packageId,
+        TEST2: '05i3i000000Gmj6XXX',
+        DEP: '05i3i000000Gmj6XXX',
+        'DEP@0.1.0-1': '04t3i000002eyYXXXX',
+      },
+    });
+    const pvc = new PackageVersionCreate({ connection, project, codecoverage: true, packageId });
+    const profileSpyGenerate = $$.SANDBOX.spy(PackageProfileApi.prototype, 'generateProfiles');
+    const profileSpyFilter = $$.SANDBOX.spy(PackageProfileApi.prototype, 'filterAndGenerateProfilesForManifest');
+    stubConvert();
+    const result = await pvc.createPackageVersion();
+    expect(result).to.have.all.keys(
+      'Branch',
+      'CreatedBy',
+      'CreatedDate',
+      'Error',
+      'HasMetadataRemoved',
+      'Id',
+      'Package2Id',
+      'Package2VersionId',
+      'Status',
+      'SubscriberPackageVersionId',
+      'Tag'
+    );
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const excludedDirsGenerate = profileSpyGenerate.firstCall.args[2];
+    expect(excludedDirsGenerate.length).to.equal(2);
+    expect(excludedDirsGenerate).to.contain('unpackaged-pkg');
+    expect(excludedDirsGenerate).to.contain('unpackaged-force-app');
+    const excludedDirsFilter = profileSpyFilter.firstCall.args[1];
+    expect(excludedDirsFilter.length).to.equal(2);
+    expect(excludedDirsFilter).to.contain('unpackaged-pkg');
+    expect(excludedDirsFilter).to.contain('unpackaged-force-app');
+  });
+
   describe('validateAncestorId', () => {
     let pvc: PackageVersionCreate;
     beforeEach(() => {
