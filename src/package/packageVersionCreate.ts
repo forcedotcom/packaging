@@ -485,7 +485,7 @@ export class PackageVersionCreate {
       );
     }
 
-    // don't package the profiles from in any unpackagedMetadata dir in the project
+    // don't package the profiles from any unpackagedMetadata dir in the project
     const profileExcludeDirs = this.project
       .getPackageDirectories()
       .filter((packageDir) => (packageDir as PackageDescriptorJson).unpackagedMetadata?.path)
