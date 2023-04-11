@@ -1,3 +1,12 @@
+## [1.4.9](https://github.com/forcedotcom/packaging/compare/1.4.8...1.4.9) (2023-04-11)
+
+
+### Bug Fixes
+
+* **deps:** bump xml2js from 0.4.23 to 0.5.0 ([0ecf49e](https://github.com/forcedotcom/packaging/commit/0ecf49e6f30f677045113d40dab560852a89c6fb))
+
+
+
 ## [1.4.8](https://github.com/forcedotcom/packaging/compare/1.4.7...1.4.8) (2023-04-08)
 
 
