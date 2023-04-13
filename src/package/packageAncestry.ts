@@ -14,6 +14,7 @@ import { dfs, dfsFromNode } from 'graphology-traversal';
 import {
   AncestryRepresentationProducer,
   AncestryRepresentationProducerOptions,
+  PackageAncestryNodeAttributes,
   PackageAncestryNodeData,
   PackageAncestryNodeOptions,
   PackageAncestryOptions,
@@ -67,16 +68,29 @@ const sortAncestryNodeData = (a: AncestryRepresentationProducer, b: AncestryRepr
  */
 export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   private roots: PackageAncestryNode[] = [];
-  private graph: DirectedGraph = new DirectedGraph<PackageAncestryNode, Attributes, Attributes>();
-  #requestedPackageId: string;
+  private graph: DirectedGraph = new DirectedGraph<PackageAncestryNodeAttributes, Attributes, Attributes>();
+  private packageId: string;
 
   public constructor(private options: PackageAncestryOptions) {
     super(options);
-    this.#requestedPackageId = options.packageId;
+    this.packageId = options.packageId;
   }
 
   public get requestedPackageId(): string | undefined {
-    return this.#requestedPackageId;
+    return this.packageId;
+  }
+
+  private static createAttributes(node: PackageAncestryNode): PackageAncestryNodeAttributes {
+    return {
+      AncestorId: node.AncestorId,
+      BuildNumber: node.BuildNumber,
+      MajorVersion: node.MajorVersion,
+      MinorVersion: node.MinorVersion,
+      PatchVersion: node.PatchVersion,
+      SubscriberPackageVersionId: node.SubscriberPackageVersionId,
+      depthCounter: node.depthCounter,
+      node,
+    };
   }
 
   public async init(): Promise<void> {
@@ -124,18 +138,21 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
    * Returns the producer representation of the package ancestry graph.
    *
    * @param producerCtor - function that returns a new instance of the producer
-   * @param root - the subscriber package version id of the root node
+   * @param rootPackageId - the subscriber package version id of the root node
    */
   public getRepresentationProducer(
     producerCtor: (options: AncestryRepresentationProducerOptions) => AncestryRepresentationProducer,
-    root: string | undefined
+    rootPackageId: string | undefined
   ): AncestryRepresentationProducer {
-    const treeRoot = root ? (this.graph.getNodeAttributes(root) as PackageAncestryNode) : undefined;
+    const treeRootKey: string | undefined = rootPackageId
+      ? this.graph.findNode((node: string, attributes) => attributes.SubscriberPackageVersionId === rootPackageId)
+      : undefined;
+    const treeRoot = treeRootKey ? (this.graph.getNodeAttributes(treeRootKey).node as PackageAncestryNode) : undefined;
 
     const tree = producerCtor({ packageNode: treeRoot, depth: 0 });
     const treeStack: AncestryRepresentationProducer[] = [];
 
-    function handleNode(node: string, attr: { node: PackageAncestryNode }, depth: number): void {
+    function handleNode(node: string, attr: PackageAncestryNodeAttributes, depth: number): void {
       if (treeStack.length > depth) {
         treeStack.splice(depth);
       }
@@ -153,7 +170,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
 
     if (treeRoot) {
       // @ts-expect-error: cannot assign PackageAncestryNode to Attributes
-      dfsFromNode(this.graph, treeRoot, handleNode);
+      dfsFromNode(this.graph, treeRoot.getVersion(), handleNode);
     } else {
       // @ts-expect-error: cannot assign PackageAncestryNode to Attributes
       dfs(this.graph, handleNode);
@@ -170,13 +187,13 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   public getLeafPathToRoot(subscriberPackageVersionId?: string): PackageAncestryNode[][] {
     const root = this.graph.findNode(
       // @ts-expect-error: cannot assign PackageAncestryNode to Attributes
-      (node, attributes: { node: PackageAncestryNode }) => attributes.node.AncestorId === null
+      (node, attributes: PackageAncestryNodeAttributes) => attributes.AncestorId === null
     );
     const paths: PackageAncestryNode[][] = [];
     let path: PackageAncestryNode[] = [];
     let previousDepth = 0;
     // @ts-expect-error: cannot assign PackageAncestryNode to Attributes
-    dfsFromNode(this.graph, root, (node, attr: { node: PackageAncestryNode }, depth) => {
+    dfsFromNode(this.graph, root, (node, attr: PackageAncestryNodeAttributes, depth) => {
       if (depth === 0) {
         paths.push(path);
         path = [];
@@ -218,8 +235,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
 
   private async getRootsFromRequestedId(): Promise<PackageAncestryNode[]> {
     let roots: PackageAncestryNode[] = [];
-    this.#requestedPackageId =
-      this.options.project.getPackageIdFromAlias(this.options.packageId) ?? this.options.packageId;
+    this.packageId = this.options.project.getPackageIdFromAlias(this.options.packageId) ?? this.options.packageId;
     switch (this.requestedPackageId?.slice(0, 3)) {
       case '0Ho':
         pkgUtils.validateId(pkgUtils.BY_LABEL.PACKAGE_ID, this.requestedPackageId);
@@ -292,7 +308,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
     const query = `${SELECT_PACKAGE_VERSION} WHERE SubscriberPackageVersionId = '${nodeId}'`;
 
     try {
-      const results = await this.options.connection.singleRecordQuery<PackageAncestryNode>(query, {
+      const results = await this.options.connection.singleRecordQuery<PackageAncestryNodeOptions>(query, {
         tooling: true,
       });
       return new PackageAncestryNode(results);
@@ -343,10 +359,10 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
 
   private addToGraph(ancestor: PackageAncestryNode, descendant: PackageAncestryNode): void {
     if (!this.graph.hasNode(ancestor.getVersion())) {
-      this.graph.addNode(ancestor.getVersion(), { node: ancestor });
+      this.graph.addNode(ancestor.getVersion(), PackageAncestry.createAttributes(ancestor));
     }
     if (!this.graph.hasNode(descendant.getVersion())) {
-      this.graph.addNode(descendant.getVersion(), { node: descendant });
+      this.graph.addNode(descendant.getVersion(), PackageAncestry.createAttributes(descendant));
     }
     if (!this.graph.hasEdge(ancestor.getVersion(), descendant.getVersion())) {
       this.graph.addDirectedEdgeWithKey(
@@ -528,10 +544,7 @@ export class AncestryDotProducer implements AncestryRepresentationProducer {
   }
 }
 
-export class PackageAncestryNode
-  extends AsyncCreatable<PackageAncestryNodeOptions>
-  implements PackageAncestryNodeOptions
-{
+export class PackageAncestryNode extends AsyncCreatable<PackageAncestryNodeOptions> {
   public readonly version: VersionNumber;
   public readonly MajorVersion: number;
   public readonly MinorVersion: number;

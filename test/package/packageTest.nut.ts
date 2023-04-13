@@ -513,7 +513,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
     });
   });
 });
-describe.only('ancestry tests', () => {
+describe('ancestry tests', () => {
   type PackageVersionQueryResult = PackagingSObjects.Package2Version & {
     Package2: {
       Id: string;

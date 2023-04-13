@@ -330,9 +330,9 @@ export type ProfileApiOptions = {
   generateProfileInformation: boolean;
 };
 
-export type PackageVersionReportResult =
-  Partial<Omit<PackagingSObjects.Package2Version, 'AncestorId' | 'HasPassedCodeCoverageCheck' | 'HasMetadataRemoved'>>
-  & {
+export type PackageVersionReportResult = Partial<
+  Omit<PackagingSObjects.Package2Version, 'AncestorId' | 'HasPassedCodeCoverageCheck' | 'HasMetadataRemoved'>
+> & {
   Package2: Partial<Omit<PackagingSObjects.Package2, 'IsOrgDependent'>> & {
     IsOrgDependent: boolean | null | undefined;
   };
@@ -398,7 +398,11 @@ export type PackageAncestryNodeOptions = Attributes & {
   depthCounter: number;
 };
 
-export type PackageAncestryData = Omit<PackageAncestryNodeOptions, 'AncestorId'>;
+export type PackageAncestryNodeAttributes = PackageAncestryNodeOptions & {
+  node: PackageAncestryNode;
+};
+
+export type PackageAncestryData = Omit<PackageAncestryNodeAttributes, 'AncestorId'>;
 
 export type PackageAncestryNodeData = {
   data: PackageAncestryNodeOptions;
@@ -431,16 +435,16 @@ export const PackageEvents = {
   convert: {
     success: 'Package/convert-success',
     error: 'Package/convert-error',
-    progress: 'Package/convert-in-progress'
+    progress: 'Package/convert-in-progress',
   },
   install: {
     warning: 'Package/install-warning',
     presend: 'Package/install-presend',
     postsend: 'Package/install-postsend',
     status: 'Package/install-status',
-    'subscriber-status': 'Package/install-subscriber-status'
+    'subscriber-status': 'Package/install-subscriber-status',
   },
-  uninstall: 'Package/uninstall'
+  uninstall: 'Package/uninstall',
 };
 
 export const PackageVersionEvents = {
@@ -450,12 +454,12 @@ export const PackageVersionEvents = {
     success: 'PackageVersion/create-success',
     error: 'PackageVersion/create-error',
     'timed-out': 'PackageVersion/create-timed-out',
-    'preserve-files': 'PackageVersion/create-preserve-files'
-  }
+    'preserve-files': 'PackageVersion/create-preserve-files',
+  },
 };
 
 export const Package1VersionEvents = {
   create: {
-    progress: 'Package1Version/create-progress'
-  }
+    progress: 'Package1Version/create-progress',
+  },
 };
