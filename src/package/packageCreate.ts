@@ -37,11 +37,9 @@ export function createPackageRequestFromContext(project: SfProject, options: Pac
  */
 
 export function createPackageDirEntry(project: SfProject, options: PackageCreateOptions): PackageDir | NamedPackageDir {
-  let packageDirs: PackageDir[] = project.getSfProjectJson().getContents().packageDirectories;
+  const packageDirs: PackageDir[] = project.getSfProjectJson().getContents().packageDirectories ?? [];
   let isNew = false;
-  if (!packageDirs) {
-    packageDirs = [];
-  }
+
   // see if package exists (exists means it has an id or package)
   let packageDir: PackageDir | undefined = packageDirs
     .map((pd: PackageDir) => pd as NamedPackageDir & { id: string })

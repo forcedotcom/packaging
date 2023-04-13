@@ -68,7 +68,11 @@ const sortAncestryNodeData = (a: AncestryRepresentationProducer, b: AncestryRepr
  */
 export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   private roots: PackageAncestryNode[] = [];
-  private graph: DirectedGraph = new DirectedGraph<PackageAncestryNodeAttributes, Attributes, Attributes>();
+  private graph: DirectedGraph<PackageAncestryNodeAttributes, Attributes, Attributes> = new DirectedGraph<
+    PackageAncestryNodeAttributes,
+    Attributes,
+    Attributes
+  >();
   private packageId: string;
 
   public constructor(private options: PackageAncestryOptions) {
@@ -147,7 +151,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
     const treeRootKey: string | undefined = rootPackageId
       ? this.graph.findNode((node: string, attributes) => attributes.SubscriberPackageVersionId === rootPackageId)
       : undefined;
-    const treeRoot = treeRootKey ? (this.graph.getNodeAttributes(treeRootKey).node as PackageAncestryNode) : undefined;
+    const treeRoot = treeRootKey ? this.graph.getNodeAttributes(treeRootKey).node : undefined;
 
     const tree = producerCtor({ packageNode: treeRoot, depth: 0 });
     const treeStack: AncestryRepresentationProducer[] = [];
@@ -169,10 +173,8 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
     }
 
     if (treeRoot) {
-      // @ts-expect-error: cannot assign PackageAncestryNode to Attributes
       dfsFromNode(this.graph, treeRoot.getVersion(), handleNode);
     } else {
-      // @ts-expect-error: cannot assign PackageAncestryNode to Attributes
       dfs(this.graph, handleNode);
     }
     return tree;
@@ -186,13 +188,11 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
    */
   public getLeafPathToRoot(subscriberPackageVersionId?: string): PackageAncestryNode[][] {
     const root = this.graph.findNode(
-      // @ts-expect-error: cannot assign PackageAncestryNode to Attributes
       (node, attributes: PackageAncestryNodeAttributes) => attributes.AncestorId === null
     );
     const paths: PackageAncestryNode[][] = [];
     let path: PackageAncestryNode[] = [];
     let previousDepth = 0;
-    // @ts-expect-error: cannot assign PackageAncestryNode to Attributes
     dfsFromNode(this.graph, root, (node, attr: PackageAncestryNodeAttributes, depth) => {
       if (depth === 0) {
         paths.push(path);
@@ -208,28 +208,23 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
     // push remaining path
     paths.push(path);
     const filteredPaths = paths.filter(
-      // eslint-disable-next-line @typescript-eslint/no-shadow
-      (path) =>
-        path.length > 0 && // don't care about zero length paths
+      (nodePath) =>
+        nodePath.length > 0 && // don't care about zero length paths
         (!subscriberPackageVersionId ||
-          path.some((node) => node.SubscriberPackageVersionId === subscriberPackageVersionId))
+          nodePath.some((node) => node.SubscriberPackageVersionId === subscriberPackageVersionId))
     );
-    return (
-      filteredPaths
-        // eslint-disable-next-line @typescript-eslint/no-shadow
-        .map((path) => path.reverse())
-        // eslint-disable-next-line @typescript-eslint/no-shadow
-        .map((path) => {
-          const subscriberPackageVersionIdIndex = path.findIndex(
-            (node) => node.SubscriberPackageVersionId === subscriberPackageVersionId
-          );
-          return path.slice(subscriberPackageVersionIdIndex === -1 ? 0 : subscriberPackageVersionIdIndex);
-        })
-    );
+    return filteredPaths
+      .map((nodePath) => nodePath.reverse())
+      .map((nodePath) => {
+        const subscriberPackageVersionIdIndex = nodePath.findIndex(
+          (node) => node.SubscriberPackageVersionId === subscriberPackageVersionId
+        );
+        return nodePath.slice(subscriberPackageVersionIdIndex === -1 ? 0 : subscriberPackageVersionIdIndex);
+      });
   }
 
   private async buildAncestryTree(): Promise<void> {
-    (await this.getRootsFromRequestedId()).forEach((root) => this.roots.push(root));
+    this.roots = await this.getRootsFromRequestedId();
     await this.buildAncestryTreeFromRoots(this.roots);
   }
 
@@ -386,7 +381,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
 
 export class AncestryTreeProducer extends Tree implements AncestryRepresentationProducer {
   public label: string;
-  public options: AncestryRepresentationProducerOptions | undefined;
+  public options?: AncestryRepresentationProducerOptions;
   private verbose = false;
 
   public constructor(options?: AncestryRepresentationProducerOptions) {
@@ -438,7 +433,7 @@ export class AncestryTreeProducer extends Tree implements AncestryRepresentation
 
 export class AncestryJsonProducer implements AncestryRepresentationProducer {
   public label: string;
-  public options: AncestryRepresentationProducerOptions | undefined;
+  public options?: AncestryRepresentationProducerOptions;
   private children: AncestryJsonProducer[] = [];
   private readonly data: PackageAncestryNodeData;
 
@@ -481,7 +476,7 @@ export class AncestryJsonProducer implements AncestryRepresentationProducer {
 
 export class AncestryDotProducer implements AncestryRepresentationProducer {
   public label: string;
-  public options: AncestryRepresentationProducerOptions | undefined;
+  public options?: AncestryRepresentationProducerOptions;
   private children: AncestryDotProducer[] = [];
 
   public constructor(options?: AncestryRepresentationProducerOptions) {

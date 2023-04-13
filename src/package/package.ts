@@ -73,7 +73,7 @@ export const Package2Fields = [
  */
 export class Package {
   private readonly packageId: string;
-  private packageData: PackagingSObjects.Package2 | undefined;
+  private packageData?: PackagingSObjects.Package2;
 
   public constructor(private options: PackageOptions) {
     let packageId = this.options.packageAliasOrId;
@@ -252,12 +252,13 @@ export class Package {
    * @param options
    */
   public async update(options: PackageUpdateOptions): Promise<PackageSaveResult> {
-    type Keys = keyof PackageUpdateOptions;
     try {
       // filter out any undefined values and their keys
-      Object.keys(options).forEach((key) => options[key as Keys] === undefined && delete options[key as Keys]);
+      const opts = Object.fromEntries(
+        Object.entries(options).filter(([, value]) => value !== undefined)
+      ) as PackageUpdateOptions;
 
-      const result = await this.options.connection.tooling.update('Package2', options);
+      const result = await this.options.connection.tooling.update('Package2', opts);
       if (!result.success) {
         throw new SfError(result.errors.join(', '));
       }

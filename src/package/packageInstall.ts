@@ -112,7 +112,7 @@ export function isErrorPackageNotAvailable(err: Error): boolean {
 
 export async function getInstallationStatus(
   subscriberPackageVersionId: string,
-  installationKey: string | undefined | Nullable<string>,
+  installationKey: Nullable<string>,
   connection: Connection
 ): Promise<QueryResult<PackagingSObjects.SubscriberPackageVersion> | undefined> {
   let query = `SELECT Id, SubscriberPackageId, InstallValidationStatus FROM SubscriberPackageVersion WHERE Id ='${subscriberPackageVersionId}'`;

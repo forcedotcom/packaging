@@ -9,3 +9,7 @@ The provided alias or ID: [%s] could not be resolved to a valid package version 
 # packageAliasNotFound
 
 The provided package id: [%s] could not be resolved to an alias.
+
+# createResultIdCannotBeEmpty
+
+The package version create result ID cannot be undefined when checking for completion.

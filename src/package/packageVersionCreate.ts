@@ -67,7 +67,7 @@ export class PackageVersionCreate {
   private readonly connection: Connection;
   private packageObject!: NamedPackageDir;
   private packageId!: string;
-  private pkg: Package | undefined;
+  private pkg?: Package;
   private readonly logger: Logger;
   private metadataResolver: MetadataResolver;
 
@@ -258,7 +258,7 @@ export class PackageVersionCreate {
     packageVersBlobZipFile: string
   ): Promise<PackageVersionCreateRequest> {
     const zipFileBase64 = fs.readFileSync(packageVersBlobZipFile).toString('base64');
-    const partialRequestObject: Partial<PackageVersionCreateRequest> = {
+    const requestObject: PackageVersionCreateRequest = {
       Package2Id: this.packageId,
       VersionInfo: zipFileBase64,
       Tag: this.options.tag,
@@ -275,15 +275,13 @@ export class PackageVersionCreate {
     // Ensure we only include the Language property for a connection api version
     // of v57.0 or higher.
     if (this.connection.getApiVersion() < '57.0') {
-      if (partialRequestObject.Language) {
+      if (requestObject.Language) {
         this.logger.warn(
-          `The language option is only valid for API version 57.0 and higher. Ignoring ${partialRequestObject.Language}`
+          `The language option is only valid for API version 57.0 and higher. Ignoring ${requestObject.Language}`
         );
       }
-      delete partialRequestObject.Language;
+      delete requestObject.Language;
     }
-
-    const requestObject = partialRequestObject as PackageVersionCreateRequest;
 
     if (preserveFiles) {
       const message = messages.getMessage('tempFileLocation', [packageVersTmpRoot]);
@@ -481,8 +479,6 @@ export class PackageVersionCreate {
     fs.mkdirSync(packageVersMetadataFolder, { recursive: true });
     fs.mkdirSync(packageVersProfileFolder, { recursive: true });
 
-    // Apply any necessary exclusions to typesArr.
-    let typesArr = packageJson.Package.types;
     this.apiVersionFromPackageXml = packageJson.Package.version;
 
     const sourceApiVersion = this.project?.getSfProjectJson()?.get('sourceApiVersion') as string;
@@ -504,14 +500,13 @@ export class PackageVersionCreate {
       );
     }
 
-    // if we're using unpackaged metadata, don't package the profiles located there
-    if (hasUnpackagedMetadata) {
-      typesArr =
-        this.options?.profileApi?.filterAndGenerateProfilesForManifest(typesArr, ensureArray(unpackagedMetadataPath)) ??
-        [];
-    } else {
-      typesArr = this.options?.profileApi?.filterAndGenerateProfilesForManifest(typesArr) ?? [];
-    }
+    const typesArr = hasUnpackagedMetadata
+      ? // if we're using unpackaged metadata, don't package the profiles located there
+        this.options?.profileApi?.filterAndGenerateProfilesForManifest(
+          packageJson.Package.types,
+          ensureArray(unpackagedMetadataPath)
+        ) ?? []
+      : this.options?.profileApi?.filterAndGenerateProfilesForManifest(packageJson.Package.types) ?? [];
 
     // Next generate profiles and retrieve any profiles that were excluded because they had no matching nodes.
     const excludedProfiles = this.options?.profileApi?.generateProfiles(
@@ -656,12 +651,13 @@ export class PackageVersionCreate {
     try {
       await this.validateOptionsForPackageType();
     } catch (error) {
-      const err = error as Error;
-      if (err.name === 'NOT_FOUND') {
-        // this means the 0Ho package was not found in the org. throw a better error.
-        throw messages.createError('errorNoIdInHub', [this.packageId]);
+      if (error instanceof Error) {
+        if (error.name === 'NOT_FOUND') {
+          // this means the 0Ho package was not found in the org. throw a better error.
+          throw messages.createError('errorNoIdInHub', [this.packageId]);
+        }
       }
-      throw err;
+      throw error;
     }
 
     const request = await this.createPackageVersionCreateRequestFromOptions();

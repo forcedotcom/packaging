@@ -18,7 +18,7 @@ import {
   PackageVersionOptions,
   PackageVersionReportResult,
   PackageVersionUpdateOptions,
-  PackagingSObjects
+  PackagingSObjects,
 } from '../interfaces';
 import { applyErrorAction, BY_LABEL, combineSaveErrors, massageErrorMessage, validateId } from '../utils/packageUtils';
 import { PackageVersionCreate } from './packageVersionCreate';
@@ -63,7 +63,7 @@ export const Package2VersionFields = [
   'ConvertedFromVersionId',
   'ReleaseVersion',
   'BuildDurationInSeconds',
-  'HasMetadataRemoved'
+  'HasMetadataRemoved',
 ];
 
 /**
@@ -122,19 +122,23 @@ export class PackageVersion {
     options: PackageVersionCreateOptions,
     polling: { frequency: Duration; timeout: Duration } = {
       frequency: Duration.seconds(0),
-      timeout: Duration.seconds(0)
+      timeout: Duration.seconds(0),
     }
   ): Promise<Partial<PackageVersionCreateRequestResult>> {
     const pvc = new PackageVersionCreate({ ...options });
     const createResult = await pvc.createPackageVersion();
 
-    return PackageVersion.pollCreateStatus(createResult.Id ?? 'Unknown', options.connection, options.project, polling).catch(
-      (err: Error) => {
-        // TODO
-        // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
-        throw applyErrorAction(massageErrorMessage(err));
-      }
-    );
+    if (createResult.Id) {
+      return PackageVersion.pollCreateStatus(createResult.Id, options.connection, options.project, polling).catch(
+        (err: Error) => {
+          // TODO
+          // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
+          throw applyErrorAction(massageErrorMessage(err));
+        }
+      );
+    } else {
+      throw new Error(messages.getMessage('createResultIdCannotBeEmpty'));
+    }
   }
 
   /**
@@ -149,7 +153,7 @@ export class PackageVersion {
   ): Promise<PackageVersionCreateRequestResult> {
     return getCreatePackageVersionCreateRequestReport({
       createPackageVersionRequestId: createPackageRequestId,
-      connection
+      connection,
     }).catch((err: Error) => {
       // TODO
       // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
@@ -201,7 +205,7 @@ export class PackageVersion {
             remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
             return {
               completed: false,
-              payload: report
+              payload: report,
             };
           case Package2VersionStatus.inProgress:
           case Package2VersionStatus.initializing:
@@ -211,19 +215,19 @@ export class PackageVersion {
           case Package2VersionStatus.finalizingPackageVersion:
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.progress, {
               ...report,
-              remainingWaitTime
+              remainingWaitTime,
             });
             remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
             return {
               completed: false,
-              payload: report
+              payload: report,
             };
           case Package2VersionStatus.success: {
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.success, report);
             const packageVersion = new PackageVersion({
               connection,
               project,
-              idOrAlias: report.Package2VersionId
+              idOrAlias: report.Package2VersionId,
             });
             await packageVersion.updateProjectWithPackageVersion(report);
             return { completed: true, payload: report };
@@ -235,7 +239,7 @@ export class PackageVersion {
       },
 
       frequency: polling.frequency,
-      timeout: polling.timeout
+      timeout: polling.timeout,
     });
 
     try {
@@ -259,7 +263,7 @@ export class PackageVersion {
   ): Promise<PackageVersionCreateRequestResult> {
     return getCreatePackageVersionCreateRequestReport({
       createPackageVersionRequestId: createPackageRequestId,
-      connection
+      connection,
     }).catch((err: Error) => {
       // TODO
       // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
@@ -297,7 +301,7 @@ export class PackageVersion {
             remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
             return {
               completed: false,
-              payload: report
+              payload: report,
             };
           case Package2VersionStatus.inProgress:
           case Package2VersionStatus.initializing:
@@ -307,12 +311,12 @@ export class PackageVersion {
           case Package2VersionStatus.finalizingPackageVersion:
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.progress, {
               ...report,
-              remainingWaitTime
+              remainingWaitTime,
             });
             remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
             return {
               completed: false,
-              payload: report
+              payload: report,
             };
           case Package2VersionStatus.success:
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.success, report);
@@ -320,7 +324,7 @@ export class PackageVersion {
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               idOrAlias: report.SubscriberPackageVersionId!,
               project,
-              connection
+              connection,
             }).updateProjectWithPackageVersion(report);
             return { completed: true, payload: report };
           case Package2VersionStatus.error:
@@ -329,7 +333,7 @@ export class PackageVersion {
         }
       },
       frequency: polling.frequency,
-      timeout: polling.timeout
+      timeout: polling.timeout,
     });
     try {
       return await pollingClient.subscribe<PackageVersionCreateRequestResult>();
@@ -408,14 +412,14 @@ export class PackageVersion {
           id: this.data.Id,
           clause: `Id = '${this.data.Id}'`,
           label1: BY_LABEL.PACKAGE_VERSION_ID.label,
-          label2: BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.label
+          label2: BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.label,
         };
       } else {
         queryConfig = {
           id: this.data.SubscriberPackageVersionId,
           clause: `SubscriberPackageVersionId = '${this.data.SubscriberPackageVersionId}'`,
           label1: BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.label,
-          label2: BY_LABEL.PACKAGE_VERSION_ID.label
+          label2: BY_LABEL.PACKAGE_VERSION_ID.label,
         };
       }
       const allFields = Package2VersionFields.toString();
@@ -459,7 +463,7 @@ export class PackageVersion {
       packageVersionId,
       connection: this.connection,
       project: this.project,
-      verbose
+      verbose,
     }).catch((err: Error) => {
       // TODO
       // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
@@ -479,19 +483,16 @@ export class PackageVersion {
   public async update(options: PackageVersionUpdateOptions): Promise<PackageSaveResult> {
     const id = await this.getId();
 
-    const request = {
-      Id: id,
-      InstallKey: options.InstallKey,
-      Name: options.VersionName,
-      Description: options.VersionDescription,
-      Branch: options.Branch,
-      Tag: options.Tag
-    };
-
-    type Keys = keyof typeof request;
-
-    // filter out any undefined values and their keys
-    Object.keys(request).forEach((key) => request[key as Keys] === undefined && delete request[key as Keys]);
+    const request = Object.fromEntries(
+      Object.entries({
+        Id: id,
+        InstallKey: options.InstallKey,
+        Name: options.VersionName,
+        Description: options.VersionDescription,
+        Branch: options.Branch,
+        Tag: options.Tag,
+      }).filter(([, value]) => value !== undefined)
+    ) as Package2Version & { [name: string]: string | undefined };
 
     const result = await this.connection.tooling.update('Package2Version', request);
     if (!result.success) {
@@ -508,7 +509,7 @@ export class PackageVersion {
     // setup the request
     const request: { Id: string; IsDeprecated: boolean } = {
       Id: id,
-      IsDeprecated: isDeprecated
+      IsDeprecated: isDeprecated,
     };
 
     const updateResult = await this.connection.tooling.update('Package2Version', request);

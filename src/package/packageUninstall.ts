@@ -41,7 +41,7 @@ export async function pollUninstall(
       case 'InProgress':
       case 'Queued': {
         await Lifecycle.getInstance().emit(PackageEvents.uninstall, {
-          ...uninstallRequest
+          ...uninstallRequest,
         });
         return { completed: false, payload: uninstallRequest };
       }
@@ -58,7 +58,7 @@ export async function pollUninstall(
   const pollingClient = await PollingClient.create({
     poll: () => poll(uninstallRequestId),
     frequency,
-    timeout: wait
+    timeout: wait,
   });
   return pollingClient.subscribe();
 }
@@ -71,7 +71,7 @@ export async function uninstallPackage(
 ): Promise<UninstallResult> {
   try {
     const uninstallRequest = await conn.tooling.sobject('SubscriberPackageVersionUninstallRequest').create({
-      SubscriberPackageVersionId: id
+      SubscriberPackageVersionId: id,
     });
 
     if (uninstallRequest.success) {
@@ -85,6 +85,9 @@ export async function uninstallPackage(
     }
     throw combineSaveErrors('SubscriberPackageVersionUninstallRequest', 'create', uninstallRequest.errors);
   } catch (err) {
-    throw applyErrorAction(massageErrorMessage(err as Error));
+    if (err instanceof Error) {
+      throw applyErrorAction(massageErrorMessage(err));
+    }
+    throw err;
   }
 }

@@ -163,17 +163,19 @@ export async function createPackageVersionCreateRequest(
   const metadataZipFile = path.join(packageVersBlobDirectory, 'package.zip');
   const packageVersBlobZipFile = path.join(packageVersTmpRoot, 'package-version-info.zip');
 
-  const packageDescriptorJson: PackageDescriptorJson = {
+  const packageDescriptorJson: PackageDescriptorJson & {
+    [prop: string]: unknown;
+  } = {
     id: packageId,
   };
 
   const settingsGenerator = new SettingsGenerator({ asDirectory: true });
   const definitionFile = context.definitionfile;
-  let definitionFileJson: ScratchOrgInfo;
+  let definitionFileJson: ScratchOrgInfo & { [prop: string]: unknown };
   if (definitionFile) {
     try {
       const definitionFilePayload = await fs.promises.readFile(definitionFile, 'utf8');
-      definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo;
+      definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo & { [prop: string]: unknown };
     } catch (err) {
       throw messages.createError('errorReadingDefintionFile', [err as string]);
     }
@@ -185,13 +187,13 @@ export async function createPackageVersionCreateRequest(
       throw messages.createError('signupDuplicateSettingsSpecified');
     }
 
-    ['country', 'edition', 'language', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].forEach(
-      (prop) => {
-        const propValue = definitionFileJson[prop as keyof ScratchOrgInfo];
-        if (propValue) {
-          (packageDescriptorJson as Record<string, unknown>)[prop] = propValue;
-        }
-      }
+    Object.assign(
+      packageDescriptorJson,
+      Object.fromEntries(
+        ['country', 'edition', 'language', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].map(
+          (prop) => [[prop], definitionFileJson[prop]]
+        )
+      )
     );
   }
 

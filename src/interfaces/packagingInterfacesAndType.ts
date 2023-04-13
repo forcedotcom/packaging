@@ -183,11 +183,11 @@ export type PackageDescriptorJson = Partial<NamedPackageDir> &
 export type PackageVersionCreateRequest = {
   Package2Id: string;
   VersionInfo: string;
-  Tag: string;
-  Branch: string;
-  InstallKey: string;
-  Instance: string;
-  SourceOrg: string;
+  Tag?: string;
+  Branch?: string;
+  InstallKey?: string;
+  Instance?: string;
+  SourceOrg?: string;
   Language?: string;
   CalculateCodeCoverage: boolean;
   SkipValidation: boolean;
@@ -319,7 +319,7 @@ export type PackageVersionCreateOptions = {
 
 export type PackageVersionCreateRequestQueryOptions = {
   createdlastdays?: number;
-  connection?: Connection;
+  connection: Connection;
   status?: 'Queued' | 'InProgress' | 'Success' | 'Error';
   id?: string;
 };
@@ -424,7 +424,7 @@ export type AncestryRepresentationProducerOptions = {
 
 export interface AncestryRepresentationProducer {
   label: string;
-  options: AncestryRepresentationProducerOptions | undefined;
+  options?: AncestryRepresentationProducerOptions;
 
   addNode(node: AncestryRepresentationProducer): void;
 
