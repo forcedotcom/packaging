@@ -21,7 +21,7 @@
     "prepare": "sf-install",
     "repl": "node --inspect ./scripts/repl.js",
     "test": "wireit",
-    "test:nuts": "nyc mocha \"**/*.nut.ts\" --slow 4500 --timeout 1800000 --parallel",
+    "test:nuts": "nyc mocha \"**/*.nut.ts\" --slow 4500 --timeout 1800000 --parallel --jobs 20",
     "test:only": "wireit"
   },
   "keywords": [
