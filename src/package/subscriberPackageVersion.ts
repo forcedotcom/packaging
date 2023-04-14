@@ -177,7 +177,10 @@ export class SubscriberPackageVersion {
         'SELECT Id, SubscriberPackageId, SubscriberPackage.NamespacePrefix, SubscriberPackage.Name, SubscriberPackageVersion.Id, SubscriberPackageVersion.Name, SubscriberPackageVersion.MajorVersion, SubscriberPackageVersion.MinorVersion, SubscriberPackageVersion.PatchVersion, SubscriberPackageVersion.BuildNumber FROM InstalledSubscriberPackage ORDER BY SubscriberPackageId';
       return (await conn.tooling.query<InstalledPackages>(query)).records;
     } catch (err) {
-      throw applyErrorAction(massageErrorMessage(err as Error));
+      if (err instanceof Error) {
+        throw applyErrorAction(massageErrorMessage(err));
+      }
+      throw err;
     }
   }
 
@@ -361,7 +364,15 @@ export class SubscriberPackageVersion {
           tooling: true,
         });
       } catch (err) {
-        throw messages.createError('errorInvalidIdNoRecordFound', [this.options.aliasOrId], undefined, err as Error);
+        const error =
+          err instanceof Error
+            ? err
+            : typeof err === 'string'
+            ? new Error(err)
+            : typeof err === 'number'
+            ? err
+            : new Error('Unknown error');
+        throw messages.createError('errorInvalidIdNoRecordFound', [this.options.aliasOrId], undefined, error);
       }
     }
     return this.data;

@@ -319,7 +319,6 @@ export type PackageVersionCreateOptions = {
 
 export type PackageVersionCreateRequestQueryOptions = {
   createdlastdays?: number;
-  connection: Connection;
   status?: 'Queued' | 'InProgress' | 'Success' | 'Error';
   id?: string;
 };

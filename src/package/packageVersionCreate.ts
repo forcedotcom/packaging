@@ -82,7 +82,10 @@ export class PackageVersionCreate {
     try {
       return this.packageVersionCreate();
     } catch (err) {
-      throw pkgUtils.applyErrorAction(pkgUtils.massageErrorMessage(err as Error));
+      if (err instanceof Error) {
+        throw pkgUtils.applyErrorAction(pkgUtils.massageErrorMessage(err));
+      }
+      throw err;
     }
   }
 

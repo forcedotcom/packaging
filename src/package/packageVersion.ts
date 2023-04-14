@@ -172,7 +172,7 @@ export class PackageVersion {
     connection: Connection,
     options?: PackageVersionCreateRequestQueryOptions
   ): Promise<PackageVersionCreateRequestResult[]> {
-    return list({ ...options, connection });
+    return list(connection, options);
   }
 
   /**
@@ -247,7 +247,10 @@ export class PackageVersion {
     } catch (err) {
       const report = await this.getCreateStatus(createPackageVersionRequestId, connection);
       await Lifecycle.getInstance().emit(PackageVersionEvents.create['timed-out'], report);
-      throw applyErrorAction(err as Error);
+      if (err instanceof Error) {
+        throw applyErrorAction(err);
+      }
+      throw err;
     }
   }
 
@@ -431,7 +434,7 @@ export class PackageVersion {
           'errorInvalidIdNoMatchingVersionId',
           [queryConfig.label1, queryConfig.id, queryConfig.label2],
           undefined,
-          err as Error
+          err instanceof Error ? err : new Error(err as string)
         );
       }
     }

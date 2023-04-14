@@ -35,17 +35,17 @@ function formatDate(date: Date): string {
 }
 
 export async function list(
-  options: PackageVersionCreateRequestQueryOptions
+  connection: Connection,
+  options?: PackageVersionCreateRequestQueryOptions
 ): Promise<PackageVersionCreateRequestResult[]> {
-  if (!options.connection) {
-    throw messages.createError('missingConnection');
-  }
-
   try {
     const whereClause = constructWhere(options);
-    return await query(util.format(QUERY, whereClause), options.connection);
+    return await query(util.format(QUERY, whereClause), connection);
   } catch (err) {
-    throw applyErrorAction(massageErrorMessage(err as Error));
+    if (err instanceof Error) {
+      throw applyErrorAction(massageErrorMessage(err));
+    }
+    throw err;
   }
 }
 
@@ -91,7 +91,7 @@ async function queryForErrors(packageVersionCreateRequestId: string, connection:
   return queryResult.records ? queryResult.records.map((record) => record.Message) : [];
 }
 
-function constructWhere(options: PackageVersionCreateRequestQueryOptions): string {
+function constructWhere(options?: PackageVersionCreateRequestQueryOptions): string {
   const where: string[] = [];
 
   if (options?.id) {

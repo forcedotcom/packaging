@@ -264,7 +264,10 @@ export class Package {
       }
       return result;
     } catch (err) {
-      throw applyErrorAction(massageErrorMessage(err as Error));
+      if (err instanceof Error) {
+        throw applyErrorAction(massageErrorMessage(err));
+      }
+      throw err;
     }
   }
 
