@@ -85,7 +85,7 @@ export class VersionNumber {
   /**
    * @deprecated use isBuildKeyword instead
    */
-  public isbuildKeyword(token?: string | number): boolean {
+  public isbuildKeyword(): boolean {
     return this.isBuildKeyword();
   }
 

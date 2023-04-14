@@ -588,7 +588,7 @@ describe('ancestry tests', () => {
       undefined
     );
     expect(jsonProducer).to.be.ok;
-    const jsonTree = await jsonProducer.produce();
+    const jsonTree = jsonProducer.produce();
     expect(jsonTree).to.have.property('data');
     expect(jsonTree).to.have.property('children');
   });
@@ -613,7 +613,7 @@ describe('ancestry tests', () => {
       undefined
     );
     expect(treeProducer).to.be.ok;
-    await treeProducer.produce();
+    treeProducer.produce();
     const treeText = TestAncestryTreeProducer.treeAsText.split(os.EOL);
     expect(treeText[0]).to.match(new RegExp(`^└─ ${sortedVersions[0].toString()}`));
   });
@@ -639,7 +639,7 @@ describe('ancestry tests', () => {
       undefined
     );
     expect(treeProducer).to.be.ok;
-    await treeProducer.produce();
+    treeProducer.produce();
     const treeText = TestAncestryTreeProducer.treeAsText.split(os.EOL);
     expect(treeText[0]).to.match(new RegExp(`^└─ ${sortedVersions[0].toString()} \\(04t.{12,15}\\)`));
   });
