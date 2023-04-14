@@ -119,7 +119,7 @@ export class Package {
         `select ${Package2Fields.toString()} from Package2 ORDER BY NamespacePrefix, Name`,
         {
           autoFetch: true,
-          maxFetch: 10000,
+          maxFetch: 10_000,
         }
       )
     )?.records;
