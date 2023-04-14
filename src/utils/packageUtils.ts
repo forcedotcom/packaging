@@ -496,3 +496,17 @@ export function copyDir(src: string, dest: string): void {
     return entry.isDirectory() ? copyDir(srcPath, destPath) : fs.copyFileSync(srcPath, destPath);
   });
 }
+
+export function copyDescriptorProperties(
+  packageDescriptorJson: Record<string, unknown>,
+  definitionFileJson: Record<string, unknown>
+): void {
+  Object.assign(
+    packageDescriptorJson,
+    Object.fromEntries(
+      ['country', 'edition', 'language', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].map(
+        (prop) => [[prop], definitionFileJson[prop]]
+      )
+    )
+  );
+}

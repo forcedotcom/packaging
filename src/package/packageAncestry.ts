@@ -68,7 +68,7 @@ const sortAncestryNodeData = (a: AncestryRepresentationProducer, b: AncestryRepr
  */
 export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   private roots: PackageAncestryNode[] = [];
-  private graph: DirectedGraph<PackageAncestryNodeAttributes, Attributes, Attributes> = new DirectedGraph<
+  private graph: DirectedGraph<PackageAncestryNodeAttributes> = new DirectedGraph<
     PackageAncestryNodeAttributes,
     Attributes,
     Attributes
@@ -104,7 +104,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   /**
    * Returns the internal representation of the requested package ancestry graph.
    */
-  public getAncestryGraph(): DirectedGraph<Attributes, Attributes, Attributes> {
+  public getAncestryGraph(): DirectedGraph {
     return this.graph;
   }
 
@@ -307,11 +307,13 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
         tooling: true,
       });
       return new PackageAncestryNode(results);
-    } catch (e) {
-      if ((e as Error).message.includes('No record found for')) {
-        throw messages.createError('versionNotFound', [nodeId]);
+    } catch (err) {
+      if (err instanceof Error) {
+        if (err.message.includes('No record found for')) {
+          throw messages.createError('versionNotFound', [nodeId]);
+        }
       }
-      throw e;
+      throw err;
     }
   }
 
@@ -382,7 +384,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
 export class AncestryTreeProducer extends Tree implements AncestryRepresentationProducer {
   public label: string;
   public options?: AncestryRepresentationProducerOptions;
-  private verbose = false;
+  private readonly verbose: boolean;
 
   public constructor(options?: AncestryRepresentationProducerOptions) {
     super();
@@ -410,6 +412,7 @@ export class AncestryTreeProducer extends Tree implements AncestryRepresentation
       const producer = producers.shift();
       if (producer) {
         Object.values(producer.nodes ?? {})
+          // as AncestryTreeProducer is needed to sort and gain access producer functions. oclif Tree does not support generic for nodes
           .map((node: Tree) => node as AncestryTreeProducer)
           .sort(sortAncestors)
           .forEach((child: AncestryTreeProducer) => {
@@ -458,7 +461,7 @@ export class AncestryJsonProducer implements AncestryRepresentationProducer {
     this.children.push(node);
   }
 
-  public produce<PackageAncestryNodeData>(): PackageAncestryNodeData {
+  public produce(): PackageAncestryNodeData {
     const producers: AncestryJsonProducer[] = [];
     producers.push(this);
 
@@ -470,7 +473,7 @@ export class AncestryJsonProducer implements AncestryRepresentationProducer {
       }
     }
 
-    return this.data.children[0] as unknown as PackageAncestryNodeData;
+    return this.data.children[0];
   }
 }
 

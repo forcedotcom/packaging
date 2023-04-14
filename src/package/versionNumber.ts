@@ -24,8 +24,7 @@ export class VersionNumber {
     public minor: string | number,
     public patch: string | number,
     public build: string | number
-  ) {
-  }
+  ) {}
 
   /**
    * Separates at major.minor string into {major: Number, minor: Number} object
@@ -42,7 +41,7 @@ export class VersionNumber {
     if (versions.length === 2) {
       return {
         major: Number(versions[0]),
-        minor: Number(versions[1])
+        minor: Number(versions[1]),
       };
     } else {
       throw messages.createError('invalidMajorMinorFormat', [versionString]);
@@ -60,15 +59,21 @@ export class VersionNumber {
       if (asNumbers.slice(0, 3).some((v) => isNaN(v))) {
         throw messages.createError('errorInvalidMajorMinorPatchNumber', [versionString]);
       }
-      if (isNaN(asNumbers[3]) && !(Object.values(BuildNumberToken) as string[]).includes(build)) {
+      if (isNaN(asNumbers[3]) && !VersionNumber.isABuildKeyword(build)) {
         throw messages.createError('errorInvalidBuildNumberToken', [
           versionString,
-          Object.values(BuildNumberToken).join(', ')
+          Object.values(BuildNumberToken).join(', '),
         ]);
       }
       return new VersionNumber(major, minor, patch, build);
     }
     throw messages.createError('errorInvalidVersionNumber', [versionString]);
+  }
+
+  public static isABuildKeyword(token: string | number): boolean {
+    const buildNumberTokenValues = Object.values(BuildNumberToken);
+    const results = buildNumberTokenValues.includes(token as BuildNumberToken);
+    return results;
   }
 
   public toString(): string {
@@ -80,13 +85,12 @@ export class VersionNumber {
   /**
    * @deprecated use isBuildKeyword instead
    */
-  public isbuildKeyword(): boolean {
+  public isbuildKeyword(token?: string | number): boolean {
     return this.isBuildKeyword();
   }
 
   public isBuildKeyword(): boolean {
-    const buildNumberTokenKeys = Object.values(BuildNumberToken);
-    return buildNumberTokenKeys.includes(this.build as BuildNumberToken);
+    return VersionNumber.isABuildKeyword(this.build);
   }
 
   public compareTo(other: VersionNumber): number {

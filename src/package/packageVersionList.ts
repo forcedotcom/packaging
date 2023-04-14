@@ -5,11 +5,11 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { Logger, Messages } from '@salesforce/core';
+import { Connection, Logger, Messages } from '@salesforce/core';
 import { QueryResult, Schema } from 'jsforce';
 import { isNumber } from '@salesforce/ts-types';
 import { BY_LABEL, validateId } from '../utils/packageUtils';
-import { ListPackageVersionOptions, PackageVersionListResult } from '../interfaces';
+import { PackageVersionListOptions, PackageVersionListResult } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
@@ -60,27 +60,31 @@ const getLogger = (): Logger => {
 };
 
 export async function listPackageVersions(
-  options: ListPackageVersionOptions
+  connection: Connection,
+  options?: PackageVersionListOptions
 ): Promise<QueryResult<PackageVersionListResult>> {
-  return options.connection.autoFetchQuery<PackageVersionListResult & Schema>(constructQuery(options), {
-    tooling: true,
-  });
+  return connection.autoFetchQuery<PackageVersionListResult & Schema>(
+    constructQuery(Number(connection.version), options),
+    {
+      tooling: true,
+    }
+  );
 }
 
-function constructQuery(options: ListPackageVersionOptions): string {
+function constructQuery(connectionVersion: number, options?: PackageVersionListOptions): string {
   // construct custom WHERE clause, if applicable
-  const where = constructWhere(options.packages, options.createdLastDays, options.modifiedLastDays, options.isReleased);
+  const where = constructWhere(options);
 
   let queryFields = defaultFields;
-  if (options.verbose) {
+  if (options?.verbose) {
     queryFields = [...queryFields, ...verboseFields];
-    if (Number(options.connection.version) >= 57) {
+    if (connectionVersion >= 57) {
       queryFields = [...queryFields, ...verbose57Fields];
     }
   }
   const query = `SELECT ${queryFields.toString()} FROM Package2Version`;
 
-  return assembleQueryParts(query, where, options.orderBy);
+  return assembleQueryParts(query, where, options?.orderBy);
 }
 
 export function assembleQueryParts(select: string, where: string[], orderBy?: string): string {
@@ -94,18 +98,13 @@ export function assembleQueryParts(select: string, where: string[], orderBy?: st
 }
 
 // construct custom WHERE clause parts
-export function constructWhere(
-  packageIds: string[],
-  createdLastDays: number,
-  lastModLastDays: number,
-  isReleased: boolean
-): string[] {
+export function constructWhere(options?: PackageVersionListOptions): string[] {
   const where: string[] = [];
 
   // filter on given package ids
-  if (packageIds?.length > 0) {
+  if (options?.packages?.length) {
     // remove dups
-    const uniquePackageIds = [...new Set(packageIds)];
+    const uniquePackageIds = [...new Set(options?.packages)];
 
     // validate ids
     uniquePackageIds.forEach((packageId) => {
@@ -117,18 +116,18 @@ export function constructWhere(
   }
 
   // filter on created date, days ago: 0 for today, etc
-  if (isNumber(createdLastDays)) {
-    createdLastDays = validateDays('createdlastdays', createdLastDays);
+  if (options?.createdLastDays && isNumber(options.createdLastDays)) {
+    const createdLastDays = validateDays('createdlastdays', options.createdLastDays);
     where.push(`CreatedDate = LAST_N_DAYS:${createdLastDays}`);
   }
 
   // filter on last mod date, days ago: 0 for today, etc
-  if (isNumber(lastModLastDays)) {
-    lastModLastDays = validateDays('modifiedlastdays', lastModLastDays);
-    where.push(`LastModifiedDate = LAST_N_DAYS:${lastModLastDays}`);
+  if (options?.modifiedLastDays && isNumber(options?.modifiedLastDays)) {
+    const modifiedLastDays = validateDays('modifiedlastdays', options.modifiedLastDays);
+    where.push(`LastModifiedDate = LAST_N_DAYS:${modifiedLastDays}`);
   }
 
-  if (isReleased) {
+  if (options?.isReleased) {
     where.push('IsReleased = true');
   }
 

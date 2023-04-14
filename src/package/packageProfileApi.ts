@@ -39,7 +39,7 @@ const NODE_ENTITIES = {
     'CustomPermission',
     'ApexPage',
     'ExternalDataSource',
-    'RecordType'
+    'RecordType',
   ],
   parentElement: [
     'objectPermissions',
@@ -51,7 +51,7 @@ const NODE_ENTITIES = {
     'customPermissions',
     'pageAccesses',
     'externalDataSourceAccesses',
-    'recordTypeVisibilities'
+    'recordTypeVisibilities',
   ],
   childElement: [
     'object',
@@ -63,8 +63,8 @@ const NODE_ENTITIES = {
     'name',
     'apexPage',
     'externalDataSource',
-    'recordType'
-  ]
+    'recordType',
+  ],
 };
 
 // There are some profile settings that are allowed to be packaged that may not necessarily map to a specific metadata
@@ -72,7 +72,7 @@ const NODE_ENTITIES = {
 const OTHER_PROFILE_SETTINGS = {
   name: ['CustomSettings', 'CustomMetadataTypeAccess'],
   parentElement: ['customSettingAccesses', 'customMetadataTypeAccesses'],
-  childElement: ['name', 'name']
+  childElement: ['name', 'name'],
 };
 
 /*
@@ -96,8 +96,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
   }
 
   // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-empty-function
-  public async init(): Promise<void> {
-  }
+  public async init(): Promise<void> {}
 
   /**
    * For any profile present in the workspace, this function generates a subset of data that only contains references
@@ -208,7 +207,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
           } catch (err) {
             // It is normal for the file to not exist if the profile is in the workspace but not in the directory being packaged.
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            if ((err as SfError).code !== 'ENOENT') {
+            if (err instanceof SfError && err.code !== 'ENOENT') {
               throw err;
             }
           }
@@ -299,7 +298,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
 
   private findAllProfiles(excludedDirectories: string[] = []): string[] {
     return glob.sync(path.join(this.project.getPath(), '**', '*.profile-meta.xml'), {
-      ignore: excludedDirectories.map((dir) => `**/${dir}/**`)
+      ignore: excludedDirectories.map((dir) => `**/${dir}/**`),
     });
   }
 }
@@ -310,8 +309,7 @@ class ProfileInformation {
     public ProfilePath: string,
     public IsPackaged: boolean,
     public settingsRemoved: string[]
-  ) {
-  }
+  ) {}
 
   public setIsPackaged(IsPackaged: boolean): void {
     this.IsPackaged = IsPackaged;

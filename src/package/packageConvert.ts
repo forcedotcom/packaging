@@ -23,12 +23,11 @@ import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
 import { Many } from '@salesforce/ts-types';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import * as pkgUtils from '../utils/packageUtils';
-import { generatePackageAliasEntry, uniqid } from '../utils/packageUtils';
+import { copyDescriptorProperties, generatePackageAliasEntry, uniqid } from '../utils/packageUtils';
 import {
   ConvertPackageOptions,
   PackageDescriptorJson,
   PackageEvents,
-  PackageVersionCreateEventData,
   PackageVersionCreateRequestResult,
   PackagingSObjects,
 } from '../interfaces';
@@ -173,12 +172,11 @@ export async function createPackageVersionCreateRequest(
   const definitionFile = context.definitionfile;
   let definitionFileJson: ScratchOrgInfo & { [prop: string]: unknown };
   if (definitionFile) {
-    try {
-      const definitionFilePayload = await fs.promises.readFile(definitionFile, 'utf8');
-      definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo & { [prop: string]: unknown };
-    } catch (err) {
-      throw messages.createError('errorReadingDefintionFile', [err as string]);
+    if (!fs.existsSync(definitionFile)) {
+      throw messages.createError('errorReadingDefintionFile', [definitionFile]);
     }
+    const definitionFilePayload = await fs.promises.readFile(definitionFile, 'utf8');
+    definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo & { [prop: string]: unknown };
 
     // Load any settings from the definition
     await settingsGenerator.extract(definitionFileJson);
@@ -187,14 +185,7 @@ export async function createPackageVersionCreateRequest(
       throw messages.createError('signupDuplicateSettingsSpecified');
     }
 
-    Object.assign(
-      packageDescriptorJson,
-      Object.fromEntries(
-        ['country', 'edition', 'language', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].map(
-          (prop) => [[prop], definitionFileJson[prop]]
-        )
-      )
-    );
+    copyDescriptorProperties(packageDescriptorJson, definitionFileJson);
   }
 
   await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
@@ -325,7 +316,7 @@ async function pollForStatusWithInterval(
           packageVersionCreateRequestResult: results[0],
           message: '',
           timeRemaining: remainingTime,
-        } as PackageVersionCreateEventData);
+        });
 
         getLogger().info(
           `Request in progress. Sleeping ${interval.seconds} seconds. Will wait a total of ${

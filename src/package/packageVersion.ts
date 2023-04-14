@@ -88,13 +88,12 @@ export class PackageVersion {
   private readonly project: SfProject;
   private readonly connection: Connection;
 
-  private data: Package2Version;
+  private data: Package2Version = {} as Package2Version;
   private packageType: Optional<PackageType>;
 
   public constructor(private options: PackageVersionOptions) {
     this.connection = this.options.connection;
     this.project = this.options.project;
-    this.data = {} as Package2Version;
     const id = this.resolveId();
 
     // validate ID

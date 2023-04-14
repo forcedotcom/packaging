@@ -150,10 +150,10 @@ export class Package {
         throw messages.createError('invalidPackageId', [id, '0Ho']);
       }
     });
-    const opts = options ?? ({} as PackageVersionListOptions);
+    const opts = options ?? {};
     opts.packages = packages ?? [];
 
-    return (await listPackageVersions({ ...opts, ...{ connection } })).records;
+    return (await listPackageVersions(connection, opts)).records;
   }
 
   /**
@@ -226,7 +226,7 @@ export class Package {
     return Package.listVersions(this.options.connection, this.options.project, {
       ...packageOptions,
       ...options,
-    } as PackageVersionListOptions);
+    });
   }
 
   /**

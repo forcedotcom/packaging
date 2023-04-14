@@ -57,7 +57,12 @@ describe('package version list', () => {
       const sfProject = await SfProject.resolve();
       sfProject.getSfProjectJson().set('packageDirectories', packageDirectories);
       sfProject.getSfProjectJson().set('packageAliases', packageAliases);
-      const where = constructWhere(['0Ho3h000000xxxxCAG'], 1, 2, true);
+      const where = constructWhere({
+        packages: ['0Ho3h000000xxxxCAG'],
+        createdLastDays: 1,
+        modifiedLastDays: 2,
+        isReleased: true,
+      });
       expect(where).to.include("Package2Id IN ('0Ho3h000000xxxxCAG')");
       expect(where).to.include('IsDeprecated = false');
       expect(where).to.include('CreatedDate = LAST_N_DAYS:1');

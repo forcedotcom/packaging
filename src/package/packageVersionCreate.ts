@@ -34,6 +34,7 @@ import { cloneJson, ensureArray } from '@salesforce/kit';
 import * as pkgUtils from '../utils/packageUtils';
 import {
   BY_LABEL,
+  copyDescriptorProperties,
   copyDir,
   getPackageVersionId,
   getPackageVersionNumber,
@@ -65,7 +66,7 @@ export class PackageVersionCreate {
   private apiVersionFromPackageXml: string | undefined;
   private readonly project: SfProject;
   private readonly connection: Connection;
-  private packageObject!: NamedPackageDir;
+  private packageObject!: NamedPackageDir & PackageDescriptorJson;
   private packageId!: string;
   private pkg?: Package;
   private readonly logger: Logger;
@@ -361,7 +362,7 @@ export class PackageVersionCreate {
       delete packageDescriptorJson.snapshot;
 
       const definitionFilePayload = await fs.promises.readFile(definitionFile, 'utf8');
-      const definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo;
+      const definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo & Record<string, unknown>;
 
       // Load any settings from the definition
       await settingsGenerator.extract(definitionFileJson);
@@ -370,15 +371,7 @@ export class PackageVersionCreate {
         throw messages.createError('signupDuplicateSettingsSpecified');
       }
 
-      // these scratch org definition file values will be applied to the build org
-      ['country', 'language', 'edition', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].forEach(
-        (prop) => {
-          const propValue = definitionFileJson[prop as keyof ScratchOrgInfo];
-          if (propValue) {
-            (packageDescriptorJson as Record<string, unknown>)[prop] = propValue;
-          }
-        }
-      );
+      copyDescriptorProperties(packageDescriptorJson, definitionFileJson);
     }
 
     this.resolveApexTestPermissions(packageDescriptorJson);
@@ -486,14 +479,14 @@ export class PackageVersionCreate {
 
     const sourceApiVersion = this.project?.getSfProjectJson()?.get('sourceApiVersion') as string;
     const hasSeedMetadata = await this.metadataResolver.resolveMetadata(
-      (this.packageObject as PackageDescriptorJson).seedMetadata?.path,
+      this.packageObject.seedMetadata?.path,
       seedMetadataFolder,
       'seedMDDirectoryDoesNotExist',
       sourceApiVersion
     );
 
     let hasUnpackagedMetadata = false;
-    const unpackagedMetadataPath = (this.packageObject as PackageDescriptorJson).unpackagedMetadata?.path;
+    const unpackagedMetadataPath = this.packageObject.unpackagedMetadata?.path;
     if (this.options.codecoverage) {
       hasUnpackagedMetadata = await this.metadataResolver.resolveMetadata(
         unpackagedMetadataPath,

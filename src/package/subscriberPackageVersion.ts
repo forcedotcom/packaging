@@ -120,8 +120,8 @@ export class SubscriberPackageVersion {
       const project = SfProject.getInstance();
       this.id = project.getPackageIdFromAlias(this.options.aliasOrId) ?? this.options.aliasOrId;
     } catch (error) {
-      const err = (error as Error).message;
-      getLogger().debug(err);
+      const message = error instanceof Error ? error.message : error;
+      getLogger().debug(message);
       this.id = this.options.aliasOrId;
     }
 
@@ -437,8 +437,11 @@ export class SubscriberPackageVersion {
         pkgInstallCreateRequest.Password,
         options
       );
-    } catch (e) {
-      throw applyErrorAction(massageErrorMessage(e as Error));
+    } catch (err) {
+      if (err instanceof Error) {
+        throw applyErrorAction(massageErrorMessage(err));
+      }
+      throw err;
     }
   }
 

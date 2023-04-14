@@ -194,13 +194,13 @@ export type PackageVersionCreateRequest = {
 };
 
 export type PackageVersionListOptions = {
-  orderBy: string;
-  modifiedLastDays: number;
-  createdLastDays: number;
-  packages: string[];
-  verbose: boolean;
-  concise: boolean;
-  isReleased: boolean;
+  orderBy?: string;
+  modifiedLastDays?: number;
+  createdLastDays?: number;
+  packages?: string[];
+  verbose?: boolean;
+  concise?: boolean;
+  isReleased?: boolean;
 };
 
 export type PackageVersionUpdateOptions = {
@@ -211,7 +211,7 @@ export type PackageVersionUpdateOptions = {
   Tag?: string;
 };
 
-export type ListPackageVersionOptions = PackageVersionListOptions & { connection: Connection };
+// export type ListPackageVersionOptions = PackageVersionListOptions & { connection: Connection };
 
 export type PackageSaveResult = SaveResult;
 
@@ -427,7 +427,7 @@ export interface AncestryRepresentationProducer {
 
   addNode(node: AncestryRepresentationProducer): void;
 
-  produce<T>(): T | string | void;
+  produce(): PackageAncestryNodeData | string | void;
 }
 
 export const PackageEvents = {

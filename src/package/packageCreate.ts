@@ -6,7 +6,6 @@
  */
 
 import { Connection, NamedPackageDir, PackageDir, SfError, SfProject } from '@salesforce/core';
-import { isString } from '@salesforce/ts-types';
 import * as pkgUtils from '../utils/packageUtils';
 import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
 import { PackageCreateOptions, PackagingSObjects } from '../interfaces';
@@ -82,7 +81,7 @@ export async function createPackage(
     .sobject('Package2')
     .create(request)
     .catch((err) => {
-      const error = isString(err) ? new Error(err) : (err as Error);
+      const error = err instanceof Error ? err : new Error(typeof err === 'string' ? err : 'Unknown error');
       throw SfError.wrap(applyErrorAction(massageErrorMessage(error)));
     });
 
