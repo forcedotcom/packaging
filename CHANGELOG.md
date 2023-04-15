@@ -1,3 +1,12 @@
+## [1.4.10](https://github.com/forcedotcom/packaging/compare/1.4.9...1.4.10) (2023-04-15)
+
+
+### Bug Fixes
+
+* **deps:** bump jsforce from 2.0.0-beta.19 to 2.0.0-beta.21 ([27973e7](https://github.com/forcedotcom/packaging/commit/27973e7d96a7cc87420a9f33a0ce2043805229ae))
+
+
+
 ## [1.4.9](https://github.com/forcedotcom/packaging/compare/1.4.8...1.4.9) (2023-04-11)
 
 
