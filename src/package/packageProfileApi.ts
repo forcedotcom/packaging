@@ -207,7 +207,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
           } catch (err) {
             // It is normal for the file to not exist if the profile is in the workspace but not in the directory being packaged.
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            if (err instanceof SfError && err.code !== 'ENOENT') {
+            if (err instanceof Error && 'code' in err && err.code !== 'ENOENT') {
               throw err;
             }
           }
