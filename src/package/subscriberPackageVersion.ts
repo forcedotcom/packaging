@@ -107,7 +107,7 @@ export class SubscriberPackageVersion {
   private readonly password: Optional<string>;
   private readonly connection: Connection;
   private readonly id: string;
-  private data: PackagingSObjects.SubscriberPackageVersion | undefined;
+  private data?: PackagingSObjects.SubscriberPackageVersion;
 
   public constructor(private options: SubscriberPackageVersionOptions) {
     this.connection = this.options.connection;
