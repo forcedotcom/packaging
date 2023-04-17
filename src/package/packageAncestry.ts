@@ -308,10 +308,8 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
       });
       return new PackageAncestryNode(results);
     } catch (err) {
-      if (err instanceof Error) {
-        if (err.message.includes('No record found for')) {
+      if (err instanceof Error && err.message.includes('No record found for')) {
           throw messages.createError('versionNotFound', [nodeId]);
-        }
       }
       throw err;
     }
