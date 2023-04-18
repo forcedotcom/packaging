@@ -1,11 +1,20 @@
-## [1.4.9](https://github.com/forcedotcom/packaging/compare/1.4.8...1.4.9) (2023-04-11)
-
+## [1.4.11](https://github.com/forcedotcom/packaging/compare/1.4.10...1.4.11) (2023-04-15)
 
 ### Bug Fixes
 
-* **deps:** bump xml2js from 0.4.23 to 0.5.0 ([0ecf49e](https://github.com/forcedotcom/packaging/commit/0ecf49e6f30f677045113d40dab560852a89c6fb))
+- **deps:** bump @salesforce/core from 3.34.1 to 3.34.6 ([1941b36](https://github.com/forcedotcom/packaging/commit/1941b36010514f1e13a739ce6f9c6186d032e79c))
 
+## [1.4.10](https://github.com/forcedotcom/packaging/compare/1.4.9...1.4.10) (2023-04-15)
 
+### Bug Fixes
+
+- **deps:** bump jsforce from 2.0.0-beta.19 to 2.0.0-beta.21 ([27973e7](https://github.com/forcedotcom/packaging/commit/27973e7d96a7cc87420a9f33a0ce2043805229ae))
+
+## [1.4.9](https://github.com/forcedotcom/packaging/compare/1.4.8...1.4.9) (2023-04-11)
+
+### Bug Fixes
+
+- **deps:** bump xml2js from 0.4.23 to 0.5.0 ([0ecf49e](https://github.com/forcedotcom/packaging/commit/0ecf49e6f30f677045113d40dab560852a89c6fb))
 
 ## [1.4.8](https://github.com/forcedotcom/packaging/compare/1.4.7...1.4.8) (2023-04-08)
 
