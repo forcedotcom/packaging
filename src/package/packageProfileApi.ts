@@ -9,7 +9,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as glob from 'glob';
 import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
-import { Messages, SfError, SfProject } from '@salesforce/core';
+import { Messages, SfProject } from '@salesforce/core';
 import { AsyncCreatable } from '@salesforce/kit';
 import { ProfileApiOptions } from '../interfaces';
 
