@@ -35,6 +35,12 @@ describe('package version list', () => {
     it('should throw with negative number as input', () => {
       expect(() => validateDays('negative', -1)).to.throw(/Provide a valid positive number for negative. -1/);
     });
+    it('should throw missing lastDays input', () => {
+      expect(() => validateDays('negative')).to.throw(/Provide a valid positive number for negative. -1/);
+    });
+    it('should throw with undefined as input', () => {
+      expect(() => validateDays('negative', undefined)).to.throw(/Provide a valid positive number for negative. -1/);
+    });
   });
   describe('_constructWhere', () => {
     // the following package dirs and aliases were extracted from the Salesforce Dreamhouse LWC repo

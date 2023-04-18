@@ -116,14 +116,14 @@ export function constructWhere(options?: PackageVersionListOptions): string[] {
   }
 
   // filter on created date, days ago: 0 for today, etc
-  if (options?.createdLastDays && isNumber(options.createdLastDays)) {
-    const createdLastDays = validateDays('createdlastdays', options.createdLastDays);
+  if (isNumber(options?.createdLastDays)) {
+    const createdLastDays = validateDays('createdlastdays', options?.createdLastDays);
     where.push(`CreatedDate = LAST_N_DAYS:${createdLastDays}`);
   }
 
   // filter on last mod date, days ago: 0 for today, etc
-  if (options?.modifiedLastDays && isNumber(options?.modifiedLastDays)) {
-    const modifiedLastDays = validateDays('modifiedlastdays', options.modifiedLastDays);
+  if (isNumber(options?.modifiedLastDays)) {
+    const modifiedLastDays = validateDays('modifiedlastdays', options?.modifiedLastDays);
     where.push(`LastModifiedDate = LAST_N_DAYS:${modifiedLastDays}`);
   }
 
@@ -136,7 +136,7 @@ export function constructWhere(options?: PackageVersionListOptions): string[] {
   return where;
 }
 
-export function validateDays(paramName: string, lastDays: number): number {
+export function validateDays(paramName: string, lastDays = -1): number {
   if (lastDays < 0) {
     throw messages.createError('invalidDaysNumber', [paramName, lastDays]);
   }
