@@ -18,14 +18,14 @@ import {
   PackageDir,
   ScratchOrgInfo,
   SfdcUrl,
-  SfProject,
+  SfProject
 } from '@salesforce/core';
 import {
   ComponentSet,
   ComponentSetBuilder,
   ComponentSetOptions,
   ConvertResult,
-  MetadataConverter,
+  MetadataConverter
 } from '@salesforce/source-deploy-retrieve';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import * as xml2js from 'xml2js';
@@ -41,7 +41,7 @@ import {
   uniqid,
   validateId,
   VERSION_NUMBER_SEP,
-  zipDir,
+  zipDir
 } from '../utils/packageUtils';
 import {
   MDFolderForArtifactOptions,
@@ -51,7 +51,7 @@ import {
   PackageVersionCreateRequest,
   PackageVersionCreateRequestResult,
   PackageVersionEvents,
-  PackagingSObjects,
+  PackagingSObjects
 } from '../interfaces';
 import { PackageProfileApi } from './packageProfileApi';
 import { byId } from './packageVersionCreateRequest';
@@ -186,7 +186,7 @@ export class PackageVersionCreate {
         dependency.packageId,
         branchString,
         versionNumber.toString(),
-        resolvedBuildNumber,
+        resolvedBuildNumber
       ]);
     }
 
@@ -202,7 +202,7 @@ export class PackageVersionCreate {
             dependency.package,
             versionNumber.toString(),
             branchString,
-            dependency.subscriberPackageVersionId,
+            dependency.subscriberPackageVersionId
           ])
         );
       } else if (buildNumber === BuildNumberToken.RELEASED_BUILD_NUMBER_TOKEN) {
@@ -210,7 +210,7 @@ export class PackageVersionCreate {
           messages.getMessage('buildNumberResolvedForReleased', [
             dependency.package,
             versionNumber.toString(),
-            dependency.subscriberPackageVersionId,
+            dependency.subscriberPackageVersionId
           ])
         );
       }
@@ -273,7 +273,7 @@ export class PackageVersionCreate {
       CalculateCodeCoverage: this.options.codecoverage ?? false,
       SkipValidation: this.options.skipvalidation ?? false,
       // note: the createRequest's Language corresponds to the AllPackageVersion's language
-      Language: this.options.language,
+      Language: this.options.language
     };
 
     // Ensure we only include the Language property for a connection api version
@@ -291,7 +291,7 @@ export class PackageVersionCreate {
       const message = messages.getMessage('tempFileLocation', [packageVersTmpRoot]);
       await Lifecycle.getInstance().emit(PackageVersionEvents.create['preserve-files'], {
         location: packageVersTmpRoot,
-        message,
+        message
       });
       this.logger.info(message);
       return requestObject;
@@ -325,7 +325,7 @@ export class PackageVersionCreate {
     const mdOptions: MDFolderForArtifactOptions = {
       deploydir: packageVersMetadataFolder,
       sourceDir: sourceBaseDir,
-      sourceApiVersion: (this.project?.getSfProjectJson()?.get('sourceApiVersion') as string) ?? undefined,
+      sourceApiVersion: (this.project?.getSfProjectJson()?.get('sourceApiVersion') as string) ?? undefined
     };
 
     // Stores any additional client side info that might be needed later on in the process
@@ -496,21 +496,21 @@ export class PackageVersionCreate {
       );
     }
 
-    const typesArr = hasUnpackagedMetadata
-      ? // if we're using unpackaged metadata, don't package the profiles located there
-        this.options?.profileApi?.filterAndGenerateProfilesForManifest(
-          packageJson.Package.types,
-          ensureArray(unpackagedMetadataPath)
-        ) ?? []
-      : this.options?.profileApi?.filterAndGenerateProfilesForManifest(packageJson.Package.types) ?? [];
+    // don't package the profiles from any unpackagedMetadata dir in the project
+    const profileExcludeDirs = this.project
+      .getPackageDirectories()
+      .filter((packageDir) => (packageDir as PackageDescriptorJson).unpackagedMetadata?.path)
+      .map((packageDir) => (packageDir as PackageDescriptorJson).unpackagedMetadata?.path) ?? [];
+
+    const typesArr = this.options?.profileApi?.filterAndGenerateProfilesForManifest(packageJson.Package.types, profileExcludeDirs);
 
     // Next generate profiles and retrieve any profiles that were excluded because they had no matching nodes.
     const excludedProfiles = this.options?.profileApi?.generateProfiles(
       packageVersProfileFolder,
       {
-        Package: typesArr,
+        Package: typesArr
       },
-      hasUnpackagedMetadata ? ensureArray(unpackagedMetadataPath) : undefined
+      profileExcludeDirs
     );
 
     if (excludedProfiles?.length) {
@@ -522,7 +522,7 @@ export class PackageVersionCreate {
 
     // Re-write the package.xml in case profiles have been added or removed
     const xmlBuilder = new xml2js.Builder({
-      xmldec: { version: '1.0', encoding: 'UTF-8' },
+      xmldec: { version: '1.0', encoding: 'UTF-8' }
     });
     const xml = xmlBuilder.buildObject(packageJson);
 
@@ -630,7 +630,7 @@ export class PackageVersionCreate {
     if (!packageObject) {
       throw messages.createError('errorCouldNotFindPackageDir', [
         this.options.packageId ? 'packageId or alias' : 'path',
-        this.options.packageId ?? this.options.path,
+        this.options.packageId ?? this.options.path
       ]);
     } else {
       this.packageObject = packageObject as NamedPackageDir;
@@ -682,7 +682,7 @@ export class PackageVersionCreate {
       this.pkg = new Package({
         packageAliasOrId: this.packageId,
         project: this.project,
-        connection: this.connection,
+        connection: this.connection
       });
     }
     return this.pkg.getType();
@@ -695,7 +695,7 @@ export class PackageVersionCreate {
     return PackageProfileApi.create({
       project: this.project,
       includeUserLicenses,
-      generateProfileInformation: shouldGenerateProfileInformation,
+      generateProfileInformation: shouldGenerateProfileInformation
     });
   }
 
@@ -749,9 +749,9 @@ export class PackageVersionCreate {
       packageDescriptorJson.versionName =
         versionNumber?.split(pkgUtils.VERSION_NUMBER_SEP)[3] === BuildNumberToken.NEXT_BUILD_NUMBER_TOKEN
           ? versionNumber.substring(
-              0,
-              versionNumber.indexOf(pkgUtils.VERSION_NUMBER_SEP + BuildNumberToken.NEXT_BUILD_NUMBER_TOKEN)
-            )
+            0,
+            versionNumber.indexOf(pkgUtils.VERSION_NUMBER_SEP + BuildNumberToken.NEXT_BUILD_NUMBER_TOKEN)
+          )
           : versionNumber;
 
       this.logger.warn(messages.getMessage('defaultVersionName', [packageDescriptorJson.versionName]));
@@ -796,7 +796,7 @@ export class PackageVersionCreate {
         throw messages.createError('errorInvalidBuildNumberForKeywords', [
           versionNumberString,
           supportedBuildNumberToken,
-          supportedBuildNumberToken2,
+          supportedBuildNumberToken2
         ]);
       } else {
         throw messages.createError('errorInvalidBuildNumber', [versionNumberString, supportedBuildNumberToken]);
@@ -865,7 +865,7 @@ export class PackageVersionCreate {
         // both ancestorId and ancestorVersion specified, HIGHEST and/or NONE are used, the values disagree
         throw messages.createError('errorAncestorIdVersionHighestOrNoneMismatch', [
           packageDescriptorJson.ancestorId,
-          packageDescriptorJson.ancestorVersion,
+          packageDescriptorJson.ancestorVersion
         ]);
       }
     }
@@ -929,7 +929,7 @@ export class PackageVersionCreate {
       if (packageDescriptorJson?.ancestorId && ancestorId !== queriedAncestorId) {
         throw messages.createError('errorAncestorIdVersionMismatch', [
           packageDescriptorJson.ancestorVersion,
-          packageDescriptorJson.ancestorId,
+          packageDescriptorJson.ancestorId
         ]);
       }
       ancestorId = queriedAncestorId;
@@ -968,7 +968,7 @@ export class PackageVersionCreate {
         if (highestReleasedVersion.Id !== ancestorId) {
           throw messages.createError('errorAncestorNotHighest', [
             origSpecifiedAncestor,
-            getPackageVersionNumber(highestReleasedVersion),
+            getPackageVersionNumber(highestReleasedVersion)
           ]);
         }
       } else {
@@ -1002,7 +1002,7 @@ export class PackageVersionCreate {
     const result: { finalAncestorId: string | null; highestReleasedVersion: PackagingSObjects.Package2Version | null } =
       {
         finalAncestorId: null,
-        highestReleasedVersion: null,
+        highestReleasedVersion: null
       };
 
     if (isPatch && explicitUseHighestRelease) {
@@ -1063,7 +1063,7 @@ export class MetadataResolver {
       await this.generateMDFolderForArtifact({
         deploydir: metadataOutputPath,
         sourceDir: metadataFullPath,
-        sourceApiVersion,
+        sourceApiVersion
       });
       return true;
     }
@@ -1077,7 +1077,7 @@ export class MetadataResolver {
     );
     const componentSetOptions: ComponentSetOptions = {
       sourceapiversion: options.sourceApiVersion,
-      ...(sourcePaths.length > 0 ? { sourcepath: sourcePaths } : {}),
+      ...(sourcePaths.length > 0 ? { sourcepath: sourcePaths } : {})
     };
 
     if (!options.deploydir) {
@@ -1128,7 +1128,7 @@ export class MetadataResolver {
       type: 'directory',
       outputDirectory,
       packageName,
-      genUniqueDir: false,
+      genUniqueDir: false
     });
   }
 }

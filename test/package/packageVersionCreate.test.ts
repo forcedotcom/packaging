@@ -545,6 +545,83 @@ describe('Package Version Create', () => {
       'Tag'
     );
   });
+
+  it('should not package the profiles from unpackaged metadata dirs', async () => {
+    await project.getSfProjectJson().write({
+      packageDirectories: [
+        {
+          path: 'pkg',
+          package: 'dep',
+          versionName: 'ver 0.1',
+          versionNumber: '0.1.0.NEXT',
+          default: false,
+          name: 'pkg',
+          unpackagedMetadata: {
+            path: 'unpackaged-pkg',
+          },
+        },
+        {
+          path: 'force-app',
+          package: 'TEST',
+          versionName: 'ver 0.1',
+          versionNumber: '0.1.0.NEXT',
+          default: true,
+          ancestorId: 'TEST2',
+          unpackagedMetadata: {
+            path: 'unpackaged-force-app',
+          },
+          seedMetadata: {
+            path: 'seed',
+          },
+          dependencies: [
+            {
+              package: 'DEP@0.1.0-1',
+            },
+          ],
+        },
+        {
+          path: 'unpackaged-pkg',
+        },
+        {
+          path: 'unpackaged-force-app',
+        },
+      ],
+      packageAliases: {
+        TEST: packageId,
+        TEST2: '05i3i000000Gmj6XXX',
+        DEP: '05i3i000000Gmj6XXX',
+        'DEP@0.1.0-1': '04t3i000002eyYXXXX',
+      },
+    });
+    const pvc = new PackageVersionCreate({ connection, project, codecoverage: true, packageId });
+    const profileSpyGenerate = $$.SANDBOX.spy(PackageProfileApi.prototype, 'generateProfiles');
+    const profileSpyFilter = $$.SANDBOX.spy(PackageProfileApi.prototype, 'filterAndGenerateProfilesForManifest');
+    stubConvert();
+    const result = await pvc.createPackageVersion();
+    expect(result).to.have.all.keys(
+      'Branch',
+      'CreatedBy',
+      'CreatedDate',
+      'Error',
+      'HasMetadataRemoved',
+      'Id',
+      'Package2Id',
+      'Package2VersionId',
+      'Status',
+      'SubscriberPackageVersionId',
+      'Tag'
+    );
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const excludedDirsGenerate = profileSpyGenerate.firstCall.args[2];
+    expect(excludedDirsGenerate.length).to.equal(2);
+    expect(excludedDirsGenerate).to.contain('unpackaged-pkg');
+    expect(excludedDirsGenerate).to.contain('unpackaged-force-app');
+    const excludedDirsFilter = profileSpyFilter.firstCall.args[1];
+    expect(excludedDirsFilter.length).to.equal(2);
+    expect(excludedDirsFilter).to.contain('unpackaged-pkg');
+    expect(excludedDirsFilter).to.contain('unpackaged-force-app');
+  });
+
   describe('validateAncestorId', () => {
     let pvc: PackageVersionCreate;
     beforeEach(() => {
