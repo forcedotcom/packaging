@@ -1,3 +1,12 @@
+## [1.4.13](https://github.com/forcedotcom/packaging/compare/1.4.12...1.4.13) (2023-04-21)
+
+
+### Bug Fixes
+
+* do not package profiles from unpackaged metadata dirs ([#265](https://github.com/forcedotcom/packaging/issues/265)) ([770361e](https://github.com/forcedotcom/packaging/commit/770361e7502050f4904910dffac0e0f3f6dc5084))
+
+
+
 ## [1.4.12](https://github.com/forcedotcom/packaging/compare/1.4.11...1.4.12) (2023-04-21)
 
 
