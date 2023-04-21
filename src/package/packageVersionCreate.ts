@@ -485,12 +485,13 @@ export class PackageVersionCreate {
       );
     }
 
-    // if we're using unpackaged metadata, don't package the profiles located there
-    if (hasUnpackagedMetadata) {
-      typesArr = this.options.profileApi.filterAndGenerateProfilesForManifest(typesArr, [unpackagedMetadataPath]);
-    } else {
-      typesArr = this.options.profileApi.filterAndGenerateProfilesForManifest(typesArr);
-    }
+    // don't package the profiles from any unpackagedMetadata dir in the project
+    const profileExcludeDirs = this.project
+      .getPackageDirectories()
+      .filter((packageDir) => (packageDir as PackageDescriptorJson).unpackagedMetadata?.path)
+      .map((packageDir) => (packageDir as PackageDescriptorJson).unpackagedMetadata.path);
+
+    typesArr = this.options.profileApi.filterAndGenerateProfilesForManifest(typesArr, profileExcludeDirs);
 
     // Next generate profiles and retrieve any profiles that were excluded because they had no matching nodes.
     const excludedProfiles = this.options.profileApi.generateProfiles(
@@ -498,7 +499,7 @@ export class PackageVersionCreate {
       {
         Package: typesArr,
       },
-      [hasUnpackagedMetadata ? unpackagedMetadataPath : null]
+      profileExcludeDirs
     );
 
     if (excludedProfiles.length > 0) {
