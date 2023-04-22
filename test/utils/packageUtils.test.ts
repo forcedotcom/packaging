@@ -9,13 +9,14 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { assert, expect } from 'chai';
-import { instantiateContext, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
+import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { SaveError } from 'jsforce';
 import { Duration } from '@salesforce/kit';
 import * as JSZIP from 'jszip';
 import {
   applyErrorAction,
   getPackageVersionNumber,
+  getPackageVersionStrings,
   massageErrorMessage,
   combineSaveErrors,
   zipDir,
@@ -25,6 +26,7 @@ import { PackagingSObjects } from '../../src/interfaces';
 
 describe('packageUtils', () => {
   const $$ = instantiateContext();
+  const testOrg = new MockTestOrgData();
 
   beforeEach(() => {
     stubContext($$);
@@ -67,7 +69,22 @@ describe('packageUtils', () => {
     });
   });
   describe('getPackageVersionStrings', () => {
-    it.skip('should return the correct version strings', () => {});
+    it('should chunk a large query', async () => {
+      const conn = await testOrg.getConnection();
+      const queryStub = $$.SANDBOX.stub(conn.tooling, 'query').resolves({
+        records: [{ MajorVersion: 1 }],
+        done: true,
+        totalSize: 1,
+      });
+
+      // generate a large array of fake subscriber package version IDs
+      const spvs: string[] = [];
+      while (spvs.length < 201) {
+        spvs.push($$.uniqid());
+      }
+      await getPackageVersionStrings(spvs, conn);
+      expect(queryStub.callCount).to.equal(2);
+    });
   });
   describe('getContainerOptions', () => {
     it.skip('should return the correct value', () => {});
