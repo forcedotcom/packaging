@@ -67,7 +67,7 @@
     "@types/globby": "^9.1.0",
     "@types/jszip": "^3.4.1",
     "@types/xml2js": "^0.4.11",
-    "@typescript-eslint/eslint-plugin": "^5.40.1",
+    "@typescript-eslint/eslint-plugin": "^5.59.0",
     "@typescript-eslint/parser": "5.58.0",
     "chai": "^4.3.7",
     "commitizen": "^4.2.6",
