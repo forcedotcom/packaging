@@ -1,3 +1,12 @@
+## [1.4.14](https://github.com/forcedotcom/packaging/compare/1.4.13...1.4.14) (2023-04-22)
+
+
+### Bug Fixes
+
+* **deps:** bump @xmldom/xmldom from 0.8.6 to 0.8.7 ([de8a404](https://github.com/forcedotcom/packaging/commit/de8a4042c6d3b4e55a76d97400fab3bea88dd749))
+
+
+
 ## [1.4.13](https://github.com/forcedotcom/packaging/compare/1.4.12...1.4.13) (2023-04-21)
 
 
