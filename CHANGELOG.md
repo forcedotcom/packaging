@@ -1,20 +1,26 @@
-## [1.4.13](https://github.com/forcedotcom/packaging/compare/1.4.12...1.4.13) (2023-04-21)
-
+## [1.4.15](https://github.com/forcedotcom/packaging/compare/1.4.14...1.4.15) (2023-04-22)
 
 ### Bug Fixes
 
-* do not package profiles from unpackaged metadata dirs ([#265](https://github.com/forcedotcom/packaging/issues/265)) ([770361e](https://github.com/forcedotcom/packaging/commit/770361e7502050f4904910dffac0e0f3f6dc5084))
+- **deps:** bump @salesforce/source-deploy-retrieve from 7.11.3 to 7.15.1 ([6155dab](https://github.com/forcedotcom/packaging/commit/6155dab7c978501a6113973572bdb49e7cf6f6f8))
 
+## [1.4.14](https://github.com/forcedotcom/packaging/compare/1.4.13...1.4.14) (2023-04-22)
 
+### Bug Fixes
+
+- **deps:** bump @xmldom/xmldom from 0.8.6 to 0.8.7 ([de8a404](https://github.com/forcedotcom/packaging/commit/de8a4042c6d3b4e55a76d97400fab3bea88dd749))
+
+## [1.4.13](https://github.com/forcedotcom/packaging/compare/1.4.12...1.4.13) (2023-04-21)
+
+### Bug Fixes
+
+- do not package profiles from unpackaged metadata dirs ([#265](https://github.com/forcedotcom/packaging/issues/265)) ([770361e](https://github.com/forcedotcom/packaging/commit/770361e7502050f4904910dffac0e0f3f6dc5084))
 
 ## [1.4.12](https://github.com/forcedotcom/packaging/compare/1.4.11...1.4.12) (2023-04-21)
 
-
 ### Bug Fixes
 
-* **deps:** bump vm2 from 3.9.15 to 3.9.17 ([ea614b9](https://github.com/forcedotcom/packaging/commit/ea614b99f32c1156fde2b1c49b994a0ec2c9db38))
-
-
+- **deps:** bump vm2 from 3.9.15 to 3.9.17 ([ea614b9](https://github.com/forcedotcom/packaging/commit/ea614b99f32c1156fde2b1c49b994a0ec2c9db38))
 
 ## [1.4.11](https://github.com/forcedotcom/packaging/compare/1.4.10...1.4.11) (2023-04-15)
 
