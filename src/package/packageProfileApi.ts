@@ -231,7 +231,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
     const profilePaths = this.findAllProfiles(excludedDirectories);
 
     // Filter all profiles
-    typesArr = (typesArr ?? []).filter((kvp) => kvp.name[0] !== 'Profile');
+    const filteredTypesArr = (typesArr ?? []).filter((kvp) => kvp.name[0] !== 'Profile');
 
     if (profilePaths) {
       const members: string[] = [];
@@ -248,11 +248,11 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
         }
       });
       if (members.length > 0) {
-        typesArr.push({ name: ['Profile'], members });
+        filteredTypesArr.push({ name: ['Profile'], members });
       }
     }
 
-    return typesArr;
+    return filteredTypesArr;
   }
 
   public getProfileInformation(): ProfileInformation[] {
