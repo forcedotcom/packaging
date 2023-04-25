@@ -271,9 +271,8 @@ export async function getPackageVersionStrings(
   // remove any duplicate Ids
   const ids = [...new Set<string>(subscriberPackageVersionIds)];
 
-  const query = `SELECT SubscriberPackageVersionId, MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version WHERE SubscriberPackageVersionId IN (${ids
-    .map((id) => `'${id}'`)
-    .join(',')})`;
+  const query =
+    "SELECT SubscriberPackageVersionId, MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version WHERE SubscriberPackageVersionId IN ('%IDS%')";
 
   const records = await queryWithInConditionChunking<PackageVersionString>(query, ids, '%IDS%', connection);
   if (records && records.length > 0) {

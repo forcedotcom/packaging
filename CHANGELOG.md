@@ -1,3 +1,9 @@
+## [1.4.16](https://github.com/forcedotcom/packaging/compare/1.4.15...1.4.16) (2023-04-25)
+
+### Bug Fixes
+
+- properly chunk query for getPackageVersionStrings ([#277](https://github.com/forcedotcom/packaging/issues/277)) ([6b9001e](https://github.com/forcedotcom/packaging/commit/6b9001e4e519d780c1e71806a2491915a4154aa8))
+
 ## [1.4.15](https://github.com/forcedotcom/packaging/compare/1.4.14...1.4.15) (2023-04-22)
 
 ### Bug Fixes

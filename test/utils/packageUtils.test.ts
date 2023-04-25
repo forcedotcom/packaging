@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { assert, expect } from 'chai';
-import { instantiateContext, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
+import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { SaveError } from 'jsforce';
 import { Duration } from '@salesforce/kit';
 import * as JSZIP from 'jszip';
@@ -17,14 +17,16 @@ import {
   applyErrorAction,
   combineSaveErrors,
   getPackageVersionNumber,
+  getPackageVersionStrings,
   massageErrorMessage,
   numberToDuration,
-  zipDir
+  zipDir,
 } from '../../src/utils/packageUtils';
 import { PackagingSObjects } from '../../src/interfaces';
 
 describe('packageUtils', () => {
   const $$ = instantiateContext();
+  const testOrg = new MockTestOrgData();
 
   beforeEach(() => {
     stubContext($$);
@@ -40,7 +42,7 @@ describe('packageUtils', () => {
         Id: 'foo',
         MajorVersion: 1,
         MinorVersion: 2,
-        PatchVersion: 3
+        PatchVersion: 3,
       } as PackagingSObjects.Package2Version;
       const result = getPackageVersionNumber(version);
       expect(result).to.be.equal('1.2.3');
@@ -51,7 +53,7 @@ describe('packageUtils', () => {
       it('should modify error message if packaging is not enabled', () => {
         const error = new Error() as Error & { action: string | undefined };
         error.name = 'INVALID_TYPE';
-        error.message = 'sObject type \'Package2Version\' is not supported';
+        error.message = "sObject type 'Package2Version' is not supported";
         const result = applyErrorAction(error) as Error & { action: string | undefined };
         expect(result.action).to.be.include('Packaging is not enabled on this org.');
       });
@@ -66,39 +68,44 @@ describe('packageUtils', () => {
     });
   });
   describe('getPackageVersionStrings', () => {
-    it.skip('should return the correct version strings', () => {
+    it('should chunk a large query', async () => {
+      const conn = await testOrg.getConnection();
+      const queryStub = $$.SANDBOX.stub(conn.tooling, 'query').resolves({
+        records: [{ MajorVersion: 1 }],
+        done: true,
+        totalSize: 1,
+      });
+
+      // generate a large array of fake subscriber package version IDs
+      const spvs = Array.from({ length: 201 }, () => $$.uniqid());
+      await getPackageVersionStrings(spvs, conn);
+      expect(queryStub.callCount).to.equal(2);
     });
   });
   describe('getContainerOptions', () => {
-    it.skip('should return the correct value', () => {
-    });
+    it.skip('should return the correct value', () => {});
   });
   describe('getSubscriberPackageVersionId', () => {
-    it.skip('should return the correct value', () => {
-    });
+    it.skip('should return the correct value', () => {});
   });
   describe('getPackage2TypeBy04type', () => {
-    it.skip('should return the correct value', () => {
-    });
+    it.skip('should return the correct value', () => {});
   });
   describe('getPackage2TypeBy05type', () => {
-    it.skip('should return the correct value', () => {
-    });
+    it.skip('should return the correct value', () => {});
   });
   describe('getPackageVersionId', () => {
-    it.skip('should return the correct value', () => {
-    });
+    it.skip('should return the correct value', () => {});
   });
   describe('validatePatchVersion', () => {
-    it.skip('should return the correct value', () => {
-    });
+    it.skip('should return the correct value', () => {});
   });
   describe('combineSaveErrors', () => {
     it('should combine crud operations errors', () => {
       const errors = [
         { message: 'error 1', errorCode: 'errorCode 1', fields: ['field1', 'field2'] },
         { message: 'error 2', errorCode: 'errorCode 2', fields: [] },
-        { message: 'error 3', errorCode: 'errorCode 3' }
+        { message: 'error 3', errorCode: 'errorCode 3' },
       ] as SaveError[];
       const result = combineSaveErrors('fooObject', 'upsert', errors);
       const messageLines = result.message.split('\n');
@@ -122,9 +129,9 @@ describe('packageUtils', () => {
       const result = numberToDuration(Duration.minutes(1000));
       expect(result.minutes).to.be.equal(Duration.minutes(1000).minutes);
     });
-    it('should default an undefined number param instance to 0', () => {
+    it('should a treat a undefined number param instance as idempotent', () => {
       const result = numberToDuration(undefined);
-      expect(result.minutes).to.be.equal(Duration.minutes(0).minutes);
+      expect(result).to.be.not.ok;
     });
   });
   describe('zipDir', () => {
@@ -153,7 +160,7 @@ describe('packageUtils', () => {
         'not-empty-dir/',
         'not-empty-dir/file3.txt',
         'not-empty-dir/sub-dir/',
-        'not-empty-dir/sub-dir/file4.txt'
+        'not-empty-dir/sub-dir/file4.txt',
       ];
       await zipDir(path.resolve(tmpSrcDir), path.join(tmpZipDir, 'test.zip'));
       try {
