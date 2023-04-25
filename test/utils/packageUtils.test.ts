@@ -78,10 +78,7 @@ describe('packageUtils', () => {
       });
 
       // generate a large array of fake subscriber package version IDs
-      const spvs: string[] = [];
-      while (spvs.length < 201) {
-        spvs.push($$.uniqid());
-      }
+      Array.from({ length: 201 }, () => $$.uniqid())
       await getPackageVersionStrings(spvs, conn);
       expect(queryStub.callCount).to.equal(2);
     });
