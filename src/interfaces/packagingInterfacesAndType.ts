@@ -211,8 +211,6 @@ export type PackageVersionUpdateOptions = {
   Tag?: string;
 };
 
-// export type ListPackageVersionOptions = PackageVersionListOptions & { connection: Connection };
-
 export type PackageSaveResult = SaveResult;
 
 export type PackageVersionCreateRequestOptions = {
