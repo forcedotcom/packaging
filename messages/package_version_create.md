@@ -186,7 +186,7 @@ The package path cannot be undefined.
 
 # errorMissingPackagePath
 
-The package path is missing is undefined. Supplied options: %s
+The package path is missing. Supplied options: %s
 
 # versionNumberRequired
 

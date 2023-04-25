@@ -29,4 +29,4 @@ a VersionName was not provided, but is required
 
 # createFailed
 
-The attempt to create a package version failed. See the following for mor information: %s
+The attempt to create a package version failed. See the following for more information: %s
