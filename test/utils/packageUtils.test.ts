@@ -129,9 +129,9 @@ describe('packageUtils', () => {
       const result = numberToDuration(Duration.minutes(1000));
       expect(result.minutes).to.be.equal(Duration.minutes(1000).minutes);
     });
-    it('should a treat a undefined number param instance as idempotent', () => {
+    it('should a treat a undefined number param instance as Duration(0)', () => {
       const result = numberToDuration(undefined);
-      expect(result).to.be.not.ok;
+      expect(result.milliseconds).to.be.equal(Duration.milliseconds(0).milliseconds);
     });
   });
   describe('zipDir', () => {
