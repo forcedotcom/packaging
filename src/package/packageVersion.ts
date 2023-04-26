@@ -513,7 +513,7 @@ export class PackageVersion {
     // Use the 04t ID for the success message
     const subscriberPackageVersionId = await this.getSubscriberId();
     if (!subscriberPackageVersionId) {
-      throw messages.createError('errorInvalidPackageVersionId', [this.options.idOrAlias]);
+      throw messages.createError('errorNoSubscriberPackageVersionId');
     }
     result.id = subscriberPackageVersionId;
     return result;
@@ -537,7 +537,7 @@ export class PackageVersion {
     }
     const subscriberPackageVersionId = await this.getSubscriberId();
     if (!subscriberPackageVersionId) {
-      throw messages.createError('errorInvalidPackageVersionId', [this.options.idOrAlias]);
+      throw messages.createError('errorNoSubscriberPackageVersionId');
     }
     updateResult.id = subscriberPackageVersionId;
     return updateResult;

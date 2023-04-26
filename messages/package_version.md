@@ -13,3 +13,7 @@ The provided package id: [%s] could not be resolved to an alias.
 # createResultIdCannotBeEmpty
 
 The package version create result ID must be defined when checking for completion.
+
+# errorNoSubscriberPackageVersionId
+
+Could not fetch the subscriber package version ID (04t).
