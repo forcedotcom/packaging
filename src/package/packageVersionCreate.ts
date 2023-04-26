@@ -332,7 +332,7 @@ export class PackageVersionCreate {
     const clientSideInfo = new Map<string, string>();
     await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
     const settingsGenerator = new SettingsGenerator({ asDirectory: true });
-    const packageDescriptorJson = cloneJson(this.packageObject) as PackageDescriptorJson;
+    let packageDescriptorJson = cloneJson(this.packageObject) as PackageDescriptorJson;
     const apvLanguage = packageDescriptorJson.language;
 
     // Copy all the metadata from the workspace to a tmp folder
@@ -362,7 +362,7 @@ export class PackageVersionCreate {
       delete packageDescriptorJson.snapshot;
 
       const definitionFilePayload = await fs.promises.readFile(definitionFile, 'utf8');
-      const definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo & Record<string, unknown>;
+      const definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo;
 
       // Load any settings from the definition
       await settingsGenerator.extract(definitionFileJson);
@@ -371,7 +371,7 @@ export class PackageVersionCreate {
         throw messages.createError('signupDuplicateSettingsSpecified');
       }
 
-      copyDescriptorProperties(packageDescriptorJson, definitionFileJson);
+      packageDescriptorJson = copyDescriptorProperties(packageDescriptorJson, definitionFileJson);
     }
 
     this.resolveApexTestPermissions(packageDescriptorJson);

@@ -7,7 +7,7 @@
 
 import { Connection, NamedPackageDir, PackageDir, SfError, SfProject } from '@salesforce/core';
 import * as pkgUtils from '../utils/packageUtils';
-import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
+import { applyErrorAction, massageErrorMessage, replaceIfEmpty } from '../utils/packageUtils';
 import { PackageCreateOptions, PackagingSObjects } from '../interfaces';
 
 type Package2Request = Pick<
@@ -48,7 +48,7 @@ export function createPackageDirEntry(project: SfProject, options: PackageCreate
     // no match - create a new one
     isNew = true;
     packageDir = pkgUtils.DEFAULT_PACKAGE_DIR as NamedPackageDir;
-    packageDir.path = !packageDir.path ? options.path : packageDir.path;
+    packageDir.path = replaceIfEmpty(packageDir.path, options.path);
   }
 
   if (packageDirs.length === 0) {
@@ -57,12 +57,10 @@ export function createPackageDirEntry(project: SfProject, options: PackageCreate
     packageDir.default = !packageDirs.find((pd: PackageDir) => pd.default);
   }
 
-  packageDir.package = !packageDir.package ? options.name : packageDir.package;
-  packageDir.versionName = !packageDir.versionName ? pkgUtils.DEFAULT_PACKAGE_DIR.versionName : packageDir.versionName;
-  packageDir.versionNumber = !packageDir.versionNumber
-    ? pkgUtils.DEFAULT_PACKAGE_DIR.versionNumber
-    : packageDir.versionNumber;
-  packageDir.versionDescription = !packageDir.versionDescription ? options.description : packageDir.versionDescription;
+  packageDir.package = replaceIfEmpty(packageDir.package, options.name);
+  packageDir.versionName = replaceIfEmpty(packageDir.versionName, pkgUtils.DEFAULT_PACKAGE_DIR.versionName);
+  packageDir.versionNumber = replaceIfEmpty(packageDir.versionNumber, pkgUtils.DEFAULT_PACKAGE_DIR.versionNumber);
+  packageDir.versionDescription = replaceIfEmpty(packageDir.versionDescription, options.description);
 
   return packageDir;
 }

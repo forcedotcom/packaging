@@ -135,9 +135,9 @@ export async function getInstallationStatus(
 export async function waitForPublish(
   connection: Connection,
   subscriberPackageVersionId: string,
-  frequency: number | Duration | undefined,
-  timeout: number | Duration | undefined,
-  installationKey?: string | undefined | Nullable<string>
+  frequency?: number | Duration,
+  timeout?: number | Duration,
+  installationKey?: string | Nullable<string>
 ): Promise<void> {
   const pollingTimeout = numberToDuration(timeout);
 

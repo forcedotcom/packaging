@@ -11,13 +11,13 @@ import { pipeline as cbPipeline } from 'stream';
 import * as util from 'util';
 import { promisify } from 'util';
 import { randomBytes } from 'crypto';
-import { Connection, Logger, Messages, SfdcUrl, SfError, SfProject } from '@salesforce/core';
+import { Connection, Logger, Messages, ScratchOrgInfo, SfdcUrl, SfError, SfProject } from '@salesforce/core';
 import { isNumber, Many, Nullable, Optional } from '@salesforce/ts-types';
 import { SaveError } from 'jsforce';
-import { Duration, ensureArray } from '@salesforce/kit';
+import { Duration, ensureArray, isEmpty } from '@salesforce/kit';
 import * as globby from 'globby';
 import * as JSZIP from 'jszip';
-import { PackageType, PackagingSObjects } from '../interfaces';
+import { PackageDescriptorJson, PackageType, PackagingSObjects } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'pkg_utils');
@@ -497,15 +497,22 @@ export function copyDir(src: string, dest: string): void {
 }
 
 export function copyDescriptorProperties(
-  packageDescriptorJson: Record<string, unknown>,
-  definitionFileJson: Record<string, unknown>
-): void {
-  Object.assign(
-    packageDescriptorJson,
+  packageDescriptorJson: PackageDescriptorJson,
+  definitionFileJson: ScratchOrgInfo
+): PackageDescriptorJson {
+  const packageDescriptorJsonCopy = Object.assign({}, packageDescriptorJson) as Record<string, unknown>;
+  const definitionFileJsonCopy = Object.assign({}, definitionFileJson) as unknown as { [key: string]: unknown };
+  return Object.assign(
+    {},
+    packageDescriptorJsonCopy,
     Object.fromEntries(
       ['country', 'edition', 'language', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].map(
-        (prop) => [[prop], definitionFileJson[prop]]
+        (prop) => [[prop], definitionFileJsonCopy[prop]]
       )
     )
-  );
+  ) as PackageDescriptorJson;
+}
+
+export function replaceIfEmpty<T>(value: T, replacement: T): T {
+  return !isEmpty(value) ? value : replacement;
 }

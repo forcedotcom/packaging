@@ -16,8 +16,7 @@ No package ID was found in Dev Hub for package ID: %s.
 
 # versionNumberNotFoundInDevHub
 
-No version number was found in Dev Hub for package id %s and branch %s and version number %s that resolved to build
-number %s.
+No version number was found in Dev Hub for package id %s and branch %s and version number %s that resolved to build number %s.
 
 # buildNumberResolvedForLatest
 
@@ -174,15 +173,15 @@ The provided package ID '%s' is invalid.
 
 # packageIdCannotBeUndefined
 
-The package ID cannot be undefined.
+The package ID must be defined.
 
 # deploydirCannotBeUndefined
 
-The deploy directory cannot be undefined. Supplied options: %s
+The deploy directory must be defined. Supplied options: %s
 
 # packagePathCannotBeUndefined
 
-The package path cannot be undefined.
+The package path must be defined.
 
 # errorMissingPackagePath
 

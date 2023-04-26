@@ -88,24 +88,14 @@ export class PackageVersion {
   private readonly project: SfProject;
   private readonly connection: Connection;
 
-  private data: Package2Version = {} as Package2Version;
+  private data?: Package2Version;
   private packageType: Optional<PackageType>;
+  private id: string;
 
   public constructor(private options: PackageVersionOptions) {
     this.connection = this.options.connection;
     this.project = this.options.project;
-    const id = this.resolveId();
-
-    // validate ID
-    if (id.startsWith('04t')) {
-      validateId(BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, id);
-      this.data.SubscriberPackageVersionId = id;
-    } else if (id.startsWith('05i')) {
-      validateId(BY_LABEL.PACKAGE_VERSION_ID, id);
-      this.data.Id = id;
-    } else {
-      throw messages.createError('errorInvalidPackageVersionId', [this.options.idOrAlias]);
-    }
+    this.id = this.resolveId();
   }
 
   /**
@@ -351,11 +341,11 @@ export class PackageVersion {
    *
    * @returns The PackageVersionId (05i).
    */
-  public async getId(): Promise<string> {
-    if (!this.data.Id) {
+  public async getId(): Promise<string | undefined> {
+    if (!this.data?.Id) {
       await this.getData();
     }
-    return this.data.Id;
+    return this.data?.Id;
   }
 
   /**
@@ -363,11 +353,11 @@ export class PackageVersion {
    *
    * @returns The SubscriberPackageVersionId (04t).
    */
-  public async getSubscriberId(): Promise<string> {
-    if (!this.data.SubscriberPackageVersionId) {
+  public async getSubscriberId(): Promise<string | undefined> {
+    if (!this.data?.SubscriberPackageVersionId) {
       await this.getData();
     }
-    return this.data.SubscriberPackageVersionId;
+    return this.data?.SubscriberPackageVersionId;
   }
 
   /**
@@ -375,11 +365,11 @@ export class PackageVersion {
    *
    * @returns The PackageId (0Ho).
    */
-  public async getPackageId(): Promise<string> {
-    if (!this.data.Package2Id) {
+  public async getPackageId(): Promise<string | undefined> {
+    if (!this.data?.Package2Id) {
       await this.getData();
     }
-    return this.data.Package2Id;
+    return this.data?.Package2Id;
   }
 
   /**
@@ -406,20 +396,31 @@ export class PackageVersion {
    * @param force force a refresh of the package version data.
    * @returns Package2Version
    */
-  public async getData(force = false): Promise<Package2Version> {
-    if (!this.data.Name || force) {
+  public async getData(force = false): Promise<Package2Version> | never {
+    let is05i = false;
+    if (!this.data || force) {
+      // validate ID
+      if (this.id.startsWith('04t')) {
+        validateId(BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, this.id);
+        is05i = false;
+      } else if (this.id.startsWith('05i')) {
+        validateId(BY_LABEL.PACKAGE_VERSION_ID, this.id);
+        is05i = true;
+      } else {
+        throw messages.createError('errorInvalidPackageVersionId', [this.options.idOrAlias]);
+      }
       let queryConfig: { id: string; clause: string; label1: string; label2: string };
-      if (this.data.Id) {
+      if (is05i) {
         queryConfig = {
-          id: this.data.Id,
-          clause: `Id = '${this.data.Id}'`,
+          id: this.id,
+          clause: `Id = '${this.id}'`,
           label1: BY_LABEL.PACKAGE_VERSION_ID.label,
           label2: BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.label,
         };
       } else {
         queryConfig = {
-          id: this.data.SubscriberPackageVersionId,
-          clause: `SubscriberPackageVersionId = '${this.data.SubscriberPackageVersionId}'`,
+          id: this.id,
+          clause: `SubscriberPackageVersionId = '${this.id}'`,
           label1: BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.label,
           label2: BY_LABEL.PACKAGE_VERSION_ID.label,
         };
@@ -461,6 +462,9 @@ export class PackageVersion {
    */
   public async report(verbose = false): Promise<PackageVersionReportResult> {
     const packageVersionId = await this.getId();
+    if (!packageVersionId) {
+      throw messages.createError('errorInvalidPackageVersionId', [this.options.idOrAlias]);
+    }
     const results = await getPackageVersionReport({
       packageVersionId,
       connection: this.connection,
@@ -479,11 +483,17 @@ export class PackageVersion {
    */
   public async promote(): Promise<PackageSaveResult> {
     const id = await this.getId();
+    if (!id) {
+      throw messages.createError('errorInvalidPackageVersionId', [this.options.idOrAlias]);
+    }
     return this.options.connection.tooling.update('Package2Version', { IsReleased: true, Id: id });
   }
 
   public async update(options: PackageVersionUpdateOptions): Promise<PackageSaveResult> {
     const id = await this.getId();
+    if (!id) {
+      throw messages.createError('errorInvalidPackageVersionId', [this.options.idOrAlias]);
+    }
 
     const request = Object.fromEntries(
       Object.entries({
@@ -501,12 +511,19 @@ export class PackageVersion {
       throw new Error(result.errors.join(', '));
     }
     // Use the 04t ID for the success message
-    result.id = await this.getSubscriberId();
+    const subscriberPackageVersionId = await this.getSubscriberId();
+    if (!subscriberPackageVersionId) {
+      throw messages.createError('errorInvalidPackageVersionId', [this.options.idOrAlias]);
+    }
+    result.id = subscriberPackageVersionId;
     return result;
   }
 
   private async updateDeprecation(isDeprecated: boolean): Promise<PackageSaveResult> {
     const id = await this.getId();
+    if (!id) {
+      throw messages.createError('errorInvalidPackageVersionId', [this.options.idOrAlias]);
+    }
 
     // setup the request
     const request: { Id: string; IsDeprecated: boolean } = {
@@ -518,7 +535,11 @@ export class PackageVersion {
     if (!updateResult.success) {
       throw combineSaveErrors('Package2', 'update', updateResult.errors);
     }
-    updateResult.id = await this.getSubscriberId();
+    const subscriberPackageVersionId = await this.getSubscriberId();
+    if (!subscriberPackageVersionId) {
+      throw messages.createError('errorInvalidPackageVersionId', [this.options.idOrAlias]);
+    }
+    updateResult.id = subscriberPackageVersionId;
     return updateResult;
   }
 

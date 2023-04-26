@@ -335,11 +335,11 @@ export type PackageVersionReportResult = Partial<
   };
   SubscriberPackageVersion?: Pick<PackagingSObjects.SubscriberPackageVersion, 'Dependencies'>;
   Version: string;
-  AncestorVersion: string | null | undefined;
-  AncestorId?: string | null | undefined;
-  PackageType: PackageType | null | undefined;
-  HasPassedCodeCoverageCheck: boolean | null | undefined;
-  HasMetadataRemoved: boolean | null | undefined;
+  AncestorVersion?: string | null;
+  AncestorId?: string | null;
+  PackageType?: PackageType | null;
+  HasPassedCodeCoverageCheck?: boolean | null;
+  HasMetadataRemoved?: boolean | null;
 };
 
 export type PackageVersionCreateReportProgress = PackageVersionCreateRequestResult & {
@@ -413,10 +413,10 @@ export type PackageAncestryOptions = {
 };
 
 export type AncestryRepresentationProducerOptions = {
-  [key: string]: unknown;
   packageNode?: PackageAncestryNode;
   depth: number;
   verbose?: boolean;
+  logger?: (text: string) => void;
 };
 
 export interface AncestryRepresentationProducer {

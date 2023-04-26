@@ -162,21 +162,19 @@ export async function createPackageVersionCreateRequest(
   const metadataZipFile = path.join(packageVersBlobDirectory, 'package.zip');
   const packageVersBlobZipFile = path.join(packageVersTmpRoot, 'package-version-info.zip');
 
-  const packageDescriptorJson: PackageDescriptorJson & {
-    [prop: string]: unknown;
-  } = {
+  let packageDescriptorJson: PackageDescriptorJson = {
     id: packageId,
   };
 
   const settingsGenerator = new SettingsGenerator({ asDirectory: true });
   const definitionFile = context.definitionfile;
-  let definitionFileJson: ScratchOrgInfo & { [prop: string]: unknown };
+  let definitionFileJson: ScratchOrgInfo;
   if (definitionFile) {
     if (!fs.existsSync(definitionFile)) {
       throw messages.createError('errorReadingDefintionFile', [definitionFile]);
     }
     const definitionFilePayload = await fs.promises.readFile(definitionFile, 'utf8');
-    definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo & { [prop: string]: unknown };
+    definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo;
 
     // Load any settings from the definition
     await settingsGenerator.extract(definitionFileJson);
@@ -185,7 +183,7 @@ export async function createPackageVersionCreateRequest(
       throw messages.createError('signupDuplicateSettingsSpecified');
     }
 
-    copyDescriptorProperties(packageDescriptorJson, definitionFileJson);
+    packageDescriptorJson = copyDescriptorProperties(packageDescriptorJson, definitionFileJson);
   }
 
   await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
