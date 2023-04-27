@@ -330,7 +330,7 @@ export class PackageVersion {
     try {
       return await pollingClient.subscribe<PackageVersionCreateRequestResult>();
     } catch (err) {
-      const report = await this.getCreateStatus(createPackageVersionRequestId, connection);
+      const report = await this.getCreateVersionReport(createPackageVersionRequestId, connection);
       await Lifecycle.getInstance().emit(PackageVersionEvents.create['timed-out'], report);
       throw applyErrorAction(err as Error);
     }
