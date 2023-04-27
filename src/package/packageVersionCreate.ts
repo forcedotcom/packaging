@@ -289,6 +289,7 @@ export class PackageVersionCreate {
    * @private
    */
   private async createPackageVersionCreateRequestFromOptions(): Promise<PackageVersionCreateRequest> {
+    // this is not an "official" env known to sfdx-core
     const preserveFiles = !!(this.options.preserve || process.env.SFDX_PACKAGE2_VERSION_CREATE_PRESERVE);
     const uniqueHash = uniqid({ template: `${this.packageId}-%s` });
     const packageVersTmpRoot = path.join(os.tmpdir(), `${uniqueHash}`);

@@ -516,7 +516,7 @@ export class PackageVersion {
   }
 
   private async updateProjectWithPackageVersion(results: PackageVersionCreateRequestResult): Promise<void> {
-    if (!process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE) {
+    if (!process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE) {
       // get the newly created package version from the server
       const versionResult = (
         await this.connection.tooling.query<{

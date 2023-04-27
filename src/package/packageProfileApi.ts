@@ -9,7 +9,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as glob from 'glob';
 import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
-import { ConfigAggregator, Messages, SfProject } from '@salesforce/core';
+import { ConfigAggregator, Messages, OrgConfigProperties, SfProject } from '@salesforce/core';
 import { AsyncCreatable } from '@salesforce/kit';
 import { ProfileApiOptions } from '../interfaces';
 
@@ -39,7 +39,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
     this.includeUserLicenses = this.options.includeUserLicenses;
     this.generateProfileInformation = this.options.generateProfileInformation;
     this.config = await ConfigAggregator.create();
-    this.apiVersion = this.config.getPropertyValue('apiVersion');
+    this.apiVersion = this.config.getPropertyValue(OrgConfigProperties.ORG_API_VERSION);
 
     // nodeEntities is used to determine which elements in the profile are relevant to the source being packaged.
     // name refers to the entity type name in source that the element pertains to.  As an example, a profile may
