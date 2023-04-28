@@ -23,16 +23,16 @@ import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
 import { Many } from '@salesforce/ts-types';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import * as pkgUtils from '../utils/packageUtils';
+import { copyDescriptorProperties, generatePackageAliasEntry, uniqid } from '../utils/packageUtils';
 import {
-  PackagingSObjects,
-  PackageVersionCreateRequestResult,
   ConvertPackageOptions,
-  PackageVersionCreateEventData,
+  PackageDescriptorJson,
   PackageEvents,
+  PackageVersionCreateRequestResult,
+  PackagingSObjects,
 } from '../interfaces';
-import { generatePackageAliasEntry, uniqid } from '../utils/packageUtils';
-import { byId } from './packageVersionCreateRequest';
 import * as pvcr from './packageVersionCreateRequest';
+import { byId } from './packageVersionCreateRequest';
 import { MetadataResolver } from './packageVersionCreate';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
@@ -117,10 +117,8 @@ export async function convertPackage(
   const createResult = await connection.tooling.create('Package2VersionCreateRequest', request);
   if (!createResult.success) {
     const errStr = createResult?.errors.length ? createResult.errors.join(', ') : createResult.errors;
-    throw messages.createError('failedToCreatePVCRequest', [
-      createResult.id ? ` [${createResult.id}]` : '',
-      errStr.toString(),
-    ]);
+    const id = createResult.id ?? '';
+    throw messages.createError('failedToCreatePVCRequest', [id, errStr.toString()]);
   }
 
   let results: Many<PackageVersionCreateRequestResult>;
@@ -164,7 +162,7 @@ export async function createPackageVersionCreateRequest(
   const metadataZipFile = path.join(packageVersBlobDirectory, 'package.zip');
   const packageVersBlobZipFile = path.join(packageVersTmpRoot, 'package-version-info.zip');
 
-  const packageDescriptorJson = {
+  let packageDescriptorJson: PackageDescriptorJson = {
     id: packageId,
   };
 
@@ -172,12 +170,11 @@ export async function createPackageVersionCreateRequest(
   const definitionFile = context.definitionfile;
   let definitionFileJson: ScratchOrgInfo;
   if (definitionFile) {
-    try {
-      const definitionFilePayload = await fs.promises.readFile(definitionFile, 'utf8');
-      definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo;
-    } catch (err) {
-      throw messages.createError('errorReadingDefintionFile', [err as string]);
+    if (!fs.existsSync(definitionFile)) {
+      throw messages.createError('errorReadingDefintionFile', [definitionFile]);
     }
+    const definitionFilePayload = await fs.promises.readFile(definitionFile, 'utf8');
+    definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo;
 
     // Load any settings from the definition
     await settingsGenerator.extract(definitionFileJson);
@@ -186,14 +183,7 @@ export async function createPackageVersionCreateRequest(
       throw messages.createError('signupDuplicateSettingsSpecified');
     }
 
-    ['country', 'edition', 'language', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].forEach(
-      (prop) => {
-        const propValue = definitionFileJson[prop] as string | [] | number;
-        if (propValue) {
-          packageDescriptorJson[prop] = propValue;
-        }
-      }
-    );
+    packageDescriptorJson = copyDescriptorProperties(packageDescriptorJson, definitionFileJson);
   }
 
   await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
@@ -257,7 +247,7 @@ async function pollForStatusWithInterval(
   retries: number,
   packageId: string,
   branch: string,
-  project: SfProject,
+  project: SfProject | undefined,
   connection: Connection,
   interval: Duration
 ): Promise<PackageVersionCreateRequestResult> {
@@ -265,7 +255,6 @@ async function pollForStatusWithInterval(
   const pollingClient = await PollingClient.create({
     poll: async (): Promise<StatusResult> => {
       const results: PackageVersionCreateRequestResult[] = await pvcr.byId(id, connection);
-
       if (isStatusEqualTo(results, [Package2VersionStatus.success, Package2VersionStatus.error])) {
         // complete
         if (isStatusEqualTo(results, [Package2VersionStatus.success])) {
@@ -280,6 +269,9 @@ async function pollForStatusWithInterval(
                 const record = pkgQueryResult.records[0];
                 return `${record.MajorVersion}.${record.MinorVersion}.${record.PatchVersion}-${record.BuildNumber}`;
               });
+            if (!results[0]?.SubscriberPackageVersionId) {
+              throw new SfError('No SubscriberPackageVersionId found');
+            }
             const [alias, writtenId] = await generatePackageAliasEntry(
               connection,
               project,
@@ -288,6 +280,7 @@ async function pollForStatusWithInterval(
               branch,
               packageId
             );
+
             project.getSfProjectJson().addPackageAlias(alias, writtenId);
             await project.getSfProjectJson().write();
           }
@@ -321,7 +314,7 @@ async function pollForStatusWithInterval(
           packageVersionCreateRequestResult: results[0],
           message: '',
           timeRemaining: remainingTime,
-        } as PackageVersionCreateEventData);
+        });
 
         getLogger().info(
           `Request in progress. Sleeping ${interval.seconds} seconds. Will wait a total of ${
@@ -346,6 +339,9 @@ async function pollForStatusWithInterval(
  * @param statuses array of statuses to look for
  * @returns {boolean} if one of the values in status is found.
  */
-function isStatusEqualTo(results: PackageVersionCreateRequestResult[], statuses?: Package2VersionStatus[]): boolean {
-  return results?.length <= 0 ? false : statuses?.some((status) => results[0].Status === status);
+function isStatusEqualTo(
+  results: PackageVersionCreateRequestResult[],
+  statuses: Package2VersionStatus[] = []
+): boolean {
+  return !results?.length ? false : statuses.some((status) => results[0].Status === status);
 }

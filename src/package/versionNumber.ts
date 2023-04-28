@@ -31,7 +31,7 @@ export class VersionNumber {
    *
    * @param versionString a string in the format of major.minor like '3.2'
    */
-  public static parseMajorMinor(versionString: string): { major: number; minor: number } {
+  public static parseMajorMinor(versionString: string): { major: number | null; minor: number | null } {
     const versions = versionString?.split('.');
     if (!versions) {
       // return nulls so when no version option is provided, the server can infer the correct version
@@ -48,7 +48,7 @@ export class VersionNumber {
     }
   }
 
-  public static from(versionString: string): VersionNumber {
+  public static from(versionString: string | undefined): VersionNumber {
     if (!versionString) {
       throw messages.createError('errorMissingVersionNumber');
     }
@@ -59,7 +59,7 @@ export class VersionNumber {
       if (asNumbers.slice(0, 3).some((v) => isNaN(v))) {
         throw messages.createError('errorInvalidMajorMinorPatchNumber', [versionString]);
       }
-      if (isNaN(asNumbers[3]) && !(Object.values(BuildNumberToken) as string[]).includes(build)) {
+      if (isNaN(asNumbers[3]) && !VersionNumber.isABuildKeyword(build)) {
         throw messages.createError('errorInvalidBuildNumberToken', [
           versionString,
           Object.values(BuildNumberToken).join(', '),
@@ -70,16 +70,27 @@ export class VersionNumber {
     throw messages.createError('errorInvalidVersionNumber', [versionString]);
   }
 
+  public static isABuildKeyword(token: string | number): boolean {
+    const buildNumberTokenValues = Object.values(BuildNumberToken);
+    const results = buildNumberTokenValues.includes(token as BuildNumberToken);
+    return results;
+  }
+
   public toString(): string {
     {
       return `${this.major || '0'}.${this.minor || '0'}.${this.patch || '0'}.${this.build ? `${this.build}` : '0'}`;
     }
   }
 
+  /**
+   * @deprecated use isBuildKeyword instead
+   */
   public isbuildKeyword(): boolean {
-    return Object.values(BuildNumberToken)
-      .map((v) => v.toString())
-      .includes(typeof this.build === 'string' && this.build.toUpperCase());
+    return this.isBuildKeyword();
+  }
+
+  public isBuildKeyword(): boolean {
+    return VersionNumber.isABuildKeyword(this.build);
   }
 
   public compareTo(other: VersionNumber): number {

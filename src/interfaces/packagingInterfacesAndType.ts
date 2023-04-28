@@ -23,11 +23,17 @@ export interface IPackageVersion1GP {
 
 export interface IPackageVersion2GP {
   create(): Promise<void>;
+
   convert(): Promise<void>;
+
   delete(): Promise<void>;
+
   install(): Promise<void>;
+
   list(): Promise<void>;
+
   uninstall(): Promise<void>;
+
   update(): Promise<void>;
 }
 
@@ -177,24 +183,24 @@ export type PackageDescriptorJson = Partial<NamedPackageDir> &
 export type PackageVersionCreateRequest = {
   Package2Id: string;
   VersionInfo: string;
-  Tag: string;
-  Branch: string;
-  InstallKey: string;
-  Instance: string;
-  SourceOrg: string;
+  Tag?: string;
+  Branch?: string;
+  InstallKey?: string;
+  Instance?: string;
+  SourceOrg?: string;
   Language?: string;
   CalculateCodeCoverage: boolean;
   SkipValidation: boolean;
 };
 
 export type PackageVersionListOptions = {
-  orderBy: string;
-  modifiedLastDays: number;
-  createdLastDays: number;
-  packages: string[];
-  verbose: boolean;
-  concise: boolean;
-  isReleased: boolean;
+  orderBy?: string;
+  modifiedLastDays?: number;
+  createdLastDays?: number;
+  packages?: string[];
+  verbose?: boolean;
+  concise?: boolean;
+  isReleased?: boolean;
 };
 
 export type PackageVersionUpdateOptions = {
@@ -204,8 +210,6 @@ export type PackageVersionUpdateOptions = {
   Branch?: string;
   Tag?: string;
 };
-
-export type ListPackageVersionOptions = PackageVersionListOptions & { connection: Connection };
 
 export type PackageSaveResult = SaveResult;
 
@@ -313,7 +317,6 @@ export type PackageVersionCreateOptions = {
 
 export type PackageVersionCreateRequestQueryOptions = {
   createdlastdays?: number;
-  connection?: Connection;
   status?: 'Queued' | 'InProgress' | 'Success' | 'Error';
   id?: string;
 };
@@ -324,12 +327,19 @@ export type ProfileApiOptions = {
   generateProfileInformation: boolean;
 };
 
-export type PackageVersionReportResult = Partial<PackagingSObjects.Package2Version> & {
-  Package2: Partial<PackagingSObjects.Package2>;
+export type PackageVersionReportResult = Partial<
+  Omit<PackagingSObjects.Package2Version, 'AncestorId' | 'HasPassedCodeCoverageCheck' | 'HasMetadataRemoved'>
+> & {
+  Package2: Partial<Omit<PackagingSObjects.Package2, 'IsOrgDependent'>> & {
+    IsOrgDependent: boolean | null | undefined;
+  };
   SubscriberPackageVersion?: Pick<PackagingSObjects.SubscriberPackageVersion, 'Dependencies'>;
   Version: string;
-  AncestorVersion?: string;
-  PackageType: PackageType;
+  AncestorVersion?: string | null;
+  AncestorId?: string | null;
+  PackageType?: PackageType | null;
+  HasPassedCodeCoverageCheck?: boolean | null;
+  HasMetadataRemoved?: boolean | null;
 };
 
 export type PackageVersionCreateReportProgress = PackageVersionCreateRequestResult & {
@@ -377,15 +387,19 @@ export type CodeCoveragePercentages = null | {
 
 export type PackageAncestryNodeOptions = Attributes & {
   AncestorId?: string;
-  SubscriberPackageVersionId?: string;
-  MajorVersion?: string | number;
-  MinorVersion?: string | number;
-  PatchVersion?: string | number;
-  BuildNumber?: string | number;
-  depthCounter?: number;
+  SubscriberPackageVersionId: string;
+  MajorVersion: string | number;
+  MinorVersion: string | number;
+  PatchVersion: string | number;
+  BuildNumber: string | number;
+  depthCounter: number;
 };
 
-export type PackageAncestryData = Omit<PackageAncestryNodeOptions, 'AncestorId'>;
+export type PackageAncestryNodeAttributes = PackageAncestryNodeOptions & {
+  node: PackageAncestryNode;
+};
+
+export type PackageAncestryData = Omit<PackageAncestryNodeAttributes, 'AncestorId'>;
 
 export type PackageAncestryNodeData = {
   data: PackageAncestryNodeOptions;
@@ -399,17 +413,19 @@ export type PackageAncestryOptions = {
 };
 
 export type AncestryRepresentationProducerOptions = {
-  [key: string]: unknown;
-  node: PackageAncestryNode;
-  depth?: number;
+  packageNode?: PackageAncestryNode;
+  depth: number;
   verbose?: boolean;
+  logger?: (text: string) => void;
 };
 
 export interface AncestryRepresentationProducer {
   label: string;
-  options: AncestryRepresentationProducerOptions;
+  options?: AncestryRepresentationProducerOptions;
+
   addNode(node: AncestryRepresentationProducer): void;
-  produce<T>(): T | string | void;
+
+  produce(): PackageAncestryNodeData | string | void;
 }
 
 export const PackageEvents = {

@@ -6,7 +6,7 @@
  */
 
 import { Connection, SfProject } from '@salesforce/core';
-import { combineSaveErrors, applyErrorAction, massageErrorMessage, validateId, BY_LABEL } from '../utils/packageUtils';
+import { applyErrorAction, BY_LABEL, combineSaveErrors, massageErrorMessage, validateId } from '../utils/packageUtils';
 import { PackageSaveResult } from '../interfaces';
 
 export async function deletePackage(
@@ -24,7 +24,10 @@ export async function deletePackage(
   request.IsDeprecated = !isUndelete;
 
   const updateResult = await connection.tooling.update('Package2', request).catch((err) => {
-    throw applyErrorAction(massageErrorMessage(err as Error));
+    if (err instanceof Error) {
+      throw applyErrorAction(massageErrorMessage(err));
+    }
+    throw err;
   });
   if (!updateResult.success) {
     throw combineSaveErrors('Package2', 'update', updateResult.errors);

@@ -58,4 +58,12 @@ describe('VersionNumber', () => {
     const sorted = [...versions].reverse().sort((a, b) => a.compareTo(b));
     expect(sorted).to.deep.equal(versions);
   });
+  it('should be able to detect a well-known build number', () => {
+    const version = VersionNumber.from('1.2.3.NONE');
+    expect(version.isBuildKeyword()).to.be.true;
+  });
+  it('should be able to detect a numeric build number', () => {
+    const version = VersionNumber.from('1.2.3.4');
+    expect(version.isBuildKeyword()).to.be.false;
+  });
 });

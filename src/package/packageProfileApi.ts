@@ -9,12 +9,71 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as glob from 'glob';
 import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
-import { ConfigAggregator, Messages, OrgConfigProperties, SfProject } from '@salesforce/core';
+import { Messages, SfProject } from '@salesforce/core';
 import { AsyncCreatable } from '@salesforce/kit';
 import { ProfileApiOptions } from '../interfaces';
 
 Messages.importMessagesDirectory(__dirname);
 const profileApiMessages = Messages.loadMessages('@salesforce/packaging', 'profile_api');
+
+// nodeEntities is used to determine which elements in the profile are relevant to the source being packaged.
+// name refers to the entity type name in source that the element pertains to.  As an example, a profile may
+// have an entry like the example below, which should only be added to the packaged profile if the related
+// CustomObject is in the source being packaged:
+//   <objectPermissions>
+//      <allowCreate>true</allowCreate>
+//       ...
+//      <object>MyCustomObject__c</object>
+//       ...
+//   </objectPermissions>
+//
+// For this example: nodeEntities.parentElement = objectPermissions and nodeEntities.childElement = object
+const NODE_ENTITIES = {
+  name: [
+    'CustomObject',
+    'CustomField',
+    'Layout',
+    'CustomTab',
+    'CustomApplication',
+    'ApexClass',
+    'CustomPermission',
+    'ApexPage',
+    'ExternalDataSource',
+    'RecordType',
+  ],
+  parentElement: [
+    'objectPermissions',
+    'fieldPermissions',
+    'layoutAssignments',
+    'tabVisibilities',
+    'applicationVisibilities',
+    'classAccesses',
+    'customPermissions',
+    'pageAccesses',
+    'externalDataSourceAccesses',
+    'recordTypeVisibilities',
+  ],
+  childElement: [
+    'object',
+    'field',
+    'layout',
+    'tab',
+    'application',
+    'apexClass',
+    'name',
+    'apexPage',
+    'externalDataSource',
+    'recordType',
+  ],
+};
+
+// There are some profile settings that are allowed to be packaged that may not necessarily map to a specific metadata
+// object. We should still handle these accordingly, but a little differently than the above mentioned types.
+const OTHER_PROFILE_SETTINGS = {
+  name: ['CustomSettings', 'CustomMetadataTypeAccess'],
+  parentElement: ['customSettingAccesses', 'customMetadataTypeAccesses'],
+  childElement: ['name', 'name'],
+};
 
 /*
  * This class provides functions used to re-write .profiles in the workspace when creating a package2 version.
@@ -23,83 +82,22 @@ const profileApiMessages = Messages.loadMessages('@salesforce/packaging', 'profi
  */
 export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
   public readonly profiles: ProfileInformation[] = [];
-  public apiVersion: string;
-  public nodeEntities: { name: string[]; childElement: string[]; parentElement: string[] };
-  public otherProfileSettings: { name: string[]; childElement: string[]; parentElement: string[] };
-  public config: ConfigAggregator;
+  public nodeEntities = NODE_ENTITIES;
+  public otherProfileSettings = OTHER_PROFILE_SETTINGS;
   public project: SfProject;
-  public includeUserLicenses: boolean;
+  public includeUserLicenses = false;
   public generateProfileInformation = false;
-  public constructor(private options: ProfileApiOptions) {
+
+  public constructor(options: ProfileApiOptions) {
     super(options);
+    this.project = options.project;
+    this.includeUserLicenses = options.includeUserLicenses ?? false;
+    this.generateProfileInformation = options.generateProfileInformation ?? false;
   }
 
-  public async init(): Promise<void> {
-    this.project = this.options.project;
-    this.includeUserLicenses = this.options.includeUserLicenses;
-    this.generateProfileInformation = this.options.generateProfileInformation;
-    this.config = await ConfigAggregator.create();
-    this.apiVersion = this.config.getPropertyValue(OrgConfigProperties.ORG_API_VERSION);
+  // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-empty-function
+  public async init(): Promise<void> {}
 
-    // nodeEntities is used to determine which elements in the profile are relevant to the source being packaged.
-    // name refers to the entity type name in source that the element pertains to.  As an example, a profile may
-    // have an entry like the example below, which should only be added to the packaged profile if the related
-    // CustomObject is in the source being packaged:
-    //   <objectPermissions>
-    //      <allowCreate>true</allowCreate>
-    //       ...
-    //      <object>MyCustomObject__c</object>
-    //       ...
-    //   </objectPermissions>
-    //
-    // For this example: nodeEntities.parentElement = objectPermissions and nodeEntities.childElement = object
-    this.nodeEntities = {
-      name: [
-        'CustomObject',
-        'CustomField',
-        'Layout',
-        'CustomTab',
-        'CustomApplication',
-        'ApexClass',
-        'CustomPermission',
-        'ApexPage',
-        'ExternalDataSource',
-        'RecordType',
-      ],
-      parentElement: [
-        'objectPermissions',
-        'fieldPermissions',
-        'layoutAssignments',
-        'tabVisibilities',
-        'applicationVisibilities',
-        'classAccesses',
-        'customPermissions',
-        'pageAccesses',
-        'externalDataSourceAccesses',
-        'recordTypeVisibilities',
-      ],
-      childElement: [
-        'object',
-        'field',
-        'layout',
-        'tab',
-        'application',
-        'apexClass',
-        'name',
-        'apexPage',
-        'externalDataSource',
-        'recordType',
-      ],
-    };
-
-    // There are some profile settings that are allowed to be packaged that may not necessarily map to a specific metadata
-    // object. We should still handle these accordingly, but a little differently than the above mentioned types.
-    this.otherProfileSettings = {
-      name: ['CustomSettings', 'CustomMetadataTypeAccess'],
-      parentElement: ['customSettingAccesses', 'customMetadataTypeAccesses'],
-      childElement: ['name', 'name'],
-    };
-  }
   /**
    * For any profile present in the workspace, this function generates a subset of data that only contains references
    * to items in the manifest.
@@ -125,90 +123,93 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
 
     profilePaths.forEach((profilePath) => {
       // profile metadata can present in any directory in the package structure
-      const profileName = profilePath.match(/([^/]+)\.profile-meta.xml/)[1];
-      const profileDom = new DOMParser().parseFromString(fs.readFileSync(profilePath, 'utf-8'));
-      const newDom = new DOMParser().parseFromString(
-        '<?xml version="1.0" encoding="UTF-8"?><Profile xmlns="http://soap.sforce.com/2006/04/metadata"></Profile>'
-      );
-      const profileNode = newDom.getElementsByTagName('Profile')[0];
-      let hasNodes = false;
+      const profileNameMatch = profilePath.match(/([^/]+)\.profile-meta.xml/);
+      const profileName = profileNameMatch ? profileNameMatch[1] : null;
+      if (profileName) {
+        const profileDom = new DOMParser().parseFromString(fs.readFileSync(profilePath, 'utf-8'));
+        const newDom = new DOMParser().parseFromString(
+          '<?xml version="1.0" encoding="UTF-8"?><Profile xmlns="http://soap.sforce.com/2006/04/metadata"></Profile>'
+        );
+        const profileNode = newDom.getElementsByTagName('Profile')[0];
+        let hasNodes = false;
 
-      // We need to keep track of all the members for when we package up the "OtherProfileSettings"
-      let allMembers: string[] = [];
-      manifest.Package.forEach((element) => {
-        const name = element.name;
-        const members = element.members;
-        allMembers = allMembers.concat(members);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        const idx = this.nodeEntities.name.indexOf(name[0]);
-        if (idx > -1) {
-          hasNodes =
-            this.copyNodes(
-              profileDom,
-              this.nodeEntities.parentElement[idx],
-              this.nodeEntities.childElement[idx],
-              members,
-              profileNode,
-              profileName
-            ) || hasNodes;
-        }
-      });
-
-      // Go through each of the other profile settings we might want to include. We pass in "all" the members since these
-      // will reference anything that could be packaged. The "copyNodes" function will only include the type if it
-      // exists in the profile itself
-      this.otherProfileSettings.name.forEach((element) => {
-        const idx = this.otherProfileSettings.name.indexOf(element);
-        if (idx > -1) {
-          hasNodes =
-            this.copyNodes(
-              profileDom,
-              this.otherProfileSettings.parentElement[idx],
-              this.otherProfileSettings.childElement[idx],
-              allMembers,
-              profileNode,
-              profileName
-            ) || hasNodes;
-        }
-      });
-
-      // add userLicenses to the profile
-      if (this.includeUserLicenses === true) {
-        const userLicenses = profileDom.getElementsByTagName('userLicense');
-        if (userLicenses) {
-          hasNodes = true;
-          for (const userLicense of Array.from(userLicenses)) {
-            profileNode.appendChild(userLicense.cloneNode(true));
+        // We need to keep track of all the members for when we package up the "OtherProfileSettings"
+        let allMembers: string[] = [];
+        manifest.Package.forEach((element) => {
+          const name = element.name;
+          const members = element.members;
+          allMembers = allMembers.concat(members);
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          const idx = this.nodeEntities.name.indexOf(name[0]);
+          if (idx > -1) {
+            hasNodes =
+              this.copyNodes(
+                profileDom,
+                this.nodeEntities.parentElement[idx],
+                this.nodeEntities.childElement[idx],
+                members,
+                profileNode,
+                profileName
+              ) ?? hasNodes;
           }
-        }
-      }
+        });
 
-      const xmlSrcFile = path.basename(profilePath);
-      const xmlFile = xmlSrcFile.replace(/(.*)(-meta.xml)/, '$1');
-      const destFilePath = path.join(destPath, xmlFile);
-      if (hasNodes) {
-        const serializer = new XMLSerializer();
-        serializer.serializeToString(newDom);
-        fs.writeFileSync(destFilePath, serializer.serializeToString(newDom), 'utf-8');
-      } else {
-        // remove from manifest
-        // eslint-disable-next-line @typescript-eslint/no-shadow
-        const profileName = xmlFile.replace(/(.*)(\.profile)/, '$1');
-        excludedProfiles.push(profileName);
-        if (this.generateProfileInformation) {
-          const profile = this.profiles.find(({ ProfileName }) => ProfileName === profileName);
-          if (profile) {
-            profile.setIsPackaged(false);
+        // Go through each of the other profile settings we might want to include. We pass in "all" the members since these
+        // will reference anything that could be packaged. The "copyNodes" function will only include the type if it
+        // exists in the profile itself
+        this.otherProfileSettings.name.forEach((element) => {
+          const idx = this.otherProfileSettings.name.indexOf(element);
+          if (idx > -1) {
+            hasNodes =
+              this.copyNodes(
+                profileDom,
+                this.otherProfileSettings.parentElement[idx],
+                this.otherProfileSettings.childElement[idx],
+                allMembers,
+                profileNode,
+                profileName
+              ) ?? hasNodes;
+          }
+        });
+
+        // add userLicenses to the profile
+        if (this.includeUserLicenses) {
+          const userLicenses = profileDom.getElementsByTagName('userLicense');
+          if (userLicenses) {
+            hasNodes = true;
+            for (const userLicense of Array.from(userLicenses)) {
+              profileNode.appendChild(userLicense.cloneNode(true));
+            }
           }
         }
 
-        try {
-          fs.unlinkSync(destFilePath);
-        } catch (err) {
-          // It is normal for the file to not exist if the profile is in the workspace but not in the directory being packaged.
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          if (err.code !== 'ENOENT') {
-            throw err;
+        const xmlSrcFile = path.basename(profilePath);
+        const xmlFile = xmlSrcFile.replace(/(.*)(-meta.xml)/, '$1');
+        const destFilePath = path.join(destPath, xmlFile);
+        if (hasNodes) {
+          const serializer = new XMLSerializer();
+          serializer.serializeToString(newDom);
+          fs.writeFileSync(destFilePath, serializer.serializeToString(newDom), 'utf-8');
+        } else {
+          // remove from manifest
+          // eslint-disable-next-line @typescript-eslint/no-shadow
+          const profileName = xmlFile.replace(/(.*)(\.profile)/, '$1');
+          excludedProfiles.push(profileName);
+          if (this.generateProfileInformation) {
+            const profile = this.profiles.find(({ ProfileName }) => ProfileName === profileName);
+            if (profile) {
+              profile.setIsPackaged(false);
+            }
+          }
+
+          try {
+            fs.unlinkSync(destFilePath);
+          } catch (err) {
+            // It is normal for the file to not exist if the profile is in the workspace but not in the directory being packaged.
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            if (err instanceof Error && 'code' in err && err.code !== 'ENOENT') {
+              throw err;
+            }
           }
         }
       }
@@ -230,25 +231,28 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
     const profilePaths = this.findAllProfiles(excludedDirectories);
 
     // Filter all profiles
-    typesArr = (typesArr || []).filter((kvp) => kvp.name[0] !== 'Profile');
+    const filteredTypesArr = (typesArr ?? []).filter((kvp) => kvp.name[0] !== 'Profile');
 
     if (profilePaths) {
       const members: string[] = [];
 
       profilePaths.forEach((profilePath) => {
         // profile metadata can present in any directory in the package structure
-        const profileName = profilePath.match(/([^/]+)\.profile-meta.xml/)[1];
-        members.push(profileName);
-        if (this.generateProfileInformation) {
-          this.profiles.push(new ProfileInformation(profileName, profilePath, true, []));
+        const profileNameMatch = profilePath.match(/([^/]+)\.profile-meta.xml/);
+        const profileName = profileNameMatch ? profileNameMatch[1] : null;
+        if (profileName) {
+          members.push(profileName);
+          if (this.generateProfileInformation) {
+            this.profiles.push(new ProfileInformation(profileName, profilePath, true, []));
+          }
         }
       });
       if (members.length > 0) {
-        typesArr.push({ name: ['Profile'], members });
+        filteredTypesArr.push({ name: ['Profile'], members });
       }
     }
 
-    return typesArr;
+    return filteredTypesArr;
   }
 
   public getProfileInformation(): ProfileInformation[] {
@@ -273,17 +277,19 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
     // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < nodes.length; i++) {
       const name = nodes[i].getElementsByTagName(childElement)[0].childNodes[0].nodeValue;
-      if (members.includes(name)) {
-        // appendChild will take the passed in node (newNode) and find the parent if it exists and then remove
-        // the newNode from the parent.  This causes issues with the way this is copying the nodes, so pass in a clone instead.
-        const currentNode = nodes[i].cloneNode(true);
-        appendToNode.appendChild(currentNode);
-        nodesAdded = true;
-      } else if (this.generateProfileInformation) {
-        // Tell the user which profile setting has been removed from the package
-        const profile = this.profiles.find(({ ProfileName }) => ProfileName === profileName);
-        if (profile) {
-          profile.appendRemovedSetting(name);
+      if (name) {
+        if (members.includes(name)) {
+          // appendChild will take the passed in node (newNode) and find the parent if it exists and then remove
+          // the newNode from the parent.  This causes issues with the way this is copying the nodes, so pass in a clone instead.
+          const currentNode = nodes[i].cloneNode(true);
+          appendToNode.appendChild(currentNode);
+          nodesAdded = true;
+        } else if (this.generateProfileInformation) {
+          // Tell the user which profile setting has been removed from the package
+          const profile = this.profiles.find(({ ProfileName }) => ProfileName === profileName);
+          if (profile) {
+            profile.appendRemovedSetting(name);
+          }
         }
       }
     }

@@ -15,7 +15,7 @@ import { PackagingSObjects } from '../../src/interfaces';
 
 const oThreeThree = '033xxxxxxxxxxxxxxx';
 const oFourT = '04txxxxxxxxxxxxxxx';
-const spvRecord: PackagingSObjects.SubscriberPackageVersion = {
+const spvRecord: Partial<PackagingSObjects.SubscriberPackageVersion> = {
   AppExchangeDescription: '',
   AppExchangeLogoUrl: '',
   AppExchangePackageName: '',
@@ -74,7 +74,7 @@ async function setupProject(setup: (project: SfProject) => void = () => {}) {
 
 describe('subscriberPackageVersion', () => {
   const testOrg = new MockTestOrgData();
-  const password: Optional<string> = null;
+  const password: Optional<string> = undefined;
   let connection: Connection;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

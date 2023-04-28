@@ -7,12 +7,12 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
-import { expect } from 'chai';
+import { assert, expect } from 'chai';
 import { Connection, SfProject } from '@salesforce/core';
 import * as xml2js from 'xml2js';
-import { PackageVersionCreate, MetadataResolver } from '../../src/package/packageVersionCreate';
-import { PackageProfileApi } from '../../src/package/packageProfileApi';
+import { MetadataResolver, PackageVersionCreate } from '../../src/package/packageVersionCreate';
 import { PackagingSObjects } from '../../src/interfaces';
+import { PackageProfileApi } from '../../src/package/packageProfileApi';
 
 describe('Package Version Create', () => {
   const $$ = instantiateContext();
@@ -89,7 +89,7 @@ describe('Package Version Create', () => {
     packageCreateStub = $$.SANDBOX.stub(connection.tooling, 'create').resolves({
       id: '123',
       success: true,
-      errors: undefined,
+      errors: [],
     });
     xml2jsStub = $$.SANDBOX.stub(xml2js, 'parseStringPromise').resolves({
       Package: { types: [{ name: ['Apexclass'], members: ['MyApexClass'] }] },
@@ -114,6 +114,7 @@ describe('Package Version Create', () => {
     try {
       await pvc.createPackageVersion();
     } catch (e) {
+      assert(e instanceof Error);
       expect(e.message).to.equal(
         'In sfdx-project.json, be sure to specify which package directory (path) is the default. Example: `[{ "path": "packageDirectory1", "default": true }, { "path": "packageDirectory2" }]`'
       );
@@ -129,6 +130,7 @@ describe('Package Version Create', () => {
     try {
       await pvc.createPackageVersion();
     } catch (e) {
+      assert(e instanceof Error);
       expect(e.message).to.equal('No matching source was found within the package root directory: force-app');
     }
   });
@@ -383,7 +385,7 @@ describe('Package Version Create', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     $$.SANDBOX.stub(MetadataResolver.prototype, 'generateMDFolderForArtifact' as any).resolves();
     $$.SANDBOX.stub(fs, 'existsSync').returns(true);
-    const writeFileSpy = $$.SANDBOX.spy(fs.promises, 'writeFile'); // this is called to write the final package2-descriptor.json file
+    const writeFileSpy = $$.SANDBOX.spy(fs.promises, 'writeFile');
 
     const pvc = new PackageVersionCreate({ connection, project, definitionfile: scratchOrgDefFileName, packageId });
     const result = await pvc.createPackageVersion();
@@ -400,9 +402,9 @@ describe('Package Version Create', () => {
       'SubscriberPackageVersionId',
       'Tag'
     );
+
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // get the package2-descriptor.json contents (args[1])
-    // verfiy that package2-descriptor.json contains the specified lanaguage
+    const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // package2-descriptor.json contents
     expect(package2DescriptorJson).to.have.string('buildOrgLanguage');
   });
 
@@ -424,6 +426,7 @@ describe('Package Version Create', () => {
     try {
       await pvc.createPackageVersion();
     } catch (e) {
+      assert(e instanceof Error);
       expect(e.message).to.equal(
         'We can’t create the package version. This parameter is available only for second-generation managed packages. Create the package version without the postinstallscript or uninstallscript parameters.'
       );
@@ -449,6 +452,7 @@ describe('Package Version Create', () => {
     try {
       await pvc.createPackageVersion();
     } catch (e) {
+      assert(e instanceof Error);
       expect(e.message).to.equal(
         'We can’t create the package version. This parameter is available only for second-generation managed packages. Create the package version without the postinstallscript or uninstallscript parameters.'
       );
@@ -484,6 +488,7 @@ describe('Package Version Create', () => {
     try {
       await pvc.createPackageVersion();
     } catch (e) {
+      assert(e instanceof Error);
       expect(e.message).to.equal(
         'Can’t create package version. Specifying an ancestor is available only for second-generation managed packages. Remove the ancestorId or ancestorVersion from your sfdx-project.json file, and then create the package version again.'
       );
@@ -508,6 +513,7 @@ describe('Package Version Create', () => {
     try {
       await pvc.createPackageVersion();
     } catch (e) {
+      assert(e instanceof Error);
       expect(e.message).to.equal(
         'Can’t create package version. Specifying an ancestor is available only for second-generation managed packages. Remove the ancestorId or ancestorVersion from your sfdx-project.json file, and then create the package version again.'
       );
@@ -608,11 +614,11 @@ describe('Package Version Create', () => {
     );
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const excludedDirsGenerate = profileSpyGenerate.firstCall.args[2];
-    expect(excludedDirsGenerate.length).to.equal(2);
+    expect(excludedDirsGenerate?.length).to.equal(2);
     expect(excludedDirsGenerate).to.contain('unpackaged-pkg');
     expect(excludedDirsGenerate).to.contain('unpackaged-force-app');
     const excludedDirsFilter = profileSpyFilter.firstCall.args[1];
-    expect(excludedDirsFilter.length).to.equal(2);
+    expect(excludedDirsFilter?.length).to.equal(2);
     expect(excludedDirsFilter).to.contain('unpackaged-pkg');
     expect(excludedDirsFilter).to.contain('unpackaged-force-app');
   });
@@ -672,7 +678,7 @@ describe('Package Version Create', () => {
     });
     it('should identify the ancestor as "" when version is the first version', () => {
       const ancestorId = 'ancestorId';
-      const highestReleasedVersion = undefined as PackagingSObjects.Package2Version;
+      const highestReleasedVersion = undefined as unknown as PackagingSObjects.Package2Version;
       const explicitUseNoAncestor = false;
       const isPatch = false;
       const skipAncestorCheck = false;
@@ -689,7 +695,7 @@ describe('Package Version Create', () => {
     });
     it('should identify the correct ancestor as the value passed to the function', () => {
       const ancestorId = 'ancestorId';
-      const highestReleasedVersion = undefined as PackagingSObjects.Package2Version;
+      const highestReleasedVersion = undefined as unknown as PackagingSObjects.Package2Version;
       const explicitUseNoAncestor = false;
       const isPatch = true;
       const skipAncestorCheck = true;

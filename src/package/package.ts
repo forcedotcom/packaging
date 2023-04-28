@@ -73,7 +73,7 @@ export const Package2Fields = [
  */
 export class Package {
   private readonly packageId: string;
-  private packageData: PackagingSObjects.Package2;
+  private packageData?: PackagingSObjects.Package2;
 
   public constructor(private options: PackageOptions) {
     let packageId = this.options.packageAliasOrId;
@@ -119,7 +119,7 @@ export class Package {
         `select ${Package2Fields.toString()} from Package2 ORDER BY NamespacePrefix, Name`,
         {
           autoFetch: true,
-          maxFetch: 10000,
+          maxFetch: 10_000,
         }
       )
     )?.records;
@@ -150,10 +150,10 @@ export class Package {
         throw messages.createError('invalidPackageId', [id, '0Ho']);
       }
     });
-    const opts = options || ({} as PackageVersionListOptions);
-    opts.packages = packages || [];
+    const opts = options ?? {};
+    opts.packages = packages ?? [];
 
-    return (await listPackageVersions({ ...opts, ...{ connection } })).records;
+    return (await listPackageVersions(connection, opts)).records;
   }
 
   /**
@@ -207,8 +207,8 @@ export class Package {
    *
    * @returns {Promise<PackageType>}
    */
-  public async getType(): Promise<PackageType> {
-    return (await this.getPackageData()).ContainerOptions;
+  public async getType(): Promise<PackageType | undefined> {
+    return (await this.getPackageData())?.ContainerOptions;
   }
 
   /**
@@ -226,7 +226,7 @@ export class Package {
     return Package.listVersions(this.options.connection, this.options.project, {
       ...packageOptions,
       ...options,
-    } as PackageVersionListOptions);
+    });
   }
 
   /**
@@ -254,15 +254,20 @@ export class Package {
   public async update(options: PackageUpdateOptions): Promise<PackageSaveResult> {
     try {
       // filter out any undefined values and their keys
-      Object.keys(options).forEach((key) => options[key] === undefined && delete options[key]);
+      const opts = Object.fromEntries(
+        Object.entries(options).filter(([, value]) => value !== undefined)
+      ) as PackageUpdateOptions;
 
-      const result = await this.options.connection.tooling.update('Package2', options);
+      const result = await this.options.connection.tooling.update('Package2', opts);
       if (!result.success) {
         throw new SfError(result.errors.join(', '));
       }
       return result;
     } catch (err) {
-      throw applyErrorAction(massageErrorMessage(err as Error));
+      if (err instanceof Error) {
+        throw applyErrorAction(massageErrorMessage(err));
+      }
+      throw err;
     }
   }
 
@@ -271,11 +276,14 @@ export class Package {
    *
    * @param force force a refresh of the package data
    */
-  public async getPackageData(force = false): Promise<PackagingSObjects.Package2> {
-    if (!this.packageData || force) {
+  public async getPackageData(force = false): Promise<PackagingSObjects.Package2 | undefined> {
+    if (!this.packageData ?? force) {
       this.packageData = (await this.options.connection.tooling
         .sobject('Package2')
         .retrieve(this.packageId)) as PackagingSObjects.Package2;
+      if (!this.packageData) {
+        throw messages.createError('packageNotFound', [this.packageId]);
+      }
     }
     return this.packageData;
   }

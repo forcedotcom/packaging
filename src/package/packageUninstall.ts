@@ -8,7 +8,7 @@ import * as os from 'os';
 import { Connection, Lifecycle, Messages, PollingClient, SfError } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import { PackageEvents, PackagingSObjects } from '../interfaces';
-import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
+import { applyErrorAction, combineSaveErrors, massageErrorMessage } from '../utils/packageUtils';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_uninstall');
@@ -20,7 +20,7 @@ export async function getUninstallErrors(conn: Connection, id: string): Promise<
   const errorQueryResult = await conn.tooling.query<{ Message: string }>(
     `"SELECT Message FROM PackageVersionUninstallRequestError WHERE ParentRequest.Id = '${id}' ORDER BY Message"`
   );
-  return errorQueryResult?.records || [];
+  return errorQueryResult?.records ?? [];
 }
 
 export async function pollUninstall(
@@ -74,14 +74,20 @@ export async function uninstallPackage(
       SubscriberPackageVersionId: id,
     });
 
-    if (wait.seconds === 0) {
-      return (await conn.tooling
-        .sobject('SubscriberPackageVersionUninstallRequest')
-        .retrieve(uninstallRequest.id)) as UninstallResult;
-    } else {
-      return await pollUninstall(uninstallRequest.id, conn, frequency, wait);
+    if (uninstallRequest.success) {
+      if (wait.seconds === 0) {
+        return (await conn.tooling
+          .sobject('SubscriberPackageVersionUninstallRequest')
+          .retrieve(uninstallRequest.id)) as UninstallResult;
+      } else {
+        return await pollUninstall(uninstallRequest.id, conn, frequency, wait);
+      }
     }
+    throw combineSaveErrors('SubscriberPackageVersionUninstallRequest', 'create', uninstallRequest.errors);
   } catch (err) {
-    throw applyErrorAction(massageErrorMessage(err as Error));
+    if (err instanceof Error) {
+      throw applyErrorAction(massageErrorMessage(err));
+    }
+    throw err;
   }
 }

@@ -113,6 +113,7 @@ describe('Package1 Version List', () => {
       await Package1Version.list(conn, '04t46000001ZfaXXXX');
       assert.fail('the above should throw an invalid id error');
     } catch (e) {
+      assert(e instanceof Error);
       expect(e.message).to.equal(
         'Specify a valid package metadata package ID (starts with 033), received 04t46000001ZfaXXXX'
       );

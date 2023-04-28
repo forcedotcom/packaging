@@ -9,7 +9,7 @@
 import * as util from 'util';
 
 // Local
-import { Logger, Connection, SfProject } from '@salesforce/core';
+import { Connection, Logger, SfProject } from '@salesforce/core';
 import * as pkgUtils from '../utils/packageUtils';
 import { PackageVersionReportResult } from '../interfaces';
 
@@ -38,6 +38,7 @@ const getLogger = (): Logger => {
   }
   return logger;
 };
+
 export async function getPackageVersionReport(options: {
   packageVersionId: string;
   connection: Connection;
@@ -53,8 +54,10 @@ export async function getPackageVersionReport(options: {
     const record = records[0];
     record.Version = [record.MajorVersion, record.MinorVersion, record.PatchVersion, record.BuildNumber].join('.');
 
-    const containerOptions = await pkgUtils.getContainerOptions([record.Package2Id], options.connection);
-    record.PackageType = containerOptions.get(record.Package2Id);
+    const containerOptions = await pkgUtils.getContainerOptions(record.Package2Id, options.connection);
+    if (containerOptions.size > 0 && record.Package2Id) {
+      record.PackageType = containerOptions.get(record.Package2Id);
+    }
 
     record.AncestorVersion = null;
 

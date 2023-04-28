@@ -26,3 +26,7 @@ A MetadataPackageId was not provided, but is required, it must start with 033
 # missingVersionName
 
 a VersionName was not provided, but is required
+
+# createFailed
+
+The attempt to create a package version failed. See the following for more information: %s

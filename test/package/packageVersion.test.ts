@@ -91,7 +91,7 @@ describe('Package Version', () => {
       Package2Id: uniquePackageId,
       SubscriberPackageVersionId: idOrAlias,
     });
-    expect(project.getSfProjectJson().getPackageAliases()['uniquePkg@1.2.3']).to.equal(idOrAlias);
+    expect(project.getSfProjectJson().getPackageAliases()?.['uniquePkg@1.2.3']).to.equal(idOrAlias);
   });
   it('should save alias for unique 0Ho in aliases', async () => {
     // @ts-ignore
@@ -99,6 +99,6 @@ describe('Package Version', () => {
       Package2Id: packageId,
       SubscriberPackageVersionId: idOrAlias,
     });
-    expect(project.getSfProjectJson().getPackageAliases()['dupPkg1@1.2.3']).to.equal(idOrAlias);
+    expect(project.getSfProjectJson().getPackageAliases()?.['dupPkg1@1.2.3']).to.equal(idOrAlias);
   });
 });
