@@ -3,7 +3,5 @@
   "compilerOptions": {
     "strictNullChecks": true
   },
-  "include": [
-    "./**/*.ts"
-  ]
+  "include": ["./**/*.ts"]
 }

@@ -87,7 +87,7 @@ export async function createPackage(
     throw pkgUtils.combineSaveErrors('Package2', 'create', createResult.errors);
   }
 
-  if (!process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE) {
+  if (!process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE) {
     const packageDirectory = createPackageDirEntry(project, options);
     project.getSfProjectJson().addPackageDirectory(packageDirectory as NamedPackageDir);
     project.getSfProjectJson().addPackageAlias(options.name, createResult.id);

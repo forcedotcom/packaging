@@ -11,16 +11,15 @@ import { instantiateContext, restoreContext, stubContext } from '@salesforce/cor
 import { Connection, SfProject } from '@salesforce/core';
 import { Package } from '../../src/package';
 
-async function setupProject(setup: (project: SfProject) => void = () => {
-}) {
+async function setupProject(setup: (project: SfProject) => void = () => {}) {
   // @ts-ignore
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const project: SfProject = new SfProject('a');
   const packageDirectories = [
     {
       path: 'force-app',
-      default: true
-    }
+      default: true,
+    },
   ];
   const packageAliases = {};
   project.getSfProjectJson().set('packageDirectories', packageDirectories);
@@ -31,11 +30,11 @@ async function setupProject(setup: (project: SfProject) => void = () => {
     .getSfProjectJson()
     .getContents()
     .packageDirectories?.forEach((dir) => {
-    if (dir.path) {
-      const packagePath = path.join(projectDir, dir.path);
-      fs.mkdirSync(packagePath, { recursive: true });
-    }
-  });
+      if (dir.path) {
+        const packagePath = path.join(projectDir, dir.path);
+        fs.mkdirSync(packagePath, { recursive: true });
+      }
+    });
 
   return project;
 }
@@ -104,7 +103,7 @@ describe('Package', () => {
       project = await setupProject((p) => {
         p.getSfProjectJson().set('packageAliases', {
           'mypkgalias@1.0.0': '04tasdsadfasdf',
-          mypkgalias: pkgId
+          mypkgalias: pkgId,
         });
       });
 
@@ -113,7 +112,7 @@ describe('Package', () => {
           // @ts-expect-error: Type 'undefined' is not assignable to type 'Connection<Schema>'.
           connection: undefined,
           packageAliasOrId: '04tasdsadfasdf',
-          project
+          project,
         });
       } catch (e) {
         assert(e instanceof Error);
@@ -130,9 +129,9 @@ describe('Package', () => {
       const conn = {
         tooling: {
           sobject: () => ({
-            retrieve: () => ({ Id: pkgId, ContainerOptions: 'Unlocked' })
-          })
-        }
+            retrieve: () => ({ Id: pkgId, ContainerOptions: 'Unlocked' }),
+          }),
+        },
       } as unknown as Connection;
 
       const pkg = new Package({ connection: conn, packageAliasOrId: pkgId, project });

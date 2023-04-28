@@ -260,7 +260,7 @@ async function pollForStatusWithInterval(
         if (isStatusEqualTo(results, [Package2VersionStatus.success])) {
           // update sfdx-project.json
           let projectUpdated = false;
-          if (project && !process.env.SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE) {
+          if (project && !process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE) {
             projectUpdated = true;
             const query = `SELECT MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version WHERE Id = '${results[0].Package2VersionId}'`;
             const packageVersionVersionString: string = await connection.tooling

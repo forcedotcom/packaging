@@ -18,7 +18,7 @@ const QUERY =
   'MajorVersion, MinorVersion, PatchVersion, BuildNumber, IsReleased, CodeCoverage, HasPassedCodeCoverageCheck, ' +
   'Package2.IsOrgDependent, ReleaseVersion, BuildDurationInSeconds, HasMetadataRemoved, CreatedById ' +
   'FROM Package2Version ' +
-  'WHERE Id = \'%s\' AND IsDeprecated != true ' +
+  "WHERE Id = '%s' AND IsDeprecated != true " +
   'ORDER BY Package2Id, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber';
 
 // verbose adds: Id, ConvertedFromVersionId, SubscriberPackageVersion.Dependencies
@@ -28,7 +28,7 @@ const QUERY_VERBOSE =
   'Package2.IsOrgDependent, ReleaseVersion, BuildDurationInSeconds, HasMetadataRemoved, SubscriberPackageVersion.Dependencies, ' +
   'CreatedById, CodeCoveragePercentages ' +
   'FROM Package2Version ' +
-  'WHERE Id = \'%s\' AND IsDeprecated != true ' +
+  "WHERE Id = '%s' AND IsDeprecated != true " +
   'ORDER BY Package2Id, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber';
 
 let logger: Logger;

@@ -11,7 +11,7 @@ import {
   IPackageVersion1GP,
   Package1VersionCreateRequest,
   Package1VersionEvents,
-  PackagingSObjects
+  PackagingSObjects,
 } from '../interfaces';
 import MetadataPackageVersion = PackagingSObjects.MetadataPackageVersion;
 
@@ -70,8 +70,13 @@ export class Package1Version implements IPackageVersion1GP {
         const timeout = pollingOptions.timeout.seconds;
         const pollingClient = await PollingClient.create({
           poll: () =>
-            Package1Version.packageUploadPolling(connection, createRequest.id, timeout, pollingOptions.frequency.seconds),
-          ...pollingOptions
+            Package1Version.packageUploadPolling(
+              connection,
+              createRequest.id,
+              timeout,
+              pollingOptions.frequency.seconds
+            ),
+          ...pollingOptions,
         });
         return pollingClient.subscribe<PackagingSObjects.PackageUploadRequest>();
       } else {
@@ -145,7 +150,7 @@ export class Package1Version implements IPackageVersion1GP {
         const errors = pollingResult?.Errors?.errors as Error[];
         if (errors?.length > 0) {
           throw messages.createError('package1VersionCreateCommandUploadFailure', [
-            errors.map((e: Error) => e.message).join(os.EOL)
+            errors.map((e: Error) => e.message).join(os.EOL),
           ]);
         } else {
           throw messages.createError('package1VersionCreateCommandUploadFailureDefault');
