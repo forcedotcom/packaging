@@ -9,7 +9,7 @@
 import * as util from 'util';
 
 // Local
-import { Logger, Connection, SfProject } from '@salesforce/core';
+import { Connection, Logger, SfProject } from '@salesforce/core';
 import * as pkgUtils from '../utils/packageUtils';
 import { PackageVersionReportResult } from '../interfaces';
 
@@ -18,7 +18,7 @@ const QUERY =
   'MajorVersion, MinorVersion, PatchVersion, BuildNumber, IsReleased, CodeCoverage, HasPassedCodeCoverageCheck, ' +
   'Package2.IsOrgDependent, ReleaseVersion, BuildDurationInSeconds, HasMetadataRemoved, CreatedById ' +
   'FROM Package2Version ' +
-  "WHERE Id = '%s' AND IsDeprecated != true " +
+  'WHERE Id = \'%s\' AND IsDeprecated != true ' +
   'ORDER BY Package2Id, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber';
 
 // verbose adds: Id, ConvertedFromVersionId, SubscriberPackageVersion.Dependencies
@@ -28,7 +28,7 @@ const QUERY_VERBOSE =
   'Package2.IsOrgDependent, ReleaseVersion, BuildDurationInSeconds, HasMetadataRemoved, SubscriberPackageVersion.Dependencies, ' +
   'CreatedById, CodeCoveragePercentages ' +
   'FROM Package2Version ' +
-  "WHERE Id = '%s' AND IsDeprecated != true " +
+  'WHERE Id = \'%s\' AND IsDeprecated != true ' +
   'ORDER BY Package2Id, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber';
 
 let logger: Logger;
@@ -38,6 +38,7 @@ const getLogger = (): Logger => {
   }
   return logger;
 };
+
 export async function getPackageVersionReport(options: {
   packageVersionId: string;
   connection: Connection;
@@ -53,8 +54,10 @@ export async function getPackageVersionReport(options: {
     const record = records[0];
     record.Version = [record.MajorVersion, record.MinorVersion, record.PatchVersion, record.BuildNumber].join('.');
 
-    const containerOptions = await pkgUtils.getContainerOptions([record.Package2Id], options.connection);
-    record.PackageType = containerOptions.get(record.Package2Id);
+    const containerOptions = await pkgUtils.getContainerOptions(record.Package2Id, options.connection);
+    if (containerOptions.size > 0 && record.Package2Id) {
+      record.PackageType = containerOptions.get(record.Package2Id);
+    }
 
     record.AncestorVersion = null;
 

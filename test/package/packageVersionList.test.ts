@@ -10,8 +10,8 @@ import { instantiateContext, restoreContext, stubContext } from '@salesforce/cor
 import {
   assembleQueryParts,
   constructWhere,
-  validateDays,
   DEFAULT_ORDER_BY_FIELDS,
+  validateDays,
 } from '../../src/package/packageVersionList';
 
 describe('package version list', () => {
@@ -35,6 +35,12 @@ describe('package version list', () => {
     it('should throw with negative number as input', () => {
       expect(() => validateDays('negative', -1)).to.throw(/Provide a valid positive number for negative. -1/);
     });
+    it('should throw missing lastDays input', () => {
+      expect(() => validateDays('negative')).to.throw(/Provide a valid positive number for negative. -1/);
+    });
+    it('should throw with undefined as input', () => {
+      expect(() => validateDays('negative', undefined)).to.throw(/Provide a valid positive number for negative. -1/);
+    });
   });
   describe('_constructWhere', () => {
     // the following package dirs and aliases were extracted from the Salesforce Dreamhouse LWC repo
@@ -57,7 +63,12 @@ describe('package version list', () => {
       const sfProject = await SfProject.resolve();
       sfProject.getSfProjectJson().set('packageDirectories', packageDirectories);
       sfProject.getSfProjectJson().set('packageAliases', packageAliases);
-      const where = constructWhere(['0Ho3h000000xxxxCAG'], 1, 2, true);
+      const where = constructWhere({
+        packages: ['0Ho3h000000xxxxCAG'],
+        createdLastDays: 1,
+        modifiedLastDays: 2,
+        isReleased: true,
+      });
       expect(where).to.include("Package2Id IN ('0Ho3h000000xxxxCAG')");
       expect(where).to.include('IsDeprecated = false');
       expect(where).to.include('CreatedDate = LAST_N_DAYS:1');

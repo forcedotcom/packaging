@@ -23,14 +23,26 @@ import {
 import {
   ComponentSet,
   ComponentSetBuilder,
+  ComponentSetOptions,
   ConvertResult,
   MetadataConverter,
 } from '@salesforce/source-deploy-retrieve';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import * as xml2js from 'xml2js';
 import { PackageDirDependency } from '@salesforce/core/lib/sfProject';
-import { cloneJson } from '@salesforce/kit';
+import { cloneJson, ensureArray } from '@salesforce/kit';
 import * as pkgUtils from '../utils/packageUtils';
+import {
+  BY_LABEL,
+  copyDescriptorProperties,
+  copyDir,
+  getPackageVersionId,
+  getPackageVersionNumber,
+  uniqid,
+  validateId,
+  VERSION_NUMBER_SEP,
+  zipDir,
+} from '../utils/packageUtils';
 import {
   MDFolderForArtifactOptions,
   PackageDescriptorJson,
@@ -41,16 +53,6 @@ import {
   PackageVersionEvents,
   PackagingSObjects,
 } from '../interfaces';
-import {
-  BY_LABEL,
-  getPackageVersionId,
-  getPackageVersionNumber,
-  validateId,
-  VERSION_NUMBER_SEP,
-  uniqid,
-  copyDir,
-  zipDir,
-} from '../utils/packageUtils';
 import { PackageProfileApi } from './packageProfileApi';
 import { byId } from './packageVersionCreateRequest';
 import { Package } from './package';
@@ -61,12 +63,12 @@ const messages = Messages.loadMessages('@salesforce/packaging', 'package_version
 const DESCRIPTOR_FILE = 'package2-descriptor.json';
 
 export class PackageVersionCreate {
-  private apiVersionFromPackageXml: string;
+  private apiVersionFromPackageXml: string | undefined;
   private readonly project: SfProject;
   private readonly connection: Connection;
-  private packageObject: NamedPackageDir;
-  private packageId: string;
-  private pkg: Package;
+  private packageObject!: NamedPackageDir & PackageDescriptorJson;
+  private packageId!: string;
+  private pkg?: Package;
   private readonly logger: Logger;
   private metadataResolver: MetadataResolver;
 
@@ -81,7 +83,10 @@ export class PackageVersionCreate {
     try {
       return this.packageVersionCreate();
     } catch (err) {
-      throw pkgUtils.applyErrorAction(pkgUtils.massageErrorMessage(err as Error));
+      if (err instanceof Error) {
+        throw pkgUtils.applyErrorAction(pkgUtils.massageErrorMessage(err));
+      }
+      throw err;
     }
   }
 
@@ -96,14 +101,16 @@ export class PackageVersionCreate {
       throw messages.createError('errorPackageAndPackageIdCollision', []);
     }
 
-    const packageIdFromAlias =
-      this.project.getPackageIdFromAlias(dependency.packageId || dependency.package) ??
-      (dependency.packageId || dependency.package);
+    const idOrPackage = dependency.packageId ?? dependency.package;
+    if (!idOrPackage) {
+      throw messages.createError('errorPackageOrPackageIdMissing', []);
+    }
+
+    const packageIdFromAlias = this.project.getPackageIdFromAlias(idOrPackage) ?? idOrPackage;
 
     // If valid 04t package, just return it to be used straight away.
     if (pkgUtils.validateIdNoThrow(pkgUtils.BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, packageIdFromAlias)) {
       dependency.subscriberPackageVersionId = packageIdFromAlias;
-
       return;
     }
 
@@ -148,11 +155,18 @@ export class PackageVersionCreate {
       return dependency;
     }
 
+    if (!dependency.versionNumber) {
+      throw messages.createError('errorDependencyPair', [JSON.stringify(dependency)]);
+    }
+    if (!dependency.packageId) {
+      throw messages.createError('errorDependencyPair', [JSON.stringify(dependency)]);
+    }
+
     const versionNumber = VersionNumber.from(dependency.versionNumber);
     const buildNumber = versionNumber.build;
 
     // use the dependency.branch if present otherwise use the branch of the version being created
-    const branch = dependency.branch || dependency.branch === '' ? dependency.branch : this.options.branch;
+    const branch = dependency.branch === '' ? dependency.branch : this.options.branch;
     const branchString = !branch || branch === '' ? 'null' : `'${branch}'`;
 
     // resolve a build number keyword to an actual number, if needed
@@ -210,7 +224,11 @@ export class PackageVersionCreate {
     return dependency;
   }
 
-  private async resolveBuildNumber(versionNumber: VersionNumber, packageId: string, branch: string): Promise<string> {
+  private async resolveBuildNumber(
+    versionNumber: VersionNumber,
+    packageId: string,
+    branch: string | undefined
+  ): Promise<string> {
     if (!versionNumber.isbuildKeyword()) {
       // The build number is already specified so just return it using the tooling query result obj structure
       return `${versionNumber.build}`;
@@ -218,11 +236,11 @@ export class PackageVersionCreate {
     // query for the LATEST or RELEASED build number (excluding deleted versions)
     let branchCondition = '';
     let releasedCondition = '';
-    if (versionNumber[3] === BuildNumberToken.LATEST_BUILD_NUMBER_TOKEN) {
+    if (versionNumber.build === BuildNumberToken.LATEST_BUILD_NUMBER_TOKEN) {
       // respect the branch when querying for LATEST
       const branchString = !branch || branch === '' ? 'null' : `'${branch}'`;
       branchCondition = `AND Branch = ${branchString}`;
-    } else if (versionNumber[3] === BuildNumberToken.RELEASED_BUILD_NUMBER_TOKEN) {
+    } else if (versionNumber.build === BuildNumberToken.RELEASED_BUILD_NUMBER_TOKEN) {
       releasedCondition = 'AND IsReleased = true';
     }
     const query = `SELECT MAX(BuildNumber) FROM Package2Version WHERE Package2Id = '${packageId}' AND IsDeprecated != true AND MajorVersion = ${versionNumber.major} AND MinorVersion = ${versionNumber.minor} AND PatchVersion = ${versionNumber.patch} ${branchCondition} ${releasedCondition}`;
@@ -244,7 +262,7 @@ export class PackageVersionCreate {
     packageVersBlobZipFile: string
   ): Promise<PackageVersionCreateRequest> {
     const zipFileBase64 = fs.readFileSync(packageVersBlobZipFile).toString('base64');
-    const requestObject = {
+    const requestObject: PackageVersionCreateRequest = {
       Package2Id: this.packageId,
       VersionInfo: zipFileBase64,
       Tag: this.options.tag,
@@ -252,8 +270,8 @@ export class PackageVersionCreate {
       InstallKey: this.options.installationkey,
       Instance: this.options.buildinstance,
       SourceOrg: this.options.sourceorg,
-      CalculateCodeCoverage: this.options.codecoverage || false,
-      SkipValidation: this.options.skipvalidation || false,
+      CalculateCodeCoverage: this.options.codecoverage ?? false,
+      SkipValidation: this.options.skipvalidation ?? false,
       // note: the createRequest's Language corresponds to the AllPackageVersion's language
       Language: this.options.language,
     };
@@ -289,7 +307,7 @@ export class PackageVersionCreate {
    * @private
    */
   private async createPackageVersionCreateRequestFromOptions(): Promise<PackageVersionCreateRequest> {
-    const preserveFiles = !!(this.options.preserve || process.env.SFDX_PACKAGE2_VERSION_CREATE_PRESERVE);
+    const preserveFiles = !!(this.options.preserve ?? process.env.SFDX_PACKAGE2_VERSION_CREATE_PRESERVE);
     const uniqueHash = uniqid({ template: `${this.packageId}-%s` });
     const packageVersTmpRoot = path.join(os.tmpdir(), `${uniqueHash}`);
     const packageVersMetadataFolder = path.join(packageVersTmpRoot, 'md-files');
@@ -302,19 +320,19 @@ export class PackageVersionCreate {
     const seedMetadataZipFile = path.join(packageVersBlobDirectory, 'seed-metadata-package.zip');
     const settingsZipFile = path.join(packageVersBlobDirectory, 'settings.zip');
     const packageVersBlobZipFile = path.join(packageVersTmpRoot, 'package-version-info.zip');
-    const sourceBaseDir = path.join(this.project.getPath(), this.packageObject.path ?? '');
+    const sourceBaseDir = path.join(this.project.getPath(), this.packageObject?.path ?? '');
 
-    const mdOptions = {
+    const mdOptions: MDFolderForArtifactOptions = {
       deploydir: packageVersMetadataFolder,
       sourceDir: sourceBaseDir,
-      sourceApiVersion: this.project?.getSfProjectJson()?.get('sourceApiVersion') as string,
+      sourceApiVersion: (this.project?.getSfProjectJson()?.get('sourceApiVersion') as string) ?? undefined,
     };
 
     // Stores any additional client side info that might be needed later on in the process
     const clientSideInfo = new Map<string, string>();
     await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
     const settingsGenerator = new SettingsGenerator({ asDirectory: true });
-    const packageDescriptorJson = cloneJson(this.packageObject) as PackageDescriptorJson;
+    let packageDescriptorJson = cloneJson(this.packageObject) as PackageDescriptorJson;
     const apvLanguage = packageDescriptorJson.language;
 
     // Copy all the metadata from the workspace to a tmp folder
@@ -353,17 +371,7 @@ export class PackageVersionCreate {
         throw messages.createError('signupDuplicateSettingsSpecified');
       }
 
-      // these scratch org definition file values will be applied to the build org
-      ['country', 'language', 'edition', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].forEach(
-        (prop) => {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          const propValue = definitionFileJson[prop];
-          if (propValue) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            packageDescriptorJson[prop] = propValue;
-          }
-        }
-      );
+      packageDescriptorJson = copyDescriptorProperties(packageDescriptorJson, definitionFileJson);
     }
 
     this.resolveApexTestPermissions(packageDescriptorJson);
@@ -379,11 +387,16 @@ export class PackageVersionCreate {
     const resultValues = await Promise.all(
       !dependencies ? [] : dependencies.map((dependency) => this.retrieveSubscriberPackageVersionId(dependency))
     );
+
+    const versionNumber = this.options.versionnumber ?? packageDescriptorJson.versionNumber;
+    if (!versionNumber) {
+      throw messages.createError('versionNumberRequired');
+    }
     const ancestorId = await this.getAncestorId(
       packageDescriptorJson,
       this.options.project,
-      this.options.versionnumber ?? packageDescriptorJson.versionNumber,
-      this.options.skipancestorcheck
+      versionNumber,
+      !!this.options.skipancestorcheck
     );
     // If dependencies exist, the resultValues array will contain the dependencies populated with a resolved
     // subscriber pkg version id.
@@ -426,7 +439,7 @@ export class PackageVersionCreate {
   }
 
   private verifyHasSource(componentSet: ConvertResult): void {
-    if (componentSet?.converted.length === 0) {
+    if (componentSet?.converted?.length === 0) {
       throw messages.createError('noSourceInRootDirectory', [this.packageObject.path ?? '<unknown>']);
     }
   }
@@ -462,20 +475,18 @@ export class PackageVersionCreate {
     fs.mkdirSync(packageVersMetadataFolder, { recursive: true });
     fs.mkdirSync(packageVersProfileFolder, { recursive: true });
 
-    // Apply any necessary exclusions to typesArr.
-    let typesArr = packageJson.Package.types;
     this.apiVersionFromPackageXml = packageJson.Package.version;
 
     const sourceApiVersion = this.project?.getSfProjectJson()?.get('sourceApiVersion') as string;
     const hasSeedMetadata = await this.metadataResolver.resolveMetadata(
-      (this.packageObject as PackageDescriptorJson).seedMetadata?.path,
+      this.packageObject.seedMetadata?.path,
       seedMetadataFolder,
       'seedMDDirectoryDoesNotExist',
       sourceApiVersion
     );
 
     let hasUnpackagedMetadata = false;
-    const unpackagedMetadataPath = (this.packageObject as PackageDescriptorJson).unpackagedMetadata?.path;
+    const unpackagedMetadataPath = this.packageObject.unpackagedMetadata?.path;
     if (this.options.codecoverage) {
       hasUnpackagedMetadata = await this.metadataResolver.resolveMetadata(
         unpackagedMetadataPath,
@@ -485,16 +496,18 @@ export class PackageVersionCreate {
       );
     }
 
-    // don't package the profiles from any unpackagedMetadata dir in the project
+    // don't package the profiles from any un-packagedMetadata dir in the project
     const profileExcludeDirs = this.project
       .getPackageDirectories()
-      .filter((packageDir) => (packageDir as PackageDescriptorJson).unpackagedMetadata?.path)
-      .map((packageDir) => (packageDir as PackageDescriptorJson).unpackagedMetadata.path);
+      .map((packageDir) => (packageDir as PackageDescriptorJson).unpackagedMetadata?.path)
+      .filter((packageDirPath) => packageDirPath) as string[];
 
-    typesArr = this.options.profileApi.filterAndGenerateProfilesForManifest(typesArr, profileExcludeDirs);
+    const typesArr =
+      this.options?.profileApi?.filterAndGenerateProfilesForManifest(packageJson.Package.types, profileExcludeDirs) ??
+      packageJson.Package.types;
 
     // Next generate profiles and retrieve any profiles that were excluded because they had no matching nodes.
-    const excludedProfiles = this.options.profileApi.generateProfiles(
+    const excludedProfiles = this.options?.profileApi?.generateProfiles(
       packageVersProfileFolder,
       {
         Package: typesArr,
@@ -502,7 +515,7 @@ export class PackageVersionCreate {
       profileExcludeDirs
     );
 
-    if (excludedProfiles.length > 0) {
+    if (excludedProfiles?.length) {
       const profileIdx = typesArr.findIndex((e) => e.name[0] === 'Profile');
       typesArr[profileIdx].members = typesArr[profileIdx].members.filter((e) => !excludedProfiles.includes(e));
     }
@@ -516,7 +529,7 @@ export class PackageVersionCreate {
     const xml = xmlBuilder.buildObject(packageJson);
 
     // Log information about the profiles being packaged up
-    const profiles = this.options.profileApi.getProfileInformation();
+    const profiles = this.options?.profileApi?.getProfileInformation() ?? [];
     profiles.forEach((profile) => {
       if (this.logger.shouldLog(LoggerLevel.DEBUG)) {
         this.logger.debug(profile.logDebug());
@@ -593,7 +606,8 @@ export class PackageVersionCreate {
     }
 
     // establish the package Id (0ho) and load the package directory
-    let packageName: string;
+    let packageName: string | undefined;
+    let packageObject: PackageDir | undefined;
     if (this.options.packageId) {
       const pkg = this.options.packageId;
       // for backward compatibility allow for a packageDirectory package property to be an id (0Ho) instead of an alias.
@@ -602,26 +616,31 @@ export class PackageVersionCreate {
         packageName = pkg.startsWith('0Ho') ? this.project.getAliasesFromPackageId(pkg).find((alias) => alias) : pkg;
         if (!packageName) throw messages.createError('errorMissingPackage', [this.options.packageId]);
       }
-      this.packageObject = this.project.findPackage(
+      packageObject = this.project.findPackage(
         (namedPackageDir) => namedPackageDir.package === packageName || namedPackageDir.name === packageName
       );
     } else {
       // We'll either have a package ID or alias, or a directory path
-      this.packageObject = this.project.getPackageFromPath(this.options.path);
-      packageName = this.packageObject?.package;
+      if (!this.options.path) {
+        throw messages.createError('errorMissingPackagePath', [JSON.stringify(this.options)]);
+      }
+      packageObject = this.project.getPackageFromPath(this.options.path);
+      packageName = packageObject?.package;
       if (!packageName) throw messages.createError('errorCouldNotFindPackageUsingPath', [this.options.path]);
     }
 
-    if (!this.packageObject) {
+    if (!packageObject) {
       throw messages.createError('errorCouldNotFindPackageDir', [
         this.options.packageId ? 'packageId or alias' : 'path',
-        this.options.packageId || this.options.path,
+        this.options.packageId ?? this.options.path,
       ]);
+    } else {
+      this.packageObject = packageObject as NamedPackageDir;
     }
 
     this.packageId = this.project.getPackageIdFromAlias(packageName) ?? packageName;
 
-    this.options.profileApi = await this.resolveUserLicenses(this.packageObject.includeProfileUserLicenses);
+    this.options.profileApi = await this.resolveUserLicenses(!!this.packageObject.includeProfileUserLicenses);
 
     // At this point, the packageIdFromAlias should have been resolved to an Id.  Now, we
     // need to validate that the Id is correct.
@@ -630,27 +649,26 @@ export class PackageVersionCreate {
     try {
       await this.validateOptionsForPackageType();
     } catch (error) {
-      const err = error as Error;
-      if (err.name === 'NOT_FOUND') {
-        // this means the 0Ho package was not found in the org. throw a better error.
-        throw messages.createError('errorNoIdInHub', [this.packageId]);
+      if (error instanceof Error) {
+        if (error.name === 'NOT_FOUND') {
+          // this means the 0Ho package was not found in the org. throw a better error.
+          throw messages.createError('errorNoIdInHub', [this.packageId]);
+        }
       }
-      throw err;
+      throw error;
     }
 
     const request = await this.createPackageVersionCreateRequestFromOptions();
     const createResult = await this.connection.tooling.create('Package2VersionCreateRequest', request);
     if (!createResult.success) {
       const errStr = createResult.errors?.join(', ') ?? createResult.errors;
-      throw messages.createError('failedToCreatePVCRequest', [
-        createResult.id ? ` [${createResult.id}]` : '',
-        errStr.toString(),
-      ]);
+      const id: string = createResult.id ?? '';
+      throw messages.createError('failedToCreatePVCRequest', [id === '' ? '' : ` [${id}]`, errStr.toString()]);
     }
     return (await byId(createResult.id, this.connection))[0];
   }
 
-  private async getPackageDirFromId(pkg: string): Promise<PackageDir> {
+  private async getPackageDirFromId(pkg: string): Promise<PackageDir | undefined> {
     let dir: PackageDir[];
     if (pkg.startsWith('0Ho')) {
       dir = (await this.project.getSfProjectJson().getPackageDirectories()).filter((p) => p.package === pkg);
@@ -658,10 +676,9 @@ export class PackageVersionCreate {
         return dir[0];
       }
     }
-    return;
   }
 
-  private async getPackageType(): Promise<PackageType> {
+  private async getPackageType(): Promise<PackageType | undefined> {
     // this.packageId should be an 0Ho package Id at this point
     if (!this.pkg) {
       this.pkg = new Package({
@@ -732,7 +749,7 @@ export class PackageVersionCreate {
     if (!packageDescriptorJson.versionName) {
       const versionNumber = packageDescriptorJson.versionNumber;
       packageDescriptorJson.versionName =
-        versionNumber.split(pkgUtils.VERSION_NUMBER_SEP)[3] === BuildNumberToken.NEXT_BUILD_NUMBER_TOKEN
+        versionNumber?.split(pkgUtils.VERSION_NUMBER_SEP)[3] === BuildNumberToken.NEXT_BUILD_NUMBER_TOKEN
           ? versionNumber.substring(
               0,
               versionNumber.indexOf(pkgUtils.VERSION_NUMBER_SEP + BuildNumberToken.NEXT_BUILD_NUMBER_TOKEN)
@@ -818,7 +835,7 @@ export class PackageVersionCreate {
     // If an id property is present, use it.  Otherwise, look up the package id from the package property.
     const packageId =
       packageDescriptorJson.id ??
-      project.getPackageIdFromAlias(packageDescriptorJson.package) ??
+      project.getPackageIdFromAlias(packageDescriptorJson.package ?? '') ??
       packageDescriptorJson.package;
 
     // No need to proceed if Unlocked
@@ -832,8 +849,8 @@ export class PackageVersionCreate {
 
     const versionNumber = VersionNumber.from(versionNumberString);
 
-    let origSpecifiedAncestor = packageDescriptorJson.ancestorId;
-    let highestReleasedVersion: PackagingSObjects.Package2Version = null;
+    let origSpecifiedAncestor = packageDescriptorJson.ancestorId ?? '';
+    let highestReleasedVersion: PackagingSObjects.Package2Version | null = null;
 
     const explicitUseHighestRelease =
       packageDescriptorJson.ancestorId === BuildNumberToken.HIGHEST_VERSION_NUMBER_TOKEN ||
@@ -875,7 +892,7 @@ export class PackageVersionCreate {
     if (!explicitUseNoAncestor && packageDescriptorJson.ancestorId) {
       ancestorId = project.getPackageIdFromAlias(packageDescriptorJson.ancestorId) ?? packageDescriptorJson.ancestorId;
       validateId([BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, BY_LABEL.PACKAGE_VERSION_ID], ancestorId);
-      ancestorId = await getPackageVersionId(ancestorId, this.connection);
+      ancestorId = (await getPackageVersionId(ancestorId, this.connection)) ?? '';
     }
 
     if (!explicitUseNoAncestor && packageDescriptorJson.ancestorVersion) {
@@ -899,7 +916,7 @@ export class PackageVersionCreate {
 
       let queriedAncestorId: string;
       const ancestorVersionResult = await this.connection.tooling.query<PackagingSObjects.Package2Version>(query);
-      if (!ancestorVersionResult || !ancestorVersionResult.totalSize) {
+      if (!ancestorVersionResult.totalSize) {
         throw messages.createError('errorNoMatchingAncestor', [packageDescriptorJson.ancestorVersion, packageId]);
       } else {
         const releasedAncestor = ancestorVersionResult.records.find((rec) => rec.IsReleased === true);
@@ -934,7 +951,7 @@ export class PackageVersionCreate {
   // eslint-disable-next-line class-methods-use-this
   private validateAncestorId(
     ancestorId: string,
-    highestReleasedVersion: PackagingSObjects.Package2Version,
+    highestReleasedVersion: PackagingSObjects.Package2Version | null | undefined,
     explicitUseNoAncestor: boolean,
     isPatch: boolean,
     skipAncestorCheck: boolean,
@@ -965,11 +982,11 @@ export class PackageVersionCreate {
   }
 
   private async getAncestorIdHighestRelease(
-    packageId: string,
+    packageId: string | undefined,
     versionNumberString: string,
     explicitUseHighestRelease: boolean,
     skipAncestorCheck: boolean
-  ): Promise<{ finalAncestorId: string; highestReleasedVersion: PackagingSObjects.Package2Version }> {
+  ): Promise<{ finalAncestorId: string | null; highestReleasedVersion: PackagingSObjects.Package2Version | null }> {
     type Package2VersionResult = Partial<
       Pick<
         PackagingSObjects.Package2Version,
@@ -977,13 +994,18 @@ export class PackageVersionCreate {
       >
     >;
 
+    if (!packageId) {
+      throw messages.createError('packageIdCannotBeUndefined');
+    }
+
     const versionNumber = versionNumberString.split(VERSION_NUMBER_SEP);
     const isPatch = versionNumber[2] !== '0';
 
-    const result: { finalAncestorId: string; highestReleasedVersion: PackagingSObjects.Package2Version } = {
-      finalAncestorId: null,
-      highestReleasedVersion: null,
-    };
+    const result: { finalAncestorId: string | null; highestReleasedVersion: PackagingSObjects.Package2Version | null } =
+      {
+        finalAncestorId: null,
+        highestReleasedVersion: null,
+      };
 
     if (isPatch && explicitUseHighestRelease) {
       // based on server-side validation, whatever ancestor is specified for a patch is
@@ -999,7 +1021,7 @@ export class PackageVersionCreate {
       const majorMinorVersionResult = await this.connection.tooling.query<Package2VersionResult>(query);
       const majorMinorVersionRecords = majorMinorVersionResult.records;
       if (majorMinorVersionRecords && majorMinorVersionRecords?.length === 1 && majorMinorVersionRecords[0]) {
-        result.finalAncestorId = majorMinorVersionRecords[0].Id;
+        result.finalAncestorId = majorMinorVersionRecords[0].Id ?? null;
       } else {
         const majorMinorNotFound = `${versionNumber[0]}.${versionNumber[1]}.0`;
         throw messages.createError('errorNoMatchingMajorMinorForPatch', [majorMinorNotFound]);
@@ -1028,7 +1050,7 @@ export class PackageVersionCreate {
 
 export class MetadataResolver {
   public async resolveMetadata(
-    metadataRelativePath: string,
+    metadataRelativePath: string | undefined,
     metadataOutputPath: string,
     errorMessageLabel: string,
     sourceApiVersion?: string
@@ -1052,11 +1074,19 @@ export class MetadataResolver {
 
   // convert source to mdapi format and copy to tmp dir packaging up
   public async generateMDFolderForArtifact(options: MDFolderForArtifactOptions): Promise<ConvertResult> {
-    const sourcepath = options.sourcePaths ?? [options.sourceDir];
-    const componentSet = await ComponentSetBuilder.build({
+    const sourcePaths = ensureArray(options.sourcePaths ?? options.sourceDir ? options.sourceDir : undefined).filter(
+      (srcPath) => srcPath
+    );
+    const componentSetOptions: ComponentSetOptions = {
       sourceapiversion: options.sourceApiVersion,
-      sourcepath,
-    });
+      ...(sourcePaths.length > 0 ? { sourcepath: sourcePaths } : {}),
+    };
+
+    if (!options.deploydir) {
+      throw messages.createError('deploydirCannotBeUndefined', [JSON.stringify(options)]);
+    }
+
+    const componentSet = await ComponentSetBuilder.build(componentSetOptions);
     const packageName = options.packageName;
     const outputDirectory = path.resolve(options.deploydir);
     const convertResult = await this.convertMetadata(componentSet, outputDirectory, packageName);
@@ -1064,6 +1094,9 @@ export class MetadataResolver {
     if (packageName) {
       // SDR will build an output path like /output/directory/packageName/package.xml
       // this was breaking from toolbelt, so to revert it we copy the directory up a level and delete the original
+      if (!convertResult.packagePath) {
+        throw messages.createError('packagePathCannotBeUndefined');
+      }
       copyDir(convertResult.packagePath, outputDirectory);
       try {
         fs.rmSync(convertResult.packagePath, { recursive: true });
@@ -1090,7 +1123,7 @@ export class MetadataResolver {
   private async convertMetadata(
     componentSet: ComponentSet,
     outputDirectory: string,
-    packageName: string
+    packageName: string | undefined
   ): Promise<ConvertResult> {
     const converter = new MetadataConverter();
     return converter.convert(componentSet, 'metadata', {

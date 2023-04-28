@@ -2,6 +2,10 @@
 
 You can’t have both "package" and "packageId" (deprecated) defined as dependencies in sfdx-project.json.
 
+# errorPackageOrPackageIdMissing
+
+You must provide either "package" or "packageId" (deprecated) defined as dependencies in sfdx-project.json.
+
 # errorDependencyPair
 
 Dependency must specify either a subscriberPackageVersionId or both packageId and versionNumber: %s
@@ -28,7 +32,7 @@ No released version was found in Dev Hub for package id %s and version number %s
 
 # noReleaseVersionFoundForBranch
 
-No version number was found in Dev Hub for package id $s and branch %s and version number %s.
+No version number was found in Dev Hub for package id %s and branch %s and version number %s.
 
 # tempFileLocation
 
@@ -80,7 +84,7 @@ Multiple errors occurred:
 
 # invalidDaysNumber
 
-Provide a valid positive number for %s.
+Provide a valid positive number for %s. %d
 
 # errorAncestorNoneNotAllowed
 
@@ -141,7 +145,7 @@ Patch version node for version, %s, must be 0 for a Locked package.
 
 # errorAncestorIdVersionHighestOrNoneMismatch
 
-Both ancestorId (%s) and ancestorVersion (%) specified, HIGHEST and/or NONE are used, the values disagree
+Both ancestorId (%s) and ancestorVersion (%s) specified, HIGHEST and/or NONE are used, the values disagree
 
 # errorInvalidAncestorVersionFormat
 
@@ -157,7 +161,7 @@ The given ancestor version (%s) has not been released
 
 # errorAncestorIdVersionMismatch
 
-No matching ancestor version found for the given ancestorId (%s)
+No matching ancestor version (%s) found for the given ancestorId (%s)
 
 # errorNoMatchingMajorMinorForPatch
 
@@ -166,3 +170,27 @@ No matching major.minor version found for the given patch version (%s)
 # errorInvalidPackageId
 
 The provided package ID '%s' is invalid.
+
+# packageIdCannotBeUndefined
+
+The package ID must be defined.
+
+# deploydirCannotBeUndefined
+
+The deploy directory must be defined. Supplied options: %s
+
+# packagePathCannotBeUndefined
+
+The package path must be defined.
+
+# errorMissingPackagePath
+
+The package path is missing. Supplied options: %s
+
+# versionNumberRequired
+
+The version number is required and was not found in the options or in package json descriptor.
+
+# missingConnection
+
+A connection is required.

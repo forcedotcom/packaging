@@ -15,12 +15,12 @@ import { Duration } from '@salesforce/kit';
 import * as JSZIP from 'jszip';
 import {
   applyErrorAction,
+  combineSaveErrors,
   getPackageVersionNumber,
   getPackageVersionStrings,
   massageErrorMessage,
-  combineSaveErrors,
-  zipDir,
   numberToDuration,
+  zipDir,
 } from '../../src/utils/packageUtils';
 import { PackagingSObjects } from '../../src/interfaces';
 
@@ -51,12 +51,11 @@ describe('packageUtils', () => {
   describe('applyErrorAction', () => {
     describe('INVALID_TYPE', () => {
       it('should modify error message if packaging is not enabled', () => {
-        const error = new Error();
+        const error = new Error() as Error & { action: string | undefined };
         error.name = 'INVALID_TYPE';
         error.message = "sObject type 'Package2Version' is not supported";
-        error['action'] = [];
-        const result = applyErrorAction(error);
-        expect(result['action']).to.be.include('Packaging is not enabled on this org.');
+        const result = applyErrorAction(error) as Error & { action: string | undefined };
+        expect(result.action).to.be.include('Packaging is not enabled on this org.');
       });
     });
   });
@@ -130,9 +129,9 @@ describe('packageUtils', () => {
       const result = numberToDuration(Duration.minutes(1000));
       expect(result.minutes).to.be.equal(Duration.minutes(1000).minutes);
     });
-    it('should a treat a undefined number param instance as idempotent', () => {
+    it('should a treat a undefined number param instance as Duration(0)', () => {
       const result = numberToDuration(undefined);
-      expect(result).to.be.not.ok;
+      expect(result.milliseconds).to.be.equal(Duration.milliseconds(0).milliseconds);
     });
   });
   describe('zipDir', () => {

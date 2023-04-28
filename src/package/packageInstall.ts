@@ -6,16 +6,16 @@
  */
 
 import { Connection, Lifecycle, Logger, Messages, PollingClient, SfError, StatusResult } from '@salesforce/core';
-import { isString } from '@salesforce/ts-types';
+import { isString, Nullable } from '@salesforce/ts-types';
 import { QueryResult } from 'jsforce';
 import { Duration } from '@salesforce/kit';
 import { escapeInstallationKey, numberToDuration } from '../utils/packageUtils';
 import {
-  PackagingSObjects,
-  PackageInstallCreateRequest,
   PackageEvents,
-  PackageType,
+  PackageInstallCreateRequest,
   PackageInstallOptions,
+  PackageType,
+  PackagingSObjects,
 } from '../interfaces';
 import SubscriberPackageVersion = PackagingSObjects.SubscriberPackageVersion;
 import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
@@ -45,7 +45,12 @@ export async function createPackageInstallRequest(
     UpgradeType: 'mixed-mode',
   };
 
-  const request = Object.assign({}, defaults, pkgInstallCreateRequest);
+  const request: Omit<PackageInstallCreateRequest, 'UpgradeType' | 'ApexCompileType'> &
+    Partial<Pick<PackageInstallCreateRequest, 'UpgradeType' | 'ApexCompileType'>> = Object.assign(
+    {},
+    defaults,
+    pkgInstallCreateRequest
+  );
   if (request.Password) {
     request.Password = escapeInstallationKey(request.Password);
   }
@@ -84,7 +89,11 @@ export async function getStatus(
   connection: Connection,
   packageInstallRequestId: string
 ): Promise<PackageInstallRequest> {
-  return (await connection.tooling.retrieve('PackageInstallRequest', packageInstallRequestId)) as PackageInstallRequest;
+  const results = (await connection.tooling.retrieve(
+    'PackageInstallRequest',
+    packageInstallRequestId
+  )) as PackageInstallRequest;
+  return results;
 }
 
 // determines if error is from malformed SubscriberPackageVersion query
@@ -103,9 +112,9 @@ export function isErrorPackageNotAvailable(err: Error): boolean {
 
 export async function getInstallationStatus(
   subscriberPackageVersionId: string,
-  installationKey: string,
+  installationKey: Nullable<string>,
   connection: Connection
-): Promise<QueryResult<PackagingSObjects.SubscriberPackageVersion>> {
+): Promise<QueryResult<PackagingSObjects.SubscriberPackageVersion> | undefined> {
   let query = `SELECT Id, SubscriberPackageId, InstallValidationStatus FROM SubscriberPackageVersion WHERE Id ='${subscriberPackageVersionId}'`;
 
   if (installationKey) {
@@ -126,19 +135,19 @@ export async function getInstallationStatus(
 export async function waitForPublish(
   connection: Connection,
   subscriberPackageVersionId: string,
-  frequency: number | Duration,
-  timeout: number | Duration,
-  installationKey?: string
+  frequency?: number | Duration,
+  timeout?: number | Duration,
+  installationKey?: string | Nullable<string>
 ): Promise<void> {
-  const pollingTimeout = numberToDuration(timeout || 0);
+  const pollingTimeout = numberToDuration(timeout);
 
   if (pollingTimeout.milliseconds <= 0) {
     return;
   }
-  let queryResult: QueryResult<SubscriberPackageVersion>;
+  let queryResult: QueryResult<SubscriberPackageVersion> | undefined;
   let installValidationStatus: SubscriberPackageVersion['InstallValidationStatus'] = 'PACKAGE_UNAVAILABLE';
-  const pollingOptions: Partial<PollingClient.Options> = {
-    frequency: numberToDuration(frequency || 0),
+  const pollingOptions: PollingClient.Options = {
+    frequency: numberToDuration(frequency),
     timeout: pollingTimeout,
     poll: async (): Promise<StatusResult> => {
       queryResult = await getInstallationStatus(subscriberPackageVersionId, installationKey, connection);
@@ -171,10 +180,10 @@ export async function waitForPublish(
     // if polling timed out
     const error = installMsgs.createError('subscriberPackageVersionNotPublished');
     error.setData(queryResult?.records[0]);
-    if (error.stack && (e as Error).stack) {
-      getLogger().debug(`Error during waitForPublish polling:\n${(e as Error).stack}`);
+    if (error.stack && e instanceof Error && e.stack) {
+      getLogger().debug(`Error during waitForPublish polling:\n${e.stack}`);
       // append the original stack to this new error
-      error.stack += `\nDUE TO:\n${(e as Error).stack}`;
+      error.stack += `\nDUE TO:\n${e.stack}`;
     }
     throw error;
   }
@@ -183,16 +192,16 @@ export async function waitForPublish(
 export async function pollStatus(
   connection: Connection,
   installRequestId: string,
-  options: PackageInstallOptions
+  options: PackageInstallOptions = { pollingFrequency: 5000, pollingTimeout: 300000 }
 ): Promise<PackageInstallRequest> {
-  let packageInstallRequest: PackageInstallRequest;
+  let packageInstallRequest = await getStatus(connection, installRequestId);
 
   const { pollingFrequency, pollingTimeout } = options;
-  const frequency = numberToDuration(pollingFrequency || 5000);
+  const frequency = numberToDuration(pollingFrequency);
 
-  const timeout = numberToDuration(pollingTimeout || 300000);
+  const timeout = numberToDuration(pollingTimeout);
 
-  const pollingOptions: Partial<PollingClient.Options> = {
+  const pollingOptions: PollingClient.Options = {
     frequency,
     timeout,
     poll: async (): Promise<StatusResult> => {
@@ -218,9 +227,9 @@ export async function pollStatus(
     const errMsg = e instanceof Error ? e.message : isString(e) ? e : 'polling timed out';
     const error = new SfError(errMsg, 'PackageInstallTimeout');
     error.setData(packageInstallRequest);
-    if (error.stack && (e as Error).stack) {
+    if (error.stack && e instanceof Error && e.stack) {
       // add the original stack to this new error
-      error.stack += `\nDUE TO:\n${(e as Error).stack}`;
+      error.stack += `\nDUE TO:\n${e.stack}`;
     }
     throw error;
   }

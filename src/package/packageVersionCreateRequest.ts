@@ -9,11 +9,12 @@ import * as util from 'util';
 import { Connection, Messages } from '@salesforce/core';
 import { Schema } from 'jsforce';
 import {
-  PackageVersionCreateRequestResult,
   PackageVersionCreateRequestQueryOptions,
+  PackageVersionCreateRequestResult,
   PackagingSObjects,
 } from '../interfaces';
 import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
+import Package2VersionCreateRequestError = PackagingSObjects.Package2VersionCreateRequestError;
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
@@ -34,13 +35,17 @@ function formatDate(date: Date): string {
 }
 
 export async function list(
+  connection: Connection,
   options?: PackageVersionCreateRequestQueryOptions
 ): Promise<PackageVersionCreateRequestResult[]> {
   try {
     const whereClause = constructWhere(options);
-    return await query(util.format(QUERY, whereClause), options.connection);
+    return await query(util.format(QUERY, whereClause), connection);
   } catch (err) {
-    throw applyErrorAction(massageErrorMessage(err as Error));
+    if (err instanceof Error) {
+      throw applyErrorAction(massageErrorMessage(err));
+    }
+    throw err;
   }
 }
 
@@ -55,6 +60,7 @@ export async function byId(
 
   return results;
 }
+
 // eslint-disable-next-line @typescript-eslint/no-shadow
 async function query(query: string, connection: Connection): Promise<PackageVersionCreateRequestResult[]> {
   type QueryRecord = PackagingSObjects.Package2VersionCreateRequest &
@@ -78,22 +84,11 @@ async function query(query: string, connection: Connection): Promise<PackageVers
   }));
 }
 
-async function queryForErrors(packageVersionCreateRequestId, connection: Connection): Promise<string[]> {
-  const errorResults: string[] = [];
-
-  const queryResult = await connection.tooling.query(
-    util.format(
-      "SELECT Message FROM Package2VersionCreateRequestError WHERE ParentRequest.Id = '%s'",
-      packageVersionCreateRequestId
-    )
+async function queryForErrors(packageVersionCreateRequestId: string, connection: Connection): Promise<string[]> {
+  const queryResult = await connection.tooling.query<Package2VersionCreateRequestError>(
+    `SELECT Message FROM Package2VersionCreateRequestError WHERE ParentRequest.Id = '${packageVersionCreateRequestId}'`
   );
-  if (queryResult.records) {
-    queryResult.records.forEach((record: { Message: string }) => {
-      errorResults.push(record.Message);
-    });
-  }
-
-  return errorResults;
+  return queryResult.records ? queryResult.records.map((record) => record.Message) : [];
 }
 
 function constructWhere(options?: PackageVersionCreateRequestQueryOptions): string {

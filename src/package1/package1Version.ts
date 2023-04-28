@@ -11,7 +11,7 @@ import {
   IPackageVersion1GP,
   Package1VersionCreateRequest,
   Package1VersionEvents,
-  PackagingSObjects,
+  PackagingSObjects
 } from '../interfaces';
 import MetadataPackageVersion = PackagingSObjects.MetadataPackageVersion;
 
@@ -45,6 +45,7 @@ export class Package1Version implements IPackageVersion1GP {
       throw messages.createError('invalid04tId', [id]);
     }
   }
+
   /**
    * Will create a PackageUploadRequest object based on the options provided, will poll for completion if pollingOptions are provided
    *
@@ -57,26 +58,30 @@ export class Package1Version implements IPackageVersion1GP {
     options: Package1VersionCreateRequest,
     pollingOptions = { frequency: Duration.seconds(5), timeout: Duration.seconds(0) }
   ): Promise<PackagingSObjects.PackageUploadRequest> {
-    if (!options.MetadataPackageId || !options.MetadataPackageId.startsWith('033')) {
+    if (!options.MetadataPackageId?.startsWith('033')) {
       throw messages.createError('missingMetadataPackageId');
     }
     if (!options.VersionName) {
       throw messages.createError('missingVersionName');
     }
     const createRequest = await connection.tooling.sobject('PackageUploadRequest').create(options);
-    if (pollingOptions.timeout.seconds) {
-      const timeout = pollingOptions.timeout.seconds;
-      const pollingClient = await PollingClient.create({
-        poll: () =>
-          Package1Version.packageUploadPolling(connection, createRequest.id, timeout, pollingOptions.frequency.seconds),
-        ...pollingOptions,
-      });
-      return pollingClient.subscribe<PackagingSObjects.PackageUploadRequest>();
+    if (createRequest.success) {
+      if (pollingOptions.timeout.seconds) {
+        const timeout = pollingOptions.timeout.seconds;
+        const pollingClient = await PollingClient.create({
+          poll: () =>
+            Package1Version.packageUploadPolling(connection, createRequest.id, timeout, pollingOptions.frequency.seconds),
+          ...pollingOptions
+        });
+        return pollingClient.subscribe<PackagingSObjects.PackageUploadRequest>();
+      } else {
+        // jsforce templates weren't working when setting the type to PackageUploadRequest, so we have to cast `as unknown as PackagingSObjects.PackageUploadRequest`
+        return (await connection.tooling
+          .sobject('PackageUploadRequest')
+          .retrieve(createRequest.id)) as unknown as PackagingSObjects.PackageUploadRequest;
+      }
     } else {
-      // jsforce templates weren't working when setting the type to PackageUploadRequest, so we have to cast `as unknown as PackagingSObjects.PackageUploadRequest`
-      return (await connection.tooling
-        .sobject('PackageUploadRequest')
-        .retrieve(createRequest.id)) as unknown as PackagingSObjects.PackageUploadRequest;
+      throw messages.createError('createFailed', [JSON.stringify(createRequest)]);
     }
   }
 
@@ -140,7 +145,7 @@ export class Package1Version implements IPackageVersion1GP {
         const errors = pollingResult?.Errors?.errors as Error[];
         if (errors?.length > 0) {
           throw messages.createError('package1VersionCreateCommandUploadFailure', [
-            errors.map((e: Error) => e.message).join(os.EOL),
+            errors.map((e: Error) => e.message).join(os.EOL)
           ]);
         } else {
           throw messages.createError('package1VersionCreateCommandUploadFailureDefault');

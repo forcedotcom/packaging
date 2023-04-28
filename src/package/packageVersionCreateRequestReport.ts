@@ -20,6 +20,9 @@ export async function getCreatePackageVersionCreateRequestReport(options: {
     const results = await byId(options.createPackageVersionRequestId, options.connection);
     return results[0];
   } catch (err) {
-    throw applyErrorAction(massageErrorMessage(err as Error));
+    if (err instanceof Error) {
+      throw applyErrorAction(massageErrorMessage(err));
+    }
+    throw err;
   }
 }

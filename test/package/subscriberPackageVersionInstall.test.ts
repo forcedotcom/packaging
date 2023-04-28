@@ -5,8 +5,8 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
-import { expect } from 'chai';
-import { Connection, Lifecycle, Messages } from '@salesforce/core';
+import { assert, expect } from 'chai';
+import { Connection, Lifecycle, Messages, SfError } from '@salesforce/core';
 import { QueryResult, SaveResult } from 'jsforce';
 import { Duration } from '@salesforce/kit';
 import {
@@ -15,10 +15,10 @@ import {
   waitForPublish,
 } from '../../src/package/packageInstall';
 import {
-  PackagingSObjects,
+  PackageEvents,
   PackageInstallCreateRequest,
   PackageInstallOptions,
-  PackageEvents,
+  PackagingSObjects,
 } from '../../src/interfaces';
 import { SubscriberPackageVersion } from '../../src/package';
 import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
@@ -54,7 +54,7 @@ describe('Package Install', () => {
   const pkgInstallRequest: SaveResult = {
     id: pkgInstallRequestId,
     success: true,
-    errors: null,
+    errors: [],
   };
 
   const pkgInstallResult: PackageInstallRequest = {
@@ -151,9 +151,10 @@ describe('Package Install', () => {
       .onSecondCall()
       .resolves(inProgressPIR);
     otherQueryStub = $$.SANDBOX.stub(connection.tooling, 'query').resolves(
+      // @ts-expect-error: non-overlapping types
       subscriberPackageVersion as QueryResult<PackagingSObjects.SubscriberPackageVersion>
     );
-    const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: null });
+    const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: undefined });
     const result = await pkg.install(pkgInstallCreateRequest);
 
     // verify correct connection.tooling.create() call
@@ -185,6 +186,7 @@ describe('Package Install', () => {
     queryStub.restore();
     otherQueryStub = $$.SANDBOX.stub(connection.tooling, 'query')
       .onFirstCall()
+      // @ts-expect-error: non-overlapping types
       .resolves(subscriberPackageVersion as QueryResult<PackagingSObjects.SubscriberPackageVersion>)
       .onSecondCall()
       .resolves({
@@ -204,9 +206,11 @@ describe('Package Install', () => {
       .onSecondCall()
       .resolves(inProgressPIR)
       .onThirdCall()
+      .resolves(inProgressPIR)
+      .onCall(3)
       .resolves(successPIR);
 
-    const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: null });
+    const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: undefined });
     const installOptions: PackageInstallOptions = {
       pollingFrequency: Duration.seconds(1),
       pollingTimeout: Duration.seconds(10),
@@ -216,7 +220,7 @@ describe('Package Install', () => {
     expect(toolingCreateStub.calledOnce).to.be.true;
 
     // verify we polled
-    expect(retrieveStub.calledThrice).to.be.true;
+    expect(retrieveStub.callCount).to.be.equal(4);
     expect(lifecycleStub.callCount).to.equal(3);
     expect(lifecycleStub.args[0][0]).to.equal('Package/install-presend');
     const expectedRequest = Object.assign({}, pkgInstallCreateRequest, pkgInstallCreateRequestDefaults);
@@ -241,13 +245,15 @@ describe('Package Install', () => {
       .onSecondCall()
       .resolves(inProgressPIR)
       .onThirdCall()
+      .resolves(inProgressPIR)
+      .onCall(3)
       .resolves(successPIR);
 
     otherQueryStub = $$.SANDBOX.stub(connection, 'singleRecordQuery')
       .onFirstCall()
       .resolves(subscriberPackageVersion.records[0]);
 
-    const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: null });
+    const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: undefined });
     const installOptions: PackageInstallOptions = {
       publishFrequency: Duration.milliseconds(5000),
       publishTimeout: Duration.seconds(10),
@@ -261,7 +267,7 @@ describe('Package Install', () => {
     const expectedRequest = Object.assign({}, pkgInstallCreateRequest, pkgInstallCreateRequestDefaults);
 
     // verify we polled
-    expect(retrieveStub.calledThrice).to.be.true;
+    expect(retrieveStub.callCount).to.be.equal(4);
     expect(lifecycleStub.callCount).to.equal(5);
     expect(lifecycleStub.args[0][0]).to.equal('Package/install-subscriber-status');
     expect(lifecycleStub.args[0][1]).to.deep.equal('NO_ERRORS_DETECTED');
@@ -328,6 +334,7 @@ describe('Package Install', () => {
       await SubscriberPackageVersion.getInstallRequest('0Hf1h0000006runCAA', connection);
       expect.fail('should have thrown');
     } catch (e) {
+      assert(e instanceof Error);
       expect(e.message).to.include('The provided package install request ID: [0Hf1h0000006runCAA] could not be found');
     }
   });
@@ -338,6 +345,7 @@ describe('Package Install', () => {
       await SubscriberPackageVersion.getInstallRequest('04t1h0000006runCAA', connection);
       expect.fail('should have thrown');
     } catch (e) {
+      assert(e instanceof Error);
       expect(e.message).to.include('The provided package install request ID: [04t1h0000006runCAA] is invalid');
     }
   });
@@ -352,7 +360,7 @@ describe('Package Install', () => {
       .onFirstCall()
       .resolves({ ...subscriberPackageVersion.records[0], ...{ RemoteSiteSettings, CspTrustedSites } });
 
-    const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: null });
+    const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: undefined });
     const externalSites = await pkg.getExternalSites();
 
     expect(queryStub.calledOnce).to.be.true;
@@ -383,14 +391,18 @@ describe('Package Install', () => {
     $$.SANDBOX.stub(SubscriberPackageVersion.prototype, 'getPackageType').resolves('Managed');
     const overrides = { UpgradeType: 'deprecate-only', ApexCompileType: 'package' };
     const picRequest = Object.assign({}, pkgInstallCreateRequest, overrides);
-    const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: null });
+    const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: undefined });
     const result = await pkg.install(picRequest);
 
     // verify correct connection.tooling.create() call
     expect(toolingCreateStub.calledOnce).to.be.true;
     const createArgs = toolingCreateStub.args[0];
     expect(createArgs[0]).to.equal('PackageInstallRequest');
-    const expectedRequest = Object.assign({}, pkgInstallCreateRequest, pkgInstallCreateRequestDefaults);
+    const expectedRequest: Partial<PackageInstallCreateRequest> = Object.assign(
+      {},
+      pkgInstallCreateRequest,
+      pkgInstallCreateRequestDefaults
+    );
     delete expectedRequest.UpgradeType;
     delete expectedRequest.ApexCompileType;
     expect(createArgs[1]).to.deep.equal(expectedRequest);
@@ -426,7 +438,7 @@ describe('Package Install', () => {
       .onSecondCall()
       .resolves(inProgressPIR);
     const picRequest = Object.assign({}, pkgInstallCreateRequest, pkgInstallCreateRequestDefaults, overrides);
-    const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: null });
+    const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: undefined });
     const result = await pkg.install(picRequest);
 
     // verify correct connection.tooling.create() call
@@ -476,6 +488,7 @@ describe('Package Install', () => {
       );
       expect(false, 'Expected timeout error to be thrown').to.be.true;
     } catch (err) {
+      assert(err instanceof SfError);
       expect(err.name).to.equal('SubscriberPackageVersionNotPublishedError');
       expect(err.data).to.deep.equal(queryResult);
     }
