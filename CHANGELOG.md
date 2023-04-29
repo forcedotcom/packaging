@@ -1,3 +1,12 @@
+## [1.4.19](https://github.com/forcedotcom/packaging/compare/1.4.18...1.4.19) (2023-04-29)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/source-deploy-retrieve from 8.0.3 to 8.0.4 ([714aebd](https://github.com/forcedotcom/packaging/commit/714aebd5cbce56db476a3a0552ae6895012375f4))
+
+
+
 ## [1.4.18](https://github.com/forcedotcom/packaging/compare/1.4.17...1.4.18) (2023-04-28)
 
 
