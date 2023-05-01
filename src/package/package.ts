@@ -51,6 +51,7 @@ export const Package2Fields = [
   'IsOrgDependent',
   'ConvertedFromPackageId',
   'PackageErrorUsername',
+  'AppAnalyticsEnabled',
 ];
 
 /**
@@ -116,7 +117,7 @@ export class Package {
   public static async list(connection: Connection): Promise<PackagingSObjects.Package2[]> {
     return (
       await connection.tooling.query<PackagingSObjects.Package2>(
-        `select ${Package2Fields.toString()} from Package2 ORDER BY NamespacePrefix, Name`,
+        `select ${this.getPackage2Fields(connection).toString()} from Package2 ORDER BY NamespacePrefix, Name`,
         {
           autoFetch: true,
           maxFetch: 10_000,
@@ -193,6 +194,11 @@ export class Package {
     return convertPackage(pkgId, connection, options, project);
   }
 
+  private static getPackage2Fields(connection: Connection): string[] {
+    const apiVersion = connection.getApiVersion();
+    return Package2Fields.filter((field) => (apiVersion >= '59.0' ? true : field !== 'AppAnalyticsEnabled'));
+  }
+
   /**
    * Returns the package ID of the package.
    *
@@ -257,6 +263,10 @@ export class Package {
       const opts = Object.fromEntries(
         Object.entries(options).filter(([, value]) => value !== undefined)
       ) as PackageUpdateOptions;
+
+      if (opts.AppAnalyticsEnabled !== undefined && this.options.connection.getApiVersion() < '59.0') {
+        throw messages.createError('appAnalyticsEnabledApiPriorTo59Error');
+      }
 
       const result = await this.options.connection.tooling.update('Package2', opts);
       if (!result.success) {

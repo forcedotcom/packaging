@@ -21,3 +21,7 @@ Package alias %s not found in project.
 # packageNotFound
 
 A package with id %s was not found.
+
+# appAnalyticsEnabledApiPriorTo59Error
+
+Enabling App Analytics is only possible with API version 59.0 or higher.
