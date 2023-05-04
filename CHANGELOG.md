@@ -1,3 +1,12 @@
+# [1.5.0](https://github.com/forcedotcom/packaging/compare/1.4.20...1.5.0) (2023-05-04)
+
+
+### Features
+
+* add AppAnalyticsEnabled option to PackageUpdateOptions ([954c5a3](https://github.com/forcedotcom/packaging/commit/954c5a3fad65aa931cf8f0bbd77f502a6f15198d))
+
+
+
 ## [1.4.20](https://github.com/forcedotcom/packaging/compare/1.4.19...1.4.20) (2023-04-29)
 
 
