@@ -48,6 +48,7 @@ export type PackageUpdateOptions = {
   Name?: string;
   Description?: string;
   PackageErrorUsername?: string;
+  AppAnalyticsEnabled?: boolean;
 };
 
 export type PackageIdType =

@@ -10,6 +10,7 @@ import { assert, expect } from 'chai';
 import { instantiateContext, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { Connection, SfProject } from '@salesforce/core';
 import { Package } from '../../src/package';
+import { PackageUpdateOptions } from '../../src/interfaces';
 
 async function setupProject(setup: (project: SfProject) => void = () => {}) {
   // @ts-ignore
@@ -119,7 +120,62 @@ describe('Package', () => {
         expect(e.message).to.equal('Package alias 04tasdsadfasdf not found in project.');
       }
     });
+
+    it('should update package AppAnalyticsEnabled bit', async () => {
+      $$.inProject(true);
+      project = await setupProject((p) => {
+        p.getSfProjectJson().set('packageAliases', { mypkgalias: pkgId });
+      });
+
+      let objProvided = '';
+      let optsProvided: PackageUpdateOptions = { Id: '' };
+      const conn = {
+        tooling: {
+          update: (obj: string, opts: PackageUpdateOptions) => {
+            objProvided = obj;
+            optsProvided = opts;
+            return { success: true };
+          },
+        },
+        getApiVersion: () => '59.0',
+      } as unknown as Connection;
+
+      const pkg = new Package({ connection: conn, packageAliasOrId: pkgId, project });
+      const result = await pkg.update({
+        Id: pkgId,
+        AppAnalyticsEnabled: true,
+      });
+      assert(result.success);
+      expect(objProvided).to.equal('Package2');
+      expect(optsProvided.Id).to.equal(pkgId);
+      expect(optsProvided.AppAnalyticsEnabled).to.equal(true);
+    });
+
+    it('should error if AppAnalyticsEnabled is defined for api version < 59.0', async () => {
+      $$.inProject(true);
+      project = await setupProject((p) => {
+        p.getSfProjectJson().set('packageAliases', { mypkgalias: pkgId });
+      });
+      const conn = {
+        tooling: {
+          update: () => {},
+        },
+        getApiVersion: () => '58.0',
+      } as unknown as Connection;
+      const pkg = new Package({ connection: conn, packageAliasOrId: pkgId, project });
+      try {
+        await pkg.update({
+          Id: pkgId,
+          AppAnalyticsEnabled: true,
+        });
+        expect.fail('The update did not throw an error when it should have');
+      } catch (e) {
+        assert(e instanceof Error);
+        expect(e.message).to.include('App Analytics').and.to.include('59.0');
+      }
+    });
   });
+
   describe('lazy load package data', () => {
     it('should create a new package - from 0Ho', async () => {
       $$.inProject(true);

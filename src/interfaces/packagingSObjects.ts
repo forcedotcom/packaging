@@ -25,6 +25,7 @@ export namespace PackagingSObjects {
     IsOrgDependent: boolean;
     ConvertedFromPackageId: string;
     PackageErrorUsername: string;
+    AppAnalyticsEnabled?: boolean;
   };
 
   export type Package2Version = {
