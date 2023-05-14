@@ -1,3 +1,12 @@
+## [1.5.4](https://github.com/forcedotcom/packaging/compare/1.5.3...1.5.4) (2023-05-14)
+
+
+### Bug Fixes
+
+* **deps:** bump jsforce from 2.0.0-beta.21 to 2.0.0-beta.22 ([50920d7](https://github.com/forcedotcom/packaging/commit/50920d7fbfe1fdcca9e382ef85395b9237fa223e))
+
+
+
 ## [1.5.3](https://github.com/forcedotcom/packaging/compare/1.5.2...1.5.3) (2023-05-13)
 
 
