@@ -4,7 +4,11 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
+import * as os from 'os';
+import * as path from 'path';
+import * as fs from 'fs';
 import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
+import { ComponentSetBuilder, MetadataConverter } from '@salesforce/source-deploy-retrieve';
 import {
   ConvertPackageOptions,
   PackageCreateOptions,
@@ -16,8 +20,18 @@ import {
   PackageVersionListOptions,
   PackageVersionListResult,
   PackagingSObjects,
+  PackageVersionMetadataDownloadOptions,
+  PackageVersionMetadataDownloadResult,
 } from '../interfaces';
-import { applyErrorAction, BY_LABEL, massageErrorMessage, validateId } from '../utils/packageUtils';
+import {
+  applyErrorAction,
+  BY_LABEL,
+  massageErrorMessage,
+  validateId,
+  isDirEmpty,
+  uniqid,
+  unzipBuffer,
+} from '../utils/packageUtils';
 import { createPackage } from './packageCreate';
 import { convertPackage } from './packageConvert';
 import { listPackageVersions } from './packageVersionList';
@@ -192,6 +206,64 @@ export class Package {
     project?: SfProject
   ): Promise<PackageVersionCreateRequestResult> {
     return convertPackage(pkgId, connection, options, project);
+  }
+
+  /**
+   * Download the metadata files for a previously published package version, convert them to source format, and put them into a new project folder within the sfdx project.
+   *
+   * @param project
+   * @param options {@link PackageVersionMetadataDownloadOptions}
+   * @param connection
+   * @returns
+   */
+  public static async downloadPackageVersionMetadata(
+    project: SfProject,
+    options: PackageVersionMetadataDownloadOptions,
+    connection: Connection
+  ): Promise<PackageVersionMetadataDownloadResult> {
+    // Validate the destination path is suitable to extract package version metadata (must be new or empty)
+    const destinationFolder = options.destinationFolder || 'force-app/';
+    const destinationPath = path.join(project.getPath(), destinationFolder);
+    if (!fs.existsSync(destinationPath)) {
+      fs.mkdirSync(destinationPath, { recursive: true });
+    }
+    if (!isDirEmpty(destinationPath)) {
+      throw messages.createError('sourcesDownloadDirectoryNotEmpty');
+    }
+
+    // Get the MetadataZip URL from the MetadataPackageVersion record
+    const { allPackageVersionId } = options;
+    const versionInfo: PackagingSObjects.MetadataPackageVersion = (await connection.tooling
+      .sobject('MetadataPackageVersion')
+      .retrieve(allPackageVersionId)) as PackagingSObjects.MetadataPackageVersion;
+
+    if (!versionInfo.MetadataZip) {
+      throw messages.createError('unableToAccessMetadataZip');
+    }
+
+    const responseBase64 = await connection.tooling.request<string>(versionInfo.MetadataZip, {
+      decodeResponseAs: 'base64',
+    });
+    const buffer = Buffer.from(responseBase64, 'base64');
+
+    // Unzip the metadata zip file into a tmp directory. It still needs to be converted to source format.
+    const uniqueId = uniqid({ template: `${allPackageVersionId}-%s` });
+    const tmpDir = path.join(os.tmpdir(), uniqueId);
+    fs.mkdirSync(tmpDir, { recursive: true });
+    await unzipBuffer(buffer, tmpDir);
+
+    // Convert the files from metadata -> source format and copy them into the project directory (e.g. force-app/main/default)
+    const componentSet = await ComponentSetBuilder.build({
+      sourcepath: [tmpDir],
+    });
+    const converter = new MetadataConverter();
+    const convertResult = await converter.convert(componentSet, 'source', {
+      type: 'directory',
+      outputDirectory: destinationPath,
+      genUniqueDir: false,
+    });
+
+    return convertResult;
   }
 
   private static getPackage2Fields(connection: Connection): string[] {

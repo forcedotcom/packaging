@@ -10,6 +10,7 @@ import { Connection, NamedPackageDir, SfProject } from '@salesforce/core';
 import { SaveResult } from 'jsforce';
 import { Attributes } from 'graphology-types';
 import { Optional } from '@salesforce/ts-types';
+import { ConvertResult } from '@salesforce/source-deploy-retrieve';
 import { PackageProfileApi } from '../package/packageProfileApi';
 import { PackageAncestryNode } from '../package/packageAncestry';
 import { PackagingSObjects } from './packagingSObjects';
@@ -222,6 +223,13 @@ export type PackageVersionCreateRequestOptions = {
   branch?: string;
   skipancestorcheck?: boolean;
 };
+
+export type PackageVersionMetadataDownloadOptions = {
+  allPackageVersionId: string;
+  destinationFolder: string;
+};
+
+export type PackageVersionMetadataDownloadResult = ConvertResult;
 
 export type PackageInstallOptions = {
   /**
