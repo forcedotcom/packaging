@@ -1,3 +1,12 @@
+## [1.5.5](https://github.com/forcedotcom/packaging/compare/1.5.4...1.5.5) (2023-05-16)
+
+
+### Bug Fixes
+
+* **deps:** bump vm2 from 3.9.11 to 3.9.18 ([45386c6](https://github.com/forcedotcom/packaging/commit/45386c651393892a9b908e9fa866455ba1e10ad3))
+
+
+
 ## [1.5.4](https://github.com/forcedotcom/packaging/compare/1.5.3...1.5.4) (2023-05-14)
 
 
