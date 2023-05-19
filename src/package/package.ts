@@ -242,7 +242,7 @@ export class Package {
     }
 
     const responseBase64 = await connection.tooling.request<string>(versionInfo.MetadataZip, {
-      decodeResponseAs: 'base64',
+      encoding: 'base64',
     });
     const buffer = Buffer.from(responseBase64, 'base64');
 
