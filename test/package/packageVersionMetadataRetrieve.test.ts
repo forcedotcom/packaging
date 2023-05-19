@@ -85,7 +85,9 @@ describe('Package Version Metadata Retrieve', () => {
       await Package.downloadPackageVersionMetadata(project, downloadOptions, connection);
     } catch (e) {
       const error = e as SfError;
-      expect(error.message).to.equal('The directory where downloaded sources will be downloaded to must be empty.');
+      expect(error.message).to.equal(
+        'Can’t retrieve package version metadata. The specified directory isn’t empty. Empty the directory, or create a new one and then retry this command.'
+      );
     }
   });
 
@@ -98,7 +100,8 @@ describe('Package Version Metadata Retrieve', () => {
     } catch (e) {
       const error = e as SfError;
       expect(error.message).to.equal(
-        'Unable to access MetadataZip field. Check that your user has permission to access this field and you are using a suitably high API version.'
+        // eslint-disable-next-line @typescript-eslint/quotes
+        'Can’t retrieve package version metadata. Ensure that you’re using API version 59.0 or higher, and that you have the user permissions needed to access fields on the MetadataPackageVersion object.\nThen retry this command.'
       );
     }
   });
