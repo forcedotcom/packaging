@@ -28,12 +28,15 @@ Enabling App Analytics is only possible with API version 59.0 or higher.
 
 # sourcesDownloadDirectoryNotEmpty
 
-The directory where downloaded sources will be downloaded to must be empty.
+Can’t retrieve package version metadata. The specified directory isn’t empty. Empty the directory, or create a new one and then retry this command.
 
 # unableToAccessMetadataZip
 
-Unable to access MetadataZip field. Check that your user has permission to access this field and you are using a suitably high API version.
+Can’t retrieve package version metadata. Ensure that you’re using API version 59.0 or higher, and that you have the user permissions needed to access fields on the MetadataPackageVersion object.
+Then retry this command.
 
 # errorDownloadingMetadataZip
 
-An error occurred downloading the metadata zip: %s
+Can’t retrieve package version metadata.
+
+An error occurred downloading the metadata: %s
