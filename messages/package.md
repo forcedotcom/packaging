@@ -28,7 +28,12 @@ Enabling App Analytics is only possible with API version 59.0 or higher.
 
 # sourcesDownloadDirectoryNotEmpty
 
-Can’t retrieve package version metadata. The specified directory isn’t empty. Empty the directory, or create a new one and then retry this command.
+Can’t retrieve package version metadata. The specified directory isn’t empty. Empty the directory, or create a new one and try again.
+
+# sourcesDownloadDirectoryMustBeRelative
+
+Can’t retrieve package version metadata.
+The specified directory must be relative to your Salesforce DX project directory, and not an absolute path.
 
 # unableToAccessMetadataZip
 

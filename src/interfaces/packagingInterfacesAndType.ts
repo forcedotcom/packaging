@@ -225,8 +225,8 @@ export type PackageVersionCreateRequestOptions = {
 };
 
 export type PackageVersionMetadataDownloadOptions = {
-  allPackageVersionId: string;
-  destinationFolder: string;
+  subscriberPackageVersionId: string;
+  destinationFolder?: string;
 };
 
 export type PackageVersionMetadataDownloadResult = ConvertResult;

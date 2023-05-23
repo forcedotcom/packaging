@@ -4,11 +4,11 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import * as os from 'os';
+// import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
 import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
-import { ComponentSetBuilder, MetadataConverter } from '@salesforce/source-deploy-retrieve';
+import { ComponentSet, MetadataConverter, ZipTreeContainer } from '@salesforce/source-deploy-retrieve';
 import {
   ConvertPackageOptions,
   PackageCreateOptions,
@@ -28,9 +28,7 @@ import {
   BY_LABEL,
   massageErrorMessage,
   validateId,
-  isDirEmpty,
-  uniqid,
-  unzipBuffer,
+  isPackageDirectoryEffectivelyEmpty,
 } from '../utils/packageUtils';
 import { createPackage } from './packageCreate';
 import { convertPackage } from './packageConvert';
@@ -222,20 +220,25 @@ export class Package {
     connection: Connection
   ): Promise<PackageVersionMetadataDownloadResult> {
     // Validate the destination path is suitable to extract package version metadata (must be new or empty)
-    const destinationFolder = options.destinationFolder || 'force-app/';
+    const destinationFolder = options.destinationFolder ?? 'force-app';
+
+    if (path.isAbsolute(destinationFolder)) {
+      throw messages.createError('sourcesDownloadDirectoryMustBeRelative');
+    }
+
     const destinationPath = path.join(project.getPath(), destinationFolder);
     if (!fs.existsSync(destinationPath)) {
       fs.mkdirSync(destinationPath, { recursive: true });
     }
-    if (!isDirEmpty(destinationPath)) {
+    if (!isPackageDirectoryEffectivelyEmpty(destinationPath)) {
       throw messages.createError('sourcesDownloadDirectoryNotEmpty');
     }
 
     // Get the MetadataZip URL from the MetadataPackageVersion record
-    const { allPackageVersionId } = options;
+    const { subscriberPackageVersionId } = options;
     const versionInfo: PackagingSObjects.MetadataPackageVersion = (await connection.tooling
       .sobject('MetadataPackageVersion')
-      .retrieve(allPackageVersionId)) as PackagingSObjects.MetadataPackageVersion;
+      .retrieve(subscriberPackageVersionId)) as PackagingSObjects.MetadataPackageVersion;
 
     if (!versionInfo.MetadataZip) {
       throw messages.createError('unableToAccessMetadataZip');
@@ -246,23 +249,21 @@ export class Package {
     });
     const buffer = Buffer.from(responseBase64, 'base64');
 
-    // Unzip the metadata zip file into a tmp directory. It still needs to be converted to source format.
-    const uniqueId = uniqid({ template: `${allPackageVersionId}-%s` });
-    const tmpDir = path.join(os.tmpdir(), uniqueId);
-    fs.mkdirSync(tmpDir, { recursive: true });
-    await unzipBuffer(buffer, tmpDir);
-
-    // Convert the files from metadata -> source format and copy them into the project directory (e.g. force-app/main/default)
-    const componentSet = await ComponentSetBuilder.build({
-      sourcepath: [tmpDir],
-    });
     const converter = new MetadataConverter();
-    const convertResult = await converter.convert(componentSet, 'source', {
+    const tree = await ZipTreeContainer.create(buffer);
+
+    const zipComponents = ComponentSet.fromSource({
+      fsPaths: ['.'],
+      tree,
+    })
+      .getSourceComponents()
+      .toArray();
+
+    const convertResult = converter.convert(zipComponents, 'source', {
       type: 'directory',
       outputDirectory: destinationPath,
       genUniqueDir: false,
     });
-
     return convertResult;
   }
 

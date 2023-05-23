@@ -7,7 +7,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
-import { expect } from 'chai';
+import { assert, expect } from 'chai';
 import { Connection, SfProject, SfError } from '@salesforce/core';
 import { Package } from '../../src/package/package';
 
@@ -20,7 +20,7 @@ describe('Package Version Metadata Retrieve', () => {
   const metadataZipURL = `/services/data/v59.0/tooling/sobjects/MetadataPackageVersion/${packageVersionId}/MetadataZip`;
   const zipBytesBase64 = fs.readFileSync('test/data/package.zip').toString('base64');
   const downloadOptions = {
-    allPackageVersionId: packageVersionId,
+    subscriberPackageVersionId: packageVersionId,
     destinationFolder,
   };
 
@@ -76,6 +76,15 @@ describe('Package Version Metadata Retrieve', () => {
     expect(result.converted?.length).to.equal(4);
   });
 
+  it('should succeed for a valid package version when the destination dir is a newly created package directory', async () => {
+    const apexPath = path.join(project.getPath(), destinationFolder, 'main', 'default', 'classes');
+    fs.mkdirSync(apexPath, { recursive: true });
+    fs.writeFileSync(path.join(apexPath, '.eslint.json'), '{ }');
+    const result = await Package.downloadPackageVersionMetadata(project, downloadOptions, connection);
+    expect(result.converted).to.not.be.undefined;
+    expect(result.converted?.length).to.equal(4);
+  });
+
   it('should fail if the destination directory is not empty', async () => {
     const directoryToCreate = path.join(project.getPath(), destinationFolder);
     fs.mkdirSync(directoryToCreate, { recursive: true });
@@ -83,10 +92,47 @@ describe('Package Version Metadata Retrieve', () => {
     fs.writeFileSync(testFilePath, 'Some content to make this directory not empty');
     try {
       await Package.downloadPackageVersionMetadata(project, downloadOptions, connection);
+      assert.fail('Expected test execution to raise an error');
     } catch (e) {
       const error = e as SfError;
       expect(error.message).to.equal(
-        'Can’t retrieve package version metadata. The specified directory isn’t empty. Empty the directory, or create a new one and then retry this command.'
+        'Can’t retrieve package version metadata. The specified directory isn’t empty. Empty the directory, or create a new one and try again.'
+      );
+    }
+  });
+
+  it('should fail if the given destination directory is really a file', async () => {
+    const filename = 'some.file';
+    fs.writeFileSync(path.join(project.getPath(), filename), 'some contents');
+    try {
+      await Package.downloadPackageVersionMetadata(
+        project,
+        { ...downloadOptions, destinationFolder: filename },
+        connection
+      );
+      assert.fail('Expected test execution to raise an error');
+    } catch (e) {
+      const error = e as SfError;
+      expect(error.message).to.equal(
+        'Can’t retrieve package version metadata. The specified directory isn’t empty. Empty the directory, or create a new one and try again.'
+      );
+    }
+  });
+
+  it('should fail if the given destination directory is an absolute file path', async () => {
+    const absolutePath = path.resolve(destinationFolder);
+    try {
+      await Package.downloadPackageVersionMetadata(
+        project,
+        { ...downloadOptions, destinationFolder: absolutePath },
+        connection
+      );
+      assert.fail('Expected test execution to raise an error');
+    } catch (e) {
+      const error = e as SfError;
+      expect(error.message).to.equal(
+        // eslint-disable-next-line @typescript-eslint/quotes
+        'Can’t retrieve package version metadata.\nThe specified directory must be relative to your Salesforce DX project directory, and not an absolute path.'
       );
     }
   });
@@ -97,6 +143,7 @@ describe('Package Version Metadata Retrieve', () => {
     });
     try {
       await Package.downloadPackageVersionMetadata(project, downloadOptions, connection);
+      assert.fail('Expected test execution to raise an error');
     } catch (e) {
       const error = e as SfError;
       expect(error.message).to.equal(

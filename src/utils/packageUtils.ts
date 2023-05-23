@@ -6,7 +6,7 @@
  */
 import * as os from 'os';
 import * as fs from 'fs';
-import { dirname, join } from 'path';
+import { join } from 'path';
 import { pipeline as cbPipeline } from 'stream';
 import * as util from 'util';
 import { promisify } from 'util';
@@ -46,9 +46,6 @@ const ID_REGISTRY = [
 export type IdRegistryValue = { prefix: string; label: string };
 export type IdRegistry = {
   [key: string]: IdRegistryValue;
-};
-export type UnzipResults = {
-  success: boolean;
 };
 
 export const INSTALL_URL_BASE = new SfdcUrl('https://login.salesforce.com/packaging/installPackage.apexp?p0=');
@@ -423,27 +420,6 @@ export async function generatePackageAliasEntry(
   return [packageAlias, packageVersionId];
 }
 
-export async function unzipBuffer(buffer: Buffer, directory: string): Promise<UnzipResults> {
-  const zip = new JSZIP();
-  const contents = await zip.loadAsync(buffer);
-
-  await Promise.all(
-    Object.values(contents.files).map(async (file: JSZIP.JSZipObject) => {
-      const content = await file.async('nodebuffer');
-      const filepath = join(directory, file.name);
-      const destDir = file.dir ? filepath : dirname(filepath);
-      fs.mkdirSync(destDir, { recursive: true });
-      if (!file.dir) {
-        fs.writeFileSync(filepath, content);
-      }
-    })
-  );
-
-  return {
-    success: true,
-  };
-}
-
 export function combineSaveErrors(sObject: string, crudOperation: string, errors: SaveError[]): SfError {
   const errorMessages = errors.map((error) => {
     const fieldsString = error.fields?.length ? `Fields: [${error.fields?.join(', ')}]` : '';
@@ -541,6 +517,27 @@ export function replaceIfEmpty<T>(value: T, replacement: T): T {
   return !isEmpty(value) ? value : replacement;
 }
 
-export function isDirEmpty(directory: string): boolean {
-  return fs.readdirSync(directory).length === 0;
+/**
+ * Brand new SFDX projects contain a force-app directory tree contiaining empty folders
+ * and a few .eslint.json files. We still want to consider such a directory tree
+ * as 'empty' for the sake of operations like downloading package version metadata.
+ *
+ * @param directory The absolute path to a directory
+ * @returns true if the directory contains nothing except empty directories or
+ * directories containing only an .eslint.json file.
+ */
+export function isPackageDirectoryEffectivelyEmpty(directory: string): boolean {
+  if (!fs.lstatSync(directory).isDirectory()) {
+    return false;
+  }
+  const entries = fs.readdirSync(directory, { withFileTypes: true });
+  let isEffectivelyEmpty = true;
+  entries.forEach((entry) => {
+    if (entry.isDirectory()) {
+      isEffectivelyEmpty = isPackageDirectoryEffectivelyEmpty(join(directory, entry.name));
+    } else if (entry.name !== '.eslint.json') {
+      isEffectivelyEmpty = false;
+    }
+  });
+  return isEffectivelyEmpty;
 }

@@ -344,6 +344,6 @@ export namespace PackagingSObjects {
     PatchVersion: number;
     BuildNumber: number;
     IsDeprecated: boolean;
-    MetadataZip: string;
+    MetadataZip?: string;
   };
 }
