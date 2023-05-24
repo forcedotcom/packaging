@@ -131,8 +131,7 @@ describe('Package Version Metadata Retrieve', () => {
     } catch (e) {
       const error = e as SfError;
       expect(error.message).to.equal(
-        // eslint-disable-next-line @typescript-eslint/quotes
-        'Can’t retrieve package version metadata.\nThe specified directory must be relative to your Salesforce DX project directory, and not an absolute path.'
+        'Can’t retrieve package version metadata. The specified directory must be relative to your Salesforce DX project directory, and not an absolute path.'
       );
     }
   });
