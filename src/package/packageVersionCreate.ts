@@ -659,7 +659,15 @@ export class PackageVersionCreate {
     }
 
     const request = await this.createPackageVersionCreateRequestFromOptions();
-    const createResult = await this.connection.tooling.create('Package2VersionCreateRequest', request);
+    const options = {
+      multipartFileFields: {
+        VersionInfo: {
+          contentType: 'application/zip',
+          filename: 'package-version-info.zip',
+        },
+      },
+    };
+    const createResult = await this.connection.tooling.create('Package2VersionCreateRequest', request, options);
     if (!createResult.success) {
       const errStr = createResult.errors?.join(', ') ?? createResult.errors;
       const id: string = createResult.id ?? '';
