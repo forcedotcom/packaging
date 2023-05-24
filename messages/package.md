@@ -32,8 +32,7 @@ Can’t retrieve package version metadata. The specified directory isn’t empty
 
 # sourcesDownloadDirectoryMustBeRelative
 
-Can’t retrieve package version metadata.
-The specified directory must be relative to your Salesforce DX project directory, and not an absolute path.
+Can’t retrieve package version metadata. The specified directory must be relative to your Salesforce DX project directory, and not an absolute path.
 
 # unableToAccessMetadataZip
 
