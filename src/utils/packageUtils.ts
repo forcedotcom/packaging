@@ -531,13 +531,9 @@ export function isPackageDirectoryEffectivelyEmpty(directory: string): boolean {
     return false;
   }
   const entries = fs.readdirSync(directory, { withFileTypes: true });
-  let isEffectivelyEmpty = true;
-  entries.forEach((entry) => {
-    if (entry.isDirectory()) {
-      isEffectivelyEmpty = isPackageDirectoryEffectivelyEmpty(join(directory, entry.name));
-    } else if (entry.name !== '.eslint.json') {
-      isEffectivelyEmpty = false;
-    }
-  });
-  return isEffectivelyEmpty;
+  return entries.every((entry) =>
+    entry.isDirectory()
+      ? isPackageDirectoryEffectivelyEmpty(join(directory, entry.name))
+      : entry.name === '.eslint.json'
+  );
 }

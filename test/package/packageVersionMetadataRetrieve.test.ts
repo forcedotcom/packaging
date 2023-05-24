@@ -147,8 +147,7 @@ describe('Package Version Metadata Retrieve', () => {
     } catch (e) {
       const error = e as SfError;
       expect(error.message).to.equal(
-        // eslint-disable-next-line @typescript-eslint/quotes
-        'Can’t retrieve package version metadata. Ensure that you’re using API version 59.0 or higher, and that you have the user permissions needed to access fields on the MetadataPackageVersion object.\nThen retry this command.'
+        'Can’t retrieve package version metadata. Ensure that you’re using API version 59.0 or higher, and that you have the user permissions needed to access fields on the MetadataPackageVersion object.'
       );
     }
   });

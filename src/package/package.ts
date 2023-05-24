@@ -4,7 +4,6 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-// import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
 import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
@@ -259,12 +258,11 @@ export class Package {
       .getSourceComponents()
       .toArray();
 
-    const convertResult = converter.convert(zipComponents, 'source', {
+    return converter.convert(zipComponents, 'source', {
       type: 'directory',
       outputDirectory: destinationPath,
       genUniqueDir: false,
     });
-    return convertResult;
   }
 
   private static getPackage2Fields(connection: Connection): string[] {

@@ -38,7 +38,6 @@ The specified directory must be relative to your Salesforce DX project directory
 # unableToAccessMetadataZip
 
 Can’t retrieve package version metadata. Ensure that you’re using API version 59.0 or higher, and that you have the user permissions needed to access fields on the MetadataPackageVersion object.
-Then retry this command.
 
 # errorDownloadingMetadataZip
 
