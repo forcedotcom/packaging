@@ -1,3 +1,12 @@
+## [1.6.2](https://github.com/forcedotcom/packaging/compare/1.6.1...1.6.2) (2023-05-28)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/source-deploy-retrieve from 8.5.1 to 8.6.0 ([e653214](https://github.com/forcedotcom/packaging/commit/e6532149a15423f5293b1b206a80e46be2aced54))
+
+
+
 ## [1.6.1](https://github.com/forcedotcom/packaging/compare/1.6.0...1.6.1) (2023-05-27)
 
 
