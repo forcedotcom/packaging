@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/packaging",
-  "version": "1.6.2",
+  "version": "2.0.0",
   "description": "Packaging library for the Salesforce packaging platform",
   "main": "lib/exported",
   "types": "lib/exported.d.ts",
@@ -31,6 +31,9 @@
     "salesforcedx",
     "packaging"
   ],
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "files": [
     "docs",
     "lib",
@@ -40,10 +43,10 @@
   "dependencies": {
     "@oclif/core": "^2.8.5",
     "@salesforce/core": "^3.36.2",
-    "@salesforce/kit": "^1.9.2",
+    "@salesforce/kit": "^3.0.1",
     "@salesforce/schemas": "^1.5.1",
     "@salesforce/source-deploy-retrieve": "^8.6.0",
-    "@salesforce/ts-types": "^1.7.3",
+    "@salesforce/ts-types": "^2.0.2",
     "@xmldom/xmldom": "^0.8.7",
     "debug": "^4.3.4",
     "globby": "^11",
@@ -53,14 +56,13 @@
     "js2xmlparser": "^4.0.2",
     "jsforce": "^2.0.0-beta.23",
     "jszip": "^3.10.1",
-    "mkdirp": "1.0.4",
     "ts-retry-promise": "^0.7.0",
     "xml2js": "^0.5.0"
   },
   "devDependencies": {
     "@salesforce/cli-plugins-testkit": "^3.4.0",
-    "@salesforce/dev-config": "^3.1.0",
-    "@salesforce/dev-scripts": "^4.3.1",
+    "@salesforce/dev-config": "^4.0.1",
+    "@salesforce/dev-scripts": "^5.0.1",
     "@salesforce/prettier-config": "^0.0.3",
     "@salesforce/ts-sinon": "^1.4.7",
     "@types/debug": "4.1.7",
@@ -73,12 +75,12 @@
     "commitizen": "^4.2.6",
     "eslint": "^8.41.0",
     "eslint-config-prettier": "^8.8.0",
-    "eslint-config-salesforce": "^1.2.0",
+    "eslint-config-salesforce": "^2.0.1",
     "eslint-config-salesforce-license": "^0.2.0",
     "eslint-config-salesforce-typescript": "^1.1.1",
     "eslint-plugin-header": "3.1.1",
     "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-jsdoc": "^41.1.2",
+    "eslint-plugin-jsdoc": "^44.2.4",
     "eslint-plugin-sf-plugin": "^1.15.2",
     "husky": "^8.0.3",
     "mocha": "^10.2.0",

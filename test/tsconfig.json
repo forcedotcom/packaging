@@ -1,7 +1,10 @@
 {
   "extends": "@salesforce/dev-config/tsconfig-test-strict",
   "compilerOptions": {
-    "strictNullChecks": true
+    "baseUrl": "..",
+    "paths": {
+      "@salesforce/kit": ["node_modules/@salesforce/kit"]
+    }
   },
   "include": ["./**/*.ts"]
 }
