@@ -5,7 +5,7 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { Connection, Logger, Messages, sfdc, SfError, SfProject } from '@salesforce/core';
+import { Connection, Logger, Messages, validateSalesforceId, SfError, SfProject } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import { Nullable, Optional } from '@salesforce/ts-types';
 import {
@@ -126,7 +126,7 @@ export class SubscriberPackageVersion {
     }
 
     // validate ID
-    if (!this.id.startsWith('04t') || !sfdc.validateSalesforceId(this.id)) {
+    if (!this.id.startsWith('04t') || !validateSalesforceId(this.id)) {
       throw messages.createError('errorInvalidAliasOrId', [this.options.aliasOrId]);
     }
 
@@ -194,7 +194,7 @@ export class SubscriberPackageVersion {
     id: string,
     connection: Connection
   ): Promise<PackagingSObjects.SubscriberPackageVersionUninstallRequest> {
-    if (!id.startsWith('06y') || !sfdc.validateSalesforceId(id)) {
+    if (!id.startsWith('06y') || !validateSalesforceId(id)) {
       throw messages.createError('packageVersionUninstallRequestIdInvalid', [id]);
     }
     const result = (await connection.tooling.retrieve(
@@ -222,7 +222,7 @@ export class SubscriberPackageVersion {
     installRequestId: string,
     connection: Connection
   ): Promise<PackagingSObjects.PackageInstallRequest> {
-    if (!installRequestId.startsWith('0Hf') || !sfdc.validateSalesforceId(installRequestId)) {
+    if (!installRequestId.startsWith('0Hf') || !validateSalesforceId(installRequestId)) {
       throw messages.createError('packageVersionInstallRequestIdInvalid', [installRequestId]);
     }
     const installRequest = await getStatus(connection, installRequestId);
