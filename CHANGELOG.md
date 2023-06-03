@@ -1,3 +1,12 @@
+## [2.0.3](https://github.com/forcedotcom/packaging/compare/2.0.2...2.0.3) (2023-06-03)
+
+
+### Bug Fixes
+
+* **deps:** bump @xmldom/xmldom from 0.8.7 to 0.8.8 ([0ba778d](https://github.com/forcedotcom/packaging/commit/0ba778dc27f93ef8353ce7907573744799319565))
+
+
+
 ## [2.0.2](https://github.com/forcedotcom/packaging/compare/2.0.1...2.0.2) (2023-05-30)
 
 
