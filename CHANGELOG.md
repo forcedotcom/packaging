@@ -1,3 +1,17 @@
+# [2.1.0](https://github.com/forcedotcom/packaging/compare/2.0.3...2.1.0) (2023-06-06)
+
+
+### Bug Fixes
+
+* when resolving dependencies the branch attribute should be preferred ([e94e753](https://github.com/forcedotcom/packaging/commit/e94e7538ef55be365f9d8f0057dfb6492d0198a3))
+
+
+### Features
+
+* added unit test to support dependency branch verification ([c6f2d61](https://github.com/forcedotcom/packaging/commit/c6f2d61a0a289d5a46588a5699a89974fd7a332c))
+
+
+
 ## [2.0.3](https://github.com/forcedotcom/packaging/compare/2.0.2...2.0.3) (2023-06-03)
 
 
