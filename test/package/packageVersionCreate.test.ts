@@ -13,6 +13,7 @@ import * as xml2js from 'xml2js';
 import { MetadataResolver, PackageVersionCreate } from '../../src/package/packageVersionCreate';
 import { PackagingSObjects } from '../../src/interfaces';
 import { PackageProfileApi } from '../../src/package/packageProfileApi';
+import { VersionNumber } from '../../src/package/versionNumber';
 
 describe('Package Version Create', () => {
   const $$ = instantiateContext();
@@ -45,7 +46,7 @@ describe('Package Version Create', () => {
       packageDirectories: [
         {
           path: 'pkg',
-          package: 'dep',
+          package: 'DEP',
           versionName: 'ver 0.1',
           versionNumber: '0.1.0.NEXT',
           default: false,
@@ -74,7 +75,7 @@ describe('Package Version Create', () => {
       packageAliases: {
         TEST: packageId,
         TEST2: '05i3i000000Gmj6XXX',
-        DEP: '05i3i000000Gmj6XXX',
+        DEP: '0Ho4J000000TNmPXXX',
         'DEP@0.1.0-1': '04t3i000002eyYXXXX',
       },
     });
@@ -336,6 +337,50 @@ describe('Package Version Create', () => {
     );
   });
 
+  it("should create the package version create request when dependency branch does't match option branch", async () => {
+    // @ts-ignore: Argument of type '"resolveBuildNumber"' is not assignable to parameter of type '"createPackageVersion"'.
+    const packageVersionCreateSpy = $$.SANDBOX.spy(PackageVersionCreate.prototype, 'resolveBuildNumber');
+
+    const config = project.getSfProjectJson().getContents();
+    if (config.packageDirectories[1].dependencies !== undefined) {
+      config.packageDirectories[1].dependencies[0].package = 'DEP';
+      config.packageDirectories[1].dependencies[0].versionNumber = '0.1.0.1';
+      config.packageDirectories[1].dependencies[0].branch = 'dev';
+    }
+    await project.getSfProjectJson().write(config);
+
+    const pvc = new PackageVersionCreate({ connection, project, branch: 'main', packageId, skipancestorcheck: true });
+    stubConvert();
+
+    const result = await pvc.createPackageVersion();
+
+    /*
+      Assert that the --branch argument was passed in and is used to
+      retrieve the appropriate version/build number using the value in the
+      dependency definition.
+    */
+
+    expect(packageCreateStub.firstCall.args[1].Branch).to.equal('main');
+    // @ts-ignore: Expected 0 arguments, but got 3
+    expect(packageVersionCreateSpy.calledWith(VersionNumber.from('0.1.0.1'), '0Ho4J000000TNmPXXX', 'dev')).to.equal(
+      true
+    );
+
+    expect(result).to.have.all.keys(
+      'Branch',
+      'CreatedBy',
+      'CreatedDate',
+      'Error',
+      'HasMetadataRemoved',
+      'Id',
+      'Package2Id',
+      'Package2VersionId',
+      'Status',
+      'SubscriberPackageVersionId',
+      'Tag'
+    );
+  });
+
   it('should create the package version create request with language and API version >= 57.0', async () => {
     $$.SANDBOX.stub(connection, 'getApiVersion').returns('57.0');
     const pvc = new PackageVersionCreate({ connection, project, language: 'en_US', packageId });
@@ -432,6 +477,7 @@ describe('Package Version Create', () => {
       );
     }
   });
+
   it('should validate options when package type = unlocked (scripts) - uninstall script', async () => {
     packageTypeQuery.restore();
     // @ts-ignore
