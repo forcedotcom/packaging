@@ -171,6 +171,7 @@ export class PackageVersionCreate {
 
     // resolve a build number keyword to an actual number, if needed
     const resolvedBuildNumber = await this.resolveBuildNumber(versionNumber, dependency.packageId, branch);
+
     // now that we have a full build number, query for the associated 04t.
     // because the build number may not be unique across versions, add in conditionals for
     // the branch or the RELEASED token (if used)
