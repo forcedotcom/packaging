@@ -18,7 +18,9 @@ describe('Package Version Metadata Retrieve', () => {
   const packageVersionId = '04txx0000004HjmAAE';
   const destinationFolder = 'downloaded-metadata';
   const metadataZipURL = `/services/data/v59.0/tooling/sobjects/MetadataPackageVersion/${packageVersionId}/MetadataZip`;
-  const zipBytesBase64 = fs.readFileSync('test/data/package.zip').toString('base64');
+  const firstGenBytesBase64 = fs.readFileSync('test/data/package-1gp.zip').toString('base64');
+  const secondGenBytesBase64 = fs.readFileSync('test/data/package-2gp.zip').toString('base64');
+
   const downloadOptions = {
     subscriberPackageVersionId: packageVersionId,
     destinationFolder,
@@ -46,7 +48,6 @@ describe('Package Version Metadata Retrieve', () => {
     await $$.stubAuths(testOrg);
     connection = await testOrg.getConnection();
 
-    $$.SANDBOX.stub(connection.tooling, 'request').resolves(zipBytesBase64);
     packageVersionRetrieveStub = $$.SANDBOX.stub(connection.tooling, 'retrieve').resolves({
       Id: packageVersionId,
       MetadataZip: metadataZipURL,
@@ -55,6 +56,7 @@ describe('Package Version Metadata Retrieve', () => {
 
   afterEach(async () => {
     restoreContext($$);
+    $$.restore();
     const pathToClean = path.join(project.getPath(), destinationFolder);
     if (fs.existsSync(pathToClean)) {
       await fs.promises.rm(pathToClean, { recursive: true });
@@ -64,12 +66,14 @@ describe('Package Version Metadata Retrieve', () => {
   });
 
   it('should succeed for a valid package version when the destination dir is nonexistent', async () => {
+    $$.SANDBOX.stub(connection.tooling, 'request').resolves(firstGenBytesBase64);
     const result = await Package.downloadPackageVersionMetadata(project, downloadOptions, connection);
     expect(result.converted).to.not.be.undefined;
     expect(result.converted?.length).to.equal(4);
   });
 
   it('should succeed for a valid package version when the destination dir is present but empty', async () => {
+    $$.SANDBOX.stub(connection.tooling, 'request').resolves(firstGenBytesBase64);
     fs.mkdirSync(path.join(project.getPath(), destinationFolder), { recursive: true });
     const result = await Package.downloadPackageVersionMetadata(project, downloadOptions, connection);
     expect(result.converted).to.not.be.undefined;
@@ -77,9 +81,17 @@ describe('Package Version Metadata Retrieve', () => {
   });
 
   it('should succeed for a valid package version when the destination dir is a newly created package directory', async () => {
+    $$.SANDBOX.stub(connection.tooling, 'request').resolves(firstGenBytesBase64);
     const apexPath = path.join(project.getPath(), destinationFolder, 'main', 'default', 'classes');
     fs.mkdirSync(apexPath, { recursive: true });
     fs.writeFileSync(path.join(apexPath, '.eslint.json'), '{ }');
+    const result = await Package.downloadPackageVersionMetadata(project, downloadOptions, connection);
+    expect(result.converted).to.not.be.undefined;
+    expect(result.converted?.length).to.equal(4);
+  });
+
+  it('should succeed for a valid 2gp package', async () => {
+    $$.SANDBOX.stub(connection.tooling, 'request').resolves(secondGenBytesBase64);
     const result = await Package.downloadPackageVersionMetadata(project, downloadOptions, connection);
     expect(result.converted).to.not.be.undefined;
     expect(result.converted?.length).to.equal(4);

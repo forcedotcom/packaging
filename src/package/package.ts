@@ -234,7 +234,8 @@ export class Package {
     }
 
     // Get the MetadataZip URL from the MetadataPackageVersion record
-    const { subscriberPackageVersionId } = options;
+    const subscriberPackageVersionId =
+      project.getPackageIdFromAlias(options.subscriberPackageVersionId) ?? options.subscriberPackageVersionId;
     const versionInfo: PackagingSObjects.MetadataPackageVersion = (await connection.tooling
       .sobject('MetadataPackageVersion')
       .retrieve(subscriberPackageVersionId)) as PackagingSObjects.MetadataPackageVersion;
@@ -248,8 +249,11 @@ export class Package {
     });
     const buffer = Buffer.from(responseBase64, 'base64');
 
-    const converter = new MetadataConverter();
-    const tree = await ZipTreeContainer.create(buffer);
+    // 2GP packages have the package.zip wrapped in an outer zip.
+    let tree = await ZipTreeContainer.create(buffer);
+    if (tree.exists('package.zip')) {
+      tree = await ZipTreeContainer.create(await tree.readFile('package.zip'));
+    }
 
     const zipComponents = ComponentSet.fromSource({
       fsPaths: ['.'],
@@ -258,7 +262,7 @@ export class Package {
       .getSourceComponents()
       .toArray();
 
-    return converter.convert(zipComponents, 'source', {
+    return new MetadataConverter().convert(zipComponents, 'source', {
       type: 'directory',
       outputDirectory: destinationPath,
       genUniqueDir: false,
