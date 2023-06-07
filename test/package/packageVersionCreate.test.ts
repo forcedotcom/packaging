@@ -337,7 +337,49 @@ describe('Package Version Create', () => {
     );
   });
 
-  it("should create the package version create request when dependency branch does't match option branch", async () => {
+  it('should resolve dependency version using the --branch parameter only if the branch is undefined in config', async () => {
+    // @ts-ignore: Argument of type '"resolveBuildNumber"' is not assignable to parameter of type '"createPackageVersion"'.
+    const packageVersionCreateSpy = $$.SANDBOX.spy(PackageVersionCreate.prototype, 'resolveBuildNumber');
+
+    const config = project.getSfProjectJson().getContents();
+    if (config.packageDirectories[1].dependencies !== undefined) {
+      config.packageDirectories[1].dependencies[0].package = 'DEP';
+      config.packageDirectories[1].dependencies[0].versionNumber = '0.1.0.1';
+    }
+    await project.getSfProjectJson().write(config);
+
+    const pvc = new PackageVersionCreate({ connection, project, branch: 'main', packageId, skipancestorcheck: true });
+    stubConvert();
+
+    const result = await pvc.createPackageVersion();
+
+    /*
+      Assert that the --branch argument was passed in and is used to
+      retrieve the appropriate version/build number using the value in the
+      dependency definition.
+    */
+    expect(packageCreateStub.firstCall.args[1].Branch).to.equal('main');
+    // @ts-ignore: Expected 0 arguments, but got 3
+    expect(packageVersionCreateSpy.calledWith(VersionNumber.from('0.1.0.1'), '0Ho4J000000TNmPXXX', 'main')).to.equal(
+      true
+    );
+
+    expect(result).to.have.all.keys(
+      'Branch',
+      'CreatedBy',
+      'CreatedDate',
+      'Error',
+      'HasMetadataRemoved',
+      'Id',
+      'Package2Id',
+      'Package2VersionId',
+      'Status',
+      'SubscriberPackageVersionId',
+      'Tag'
+    );
+  });
+
+  it('should resolve dependency version ignoring the --branch parameter if the branch is explicitly set in config', async () => {
     // @ts-ignore: Argument of type '"resolveBuildNumber"' is not assignable to parameter of type '"createPackageVersion"'.
     const packageVersionCreateSpy = $$.SANDBOX.spy(PackageVersionCreate.prototype, 'resolveBuildNumber');
 
@@ -359,12 +401,52 @@ describe('Package Version Create', () => {
       retrieve the appropriate version/build number using the value in the
       dependency definition.
     */
-
     expect(packageCreateStub.firstCall.args[1].Branch).to.equal('main');
     // @ts-ignore: Expected 0 arguments, but got 3
     expect(packageVersionCreateSpy.calledWith(VersionNumber.from('0.1.0.1'), '0Ho4J000000TNmPXXX', 'dev')).to.equal(
       true
     );
+
+    expect(result).to.have.all.keys(
+      'Branch',
+      'CreatedBy',
+      'CreatedDate',
+      'Error',
+      'HasMetadataRemoved',
+      'Id',
+      'Package2Id',
+      'Package2VersionId',
+      'Status',
+      'SubscriberPackageVersionId',
+      'Tag'
+    );
+  });
+
+  it("should resolve dependency version to `null` if the --branch parameter is set but the branch is explicitly '' in config", async () => {
+    // @ts-ignore: Argument of type '"resolveBuildNumber"' is not assignable to parameter of type '"createPackageVersion"'.
+    const packageVersionCreateSpy = $$.SANDBOX.spy(PackageVersionCreate.prototype, 'resolveBuildNumber');
+
+    const config = project.getSfProjectJson().getContents();
+    if (config.packageDirectories[1].dependencies !== undefined) {
+      config.packageDirectories[1].dependencies[0].package = 'DEP';
+      config.packageDirectories[1].dependencies[0].versionNumber = '0.1.0.1';
+      config.packageDirectories[1].dependencies[0].branch = '';
+    }
+    await project.getSfProjectJson().write(config);
+
+    const pvc = new PackageVersionCreate({ connection, project, branch: 'main', packageId, skipancestorcheck: true });
+    stubConvert();
+
+    const result = await pvc.createPackageVersion();
+
+    /*
+      Assert that the --branch argument was passed in and is used to
+      retrieve the appropriate version/build number using the value in the
+      dependency definition.
+    */
+    expect(packageCreateStub.firstCall.args[1].Branch).to.equal('main');
+    // @ts-ignore: Expected 0 arguments, but got 3
+    expect(packageVersionCreateSpy.calledWith(VersionNumber.from('0.1.0.1'), '0Ho4J000000TNmPXXX', '')).to.equal(true);
 
     expect(result).to.have.all.keys(
       'Branch',

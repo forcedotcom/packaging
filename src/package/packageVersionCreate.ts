@@ -166,7 +166,7 @@ export class PackageVersionCreate {
     const buildNumber = versionNumber.build;
 
     // use the dependency.branch if present otherwise use the branch of the version being created
-    const branch = dependency.branch === '' ? this.options.branch : dependency.branch;
+    const branch = dependency.branch === undefined ? this.options.branch : dependency.branch;
     const branchString = !branch || branch === '' ? 'null' : `'${branch}'`;
 
     // resolve a build number keyword to an actual number, if needed
