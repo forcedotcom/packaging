@@ -1,3 +1,12 @@
+## [2.1.2](https://github.com/forcedotcom/packaging/compare/2.1.1...2.1.2) (2023-06-07)
+
+
+### Bug Fixes
+
+* support retrieval of 2gp package versions ([dbc9d57](https://github.com/forcedotcom/packaging/commit/dbc9d57e56f4b66f9face3bed7315624b760c4ca))
+
+
+
 ## [2.1.1](https://github.com/forcedotcom/packaging/compare/2.1.0...2.1.1) (2023-06-07)
 
 
