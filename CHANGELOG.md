@@ -1,3 +1,12 @@
+## [2.1.5](https://github.com/forcedotcom/packaging/compare/2.1.4...2.1.5) (2023-06-10)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/ts-types from 2.0.2 to 2.0.3 ([852cbb0](https://github.com/forcedotcom/packaging/commit/852cbb052201160374817d20087dafa188a89aa1))
+
+
+
 ## [2.1.4](https://github.com/forcedotcom/packaging/compare/2.1.3...2.1.4) (2023-06-10)
 
 
