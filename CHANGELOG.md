@@ -1,3 +1,12 @@
+## [2.1.3](https://github.com/forcedotcom/packaging/compare/2.1.2...2.1.3) (2023-06-10)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/core from 4.0.1 to 4.2.1 ([fcd9305](https://github.com/forcedotcom/packaging/commit/fcd9305a0cce9bb107799fbc295a690abb61c72a))
+
+
+
 ## [2.1.2](https://github.com/forcedotcom/packaging/compare/2.1.1...2.1.2) (2023-06-07)
 
 
