@@ -609,13 +609,13 @@
     jsonwebtoken "9.0.0"
     ts-retry-promise "^0.7.0"
 
-"@salesforce/core@^4.0.1", "@salesforce/core@^4.2.1":
-  version "4.2.1"
-  resolved "https://registry.yarnpkg.com/@salesforce/core/-/core-4.2.1.tgz#7fdbac22816d698b01b4007ba41028c230c7962e"
-  integrity sha512-1bi3era5/0lFqYNU786b1As+8JTDay1o8EUMbrhNR/GhVAH1hlJlGNgfseASrKDR9vuITykKI/5jWUa7kzFU6w==
+"@salesforce/core@^4.0.1", "@salesforce/core@^4.1.0", "@salesforce/core@^4.2.1":
+  version "4.3.1"
+  resolved "https://registry.yarnpkg.com/@salesforce/core/-/core-4.3.1.tgz#d4f16ce7a89e90d456a9407e5994f155b7d05134"
+  integrity sha512-mqlVWVQiy24sdHR3DvBlSlg3QDCqVj4AIhcgvcVSTu3BtKMLaR2C6himtTdKIH/Fl6wLkxPcy+LufQ8J3+HBEw==
   dependencies:
     "@salesforce/bunyan" "^2.0.0"
-    "@salesforce/kit" "^3.0.2"
+    "@salesforce/kit" "^3.0.3"
     "@salesforce/schemas" "^1.5.1"
     "@salesforce/ts-types" "^2.0.2"
     "@types/semver" "^7.5.0"
@@ -1052,6 +1052,14 @@
     "@typescript-eslint/typescript-estree" "5.59.9"
     debug "^4.3.4"
 
+"@typescript-eslint/scope-manager@5.59.11":
+  version "5.59.11"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/scope-manager/-/scope-manager-5.59.11.tgz#5d131a67a19189c42598af9fb2ea1165252001ce"
+  integrity sha512-dHFOsxoLFtrIcSj5h0QoBT/89hxQONwmn3FOQ0GOQcLOOXm+MIrS8zEAhs4tWl5MraxCY3ZJpaXQQdFMc2Tu+Q==
+  dependencies:
+    "@typescript-eslint/types" "5.59.11"
+    "@typescript-eslint/visitor-keys" "5.59.11"
+
 "@typescript-eslint/scope-manager@5.59.9":
   version "5.59.9"
   resolved "https://registry.yarnpkg.com/@typescript-eslint/scope-manager/-/scope-manager-5.59.9.tgz#eadce1f2733389cdb58c49770192c0f95470d2f4"
@@ -1070,10 +1078,28 @@
     debug "^4.3.4"
     tsutils "^3.21.0"
 
+"@typescript-eslint/types@5.59.11":
+  version "5.59.11"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/types/-/types-5.59.11.tgz#1a9018fe3c565ba6969561f2a49f330cf1fe8db1"
+  integrity sha512-epoN6R6tkvBYSc+cllrz+c2sOFWkbisJZWkOE+y3xHtvYaOE6Wk6B8e114McRJwFRjGvYdJwLXQH5c9osME/AA==
+
 "@typescript-eslint/types@5.59.9":
   version "5.59.9"
   resolved "https://registry.yarnpkg.com/@typescript-eslint/types/-/types-5.59.9.tgz#3b4e7ae63718ce1b966e0ae620adc4099a6dcc52"
   integrity sha512-uW8H5NRgTVneSVTfiCVffBb8AbwWSKg7qcA4Ot3JI3MPCJGsB4Db4BhvAODIIYE5mNj7Q+VJkK7JxmRhk2Lyjw==
+
+"@typescript-eslint/typescript-estree@5.59.11":
+  version "5.59.11"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/typescript-estree/-/typescript-estree-5.59.11.tgz#b2caaa31725e17c33970c1197bcd54e3c5f42b9f"
+  integrity sha512-YupOpot5hJO0maupJXixi6l5ETdrITxeo5eBOeuV7RSKgYdU3G5cxO49/9WRnJq9EMrB7AuTSLH/bqOsXi7wPA==
+  dependencies:
+    "@typescript-eslint/types" "5.59.11"
+    "@typescript-eslint/visitor-keys" "5.59.11"
+    debug "^4.3.4"
+    globby "^11.1.0"
+    is-glob "^4.0.3"
+    semver "^7.3.7"
+    tsutils "^3.21.0"
 
 "@typescript-eslint/typescript-estree@5.59.9":
   version "5.59.9"
@@ -1088,7 +1114,7 @@
     semver "^7.3.7"
     tsutils "^3.21.0"
 
-"@typescript-eslint/utils@5.59.9", "@typescript-eslint/utils@^5.59.7":
+"@typescript-eslint/utils@5.59.9":
   version "5.59.9"
   resolved "https://registry.yarnpkg.com/@typescript-eslint/utils/-/utils-5.59.9.tgz#adee890107b5ffe02cd46fdaa6c2125fb3c6c7c4"
   integrity sha512-1PuMYsju/38I5Ggblaeb98TOoUvjhRvLpLa1DoTOFaLWqaXl/1iQ1eGurTXgBY58NUdtfTXKP5xBq7q9NDaLKg==
@@ -1101,6 +1127,28 @@
     "@typescript-eslint/typescript-estree" "5.59.9"
     eslint-scope "^5.1.1"
     semver "^7.3.7"
+
+"@typescript-eslint/utils@^5.59.8":
+  version "5.59.11"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/utils/-/utils-5.59.11.tgz#9dbff49dc80bfdd9289f9f33548f2e8db3c59ba1"
+  integrity sha512-didu2rHSOMUdJThLk4aZ1Or8IcO3HzCw/ZvEjTTIfjIrcdd5cvSIwwDy2AOlE7htSNp7QIZ10fLMyRCveesMLg==
+  dependencies:
+    "@eslint-community/eslint-utils" "^4.2.0"
+    "@types/json-schema" "^7.0.9"
+    "@types/semver" "^7.3.12"
+    "@typescript-eslint/scope-manager" "5.59.11"
+    "@typescript-eslint/types" "5.59.11"
+    "@typescript-eslint/typescript-estree" "5.59.11"
+    eslint-scope "^5.1.1"
+    semver "^7.3.7"
+
+"@typescript-eslint/visitor-keys@5.59.11":
+  version "5.59.11"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/visitor-keys/-/visitor-keys-5.59.11.tgz#dca561ddad169dc27d62396d64f45b2d2c3ecc56"
+  integrity sha512-KGYniTGG3AMTuKF9QBD7EIrvufkB6O6uX3knP73xbKLMpH+QRPcgnCxjWXSHjMRuOxFLovljqQgQpR0c7GvjoA==
+  dependencies:
+    "@typescript-eslint/types" "5.59.11"
+    eslint-visitor-keys "^3.3.0"
 
 "@typescript-eslint/visitor-keys@5.59.9":
   version "5.59.9"
@@ -2438,13 +2486,13 @@ eslint-plugin-prefer-arrow@^1.2.1:
   resolved "https://registry.yarnpkg.com/eslint-plugin-prefer-arrow/-/eslint-plugin-prefer-arrow-1.2.3.tgz#e7fbb3fa4cd84ff1015b9c51ad86550e55041041"
   integrity sha512-J9I5PKCOJretVuiZRGvPQxCbllxGAV/viI20JO3LYblAodofBxyMnZAJ+WGeClHgANnSJberTNoFWWjrWKBuXQ==
 
-eslint-plugin-sf-plugin@^1.15.6:
-  version "1.15.6"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-sf-plugin/-/eslint-plugin-sf-plugin-1.15.6.tgz#26e413e8ee31d9e752a0dbf1f327cda4364f8eee"
-  integrity sha512-wotrK2ld67ugJZ/n84OLE0MdYS7qMnfa7HcNheZTDTtKygavWhf65Cn5H3vrS760G2nQWSRj1rBK+OPzW4tCEA==
+eslint-plugin-sf-plugin@^1.15.8:
+  version "1.15.8"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-sf-plugin/-/eslint-plugin-sf-plugin-1.15.8.tgz#6926244f8f8ea7015b8109283abf44736e59aa76"
+  integrity sha512-78toJayNZinG0NFKPBVeRzGoYwUViQcrvCMQq/h/7D3f0XKZ6NRHEt1V+Dt3j0GOZ+A/UqWbrLuvMPl4sPMo2Q==
   dependencies:
-    "@salesforce/core" "^4.0.1"
-    "@typescript-eslint/utils" "^5.59.7"
+    "@salesforce/core" "^4.1.0"
+    "@typescript-eslint/utils" "^5.59.8"
 
 eslint-scope@^5.1.1:
   version "5.1.1"
