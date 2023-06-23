@@ -23,6 +23,7 @@ import {
   PackageVersionCreateRequestResultInProgressStatuses,
   PackageVersionEvents,
   PackagingSObjects,
+  Package2VersionFields,
 } from '../../src/exported';
 import { PackageEvents } from '../../src/interfaces';
 import { SubscriberPackageVersion, VersionNumber } from '../../src/package';
@@ -134,6 +135,49 @@ describe('Integration tests for @salesforce/packaging library', () => {
       const pkg = new Package({ connection: devHubOrg.getConnection(), project, packageAliasOrId: pkgId });
       const pkgVersions = await pkg.getPackageVersions();
       expect(pkgVersions).to.be.empty;
+    });
+
+    describe.only('queryPackage2Version', () => {
+      type Package2Version = PackagingSObjects.Package2Version;
+
+      it('should return expected results when querying Package2Version, default options', async () => {
+        const connection = devHubOrg.getConnection();
+        const res = await PackageVersion.queryPackage2Version<Package2Version>(connection);
+        expect(res).to.be.an('Array').with.length.greaterThan(0);
+        expect(res[0]).to.have.keys([...Package2VersionFields, 'attributes']);
+      });
+
+      it('should return expected results when querying Package2Version, with fields', async () => {
+        const connection = devHubOrg.getConnection();
+        const fields = ['Id', 'Name'];
+        const res = await PackageVersion.queryPackage2Version<Package2Version>(connection, fields);
+        expect(res).to.be.an('Array').with.length.greaterThan(0);
+        expect(res[0]).to.have.keys([...fields, 'attributes']);
+      });
+
+      it('should return expected results when querying Package2Version, with whereClause', async () => {
+        const connection = devHubOrg.getConnection();
+        const fields = ['Id', 'Name'];
+        const whereClause = "WHERE Id IN ('05i46000000KymZAAS')";
+        const res = await PackageVersion.queryPackage2Version<Package2Version>(connection, fields, whereClause);
+        expect(res).to.be.an('Array').with.lengthOf(1);
+        expect(res[0]).to.have.keys([...fields, 'attributes']);
+      });
+
+      it('should return expected results when querying Package2Version, with whereClauseItems', async () => {
+        const connection = devHubOrg.getConnection();
+        const fields = ['Id', 'Name'];
+        const whereClause = "WHERE Id IN ('%IDS%')";
+        const whereClauseItems = ['05i46000000KymAAAS', '05i46000000KymKAAS', '05i46000000KymFAAS'];
+        const res = await PackageVersion.queryPackage2Version<Package2Version>(
+          connection,
+          fields,
+          whereClause,
+          whereClauseItems
+        );
+        expect(res).to.be.an('Array').with.lengthOf(3);
+        expect(res[0]).to.have.keys([...fields, 'attributes']);
+      });
     });
 
     it('package version create', async () => {

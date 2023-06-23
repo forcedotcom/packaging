@@ -291,6 +291,13 @@ export async function getPackageVersionStrings(
   return results;
 }
 
+// export async function getPackageVersionsAndNames(
+//   subscriberPackageVersionIds: string[],
+//   connection: Connection
+// ): Promise<Map<string, string>> {
+
+// }
+
 /**
  * For queries with an IN condition, determine if the WHERE clause will exceed
  * SOQL's 4000 character limit.  Perform multiple queries as needed to stay below the limit.
@@ -301,7 +308,7 @@ export async function getPackageVersionStrings(
  * @param replaceToken A placeholder in the query's IN condition that will be replaced with the chunked items
  * @param connection For tooling query
  */
-async function queryWithInConditionChunking<T extends Record<string, unknown> = Record<string, unknown>>(
+export async function queryWithInConditionChunking<T extends Record<string, unknown> = Record<string, unknown>>(
   query: string,
   items: string[],
   replaceToken: string,
@@ -373,14 +380,17 @@ function concatVersion(
   return [major, minor, patch, build].map((part) => (part ? `${part}` : '0')).join('.');
 }
 
-export function getPackageVersionNumber(package2VersionObj: PackagingSObjects.Package2Version): string {
+export function getPackageVersionNumber(
+  package2VersionObj: PackagingSObjects.Package2Version,
+  includeBuild = false
+): string {
   const version = concatVersion(
     package2VersionObj.MajorVersion,
     package2VersionObj.MinorVersion,
     package2VersionObj.PatchVersion,
-    undefined
+    includeBuild ? package2VersionObj.BuildNumber : undefined
   );
-  return version.slice(0, version.lastIndexOf('.'));
+  return includeBuild ? version : version.slice(0, version.lastIndexOf('.'));
 }
 
 /**

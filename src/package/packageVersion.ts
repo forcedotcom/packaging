@@ -20,7 +20,14 @@ import {
   PackageVersionUpdateOptions,
   PackagingSObjects,
 } from '../interfaces';
-import { applyErrorAction, BY_LABEL, combineSaveErrors, massageErrorMessage, validateId } from '../utils/packageUtils';
+import {
+  applyErrorAction,
+  BY_LABEL,
+  combineSaveErrors,
+  massageErrorMessage,
+  validateId,
+  queryWithInConditionChunking,
+} from '../utils/packageUtils';
 import { PackageVersionCreate } from './packageVersionCreate';
 import { getPackageVersionReport } from './packageVersionReport';
 import { getCreatePackageVersionCreateRequestReport } from './packageVersionCreateRequestReport';
@@ -334,6 +341,43 @@ export class PackageVersion {
       await Lifecycle.getInstance().emit(PackageVersionEvents.create['timed-out'], report);
       throw applyErrorAction(err as Error);
     }
+  }
+
+  /**
+   * Query the Package2Version SObject and return data with the provided type.
+   *
+   * NOTE: There is a limit of 2000 records that can be returned, otherwise
+   * a GACK might be thrown.
+   *
+   * @param connection jsForce Connection to the org.
+   * @param fields The fields to include in the returned data. Defaults to all fields.
+   * @param whereClause Optional where clause to filter the query.
+   * @param whereClauseItems Optional array of where clause items to match. The query is chunked,
+   * meaning broken into multiple queries when the query length would exceed the maximum char limit.
+   * When defining items here, the `whereClause` argument must use this token for the item
+   * replacement: `'%IDS%'`.
+   * @returns Results from querying the Package2Version SObject.
+   */
+  public static async queryPackage2Version<T extends Record<string, unknown> = Record<string, unknown>>(
+    connection: Connection,
+    fields = Package2VersionFields,
+    whereClause?: string,
+    whereClauseItems?: string[]
+  ): Promise<T[]> {
+    let query = `SELECT ${fields.toString()} FROM Package2Version`;
+    if (whereClause) {
+      query += ` ${whereClause}`;
+      if (whereClauseItems) {
+        query += ' LIMIT 2000';
+        return queryWithInConditionChunking<T>(query, whereClauseItems, '%IDS%', connection);
+      }
+    }
+    query += ' LIMIT 2000';
+    const result = await connection.tooling.query<T>(query);
+    if (result?.totalSize === 2000) {
+      await Lifecycle.getInstance().emitWarning('lots of records were returned');
+    }
+    return result.records ?? [];
   }
 
   /**
