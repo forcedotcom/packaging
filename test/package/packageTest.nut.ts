@@ -137,7 +137,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
       expect(pkgVersions).to.be.empty;
     });
 
-    describe.only('queryPackage2Version', () => {
+    describe('queryPackage2Version', () => {
       type Package2Version = PackagingSObjects.Package2Version;
 
       it('should return expected results when querying Package2Version, default options', async () => {

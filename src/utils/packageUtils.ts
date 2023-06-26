@@ -291,13 +291,6 @@ export async function getPackageVersionStrings(
   return results;
 }
 
-// export async function getPackageVersionsAndNames(
-//   subscriberPackageVersionIds: string[],
-//   connection: Connection
-// ): Promise<Map<string, string>> {
-
-// }
-
 /**
  * For queries with an IN condition, determine if the WHERE clause will exceed
  * SOQL's 4000 character limit.  Perform multiple queries as needed to stay below the limit.
