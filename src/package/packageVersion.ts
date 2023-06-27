@@ -347,7 +347,8 @@ export class PackageVersion {
    * Query the Package2Version SObject and return data with the provided type.
    *
    * NOTE: There is a limit of 2000 records that can be returned, otherwise
-   * a GACK might be thrown.
+   * a GACK might be thrown. If more than 2000 records are desired you should
+   * filter the query by date and aggregate all results.
    *
    * @param connection jsForce Connection to the org.
    * @param fields The fields to include in the returned data. Defaults to all fields.
@@ -356,6 +357,7 @@ export class PackageVersion {
    * meaning broken into multiple queries when the query length would exceed the maximum char limit.
    * When defining items here, the `whereClause` argument must use this token for the item
    * replacement: `'%IDS%'`.
+   * @param orderBy Optional order by clause. Defaults to LastModifiedDate descending.
    * @returns Results from querying the Package2Version SObject.
    */
   public static async queryPackage2Version<T extends Record<string, unknown> = Record<string, unknown>>(
