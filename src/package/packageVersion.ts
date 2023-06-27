@@ -362,11 +362,12 @@ export class PackageVersion {
     connection: Connection,
     fields = Package2VersionFields,
     whereClause?: string,
-    whereClauseItems?: string[]
+    whereClauseItems?: string[],
+    orderBy = 'ORDER BY LastModifiedDate DESC'
   ): Promise<T[]> {
     let query = `SELECT ${fields.toString()} FROM Package2Version`;
     if (whereClause) {
-      query += ` ${whereClause}`;
+      query += ` ${whereClause} ${orderBy}`;
       if (whereClauseItems) {
         query += ' LIMIT 2000';
         return queryWithInConditionChunking<T>(query, whereClauseItems, '%IDS%', connection);
@@ -375,7 +376,8 @@ export class PackageVersion {
     query += ' LIMIT 2000';
     const result = await connection.tooling.query<T>(query);
     if (result?.totalSize === 2000) {
-      await Lifecycle.getInstance().emitWarning('lots of records were returned');
+      const warningMsg = messages.getMessage('maxPackage2VersionRecords');
+      await Lifecycle.getInstance().emitWarning(warningMsg);
     }
     return result.records ?? [];
   }
