@@ -1,3 +1,13 @@
+## [2.1.10](https://github.com/forcedotcom/packaging/compare/2.1.9...2.1.10) (2023-06-27)
+
+
+### Bug Fixes
+
+* added unit tests to better describe branch version selection behaviour and corrected issues ([00e37db](https://github.com/forcedotcom/packaging/commit/00e37db1c4b29752d984db219b82992ececc161f))
+* altered implementation to use nullish coalescing operator ([61d8f15](https://github.com/forcedotcom/packaging/commit/61d8f15b45cfc8f6601c75e4f73fdd87e8064997))
+
+
+
 ## [2.1.9](https://github.com/forcedotcom/packaging/compare/2.1.8...2.1.9) (2023-06-25)
 
 
