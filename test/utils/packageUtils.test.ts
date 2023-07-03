@@ -83,7 +83,7 @@ describe('packageUtils', () => {
     });
   });
   describe('getPackageVersionNumber', () => {
-    it('should return build numbers when includeBuild=true', async () => {
+    it('should return build numbers when includeBuild=true', () => {
       const p2VersionObj = {
         MajorVersion: 1,
         MinorVersion: 3,
@@ -93,7 +93,7 @@ describe('packageUtils', () => {
       const res = getPackageVersionNumber(p2VersionObj, true);
       expect(res).to.equal('1.3.5.7');
     });
-    it('should NOT return build numbers by default', async () => {
+    it('should NOT return build numbers by default', () => {
       const p2VersionObj = {
         MajorVersion: 1,
         MinorVersion: 3,
