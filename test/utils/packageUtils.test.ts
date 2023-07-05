@@ -82,6 +82,28 @@ describe('packageUtils', () => {
       expect(queryStub.callCount).to.equal(2);
     });
   });
+  describe('getPackageVersionNumber', () => {
+    it('should return build numbers when includeBuild=true', () => {
+      const p2VersionObj = {
+        MajorVersion: 1,
+        MinorVersion: 3,
+        PatchVersion: 5,
+        BuildNumber: 7,
+      } as PackagingSObjects.Package2Version;
+      const res = getPackageVersionNumber(p2VersionObj, true);
+      expect(res).to.equal('1.3.5.7');
+    });
+    it('should NOT return build numbers by default', () => {
+      const p2VersionObj = {
+        MajorVersion: 1,
+        MinorVersion: 3,
+        PatchVersion: 5,
+        BuildNumber: 7,
+      } as PackagingSObjects.Package2Version;
+      const res = getPackageVersionNumber(p2VersionObj);
+      expect(res).to.equal('1.3.5');
+    });
+  });
   describe('getContainerOptions', () => {
     it.skip('should return the correct value', () => {});
   });

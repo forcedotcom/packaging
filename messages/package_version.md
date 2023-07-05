@@ -17,3 +17,7 @@ The package version create result ID must be defined when checking for completio
 # errorNoSubscriberPackageVersionId
 
 Could not fetch the subscriber package version ID (04t).
+
+# maxPackage2VersionRecords
+
+The maximum result size (2000) was reached when querying the Package2Version SObject. This means there could be more records that were not returned by the query. If all records are required you may have to break the query into multiple requests filtered by date, then aggregate the results.

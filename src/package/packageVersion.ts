@@ -20,7 +20,14 @@ import {
   PackageVersionUpdateOptions,
   PackagingSObjects,
 } from '../interfaces';
-import { applyErrorAction, BY_LABEL, combineSaveErrors, massageErrorMessage, validateId } from '../utils/packageUtils';
+import {
+  applyErrorAction,
+  BY_LABEL,
+  combineSaveErrors,
+  massageErrorMessage,
+  validateId,
+  queryWithInConditionChunking,
+} from '../utils/packageUtils';
 import { PackageVersionCreate } from './packageVersionCreate';
 import { getPackageVersionReport } from './packageVersionReport';
 import { getCreatePackageVersionCreateRequestReport } from './packageVersionCreateRequestReport';
@@ -33,7 +40,7 @@ type Package2Version = PackagingSObjects.Package2Version;
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version');
 
-export const Package2VersionFields = [
+export const Package2VersionFields: Array<keyof Package2Version> = [
   'Id',
   'IsDeleted',
   'CreatedDate',
@@ -65,6 +72,30 @@ export const Package2VersionFields = [
   'BuildDurationInSeconds',
   'HasMetadataRemoved',
 ];
+
+export type Package2VersionFieldTypes = Array<(typeof Package2VersionFields)[number]>;
+
+export type Package2VersionQueryOptions = {
+  /**
+   * The fields to include in the returned data. Defaults to all fields.
+   */
+  fields?: Package2VersionFieldTypes;
+  /**
+   * The where clause to filter the query. E.g., "WHERE Id IN ('%IDS%')";
+   */
+  whereClause?: string;
+  /**
+   * An array of where clause items to match. The query is chunked,meaning broken into
+   * multiple queries when the query length would exceed the maximum char limit.
+   * When defining items here, the `whereClause` argument must use this token for the
+   * item replacement: `'%IDS%'`.
+   */
+  whereClauseItems?: string[];
+  /**
+   * The order-by clause for the query. Defaults to LastModifiedDate descending.
+   */
+  orderBy?: string;
+};
 
 /**
  * Provides the ability to create, update, delete, and promote 2nd
@@ -334,6 +365,42 @@ export class PackageVersion {
       await Lifecycle.getInstance().emit(PackageVersionEvents.create['timed-out'], report);
       throw applyErrorAction(err as Error);
     }
+  }
+
+  /**
+   * Query the Package2Version SObject and return data with the provided type.
+   *
+   * NOTE: There is a limit of 2000 records that can be returned, otherwise
+   * a GACK might be thrown. If more than 2000 records are desired you should
+   * filter the query by date and aggregate all results.
+   *
+   * @param connection jsForce Connection to the org.
+   * @param options Package2Version query options
+   * @returns Results from querying the Package2Version SObject.
+   */
+  public static async queryPackage2Version(
+    connection: Connection,
+    options: Package2VersionQueryOptions = {}
+  ): Promise<Partial<Package2Version[]>> {
+    const fields = options.fields ?? Package2VersionFields;
+    const { whereClause, whereClauseItems } = options;
+    const orderBy = options.orderBy ?? 'ORDER BY LastModifiedDate DESC';
+    let query = `SELECT ${fields.toString()} FROM Package2Version`;
+
+    if (whereClause) {
+      query += ` ${whereClause} ${orderBy}`;
+      if (whereClauseItems) {
+        query += ' LIMIT 2000';
+        return queryWithInConditionChunking<Package2Version>(query, whereClauseItems, '%IDS%', connection);
+      }
+    }
+    query += ' LIMIT 2000';
+    const result = await connection.tooling.query<Package2Version>(query);
+    if (result?.totalSize === 2000) {
+      const warningMsg = messages.getMessage('maxPackage2VersionRecords');
+      await Lifecycle.getInstance().emitWarning(warningMsg);
+    }
+    return result.records ?? [];
   }
 
   /**
