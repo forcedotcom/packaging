@@ -1,3 +1,12 @@
+# [2.2.0](https://github.com/forcedotcom/packaging/compare/2.1.11...2.2.0) (2023-07-05)
+
+
+### Features
+
+* support querying the Package2Version SObject from PackageVersion ([#330](https://github.com/forcedotcom/packaging/issues/330)) ([76ea82f](https://github.com/forcedotcom/packaging/commit/76ea82f393940657cc2c5d6f1a6cc163f2722bb7))
+
+
+
 ## [2.1.11](https://github.com/forcedotcom/packaging/compare/2.1.10...2.1.11) (2023-07-01)
 
 
