@@ -1,3 +1,12 @@
+## [2.2.1](https://github.com/forcedotcom/packaging/compare/2.2.0...2.2.1) (2023-07-08)
+
+
+### Bug Fixes
+
+* **deps:** bump tough-cookie from 4.1.2 to 4.1.3 ([ab80de4](https://github.com/forcedotcom/packaging/commit/ab80de432a43555903b690a45b25fc430b2f4aac))
+
+
+
 # [2.2.0](https://github.com/forcedotcom/packaging/compare/2.1.11...2.2.0) (2023-07-05)
 
 
