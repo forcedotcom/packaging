@@ -464,19 +464,19 @@ export class PackageVersionCreate {
     // metadata exclusions. If necessary, read the existing package.xml and then re-write it.
     const currentPackageXml = await fs.promises.readFile(path.join(packageVersMetadataFolder, 'package.xml'), 'utf8');
     // convert to json
-    const packageJson = (await xml2js.parseStringPromise(currentPackageXml)) as {
+    const packageXmlAsJson = (await xml2js.parseStringPromise(currentPackageXml)) as {
       Package: { types: Array<{ name: string[]; members: string[] }>; version: string };
     };
-    if (!packageJson?.Package) {
+    if (!packageXmlAsJson?.Package) {
       throw messages.createError('packageXmlDoesNotContainPackage');
     }
-    if (!packageJson?.Package.types) {
+    if (!packageXmlAsJson?.Package.types) {
       throw messages.createError('packageXmlDoesNotContainPackageTypes');
     }
     fs.mkdirSync(packageVersMetadataFolder, { recursive: true });
     fs.mkdirSync(packageVersProfileFolder, { recursive: true });
 
-    this.apiVersionFromPackageXml = packageJson.Package.version;
+    this.apiVersionFromPackageXml = packageXmlAsJson.Package.version;
 
     const sourceApiVersion = this.project?.getSfProjectJson()?.get('sourceApiVersion') as string;
     const hasSeedMetadata = await this.metadataResolver.resolveMetadata(
@@ -504,8 +504,10 @@ export class PackageVersionCreate {
       .filter((packageDirPath) => packageDirPath) as string[];
 
     const typesArr =
-      this.options?.profileApi?.filterAndGenerateProfilesForManifest(packageJson.Package.types, profileExcludeDirs) ??
-      packageJson.Package.types;
+      this.options?.profileApi?.filterAndGenerateProfilesForManifest(
+        packageXmlAsJson.Package.types,
+        profileExcludeDirs
+      ) ?? packageXmlAsJson.Package.types;
 
     // Next generate profiles and retrieve any profiles that were excluded because they had no matching nodes.
     const excludedProfiles = this.options?.profileApi?.generateProfiles(
@@ -521,13 +523,13 @@ export class PackageVersionCreate {
       typesArr[profileIdx].members = typesArr[profileIdx].members.filter((e) => !excludedProfiles.includes(e));
     }
 
-    packageJson.Package.types = typesArr;
+    packageXmlAsJson.Package.types = typesArr;
 
     // Re-write the package.xml in case profiles have been added or removed
     const xmlBuilder = new xml2js.Builder({
       xmldec: { version: '1.0', encoding: 'UTF-8' },
     });
-    const xml = xmlBuilder.buildObject(packageJson);
+    const xml = xmlBuilder.buildObject(packageXmlAsJson);
 
     // Log information about the profiles being packaged up
     const profiles = this.options?.profileApi?.getProfileInformation() ?? [];
