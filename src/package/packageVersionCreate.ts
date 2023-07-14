@@ -12,7 +12,6 @@ import {
   Connection,
   Lifecycle,
   Logger,
-  LoggerLevel,
   Messages,
   NamedPackageDir,
   PackageDir,
@@ -531,16 +530,6 @@ export class PackageVersionCreate {
     });
     const xml = xmlBuilder.buildObject(packageXmlAsJson);
 
-    // Log information about the profiles being packaged up
-    const profiles = this.options?.profileApi?.getProfileInformation() ?? [];
-    profiles.forEach((profile) => {
-      if (this.logger.shouldLog(LoggerLevel.DEBUG)) {
-        this.logger.debug(profile.logDebug());
-      } else if (this.logger.shouldLog(LoggerLevel.INFO)) {
-        this.logger.info(profile.logInfo());
-      }
-    });
-
     await fs.promises.writeFile(path.join(packageVersMetadataFolder, 'package.xml'), xml, 'utf-8');
     // Zip the packageVersMetadataFolder folder and put the zip in {packageVersBlobDirectory}/package.zip
     await zipDir(packageVersMetadataFolder, metadataZipFile);
@@ -702,13 +691,9 @@ export class PackageVersionCreate {
   }
 
   private async resolveUserLicenses(includeUserLicenses: boolean): Promise<PackageProfileApi> {
-    const shouldGenerateProfileInformation =
-      this.logger.shouldLog(LoggerLevel.INFO) || this.logger.shouldLog(LoggerLevel.DEBUG);
-
     return PackageProfileApi.create({
       project: this.project,
       includeUserLicenses,
-      generateProfileInformation: shouldGenerateProfileInformation,
     });
   }
 

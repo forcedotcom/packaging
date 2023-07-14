@@ -333,7 +333,6 @@ export type PackageVersionCreateRequestQueryOptions = {
 export type ProfileApiOptions = {
   project: SfProject;
   includeUserLicenses: boolean;
-  generateProfileInformation: boolean;
 };
 
 export type PackageVersionReportResult = Partial<
