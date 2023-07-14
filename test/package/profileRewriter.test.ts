@@ -19,6 +19,12 @@ const sampleProfile: Partial<CorrectedProfile> = {
   userLicense: 'Salesforce',
   // something that should be removed when packaging profiles
   custom: true,
+  pageAccesses: [
+    {
+      apexPage: 'Foo',
+      enabled: true,
+    },
+  ],
   objectPermissions: [
     {
       object: 'Foo__c',
@@ -144,8 +150,13 @@ describe('profileRewriter', () => {
     ]);
   });
   it('omits properties when there are no values after filtering', () => {
-    const newProfile = profileRewriter(sampleProfile as CorrectedProfile, new Map<string, string[]>(), false);
+    const newProfile = profileRewriter(
+      sampleProfile as CorrectedProfile,
+      new Map<string, string[]>([['ApexPage', ['Foo']]]),
+      false
+    );
     expect(newProfile).to.not.have.property('objectPermissions');
     expect(newProfile).to.not.have.property('fieldPermissions');
+    expect(newProfile).to.have.property('pageAccesses');
   });
 });
