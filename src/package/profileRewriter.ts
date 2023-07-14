@@ -22,26 +22,24 @@ export const profileRewriter = (
   packageXml: Map<string, string[]>,
   retainUserLicense = false
 ): CorrectedProfile =>
-  // iterate the properties of profile
-  Object.fromEntries(
-    Object.entries(profileJson)
-      // keep userLicenses only if that option is set
-      // remove settings that are not used for packaging
-      .filter(([key]) => isRewriteProp(key) || (key === 'userLicense' && retainUserLicense))
-      .map(([key, value]) => [
-        key,
-        // Array check catches userLicense, everything els eis a key of ProfileAreasOfInterest because of the previous filter
-        Array.isArray(value) && filterFunctions[key as keyof RewriteProps]
-          ? // @ts-expect-error TS knows they're keyof and that the value is one of the property types
-            // but isn't smart enough to know that the filterFunctions[key] will return the same type
-            filterFunctions[key as keyof RewriteProps](value, packageXml) ?? []
-          : value,
-      ])
-      // some profileSettings might now be empty if the package.xml didn't have those types, so remove them
-      .filter(([, value]) => (Array.isArray(value) ? value.length : true))
-  ) as CorrectedProfile;
+  ({
+    ...Object.fromEntries(
+      Object.entries(profileJson)
+        // remove settings that are not used for packaging
+        .filter(isRewriteProp)
+        // @ts-expect-error the previous filter restricts us to only things that appear in filterFunctions
+        .map(([key, value]) => [key, filterFunctions[key]?.(value, packageXml)] ?? [])
+        // some profileSettings might now be empty Arrays if the package.xml didn't have those types, so remove the entire property
+        .filter(([, value]) => (Array.isArray(value) ? value.length : true))
+    ),
+    // this one prop is controlled by a param.  Put it back the way it was if the param is true
+    ...(retainUserLicense && profileJson.userLicense ? { userLicense: profileJson.userLicense } : {}),
+  } as CorrectedProfile);
 
-const isRewriteProp = (key: string): key is keyof RewriteProps => rewriteProps.includes(key as keyof RewriteProps);
+// it's both a filter and a typeguard to make sure props are represented in filterFunctions
+const isRewriteProp = <K extends keyof CorrectedProfile & keyof RewriteProps>(
+  prop: [string, unknown]
+): prop is [K, RewriteProps[K]] => rewriteProps.includes(prop[0] as keyof RewriteProps);
 
 const rewriteProps = [
   'objectPermissions',
@@ -61,8 +59,10 @@ const rewriteProps = [
 /** Packaging compares certain Profile properties to the package.xml */
 type RewriteProps = Pick<CorrectedProfile, (typeof rewriteProps)[number]>;
 
+type FilterFunction<T> = (props: T, packageXml: Map<string, string[]>) => T;
+
 type FilterFunctions = {
-  [index in keyof RewriteProps]: (props: RewriteProps[index], packageXml: Map<string, string[]>) => RewriteProps[index];
+  [index in keyof RewriteProps]: FilterFunction<RewriteProps[index]>;
 };
 
 const filterFunctions: FilterFunctions = {
