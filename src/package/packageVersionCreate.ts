@@ -50,6 +50,7 @@ import {
   PackageVersionCreateRequest,
   PackageVersionCreateRequestResult,
   PackageVersionEvents,
+  PackageXml,
   PackagingSObjects,
 } from '../interfaces';
 import { PackageProfileApi } from './packageProfileApi';
@@ -463,13 +464,11 @@ export class PackageVersionCreate {
     // metadata exclusions. If necessary, read the existing package.xml and then re-write it.
     const currentPackageXml = await fs.promises.readFile(path.join(packageVersMetadataFolder, 'package.xml'), 'utf8');
     // convert to json
-    const packageXmlAsJson = (await xml2js.parseStringPromise(currentPackageXml)) as {
-      Package: { types: Array<{ name: string[]; members: string[] }>; version: string };
-    };
+    const packageXmlAsJson = (await xml2js.parseStringPromise(currentPackageXml)) as PackageXml;
     if (!packageXmlAsJson?.Package) {
       throw messages.createError('packageXmlDoesNotContainPackage');
     }
-    if (!packageXmlAsJson?.Package.types) {
+    if (!packageXmlAsJson?.Package?.types) {
       throw messages.createError('packageXmlDoesNotContainPackageTypes');
     }
     fs.mkdirSync(packageVersMetadataFolder, { recursive: true });
@@ -511,14 +510,12 @@ export class PackageVersionCreate {
     // Next generate profiles and retrieve any profiles that were excluded because they had no matching nodes.
     const excludedProfiles = this.options?.profileApi?.generateProfiles(
       packageVersProfileFolder,
-      {
-        Package: typesArr,
-      },
+      typesArr,
       profileExcludeDirs
     );
 
     if (excludedProfiles?.length) {
-      const profileIdx = typesArr.findIndex((e) => e.name[0] === 'Profile');
+      const profileIdx = typesArr.findIndex((e) => e.name === 'Profile');
       typesArr[profileIdx].members = typesArr[profileIdx].members.filter((e) => !excludedProfiles.includes(e));
     }
 

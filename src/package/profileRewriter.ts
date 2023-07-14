@@ -6,6 +6,7 @@
  */
 import { Profile } from 'jsforce/api/metadata';
 import { XMLBuilder, XMLParser } from 'fast-xml-parser';
+import { PackageXml } from '../interfaces';
 
 // missing from jsforce, so we need to add it since Profiles code uses it
 type ProfileCustomSettingAccess = {
@@ -19,7 +20,7 @@ export type CorrectedProfile = Profile & {
 
 export const profileRewriter = (
   profileJson: CorrectedProfile,
-  packageXml: Map<string, string[]>,
+  packageXml: PackageMap,
   retainUserLicense = false
 ): CorrectedProfile =>
   ({
@@ -59,51 +60,51 @@ const rewriteProps = [
 /** Packaging compares certain Profile properties to the package.xml */
 type RewriteProps = Pick<CorrectedProfile, (typeof rewriteProps)[number]>;
 
-type FilterFunction<T> = (props: T, packageXml: Map<string, string[]>) => T;
+type FilterFunction<T> = (props: T, packageXml: PackageMap) => T;
 
 type FilterFunctions = {
   [index in keyof RewriteProps]: FilterFunction<RewriteProps[index]>;
 };
 
 const filterFunctions: FilterFunctions = {
-  objectPermissions: (props: RewriteProps['objectPermissions'], packageXml: Map<string, string[]>) =>
+  objectPermissions: (props: RewriteProps['objectPermissions'], packageXml: PackageMap) =>
     props.filter((item) => packageXml.get('CustomObject')?.includes(item.object)),
 
-  fieldPermissions: (props: RewriteProps['fieldPermissions'], packageXml: Map<string, string[]>) =>
+  fieldPermissions: (props: RewriteProps['fieldPermissions'], packageXml: PackageMap) =>
     props.filter((item) => packageXml.get('CustomField')?.includes(fieldCorrections(item.field))),
 
-  layoutAssignments: (props: RewriteProps['layoutAssignments'], packageXml: Map<string, string[]>) =>
+  layoutAssignments: (props: RewriteProps['layoutAssignments'], packageXml: PackageMap) =>
     props.filter((item) => packageXml.get('Layout')?.includes(item.layout)),
 
-  tabVisibilities: (props: RewriteProps['tabVisibilities'], packageXml: Map<string, string[]>) =>
+  tabVisibilities: (props: RewriteProps['tabVisibilities'], packageXml: PackageMap) =>
     props.filter((item) => packageXml.get('CustomTab')?.includes(item.tab)),
 
-  applicationVisibilities: (props: RewriteProps['applicationVisibilities'], packageXml: Map<string, string[]>) =>
+  applicationVisibilities: (props: RewriteProps['applicationVisibilities'], packageXml: PackageMap) =>
     props.filter((item) => packageXml.get('Application')?.includes(item.application)),
 
-  classAccesses: (props: RewriteProps['classAccesses'], packageXml: Map<string, string[]>) =>
+  classAccesses: (props: RewriteProps['classAccesses'], packageXml: PackageMap) =>
     props.filter((item) => packageXml.get('ApexClass')?.includes(item.apexClass)),
 
-  customPermissions: (props: RewriteProps['customPermissions'], packageXml: Map<string, string[]>) =>
+  customPermissions: (props: RewriteProps['customPermissions'], packageXml: PackageMap) =>
     props.filter((item) => packageXml.get('CustomPermission')?.includes(item.name)),
 
-  pageAccesses: (props: RewriteProps['pageAccesses'], packageXml: Map<string, string[]>) =>
+  pageAccesses: (props: RewriteProps['pageAccesses'], packageXml: PackageMap) =>
     props.filter((item) => packageXml.get('ApexPage')?.includes(item.apexPage)),
 
-  externalDataSourceAccesses: (props: RewriteProps['externalDataSourceAccesses'], packageXml: Map<string, string[]>) =>
+  externalDataSourceAccesses: (props: RewriteProps['externalDataSourceAccesses'], packageXml: PackageMap) =>
     props.filter((item) => packageXml.get('ExternalDataSource')?.includes(item.externalDataSource)),
 
-  recordTypeVisibilities: (props: RewriteProps['recordTypeVisibilities'], packageXml: Map<string, string[]>) =>
+  recordTypeVisibilities: (props: RewriteProps['recordTypeVisibilities'], packageXml: PackageMap) =>
     props.filter((item) => packageXml.get('RecordType')?.includes(item.recordType)),
 
-  customSettingAccesses: (props: RewriteProps['customSettingAccesses'], packageXml: Map<string, string[]>) =>
+  customSettingAccesses: (props: RewriteProps['customSettingAccesses'], packageXml: PackageMap) =>
     props.filter((item) => allMembers(packageXml).includes(item.name)),
 
-  customMetadataTypeAccesses: (props: RewriteProps['customMetadataTypeAccesses'], packageXml: Map<string, string[]>) =>
+  customMetadataTypeAccesses: (props: RewriteProps['customMetadataTypeAccesses'], packageXml: PackageMap) =>
     props.filter((item) => allMembers(packageXml).includes(item.name)),
 };
 
-const allMembers = (packageXml: Map<string, string[]>): string[] => Array.from(packageXml.values()).flat();
+const allMembers = (packageXml: PackageMap): string[] => Array.from(packageXml.values()).flat();
 
 // github.com/forcedotcom/cli/issues/2278
 // Activity Object is polymorphic (Task and Event)
@@ -145,7 +146,8 @@ export const profileObjectToString = (profileObject: Partial<CorrectedProfile>):
   );
 };
 
-/** the `name` prop on the manifest type is an Array.  Temporary function to massage it into a decent Map */
-export const manifestFixer = (original: {
-  Package: Array<{ name: string[]; members: string[] }>;
-}): Map<string, string[]> => new Map(original.Package.map((item) => [item.name[0], item.members]));
+/** it's easier to do lookups by Metadata Type on a Map */
+export const manifestTypesToMap = (original: PackageXml['Package']['types']): PackageMap =>
+  new Map(original.map((item) => [item.name, item.members]));
+
+type PackageMap = Map<string, string[]>;

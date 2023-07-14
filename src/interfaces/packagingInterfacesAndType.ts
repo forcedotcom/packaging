@@ -468,3 +468,10 @@ export const Package1VersionEvents = {
     progress: 'Package1Version/create-progress',
   },
 };
+
+export type PackageXml = {
+  Package: {
+    types: Array<{ name: string; members: string[] }>;
+    version: string;
+  };
+};

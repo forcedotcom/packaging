@@ -9,10 +9,10 @@ import * as fs from 'fs';
 import * as glob from 'glob';
 import { Logger, Messages, SfProject } from '@salesforce/core';
 import { AsyncCreatable } from '@salesforce/kit';
-import { ProfileApiOptions } from '../interfaces';
+import { PackageXml, ProfileApiOptions } from '../interfaces';
 import {
   CorrectedProfile,
-  manifestFixer,
+  manifestTypesToMap,
   profileObjectToString,
   profileRewriter,
   profileStringToProfile,
@@ -49,9 +49,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
    */
   public generateProfiles(
     destPath: string,
-    manifest: {
-      Package: Array<{ name: string[]; members: string[] }>;
-    },
+    manifestTypes: PackageXml['Package']['types'],
     excludedDirectories: string[] = []
   ): string[] {
     const logger = Logger.childFromRoot('PackageProfileApi');
@@ -62,7 +60,11 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
 
     const results = profilePathsWithNames.map(({ profilePath, name: profileName }) => {
       const originalProfile = profileStringToProfile(fs.readFileSync(profilePath, 'utf-8'));
-      const adjustedProfile = profileRewriter(originalProfile, manifestFixer(manifest), this.includeUserLicenses);
+      const adjustedProfile = profileRewriter(
+        originalProfile,
+        manifestTypesToMap(manifestTypes),
+        this.includeUserLicenses
+      );
       const hasContent = Object.keys(adjustedProfile).length;
       return { profileName, profilePath, hasContent, adjustedProfile, originalProfile };
     });
@@ -75,13 +77,13 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
         getRemovedSettings(originalProfile, adjustedProfile).forEach((setting) => {
           logger.info(profileApiMessages.getMessage('removeProfileSetting', [setting, profileName]));
         });
-        fs.writeFileSync(getXmlFileLocation(profilePath), profileObjectToString(adjustedProfile), 'utf-8');
+        fs.writeFileSync(getXmlFileLocation(destPath, profilePath), profileObjectToString(adjustedProfile), 'utf-8');
       });
 
     const excludedProfiles = results
       .filter((result) => !result.hasContent)
       .map((profile) => {
-        const xmlFile = getXmlFileLocation(profile.profilePath);
+        const xmlFile = getXmlFileLocation(destPath, profile.profilePath);
         const replacedProfileName = xmlFile.replace(/(.*)(\.profile)/, '$1');
         deleteButAllowEnoent(xmlFile);
         logger.info(profileApiMessages.getMessage('profileNotIncluded', [replacedProfileName]));
@@ -98,9 +100,9 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
    * @param excludedDirectories Direcotires not to generate profiles for
    */
   public filterAndGenerateProfilesForManifest(
-    typesArr: Array<{ name: string[]; members: string[] }>,
+    typesArr: PackageXml['Package']['types'],
     excludedDirectories: string[] = []
-  ): Array<{ name: string[]; members: string[] }> {
+  ): PackageXml['Package']['types'] {
     const profilePathsWithNames = getProfilesWithNamesAndPaths({
       projectPath: this.project.getPath(),
       excludedDirectories,
@@ -108,8 +110,8 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
 
     // Filter all profiles, and add back the ones we found names for
     return typesArr
-      .filter((kvp) => kvp.name[0] !== 'Profile')
-      .concat([{ name: ['Profile'], members: profilePathsWithNames.map((i) => i.name) }]);
+      .filter((kvp) => kvp.name !== 'Profile')
+      .concat([{ name: 'Profile', members: profilePathsWithNames.map((i) => i.name) }]);
   }
 }
 
@@ -144,7 +146,8 @@ const getProfilesWithNamesAndPaths = ({
     .map((profilePath) => ({ profilePath, name: profilePathToName(profilePath) }))
     .filter(isProfilePathWithName);
 
-const getXmlFileLocation = (profilePath: string): string => path.basename(profilePath).replace(/(.*)(-meta.xml)/, '$1');
+const getXmlFileLocation = (destPath: string, profilePath: string): string =>
+  path.join(destPath, path.basename(profilePath).replace(/(.*)(-meta.xml)/, '$1'));
 
 const deleteButAllowEnoent = (destFilePath: string): void => {
   try {
