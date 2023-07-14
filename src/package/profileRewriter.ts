@@ -27,24 +27,23 @@ export const profileRewriter = (
     Object.entries(profileJson)
       // keep userLicenses only if that option is set
       // remove settings that are not used for packaging
-      .filter(([key]) => isKeyOfInterest(key) || (key === 'userLicense' && retainUserLicense))
+      .filter(([key]) => isRewriteProp(key) || (key === 'userLicense' && retainUserLicense))
       .map(([key, value]) => [
         key,
         // Array check catches userLicense, everything els eis a key of ProfileAreasOfInterest because of the previous filter
-        Array.isArray(value) && filterFunctions[key as keyof ProfileAreasOfInterest]
+        Array.isArray(value) && filterFunctions[key as keyof RewriteProps]
           ? // @ts-expect-error TS knows they're keyof and that the value is one of the property types
             // but isn't smart enough to know that the filterFunctions[key] will return the same type
-            filterFunctions[key as keyof ProfileAreasOfInterest](value, packageXml) ?? []
+            filterFunctions[key as keyof RewriteProps](value, packageXml) ?? []
           : value,
       ])
       // some profileSettings might now be empty if the package.xml didn't have those types, so remove them
       .filter(([, value]) => (Array.isArray(value) ? value.length : true))
   ) as CorrectedProfile;
 
-const isKeyOfInterest = (key: string): key is keyof ProfileAreasOfInterest =>
-  profilePropertiesWeCareAbout.includes(key as keyof ProfileAreasOfInterest);
+const isRewriteProp = (key: string): key is keyof RewriteProps => rewriteProps.includes(key as keyof RewriteProps);
 
-const profilePropertiesWeCareAbout = [
+const rewriteProps = [
   'objectPermissions',
   'fieldPermissions',
   'layoutAssignments',
@@ -59,48 +58,49 @@ const profilePropertiesWeCareAbout = [
   'recordTypeVisibilities',
 ] as const;
 
-type ProfileAreasOfInterest = Pick<CorrectedProfile, (typeof profilePropertiesWeCareAbout)[number]>;
+/** Packaging compares certain Profile properties to the package.xml */
+type RewriteProps = Pick<CorrectedProfile, (typeof rewriteProps)[number]>;
 
 type FilterFunctions = {
-  [index in keyof ProfileAreasOfInterest]: (
-    props: ProfileAreasOfInterest[index],
-    packageXml: Map<string, string[]>
-  ) => ProfileAreasOfInterest[index];
+  [index in keyof RewriteProps]: (props: RewriteProps[index], packageXml: Map<string, string[]>) => RewriteProps[index];
 };
 
 const filterFunctions: FilterFunctions = {
-  objectPermissions: (props: ProfileAreasOfInterest['objectPermissions'], packageXml: Map<string, string[]>) =>
+  objectPermissions: (props: RewriteProps['objectPermissions'], packageXml: Map<string, string[]>) =>
     props.filter((item) => packageXml.get('CustomObject')?.includes(item.object)),
-  fieldPermissions: (props: ProfileAreasOfInterest['fieldPermissions'], packageXml: Map<string, string[]>) =>
+
+  fieldPermissions: (props: RewriteProps['fieldPermissions'], packageXml: Map<string, string[]>) =>
     props.filter((item) => packageXml.get('CustomField')?.includes(fieldCorrections(item.field))),
-  layoutAssignments: (props: ProfileAreasOfInterest['layoutAssignments'], packageXml: Map<string, string[]>) =>
+
+  layoutAssignments: (props: RewriteProps['layoutAssignments'], packageXml: Map<string, string[]>) =>
     props.filter((item) => packageXml.get('Layout')?.includes(item.layout)),
-  tabVisibilities: (props: ProfileAreasOfInterest['tabVisibilities'], packageXml: Map<string, string[]>) =>
+
+  tabVisibilities: (props: RewriteProps['tabVisibilities'], packageXml: Map<string, string[]>) =>
     props.filter((item) => packageXml.get('CustomTab')?.includes(item.tab)),
-  applicationVisibilities: (
-    props: ProfileAreasOfInterest['applicationVisibilities'],
-    packageXml: Map<string, string[]>
-  ) => props.filter((item) => packageXml.get('Application')?.includes(item.application)),
-  classAccesses: (props: ProfileAreasOfInterest['classAccesses'], packageXml: Map<string, string[]>) =>
+
+  applicationVisibilities: (props: RewriteProps['applicationVisibilities'], packageXml: Map<string, string[]>) =>
+    props.filter((item) => packageXml.get('Application')?.includes(item.application)),
+
+  classAccesses: (props: RewriteProps['classAccesses'], packageXml: Map<string, string[]>) =>
     props.filter((item) => packageXml.get('ApexClass')?.includes(item.apexClass)),
-  customPermissions: (props: ProfileAreasOfInterest['customPermissions'], packageXml: Map<string, string[]>) =>
+
+  customPermissions: (props: RewriteProps['customPermissions'], packageXml: Map<string, string[]>) =>
     props.filter((item) => packageXml.get('CustomPermission')?.includes(item.name)),
-  pageAccesses: (props: ProfileAreasOfInterest['pageAccesses'], packageXml: Map<string, string[]>) =>
+
+  pageAccesses: (props: RewriteProps['pageAccesses'], packageXml: Map<string, string[]>) =>
     props.filter((item) => packageXml.get('ApexPage')?.includes(item.apexPage)),
-  externalDataSourceAccesses: (
-    props: ProfileAreasOfInterest['externalDataSourceAccesses'],
-    packageXml: Map<string, string[]>
-  ) => props.filter((item) => packageXml.get('ExternalDataSource')?.includes(item.externalDataSource)),
-  recordTypeVisibilities: (
-    props: ProfileAreasOfInterest['recordTypeVisibilities'],
-    packageXml: Map<string, string[]>
-  ) => props.filter((item) => packageXml.get('RecordType')?.includes(item.recordType)),
-  customSettingAccesses: (props: ProfileAreasOfInterest['customSettingAccesses'], packageXml: Map<string, string[]>) =>
+
+  externalDataSourceAccesses: (props: RewriteProps['externalDataSourceAccesses'], packageXml: Map<string, string[]>) =>
+    props.filter((item) => packageXml.get('ExternalDataSource')?.includes(item.externalDataSource)),
+
+  recordTypeVisibilities: (props: RewriteProps['recordTypeVisibilities'], packageXml: Map<string, string[]>) =>
+    props.filter((item) => packageXml.get('RecordType')?.includes(item.recordType)),
+
+  customSettingAccesses: (props: RewriteProps['customSettingAccesses'], packageXml: Map<string, string[]>) =>
     props.filter((item) => allMembers(packageXml).includes(item.name)),
-  customMetadataTypeAccesses: (
-    props: ProfileAreasOfInterest['customMetadataTypeAccesses'],
-    packageXml: Map<string, string[]>
-  ) => props.filter((item) => allMembers(packageXml).includes(item.name)),
+
+  customMetadataTypeAccesses: (props: RewriteProps['customMetadataTypeAccesses'], packageXml: Map<string, string[]>) =>
+    props.filter((item) => allMembers(packageXml).includes(item.name)),
 };
 
 const allMembers = (packageXml: Map<string, string[]>): string[] => Array.from(packageXml.values()).flat();
