@@ -197,9 +197,8 @@ export async function pollStatus(
   let packageInstallRequest = await getStatus(connection, installRequestId);
 
   const { pollingFrequency, pollingTimeout } = options;
-  const frequency = numberToDuration(pollingFrequency);
-
-  const timeout = numberToDuration(pollingTimeout);
+  const frequency = numberToDuration(pollingFrequency ?? 5000);
+  const timeout = numberToDuration(pollingTimeout ?? 300000);
 
   const pollingOptions: PollingClient.Options = {
     frequency,
