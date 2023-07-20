@@ -1,3 +1,12 @@
+## [2.2.4](https://github.com/forcedotcom/packaging/compare/2.2.3...2.2.4) (2023-07-20)
+
+
+### Bug Fixes
+
+* **deps:** bump word-wrap from 1.2.3 to 1.2.4 ([ea7e0b9](https://github.com/forcedotcom/packaging/commit/ea7e0b97ae220fc418664f88ab5cea5e5f922d03))
+
+
+
 ## [2.2.3](https://github.com/forcedotcom/packaging/compare/2.2.2...2.2.3) (2023-07-15)
 
 
