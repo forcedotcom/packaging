@@ -1,3 +1,12 @@
+## [2.2.6](https://github.com/forcedotcom/packaging/compare/2.2.5...2.2.6) (2023-07-22)
+
+
+### Bug Fixes
+
+* **deps:** bump semver from 5.7.1 to 5.7.2 ([c951154](https://github.com/forcedotcom/packaging/commit/c951154cfd59016486fba2e11cc6f98e41836d66))
+
+
+
 ## [2.2.5](https://github.com/forcedotcom/packaging/compare/2.2.4...2.2.5) (2023-07-22)
 
 
