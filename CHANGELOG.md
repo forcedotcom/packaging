@@ -1,3 +1,12 @@
+## [2.2.7](https://github.com/forcedotcom/packaging/compare/2.2.6...2.2.7) (2023-07-24)
+
+
+### Bug Fixes
+
+* use default polling freq ([66fe839](https://github.com/forcedotcom/packaging/commit/66fe8397f530764f11a11bb4dcd06940e3b109a9))
+
+
+
 ## [2.2.6](https://github.com/forcedotcom/packaging/compare/2.2.5...2.2.6) (2023-07-22)
 
 
