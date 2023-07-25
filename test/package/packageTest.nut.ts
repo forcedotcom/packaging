@@ -44,6 +44,7 @@ const VERSION_CREATE_RESPONSE_KEYS = [
   'CreatedDate',
   'HasMetadataRemoved',
   'CreatedBy',
+  'ConvertedFromVersionId',
 ];
 
 // version
@@ -356,7 +357,8 @@ describe('Integration tests for @salesforce/packaging library', () => {
           'Error',
           'CreatedDate',
           'HasMetadataRemoved',
-          'CreatedBy'
+          'CreatedBy',
+          'ConvertedFromVersionId'
         );
         expect(res.Id.startsWith('08c')).to.be.true;
         expect(res.Package2Id.startsWith('0Ho')).to.be.true;
@@ -381,7 +383,8 @@ describe('Integration tests for @salesforce/packaging library', () => {
         'Error',
         'CreatedDate',
         'HasMetadataRemoved',
-        'CreatedBy'
+        'CreatedBy',
+        'ConvertedFromVersionId'
       );
       const createdDate = new Date(result[0].CreatedDate);
       const currentDate = new Date();

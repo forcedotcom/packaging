@@ -22,7 +22,7 @@ const messages = Messages.loadMessages('@salesforce/packaging', 'package_version
 const STATUS_ERROR = 'Error';
 const QUERY =
   'SELECT Id, Status, Package2Id, Package2VersionId, Package2Version.SubscriberPackageVersionId, Tag, Branch, ' +
-  'CreatedDate, Package2Version.HasMetadataRemoved, CreatedById ' +
+  'CreatedDate, Package2Version.HasMetadataRemoved, CreatedById, IsConversionRequest, Package2Version.ConvertedFromVersionId ' +
   'FROM Package2VersionCreateRequest ' +
   '%s' + // WHERE, if applicable
   'ORDER BY CreatedDate desc';
@@ -65,7 +65,10 @@ export async function byId(
 async function query(query: string, connection: Connection): Promise<PackageVersionCreateRequestResult[]> {
   type QueryRecord = PackagingSObjects.Package2VersionCreateRequest &
     Schema & {
-      Package2Version: Pick<PackagingSObjects.Package2Version, 'HasMetadataRemoved' | 'SubscriberPackageVersionId'>;
+      Package2Version: Pick<
+        PackagingSObjects.Package2Version,
+        'HasMetadataRemoved' | 'SubscriberPackageVersionId' | 'ConvertedFromVersionId'
+      >;
     };
   const queryResult = await connection.autoFetchQuery<QueryRecord>(query, { tooling: true });
   return (queryResult.records ? queryResult.records : []).map((record) => ({
@@ -81,7 +84,23 @@ async function query(query: string, connection: Connection): Promise<PackageVers
     CreatedDate: formatDate(new Date(record.CreatedDate)),
     HasMetadataRemoved: record.Package2Version != null ? record.Package2Version.HasMetadataRemoved : null,
     CreatedBy: record.CreatedById,
+    ConvertedFromVersionId: convertedFromVersionMessage(record.Status, record.Package2Version?.ConvertedFromVersionId),
   }));
+}
+
+function convertedFromVersionMessage(status: string, convertedFromVersionId: string): string {
+  switch (status) {
+    case 'Success':
+      return convertedFromVersionId;
+    case 'Queued':
+      return messages.getMessage('IdUnavailableWhenQueued');
+    case 'InProgress':
+      return messages.getMessage('IdUnavailableWhenInProgress');
+    case 'Error':
+      return messages.getMessage('IdUnavailableWhenError');
+    default:
+      return messages.getMessage('IdUnavailableWhenInProgress');
+  }
 }
 
 async function queryForErrors(packageVersionCreateRequestId: string, connection: Connection): Promise<string[]> {
@@ -108,6 +127,11 @@ function constructWhere(options?: PackageVersionCreateRequestQueryOptions): stri
   // filter on errors
   if (options?.status) {
     where.push(`Status = '${options.status.toLowerCase()}'`);
+  }
+
+  // show only conversions
+  if (options?.showConversionsOnly) {
+    where.push('IsConversionRequest = true ');
   }
 
   return where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
