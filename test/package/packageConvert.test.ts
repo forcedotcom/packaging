@@ -253,7 +253,7 @@ describe('packageConvert', () => {
         message: '',
         packageVersionCreateRequestResult: {
           Branch: undefined,
-          ConvertedFromVersionId: messages.getMessage('IdUnavailableWhenError'),
+          ConvertedFromVersionId: messages.getMessage('IdUnavailableWhenInProgress'),
           CreatedBy: undefined,
           CreatedDate: 'NaN-NaN-NaN NaN:NaN',
           Error: [],
