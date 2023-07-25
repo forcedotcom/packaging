@@ -69,26 +69,26 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
       return { profileName, profilePath, hasContent, adjustedProfile, originalProfile };
     });
 
-    // update profiles with content
-    results
-      .filter((result) => result.hasContent)
-      .map(({ profilePath, adjustedProfile, profileName, originalProfile }) => {
-        logger.info(profileApiMessages.getMessage('addProfileToPackage', [profileName, profilePath]));
-        getRemovedSettings(originalProfile, adjustedProfile).forEach((setting) => {
-          logger.info(profileApiMessages.getMessage('removeProfileSetting', [setting, profileName]));
-        });
-        fs.writeFileSync(getXmlFileLocation(destPath, profilePath), profileObjectToString(adjustedProfile), 'utf-8');
+    results.map(({ profilePath, adjustedProfile, hasContent, profileName, originalProfile }) => {
+      if (!hasContent) {
+        logger.warn(
+          `Profile ${profileName} has no content after filtering. It will still be part of the package but you can remove if it it's not needed.`
+        );
+      }
+      logger.info(profileApiMessages.getMessage('addProfileToPackage', [profileName, profilePath]));
+      getRemovedSettings(originalProfile, adjustedProfile).forEach((setting) => {
+        logger.info(profileApiMessages.getMessage('removeProfileSetting', [setting, profileName]));
       });
+      fs.writeFileSync(getXmlFileLocation(destPath, profilePath), profileObjectToString(adjustedProfile), 'utf-8');
+    });
 
-    return results
-      .filter((result) => !result.hasContent)
-      .map((profile) => {
-        const xmlFile = getXmlFileLocation(destPath, profile.profilePath);
-        const replacedProfileName = xmlFile.replace(/(.*)(\.profile)/, '$1');
-        deleteButAllowEnoent(xmlFile);
-        logger.info(profileApiMessages.getMessage('profileNotIncluded', [replacedProfileName]));
-        return replacedProfileName;
-      });
+    return results.map((profile) => {
+      const xmlFile = getXmlFileLocation(destPath, profile.profilePath);
+      const replacedProfileName = xmlFile.replace(/(.*)(\.profile)/, '$1');
+      deleteButAllowEnoent(xmlFile);
+      logger.info(profileApiMessages.getMessage('profileNotIncluded', [replacedProfileName]));
+      return replacedProfileName;
+    });
   }
 
   /**
