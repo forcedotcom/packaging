@@ -1,3 +1,12 @@
+## [2.2.8](https://github.com/forcedotcom/packaging/compare/2.2.7...2.2.8) (2023-07-25)
+
+
+### Bug Fixes
+
+* profile being filtered out ([ba6ee4c](https://github.com/forcedotcom/packaging/commit/ba6ee4cd563c3b1061c552362aee4d535e8d6921))
+
+
+
 ## [2.2.7](https://github.com/forcedotcom/packaging/compare/2.2.6...2.2.7) (2023-07-24)
 
 
