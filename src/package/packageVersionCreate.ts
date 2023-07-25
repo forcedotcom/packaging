@@ -329,8 +329,6 @@ export class PackageVersionCreate {
       sourceApiVersion: (this.project?.getSfProjectJson()?.get('sourceApiVersion') as string) ?? undefined,
     };
 
-    // Stores any additional client side info that might be needed later on in the process
-    const clientSideInfo = new Map<string, string>();
     await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
     const settingsGenerator = new SettingsGenerator({ asDirectory: true });
     let packageDescriptorJson = cloneJson(this.packageObject) as PackageDescriptorJson;
@@ -421,7 +419,7 @@ export class PackageVersionCreate {
       JSON.stringify(packageDescriptorJson),
       'utf-8'
     );
-    await this.cleanGeneratedPackage(
+    await this.cleanGeneratedPackage({
       packageVersMetadataFolder,
       packageVersProfileFolder,
       unpackagedMetadataFolder,
@@ -432,9 +430,8 @@ export class PackageVersionCreate {
       packageVersBlobZipFile,
       unpackagedMetadataZipFile,
       seedMetadataZipFile,
-      clientSideInfo,
-      settingsGenerator
-    );
+      settingsGenerator,
+    });
 
     return this.createRequestObject(preserveFiles, packageVersTmpRoot, packageVersBlobZipFile);
   }
@@ -445,20 +442,31 @@ export class PackageVersionCreate {
     }
   }
 
-  private async cleanGeneratedPackage(
-    packageVersMetadataFolder: string,
-    packageVersProfileFolder: string,
-    unpackagedMetadataFolder: string,
-    seedMetadataFolder: string,
-    metadataZipFile: string,
-    settingsZipFile: string,
-    packageVersBlobDirectory: string,
-    packageVersBlobZipFile: string,
-    unpackagedMetadataZipFile: string,
-    seedMetadataZipFile: string,
-    clientSideInfo: Map<string, string>,
-    settingsGenerator: SettingsGenerator
-  ): Promise<void> {
+  private async cleanGeneratedPackage({
+    packageVersMetadataFolder,
+    packageVersProfileFolder,
+    unpackagedMetadataFolder,
+    seedMetadataFolder,
+    metadataZipFile,
+    settingsZipFile,
+    packageVersBlobDirectory,
+    packageVersBlobZipFile,
+    unpackagedMetadataZipFile,
+    seedMetadataZipFile,
+    settingsGenerator,
+  }: {
+    packageVersMetadataFolder: string;
+    packageVersProfileFolder: string;
+    unpackagedMetadataFolder: string;
+    seedMetadataFolder: string;
+    metadataZipFile: string;
+    settingsZipFile: string;
+    packageVersBlobDirectory: string;
+    packageVersBlobZipFile: string;
+    unpackagedMetadataZipFile: string;
+    seedMetadataZipFile: string;
+    settingsGenerator: SettingsGenerator;
+  }): Promise<void> {
     // As part of the source convert process, the package.xml has been written into the tmp metadata directory.
     // The package.xml may need to be manipulated due to processing profiles in the workspace or additional
     // metadata exclusions. If necessary, read the existing package.xml and then re-write it.

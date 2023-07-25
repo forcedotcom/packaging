@@ -44,7 +44,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
    * to items in the manifest.
    *
    * @param destPath location of new profiles
-   * @param manifest
+   * @param manifestTypes: array of objects { name: string, members: string[] } that represent package xml types
    * @param excludedDirectories Directories to not include profiles from
    */
   public generateProfiles(
@@ -80,7 +80,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
         fs.writeFileSync(getXmlFileLocation(destPath, profilePath), profileObjectToString(adjustedProfile), 'utf-8');
       });
 
-    const excludedProfiles = results
+    return results
       .filter((result) => !result.hasContent)
       .map((profile) => {
         const xmlFile = getXmlFileLocation(destPath, profile.profilePath);
@@ -89,8 +89,6 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
         logger.info(profileApiMessages.getMessage('profileNotIncluded', [replacedProfileName]));
         return replacedProfileName;
       });
-
-    return excludedProfiles;
   }
 
   /**
@@ -154,7 +152,6 @@ const deleteButAllowEnoent = (destFilePath: string): void => {
     fs.unlinkSync(destFilePath);
   } catch (err) {
     // It is normal for the file to not exist if the profile is in the workspace but not in the directory being packaged.
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (err instanceof Error && 'code' in err && err.code !== 'ENOENT') {
       throw err;
     }

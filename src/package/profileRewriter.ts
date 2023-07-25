@@ -18,6 +18,19 @@ export type CorrectedProfile = Profile & {
   customSettingAccesses: ProfileCustomSettingAccess[];
 };
 
+/**
+ *
+ * Takes a Profile that's been converted from package.xml to json.
+ * Filters out all Profile props that are not
+ * 1. used by packaging (ex: ipRanges)
+ * 2. present in the package.xml (ex: ClassAccesses for a class not in the package)
+ * 3. optionally retains the UserLicense prop only if the param is true
+ *
+ * @param profileJson json representation of a profile
+ * @param packageXml package.xml as json
+ * @param retainUserLicense boolean will preserve userLicense if true
+ * @returns Profile
+ */
 export const profileRewriter = (
   profileJson: CorrectedProfile,
   packageXml: PackageMap,

@@ -11,6 +11,7 @@ import { SaveResult } from 'jsforce';
 import { Attributes } from 'graphology-types';
 import { Optional } from '@salesforce/ts-types';
 import { ConvertResult } from '@salesforce/source-deploy-retrieve';
+import { Package } from 'jsforce/lib/api/metadata';
 import { PackageProfileApi } from '../package/packageProfileApi';
 import { PackageAncestryNode } from '../package/packageAncestry';
 import { PackagingSObjects } from './packagingSObjects';
@@ -470,8 +471,5 @@ export const Package1VersionEvents = {
 };
 
 export type PackageXml = {
-  Package: {
-    types: Array<{ name: string; members: string[] }>;
-    version: string;
-  };
+  Package: Pick<Package, 'types' | 'version'>;
 };
