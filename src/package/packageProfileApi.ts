@@ -150,7 +150,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
                 members,
                 profileNode,
                 profileName
-              ) ?? hasNodes;
+              ) || hasNodes;
           }
         });
 
@@ -168,7 +168,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
                 allMembers,
                 profileNode,
                 profileName
-              ) ?? hasNodes;
+              ) || hasNodes;
           }
         });
 
