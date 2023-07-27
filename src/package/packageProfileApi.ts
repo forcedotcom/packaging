@@ -152,17 +152,6 @@ const getProfilesWithNamesAndPaths = ({
 const getXmlFileLocation = (destPath: string, profilePath: string): string =>
   path.join(destPath, path.basename(profilePath).replace(/(.*)(-meta.xml)/, '$1'));
 
-// const deleteButAllowEnoent = (destFilePath: string): void => {
-//   try {
-//     fs.unlinkSync(destFilePath);
-//   } catch (err) {
-//     // It is normal for the file to not exist if the profile is in the workspace but not in the directory being packaged.
-//     if (err instanceof Error && 'code' in err && err.code !== 'ENOENT') {
-//       throw err;
-//     }
-//   }
-// };
-
 const getRemovedSettings = (originalProfile: CorrectedProfile, adjustedProfile: CorrectedProfile): string[] => {
   const originalProfileSettings = Object.keys(originalProfile);
   const adjustedProfileSettings = new Set(Object.keys(adjustedProfile));
