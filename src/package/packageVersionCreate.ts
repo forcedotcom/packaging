@@ -1139,7 +1139,7 @@ export const packageXmlStringToPackageXmlJson = (rawXml: string): PackageXml => 
   });
   const result = (parser.parse(rawXml) as { Package: PackageXml }).Package;
   // make sure members is always an array
-  return { ...result, types: result.types.map((type) => ({ ...type, members: ensureArray(type.members) })) };
+  return { ...result, types: result.types?.map((type) => ({ ...type, members: ensureArray(type.members) })) };
 };
 
 /**
