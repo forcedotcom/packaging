@@ -132,12 +132,13 @@ export const fieldCorrections = (fieldName: string): string =>
  */
 export const profileStringToProfile = (profileString: string): CorrectedProfile => {
   const parser = new XMLParser({
-    ignoreAttributes: false,
+    ignoreAttributes: true,
     parseTagValue: false,
     parseAttributeValue: false,
     cdataPropName: '__cdata',
     ignoreDeclaration: true,
     numberParseOptions: { leadingZeros: false, hex: false },
+    isArray: (name: string) => rewriteProps.includes(name as keyof RewriteProps),
   });
   return (parser.parse(profileString) as { Profile: CorrectedProfile }).Profile;
 };

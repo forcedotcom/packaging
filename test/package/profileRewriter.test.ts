@@ -11,6 +11,7 @@ import {
   CorrectedProfile,
   fieldCorrections,
   profileObjectToString,
+  profileStringToProfile,
 } from '../../src/package/profileRewriter';
 
 config.truncateThreshold = 0;
@@ -76,6 +77,19 @@ const sampleManifest = new Map<string, string[]>([
 ]);
 
 describe('reading and writing profiles', () => {
+  it('reads a profile with single-item nodes', () => {
+    const profileJson: Partial<CorrectedProfile> = {
+      objectPermissions: [
+        {
+          object: 'Foo__c',
+          allowRead: true,
+        },
+      ],
+    };
+    const xml = profileObjectToString(profileJson);
+    const json = profileStringToProfile(xml);
+    expect(json.objectPermissions).to.deep.equal([{ object: 'Foo__c', allowRead: 'true' }]);
+  });
   it('writes include the outer object, xmlns and declaration', () => {
     const objectContents: Partial<CorrectedProfile> = {
       objectPermissions: [
