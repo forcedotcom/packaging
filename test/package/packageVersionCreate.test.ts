@@ -875,7 +875,8 @@ describe('Package Version Create', () => {
 });
 
 describe('PackageXml read/write', () => {
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+  describe('multiple types', () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
         <members>Account.Keep_Me__c</members>
@@ -897,27 +898,55 @@ describe('PackageXml read/write', () => {
 </Package>
 `;
 
-  const json = {
-    types: [
-      {
-        members: ['Account.Keep_Me__c', 'Activity.Event_Field__c', 'Activity.Task_Field__c'],
-        name: 'CustomField',
-      },
-      {
-        members: ['Account-AccountLayout', 'Event-EventLayout', 'Task-TaskLayout'],
-        name: 'Layout',
-      },
-      {
-        members: ['DummyProfile'],
-        name: 'Profile',
-      },
-    ],
-    version: '58.0',
-  };
-  it('read', () => {
-    expect(packageXmlStringToPackageXmlJson(xml)).to.deep.equal(json);
+    const json = {
+      types: [
+        {
+          members: ['Account.Keep_Me__c', 'Activity.Event_Field__c', 'Activity.Task_Field__c'],
+          name: 'CustomField',
+        },
+        {
+          members: ['Account-AccountLayout', 'Event-EventLayout', 'Task-TaskLayout'],
+          name: 'Layout',
+        },
+        {
+          members: ['DummyProfile'],
+          name: 'Profile',
+        },
+      ],
+      version: '58.0',
+    };
+    it('read', () => {
+      expect(packageXmlStringToPackageXmlJson(xml)).to.deep.equal(json);
+    });
+    it('write', () => {
+      expect(packageXmlJsonToXmlString(json)).to.deep.equal(xml);
+    });
   });
-  it('write', () => {
-    expect(packageXmlJsonToXmlString(json)).to.deep.equal(xml);
+  describe('single type', () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>Account.Keep_Me__c</members>
+        <name>CustomField</name>
+    </types>
+    <version>58.0</version>
+</Package>
+`;
+
+    const json = {
+      types: [
+        {
+          members: ['Account.Keep_Me__c'],
+          name: 'CustomField',
+        },
+      ],
+      version: '58.0',
+    };
+    it('read', () => {
+      expect(packageXmlStringToPackageXmlJson(xml)).to.deep.equal(json);
+    });
+    it('write', () => {
+      expect(packageXmlJsonToXmlString(json)).to.deep.equal(xml);
+    });
   });
 });

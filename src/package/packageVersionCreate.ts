@@ -1136,10 +1136,11 @@ export const packageXmlStringToPackageXmlJson = (rawXml: string): PackageXml => 
     cdataPropName: '__cdata',
     ignoreDeclaration: true,
     numberParseOptions: { leadingZeros: false, hex: false },
+    // make sure types and members is always an array
+    isArray: (name: string) => ['types', 'members'].includes(name),
   });
-  const result = (parser.parse(rawXml) as { Package: PackageXml }).Package;
-  // make sure members is always an array
-  return { ...result, types: result.types?.map((type) => ({ ...type, members: ensureArray(type.members) })) };
+
+  return (parser.parse(rawXml) as { Package: PackageXml }).Package;
 };
 
 /**
