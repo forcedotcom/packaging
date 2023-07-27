@@ -126,6 +126,10 @@ const allMembers = (packageXml: PackageMap): string[] => Array.from(packageXml.v
 export const fieldCorrections = (fieldName: string): string =>
   fieldName.replace(/^Event\./, 'Activity.').replace(/^Task\./, 'Activity.');
 
+/**
+ * @param profileString: raw xml read from the file
+ * @returns CorrectedProfile (json representation of the profile)
+ */
 export const profileStringToProfile = (profileString: string): CorrectedProfile => {
   const parser = new XMLParser({
     ignoreAttributes: false,
@@ -135,10 +139,12 @@ export const profileStringToProfile = (profileString: string): CorrectedProfile 
     ignoreDeclaration: true,
     numberParseOptions: { leadingZeros: false, hex: false },
   });
-  return parser.parse(profileString) as CorrectedProfile;
+  return (parser.parse(profileString) as { Profile: CorrectedProfile }).Profile;
 };
 
-/** pass in an object that has the Profile props at the top level.  This function will add the outer wrapper `Profile` */
+/** pass in an object that has the Profile props at the top level.
+ * This function will add the outer wrapper `Profile`  and convert the result to xml
+ * */
 export const profileObjectToString = (profileObject: Partial<CorrectedProfile>): string => {
   const builder = new XMLBuilder({
     format: true,
@@ -160,7 +166,7 @@ export const profileObjectToString = (profileObject: Partial<CorrectedProfile>):
 };
 
 /** it's easier to do lookups by Metadata Type on a Map */
-export const manifestTypesToMap = (original: PackageXml['Package']['types']): PackageMap =>
+export const manifestTypesToMap = (original: PackageXml['types']): PackageMap =>
   new Map(original.map((item) => [item.name, item.members]));
 
 type PackageMap = Map<string, string[]>;

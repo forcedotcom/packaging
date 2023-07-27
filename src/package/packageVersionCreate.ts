@@ -27,9 +27,9 @@ import {
   MetadataConverter,
 } from '@salesforce/source-deploy-retrieve';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
-import * as xml2js from 'xml2js';
 import { PackageDirDependency } from '@salesforce/core/lib/sfProject';
 import { cloneJson, ensureArray } from '@salesforce/kit';
+import { XMLParser, XMLBuilder } from 'fast-xml-parser';
 import * as pkgUtils from '../utils/packageUtils';
 import {
   BY_LABEL,
@@ -472,17 +472,18 @@ export class PackageVersionCreate {
     // metadata exclusions. If necessary, read the existing package.xml and then re-write it.
     const currentPackageXml = await fs.promises.readFile(path.join(packageVersMetadataFolder, 'package.xml'), 'utf8');
     // convert to json
-    const packageXmlAsJson = (await xml2js.parseStringPromise(currentPackageXml)) as PackageXml;
-    if (!packageXmlAsJson?.Package) {
+    const packageXmlAsJson = packageXmlStringToPackageXmlJson(currentPackageXml);
+
+    if (!packageXmlAsJson) {
       throw messages.createError('packageXmlDoesNotContainPackage');
     }
-    if (!packageXmlAsJson?.Package?.types) {
+    if (!packageXmlAsJson?.types) {
       throw messages.createError('packageXmlDoesNotContainPackageTypes');
     }
     fs.mkdirSync(packageVersMetadataFolder, { recursive: true });
     fs.mkdirSync(packageVersProfileFolder, { recursive: true });
 
-    this.apiVersionFromPackageXml = packageXmlAsJson.Package.version;
+    this.apiVersionFromPackageXml = packageXmlAsJson.version;
 
     const sourceApiVersion = this.project?.getSfProjectJson()?.get('sourceApiVersion') as string;
     const hasSeedMetadata = await this.metadataResolver.resolveMetadata(
@@ -510,10 +511,8 @@ export class PackageVersionCreate {
       .filter((packageDirPath) => packageDirPath) as string[];
 
     const typesArr =
-      this.options?.profileApi?.filterAndGenerateProfilesForManifest(
-        packageXmlAsJson.Package.types,
-        profileExcludeDirs
-      ) ?? packageXmlAsJson.Package.types;
+      this.options?.profileApi?.filterAndGenerateProfilesForManifest(packageXmlAsJson.types, profileExcludeDirs) ??
+      packageXmlAsJson.types;
 
     // Next generate profiles and retrieve any profiles that were excluded because they had no matching nodes.
     const excludedProfiles = this.options?.profileApi?.generateProfiles(
@@ -522,19 +521,12 @@ export class PackageVersionCreate {
       profileExcludeDirs
     );
 
-    if (excludedProfiles?.length) {
-      const profileIdx = typesArr.findIndex((e) => e.name === 'Profile');
-      typesArr[profileIdx].members = typesArr[profileIdx].members.filter((e) => !excludedProfiles.includes(e));
-    }
-
-    packageXmlAsJson.Package.types = typesArr;
-
-    // Re-write the package.xml in case profiles have been added or removed
-    const xmlBuilder = new xml2js.Builder({
-      xmldec: { version: '1.0', encoding: 'UTF-8' },
+    packageXmlAsJson.types = typesArr.map((type) => {
+      if (type.name !== 'Profile') return type;
+      return { ...type, members: type.members.filter((m) => !excludedProfiles?.includes(m)) };
     });
-    const xml = xmlBuilder.buildObject(packageXmlAsJson);
 
+    const xml = packageXmlJsonToXmlString(packageXmlAsJson);
     await fs.promises.writeFile(path.join(packageVersMetadataFolder, 'package.xml'), xml, 'utf-8');
     // Zip the packageVersMetadataFolder folder and put the zip in {packageVersBlobDirectory}/package.zip
     await zipDir(packageVersMetadataFolder, metadataZipFile);
@@ -1135,3 +1127,40 @@ export class MetadataResolver {
     });
   }
 }
+
+export const packageXmlStringToPackageXmlJson = (rawXml: string): PackageXml => {
+  const parser = new XMLParser({
+    ignoreAttributes: true,
+    parseTagValue: false,
+    parseAttributeValue: false,
+    cdataPropName: '__cdata',
+    ignoreDeclaration: true,
+    numberParseOptions: { leadingZeros: false, hex: false },
+  });
+  const result = (parser.parse(rawXml) as { Package: PackageXml }).Package;
+  // make sure members is always an array
+  return { ...result, types: result.types.map((type) => ({ ...type, members: ensureArray(type.members) })) };
+};
+
+/**
+ * Converts PackageXmlJson to a string representing the Xml
+ * */
+export const packageXmlJsonToXmlString = (packageXmlJson: PackageXml): string => {
+  const builder = new XMLBuilder({
+    format: true,
+    indentBy: '    ',
+    ignoreAttributes: false,
+    cdataPropName: '__cdata',
+    processEntities: false,
+    attributeNamePrefix: '@@@',
+  });
+  return String(
+    builder.build({
+      '?xml': {
+        '@@@version': '1.0',
+        '@@@encoding': 'UTF-8',
+      },
+      Package: { ...packageXmlJson, '@@@xmlns': 'http://soap.sforce.com/2006/04/metadata' },
+    })
+  );
+};

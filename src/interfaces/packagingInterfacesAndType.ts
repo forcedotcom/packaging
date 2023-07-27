@@ -470,6 +470,4 @@ export const Package1VersionEvents = {
   },
 };
 
-export type PackageXml = {
-  Package: Pick<Package, 'types' | 'version'>;
-};
+export type PackageXml = Pick<Package, 'types' | 'version'>;

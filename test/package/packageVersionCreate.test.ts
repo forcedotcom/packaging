@@ -9,8 +9,13 @@ import * as fs from 'fs';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { assert, expect } from 'chai';
 import { Connection, SfProject } from '@salesforce/core';
-import * as xml2js from 'xml2js';
-import { MetadataResolver, PackageVersionCreate } from '../../src/package/packageVersionCreate';
+import {
+  MetadataResolver,
+  PackageVersionCreate,
+  packageXmlStringToPackageXmlJson,
+  packageXmlJsonToXmlString,
+} from '../../src/package/packageVersionCreate';
+import * as PVCStubs from '../../src/package/packageVersionCreate';
 import { PackagingSObjects } from '../../src/interfaces';
 import { PackageProfileApi } from '../../src/package/packageProfileApi';
 import { VersionNumber } from '../../src/package/versionNumber';
@@ -22,7 +27,7 @@ describe('Package Version Create', () => {
   let connection: Connection;
   let packageTypeQuery: sinon.SinonStub;
   let packageCreateStub: sinon.SinonStub;
-  let xml2jsStub: sinon.SinonStub;
+  let pjsonXmlConversionStub: sinon.SinonStub;
   let pvcStub: sinon.SinonStub;
   let project: SfProject;
 
@@ -92,8 +97,9 @@ describe('Package Version Create', () => {
       success: true,
       errors: [],
     });
-    xml2jsStub = $$.SANDBOX.stub(xml2js, 'parseStringPromise').resolves({
-      Package: { types: [{ name: ['Apexclass'], members: ['MyApexClass'] }] },
+    pjsonXmlConversionStub = $$.SANDBOX.stub(PVCStubs, 'packageXmlStringToPackageXmlJson').returns({
+      types: [{ name: 'Apexclass', members: ['MyApexClass'] }],
+      version: '58.0',
     });
     // @ts-ignore
     pvcStub = $$.SANDBOX.stub(PackageVersionCreate.prototype, 'verifyHasSource').returns(true);
@@ -124,8 +130,9 @@ describe('Package Version Create', () => {
 
   it('should throw an error when Package entry missing from package.xml', async () => {
     pvcStub.restore();
-    xml2jsStub.restore();
-    xml2jsStub = $$.SANDBOX.stub(xml2js, 'parseStringPromise').resolves({});
+    pjsonXmlConversionStub.restore();
+    // @ts-expect-error because we're intentionally testing a validation
+    pjsonXmlConversionStub = $$.SANDBOX.stub(PVCStubs, 'packageXmlStringToPackageXmlJson').returns({});
     const pvc = new PackageVersionCreate({ connection, project, packageId });
 
     try {
@@ -864,5 +871,53 @@ describe('Package Version Create', () => {
         /The provided VersionNumber '1.2.3.NEXT' is invalid. Provide an integer value or use the keyword/
       );
     });
+  });
+});
+
+describe('PackageXml read/write', () => {
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>Account.Keep_Me__c</members>
+        <members>Activity.Event_Field__c</members>
+        <members>Activity.Task_Field__c</members>
+        <name>CustomField</name>
+    </types>
+    <types>
+        <members>Account-AccountLayout</members>
+        <members>Event-EventLayout</members>
+        <members>Task-TaskLayout</members>
+        <name>Layout</name>
+    </types>
+    <types>
+        <members>DummyProfile</members>
+        <name>Profile</name>
+    </types>
+    <version>58.0</version>
+</Package>
+`;
+
+  const json = {
+    types: [
+      {
+        members: ['Account.Keep_Me__c', 'Activity.Event_Field__c', 'Activity.Task_Field__c'],
+        name: 'CustomField',
+      },
+      {
+        members: ['Account-AccountLayout', 'Event-EventLayout', 'Task-TaskLayout'],
+        name: 'Layout',
+      },
+      {
+        members: ['DummyProfile'],
+        name: 'Profile',
+      },
+    ],
+    version: '58.0',
+  };
+  it('read', () => {
+    expect(packageXmlStringToPackageXmlJson(xml)).to.deep.equal(json);
+  });
+  it('write', () => {
+    expect(packageXmlJsonToXmlString(json)).to.deep.equal(xml);
   });
 });

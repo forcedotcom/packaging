@@ -43,52 +43,57 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
    * For any profile present in the workspace, this function generates a subset of data that only contains references
    * to items in the manifest.
    *
+   * return a list of profile file locations that need to be removed from the package because they are empty
+   *
    * @param destPath location of new profiles
    * @param manifestTypes: array of objects { name: string, members: string[] } that represent package xml types
    * @param excludedDirectories Directories to not include profiles from
    */
   public generateProfiles(
     destPath: string,
-    manifestTypes: PackageXml['Package']['types'],
+    manifestTypes: PackageXml['types'],
     excludedDirectories: string[] = []
   ): string[] {
     const logger = Logger.childFromRoot('PackageProfileApi');
-    const profilePathsWithNames = getProfilesWithNamesAndPaths({
-      projectPath: this.project.getPath(),
-      excludedDirectories,
-    });
 
-    const results = profilePathsWithNames.map(({ profilePath, name: profileName }) => {
-      const originalProfile = profileStringToProfile(fs.readFileSync(profilePath, 'utf-8'));
-      const adjustedProfile = profileRewriter(
-        originalProfile,
-        manifestTypesToMap(manifestTypes),
-        this.includeUserLicenses
-      );
-      const hasContent = Object.keys(adjustedProfile).length;
-      return { profileName, profilePath, hasContent, adjustedProfile, originalProfile };
-    });
-
-    results.map(({ profilePath, adjustedProfile, hasContent, profileName, originalProfile }) => {
-      if (!hasContent) {
-        logger.warn(
-          `Profile ${profileName} has no content after filtering. It will still be part of the package but you can remove if it it's not needed.`
-        );
-      }
-      logger.info(profileApiMessages.getMessage('addProfileToPackage', [profileName, profilePath]));
-      getRemovedSettings(originalProfile, adjustedProfile).forEach((setting) => {
-        logger.info(profileApiMessages.getMessage('removeProfileSetting', [setting, profileName]));
-      });
-      fs.writeFileSync(getXmlFileLocation(destPath, profilePath), profileObjectToString(adjustedProfile), 'utf-8');
-    });
-
-    return results.map((profile) => {
-      const xmlFile = getXmlFileLocation(destPath, profile.profilePath);
-      const replacedProfileName = xmlFile.replace(/(.*)(\.profile)/, '$1');
-      deleteButAllowEnoent(xmlFile);
-      logger.info(profileApiMessages.getMessage('profileNotIncluded', [replacedProfileName]));
-      return replacedProfileName;
-    });
+    return (
+      getProfilesWithNamesAndPaths({
+        projectPath: this.project.getPath(),
+        excludedDirectories,
+      })
+        .map(({ profilePath, name: profileName }) => {
+          const originalProfile = profileStringToProfile(fs.readFileSync(profilePath, 'utf-8'));
+          const adjustedProfile = profileRewriter(
+            originalProfile,
+            manifestTypesToMap(manifestTypes),
+            this.includeUserLicenses
+          );
+          return {
+            profileName,
+            profilePath,
+            hasContent: Object.keys(adjustedProfile).length,
+            adjustedProfile,
+            removedSettings: getRemovedSettings(originalProfile, adjustedProfile),
+            xmlFileLocation: getXmlFileLocation(destPath, profilePath),
+          };
+        })
+        // side effect: modify profiles in place
+        .filter(({ hasContent, profileName, removedSettings, profilePath, xmlFileLocation, adjustedProfile }) => {
+          if (!hasContent) {
+            logger.warn(
+              `Profile ${profileName} has no content after filtering. It will still be part of the package but you can remove if it it's not needed.`
+            );
+            return true;
+          } else {
+            logger.info(profileApiMessages.getMessage('addProfileToPackage', [profileName, profilePath]));
+            removedSettings.forEach((setting) => {
+              logger.info(profileApiMessages.getMessage('removeProfileSetting', [setting, profileName]));
+            });
+            fs.writeFileSync(xmlFileLocation, profileObjectToString(adjustedProfile), 'utf-8');
+          }
+        })
+        .map(({ xmlFileLocation }) => xmlFileLocation.replace(/(.*)(\.profile)/, '$1'))
+    );
   }
 
   /**
@@ -98,9 +103,9 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
    * @param excludedDirectories Direcotires not to generate profiles for
    */
   public filterAndGenerateProfilesForManifest(
-    typesArr: PackageXml['Package']['types'],
+    typesArr: PackageXml['types'],
     excludedDirectories: string[] = []
-  ): PackageXml['Package']['types'] {
+  ): PackageXml['types'] {
     const profilePathsWithNames = getProfilesWithNamesAndPaths({
       projectPath: this.project.getPath(),
       excludedDirectories,
@@ -147,19 +152,19 @@ const getProfilesWithNamesAndPaths = ({
 const getXmlFileLocation = (destPath: string, profilePath: string): string =>
   path.join(destPath, path.basename(profilePath).replace(/(.*)(-meta.xml)/, '$1'));
 
-const deleteButAllowEnoent = (destFilePath: string): void => {
-  try {
-    fs.unlinkSync(destFilePath);
-  } catch (err) {
-    // It is normal for the file to not exist if the profile is in the workspace but not in the directory being packaged.
-    if (err instanceof Error && 'code' in err && err.code !== 'ENOENT') {
-      throw err;
-    }
-  }
-};
+// const deleteButAllowEnoent = (destFilePath: string): void => {
+//   try {
+//     fs.unlinkSync(destFilePath);
+//   } catch (err) {
+//     // It is normal for the file to not exist if the profile is in the workspace but not in the directory being packaged.
+//     if (err instanceof Error && 'code' in err && err.code !== 'ENOENT') {
+//       throw err;
+//     }
+//   }
+// };
 
 const getRemovedSettings = (originalProfile: CorrectedProfile, adjustedProfile: CorrectedProfile): string[] => {
   const originalProfileSettings = Object.keys(originalProfile);
-  const adjustedProfileSettings = Object.keys(adjustedProfile);
-  return originalProfileSettings.filter((setting) => !adjustedProfileSettings.includes(setting));
+  const adjustedProfileSettings = new Set(Object.keys(adjustedProfile));
+  return originalProfileSettings.filter((setting) => !adjustedProfileSettings.has(setting));
 };
