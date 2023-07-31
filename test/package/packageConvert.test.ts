@@ -9,7 +9,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { expect } from 'chai';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
-import { Connection, Lifecycle } from '@salesforce/core';
+import { Connection, Lifecycle, Messages } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import {
   convertPackage,
@@ -18,6 +18,9 @@ import {
 } from '../../src/package/packageConvert';
 import { PackageEvents } from '../../src/interfaces';
 import { MetadataResolver } from '../../src/package/packageVersionCreate';
+
+Messages.importMessagesDirectory(__dirname);
+const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
 
 describe('packageConvert', () => {
   const $$ = instantiateContext();
@@ -229,6 +232,7 @@ describe('packageConvert', () => {
 
     const successResponse = {
       Branch: 'main',
+      ConvertedFromVersionId: undefined,
       CreatedBy: undefined,
       CreatedDate: '2022-09-01 00:00',
       Error: [],
@@ -249,6 +253,7 @@ describe('packageConvert', () => {
         message: '',
         packageVersionCreateRequestResult: {
           Branch: undefined,
+          ConvertedFromVersionId: messages.getMessage('IdUnavailableWhenInProgress'),
           CreatedBy: undefined,
           CreatedDate: 'NaN-NaN-NaN NaN:NaN',
           Error: [],
