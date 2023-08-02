@@ -11,6 +11,7 @@ import { SaveResult } from 'jsforce';
 import { Attributes } from 'graphology-types';
 import { Optional } from '@salesforce/ts-types';
 import { ConvertResult } from '@salesforce/source-deploy-retrieve';
+import { Package } from 'jsforce/lib/api/metadata';
 import { PackageProfileApi } from '../package/packageProfileApi';
 import { PackageAncestryNode } from '../package/packageAncestry';
 import { PackagingSObjects } from './packagingSObjects';
@@ -336,7 +337,6 @@ export type PackageVersionCreateRequestQueryOptions = {
 export type ProfileApiOptions = {
   project: SfProject;
   includeUserLicenses: boolean;
-  generateProfileInformation: boolean;
 };
 
 export type PackageVersionReportResult = Partial<
@@ -472,3 +472,5 @@ export const Package1VersionEvents = {
     progress: 'Package1Version/create-progress',
   },
 };
+
+export type PackageXml = Pick<Package, 'types' | 'version'>;

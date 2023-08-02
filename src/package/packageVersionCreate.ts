@@ -12,7 +12,6 @@ import {
   Connection,
   Lifecycle,
   Logger,
-  LoggerLevel,
   Messages,
   NamedPackageDir,
   PackageDir,
@@ -28,9 +27,9 @@ import {
   MetadataConverter,
 } from '@salesforce/source-deploy-retrieve';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
-import * as xml2js from 'xml2js';
 import { PackageDirDependency } from '@salesforce/core/lib/sfProject';
 import { cloneJson, ensureArray } from '@salesforce/kit';
+import { XMLParser, XMLBuilder } from 'fast-xml-parser';
 import * as pkgUtils from '../utils/packageUtils';
 import {
   BY_LABEL,
@@ -51,6 +50,7 @@ import {
   PackageVersionCreateRequest,
   PackageVersionCreateRequestResult,
   PackageVersionEvents,
+  PackageXml,
   PackagingSObjects,
 } from '../interfaces';
 import { PackageProfileApi } from './packageProfileApi';
@@ -329,8 +329,6 @@ export class PackageVersionCreate {
       sourceApiVersion: (this.project?.getSfProjectJson()?.get('sourceApiVersion') as string) ?? undefined,
     };
 
-    // Stores any additional client side info that might be needed later on in the process
-    const clientSideInfo = new Map<string, string>();
     await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
     const settingsGenerator = new SettingsGenerator({ asDirectory: true });
     let packageDescriptorJson = cloneJson(this.packageObject) as PackageDescriptorJson;
@@ -421,7 +419,7 @@ export class PackageVersionCreate {
       JSON.stringify(packageDescriptorJson),
       'utf-8'
     );
-    await this.cleanGeneratedPackage(
+    await this.cleanGeneratedPackage({
       packageVersMetadataFolder,
       packageVersProfileFolder,
       unpackagedMetadataFolder,
@@ -432,9 +430,8 @@ export class PackageVersionCreate {
       packageVersBlobZipFile,
       unpackagedMetadataZipFile,
       seedMetadataZipFile,
-      clientSideInfo,
-      settingsGenerator
-    );
+      settingsGenerator,
+    });
 
     return this.createRequestObject(preserveFiles, packageVersTmpRoot, packageVersBlobZipFile);
   }
@@ -445,38 +442,48 @@ export class PackageVersionCreate {
     }
   }
 
-  private async cleanGeneratedPackage(
-    packageVersMetadataFolder: string,
-    packageVersProfileFolder: string,
-    unpackagedMetadataFolder: string,
-    seedMetadataFolder: string,
-    metadataZipFile: string,
-    settingsZipFile: string,
-    packageVersBlobDirectory: string,
-    packageVersBlobZipFile: string,
-    unpackagedMetadataZipFile: string,
-    seedMetadataZipFile: string,
-    clientSideInfo: Map<string, string>,
-    settingsGenerator: SettingsGenerator
-  ): Promise<void> {
+  private async cleanGeneratedPackage({
+    packageVersMetadataFolder,
+    packageVersProfileFolder,
+    unpackagedMetadataFolder,
+    seedMetadataFolder,
+    metadataZipFile,
+    settingsZipFile,
+    packageVersBlobDirectory,
+    packageVersBlobZipFile,
+    unpackagedMetadataZipFile,
+    seedMetadataZipFile,
+    settingsGenerator,
+  }: {
+    packageVersMetadataFolder: string;
+    packageVersProfileFolder: string;
+    unpackagedMetadataFolder: string;
+    seedMetadataFolder: string;
+    metadataZipFile: string;
+    settingsZipFile: string;
+    packageVersBlobDirectory: string;
+    packageVersBlobZipFile: string;
+    unpackagedMetadataZipFile: string;
+    seedMetadataZipFile: string;
+    settingsGenerator: SettingsGenerator;
+  }): Promise<void> {
     // As part of the source convert process, the package.xml has been written into the tmp metadata directory.
     // The package.xml may need to be manipulated due to processing profiles in the workspace or additional
     // metadata exclusions. If necessary, read the existing package.xml and then re-write it.
     const currentPackageXml = await fs.promises.readFile(path.join(packageVersMetadataFolder, 'package.xml'), 'utf8');
     // convert to json
-    const packageJson = (await xml2js.parseStringPromise(currentPackageXml)) as {
-      Package: { types: Array<{ name: string[]; members: string[] }>; version: string };
-    };
-    if (!packageJson?.Package) {
+    const packageXmlAsJson = packageXmlStringToPackageXmlJson(currentPackageXml);
+
+    if (!packageXmlAsJson) {
       throw messages.createError('packageXmlDoesNotContainPackage');
     }
-    if (!packageJson?.Package.types) {
+    if (!packageXmlAsJson?.types) {
       throw messages.createError('packageXmlDoesNotContainPackageTypes');
     }
     fs.mkdirSync(packageVersMetadataFolder, { recursive: true });
     fs.mkdirSync(packageVersProfileFolder, { recursive: true });
 
-    this.apiVersionFromPackageXml = packageJson.Package.version;
+    this.apiVersionFromPackageXml = packageXmlAsJson.version;
 
     const sourceApiVersion = this.project?.getSfProjectJson()?.get('sourceApiVersion') as string;
     const hasSeedMetadata = await this.metadataResolver.resolveMetadata(
@@ -504,41 +511,22 @@ export class PackageVersionCreate {
       .filter((packageDirPath) => packageDirPath) as string[];
 
     const typesArr =
-      this.options?.profileApi?.filterAndGenerateProfilesForManifest(packageJson.Package.types, profileExcludeDirs) ??
-      packageJson.Package.types;
+      this.options?.profileApi?.filterAndGenerateProfilesForManifest(packageXmlAsJson.types, profileExcludeDirs) ??
+      packageXmlAsJson.types;
 
     // Next generate profiles and retrieve any profiles that were excluded because they had no matching nodes.
     const excludedProfiles = this.options?.profileApi?.generateProfiles(
       packageVersProfileFolder,
-      {
-        Package: typesArr,
-      },
+      typesArr,
       profileExcludeDirs
     );
 
-    if (excludedProfiles?.length) {
-      const profileIdx = typesArr.findIndex((e) => e.name[0] === 'Profile');
-      typesArr[profileIdx].members = typesArr[profileIdx].members.filter((e) => !excludedProfiles.includes(e));
-    }
-
-    packageJson.Package.types = typesArr;
-
-    // Re-write the package.xml in case profiles have been added or removed
-    const xmlBuilder = new xml2js.Builder({
-      xmldec: { version: '1.0', encoding: 'UTF-8' },
-    });
-    const xml = xmlBuilder.buildObject(packageJson);
-
-    // Log information about the profiles being packaged up
-    const profiles = this.options?.profileApi?.getProfileInformation() ?? [];
-    profiles.forEach((profile) => {
-      if (this.logger.shouldLog(LoggerLevel.DEBUG)) {
-        this.logger.debug(profile.logDebug());
-      } else if (this.logger.shouldLog(LoggerLevel.INFO)) {
-        this.logger.info(profile.logInfo());
-      }
+    packageXmlAsJson.types = typesArr.map((type) => {
+      if (type.name !== 'Profile') return type;
+      return { ...type, members: type.members.filter((m) => !excludedProfiles?.includes(m)) };
     });
 
+    const xml = packageXmlJsonToXmlString(packageXmlAsJson);
     await fs.promises.writeFile(path.join(packageVersMetadataFolder, 'package.xml'), xml, 'utf-8');
     // Zip the packageVersMetadataFolder folder and put the zip in {packageVersBlobDirectory}/package.zip
     await zipDir(packageVersMetadataFolder, metadataZipFile);
@@ -700,13 +688,9 @@ export class PackageVersionCreate {
   }
 
   private async resolveUserLicenses(includeUserLicenses: boolean): Promise<PackageProfileApi> {
-    const shouldGenerateProfileInformation =
-      this.logger.shouldLog(LoggerLevel.INFO) || this.logger.shouldLog(LoggerLevel.DEBUG);
-
     return PackageProfileApi.create({
       project: this.project,
       includeUserLicenses,
-      generateProfileInformation: shouldGenerateProfileInformation,
     });
   }
 
@@ -1143,3 +1127,41 @@ export class MetadataResolver {
     });
   }
 }
+
+export const packageXmlStringToPackageXmlJson = (rawXml: string): PackageXml => {
+  const parser = new XMLParser({
+    ignoreAttributes: true,
+    parseTagValue: false,
+    parseAttributeValue: false,
+    cdataPropName: '__cdata',
+    ignoreDeclaration: true,
+    numberParseOptions: { leadingZeros: false, hex: false },
+    // make sure types and members is always an array
+    isArray: (name: string) => ['types', 'members'].includes(name),
+  });
+
+  return (parser.parse(rawXml) as { Package: PackageXml }).Package;
+};
+
+/**
+ * Converts PackageXmlJson to a string representing the Xml
+ * */
+export const packageXmlJsonToXmlString = (packageXmlJson: PackageXml): string => {
+  const builder = new XMLBuilder({
+    format: true,
+    indentBy: '    ',
+    ignoreAttributes: false,
+    cdataPropName: '__cdata',
+    processEntities: false,
+    attributeNamePrefix: '@@@',
+  });
+  return String(
+    builder.build({
+      '?xml': {
+        '@@@version': '1.0',
+        '@@@encoding': 'UTF-8',
+      },
+      Package: { ...packageXmlJson, '@@@xmlns': 'http://soap.sforce.com/2006/04/metadata' },
+    })
+  );
+};
