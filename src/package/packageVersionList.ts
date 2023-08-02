@@ -36,12 +36,12 @@ const defaultFields = [
   'AncestorId',
   'ValidationSkipped',
   'CreatedById',
+  'ConvertedFromVersionId',
 ];
 
 const verboseFields = [
   'CodeCoverage',
   'HasPassedCodeCoverageCheck',
-  'ConvertedFromVersionId',
   'ReleaseVersion',
   'BuildDurationInSeconds',
   'HasMetadataRemoved',
@@ -129,6 +129,10 @@ export function constructWhere(options?: PackageVersionListOptions): string[] {
 
   if (options?.isReleased) {
     where.push('IsReleased = true');
+  }
+
+  if (options?.showConversionsOnly) {
+    where.push('ConvertedFromVersionId != null');
   }
 
   // exclude deleted

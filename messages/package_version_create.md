@@ -194,3 +194,15 @@ The version number is required and was not found in the options or in package js
 # missingConnection
 
 A connection is required.
+
+# IdUnavailableWhenQueued
+
+Request is queued. ID unavailable.
+
+# IdUnavailableWhenInProgress
+
+Request is in progress. ID unavailable.
+
+# IdUnavailableWhenError
+
+ID Unavailable

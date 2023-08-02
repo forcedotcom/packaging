@@ -74,6 +74,7 @@ export type PackageVersionCreateRequestResult = {
   CreatedDate: string;
   HasMetadataRemoved: boolean | null;
   CreatedBy: string;
+  ConvertedFromVersionId: string | null;
 };
 
 export const PackageVersionCreateRequestResultInProgressStatuses = Object.values(Package2VersionStatus).filter(
@@ -204,6 +205,7 @@ export type PackageVersionListOptions = {
   verbose?: boolean;
   concise?: boolean;
   isReleased?: boolean;
+  showConversionsOnly?: boolean;
 };
 
 export type PackageVersionUpdateOptions = {
@@ -329,6 +331,7 @@ export type PackageVersionCreateRequestQueryOptions = {
   createdlastdays?: number;
   status?: 'Queued' | 'InProgress' | 'Success' | 'Error';
   id?: string;
+  showConversionsOnly?: boolean;
 };
 
 export type ProfileApiOptions = {

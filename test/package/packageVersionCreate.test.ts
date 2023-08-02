@@ -150,6 +150,7 @@ describe('Package Version Create', () => {
     const result = await pvc.createPackageVersion();
     expect(result).to.have.all.keys(
       'Branch',
+      'ConvertedFromVersionId',
       'CreatedBy',
       'CreatedDate',
       'Error',
@@ -177,6 +178,7 @@ describe('Package Version Create', () => {
     expect(packageCreateStub.firstCall.args[1].CalculateCodeCoverage).to.equal(true);
     expect(result).to.have.all.keys(
       'Branch',
+      'ConvertedFromVersionId',
       'CreatedBy',
       'CreatedDate',
       'Error',
@@ -202,6 +204,7 @@ describe('Package Version Create', () => {
     expect(packageCreateStub.firstCall.args[1].CalculateCodeCoverage).to.equal(false);
     expect(result).to.have.all.keys(
       'Branch',
+      'ConvertedFromVersionId',
       'CreatedBy',
       'CreatedDate',
       'Error',
@@ -231,6 +234,7 @@ describe('Package Version Create', () => {
     expect(packageCreateStub.firstCall.args[1].Tag).to.equal('DancingBears');
     expect(result).to.have.all.keys(
       'Branch',
+      'ConvertedFromVersionId',
       'CreatedBy',
       'CreatedDate',
       'Error',
@@ -258,6 +262,7 @@ describe('Package Version Create', () => {
     expect(packageCreateStub.firstCall.args[1].skipancestorcheck).to.equal(undefined);
     expect(result).to.have.all.keys(
       'Branch',
+      'ConvertedFromVersionId',
       'CreatedBy',
       'CreatedDate',
       'Error',
@@ -284,6 +289,7 @@ describe('Package Version Create', () => {
     expect(packageCreateStub.firstCall.args[1].SkipValidation).to.equal(true);
     expect(result).to.have.all.keys(
       'Branch',
+      'ConvertedFromVersionId',
       'CreatedBy',
       'CreatedDate',
       'Error',
@@ -311,6 +317,7 @@ describe('Package Version Create', () => {
     expect(packageCreateStub.firstCall.args[1].SkipValidation).to.equal(false);
     expect(result).to.have.all.keys(
       'Branch',
+      'ConvertedFromVersionId',
       'CreatedBy',
       'CreatedDate',
       'Error',
@@ -331,6 +338,7 @@ describe('Package Version Create', () => {
     expect(packageCreateStub.firstCall.args[1].Branch).to.equal('main');
     expect(result).to.have.all.keys(
       'Branch',
+      'ConvertedFromVersionId',
       'CreatedBy',
       'CreatedDate',
       'Error',
@@ -373,6 +381,7 @@ describe('Package Version Create', () => {
 
     expect(result).to.have.all.keys(
       'Branch',
+      'ConvertedFromVersionId',
       'CreatedBy',
       'CreatedDate',
       'Error',
@@ -416,6 +425,7 @@ describe('Package Version Create', () => {
 
     expect(result).to.have.all.keys(
       'Branch',
+      'ConvertedFromVersionId',
       'CreatedBy',
       'CreatedDate',
       'Error',
@@ -457,6 +467,7 @@ describe('Package Version Create', () => {
 
     expect(result).to.have.all.keys(
       'Branch',
+      'ConvertedFromVersionId',
       'CreatedBy',
       'CreatedDate',
       'Error',
@@ -478,6 +489,7 @@ describe('Package Version Create', () => {
     expect(packageCreateStub.firstCall.args[1].Language).to.equal('en_US');
     expect(result).to.have.all.keys(
       'Branch',
+      'ConvertedFromVersionId',
       'CreatedBy',
       'CreatedDate',
       'Error',
@@ -499,6 +511,7 @@ describe('Package Version Create', () => {
     expect(packageCreateStub.firstCall.args[1].Language).to.be.undefined;
     expect(result).to.have.all.keys(
       'Branch',
+      'ConvertedFromVersionId',
       'CreatedBy',
       'CreatedDate',
       'Error',
@@ -525,6 +538,7 @@ describe('Package Version Create', () => {
     const result = await pvc.createPackageVersion();
     expect(result).to.have.all.keys(
       'Branch',
+      'ConvertedFromVersionId',
       'CreatedBy',
       'CreatedDate',
       'Error',
@@ -669,6 +683,7 @@ describe('Package Version Create', () => {
     expect(validationSpy.callCount).to.equal(1);
     expect(result).to.have.all.keys(
       'Branch',
+      'ConvertedFromVersionId',
       'CreatedBy',
       'CreatedDate',
       'Error',
@@ -736,6 +751,7 @@ describe('Package Version Create', () => {
     const result = await pvc.createPackageVersion();
     expect(result).to.have.all.keys(
       'Branch',
+      'ConvertedFromVersionId',
       'CreatedBy',
       'CreatedDate',
       'Error',

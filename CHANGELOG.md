@@ -1,3 +1,10 @@
+# [2.3.0](https://github.com/forcedotcom/packaging/compare/2.2.8...2.3.0) (2023-07-31)
+
+### Features
+
+- query improvements for 1gp to 2gp conversions ([739395e](https://github.com/forcedotcom/packaging/commit/739395e4acd8d10707fff5e2848638a471ba67db))
+- query improvements for 1gp to 2gp conversions ([476a035](https://github.com/forcedotcom/packaging/commit/476a0356b852848bf75c3973a1427a57749f8171))
+
 ## [2.2.8](https://github.com/forcedotcom/packaging/compare/2.2.7...2.2.8) (2023-07-25)
 
 ### Bug Fixes
