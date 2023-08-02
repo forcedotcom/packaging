@@ -93,7 +93,7 @@ const filterFunctions: FilterFunctions = {
     props.filter((item) => packageXml.get('CustomTab')?.includes(item.tab)),
 
   applicationVisibilities: (props: RewriteProps['applicationVisibilities'], packageXml: PackageMap) =>
-    props.filter((item) => packageXml.get('Application')?.includes(item.application)),
+    props.filter((item) => packageXml.get('CustomApplication')?.includes(item.application)),
 
   classAccesses: (props: RewriteProps['classAccesses'], packageXml: PackageMap) =>
     props.filter((item) => packageXml.get('ApexClass')?.includes(item.apexClass)),
