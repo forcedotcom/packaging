@@ -1,3 +1,12 @@
+## [2.3.2](https://github.com/forcedotcom/packaging/compare/2.3.1...2.3.2) (2023-08-09)
+
+
+### Bug Fixes
+
+* **deps:** core5 ([#372](https://github.com/forcedotcom/packaging/issues/372)) ([4d217e3](https://github.com/forcedotcom/packaging/commit/4d217e3d9c9881914a5fbf4ab08de032b17175d0))
+
+
+
 ## [2.3.1](https://github.com/forcedotcom/packaging/compare/2.3.0...2.3.1) (2023-08-02)
 
 
