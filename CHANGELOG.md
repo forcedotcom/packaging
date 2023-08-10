@@ -1,3 +1,12 @@
+## [2.3.3](https://github.com/forcedotcom/packaging/compare/2.3.2...2.3.3) (2023-08-10)
+
+
+### Bug Fixes
+
+* **deps:** bump graphology from 0.25.1 to 0.25.4 ([6cec5db](https://github.com/forcedotcom/packaging/commit/6cec5db7c1bf03df0bad3c8d3635a3397bf51740))
+
+
+
 ## [2.3.2](https://github.com/forcedotcom/packaging/compare/2.3.1...2.3.2) (2023-08-09)
 
 
