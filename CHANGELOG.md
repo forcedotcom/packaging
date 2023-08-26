@@ -1,3 +1,12 @@
+## [2.3.4](https://github.com/forcedotcom/packaging/compare/2.3.3...2.3.4) (2023-08-26)
+
+
+### Bug Fixes
+
+* **deps:** bump @oclif/core from 2.11.8 to 2.11.10 ([346a794](https://github.com/forcedotcom/packaging/commit/346a794b148062df3ba7f00cd961e248cf80fc06))
+
+
+
 ## [2.3.3](https://github.com/forcedotcom/packaging/compare/2.3.2...2.3.3) (2023-08-10)
 
 
