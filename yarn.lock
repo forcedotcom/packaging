@@ -567,13 +567,13 @@
     wordwrap "^1.0.0"
     wrap-ansi "^7.0.0"
 
-"@salesforce/cli-plugins-testkit@^4.3.0":
-  version "4.3.0"
-  resolved "https://registry.yarnpkg.com/@salesforce/cli-plugins-testkit/-/cli-plugins-testkit-4.3.0.tgz#253079d476569fbc4977c8100b3bf201b3e4a788"
-  integrity sha512-kW59i4muO49evQ76waWTfDUXpTfyBUQ0N1QIF4ZFB+aSAdVGG5N/oTMYz882ScS/SwB0XP0H119wT4cLoJI+Mw==
+"@salesforce/cli-plugins-testkit@^4.3.2":
+  version "4.3.2"
+  resolved "https://registry.yarnpkg.com/@salesforce/cli-plugins-testkit/-/cli-plugins-testkit-4.3.2.tgz#64bc6f9405d77f381c1e736a6bcce458f063d019"
+  integrity sha512-kjrFrjvR20axsWRym+JWs9GFna2Eg74KUjZ/c8HCB30Q2mk9VkE30loIYt65VDFId3cs2ChHEXXDm+Xs8e32kA==
   dependencies:
-    "@salesforce/core" "^5.2.0"
-    "@salesforce/kit" "^3.0.9"
+    "@salesforce/core" "^5.2.1"
+    "@salesforce/kit" "^3.0.11"
     "@salesforce/ts-types" "^2.0.6"
     "@types/shelljs" "^0.8.12"
     debug "^4.3.1"
@@ -649,13 +649,13 @@
     typescript "^4.9.5"
     wireit "^0.9.5"
 
-"@salesforce/kit@^3.0.9":
-  version "3.0.9"
-  resolved "https://registry.yarnpkg.com/@salesforce/kit/-/kit-3.0.9.tgz#6674559e27914a9c79dd4283eb94eaea6177fe87"
-  integrity sha512-L9xeKGdwT4q40JOZteUWgyul+xpRENNIVg336cgXYrFWs+/+7hrWlV4YZdMkLg9WRCZb1HjERJ9gHNiEKXXriA==
+"@salesforce/kit@^3.0.11", "@salesforce/kit@^3.0.9":
+  version "3.0.11"
+  resolved "https://registry.yarnpkg.com/@salesforce/kit/-/kit-3.0.11.tgz#d03160b658da9817c05e62479ca18283087a0fc0"
+  integrity sha512-ar44uFJfc/RCDWjz7LlrOtFCFHgNNUpddxe0eJCLqQuR/Xs3IlLZKuovWTx322Rzu+V9IIKrIdpz2IqA95/ClA==
   dependencies:
-    "@salesforce/ts-types" "^2.0.6"
-    tslib "^2.6.1"
+    "@salesforce/ts-types" "^2.0.7"
+    tslib "^2.6.2"
 
 "@salesforce/prettier-config@^0.0.3":
   version "0.0.3"
