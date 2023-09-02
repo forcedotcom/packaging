@@ -1,3 +1,12 @@
+## [2.3.6](https://github.com/forcedotcom/packaging/compare/2.3.5...2.3.6) (2023-09-02)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/core from 5.2.1 to 5.2.5 ([7d8b68a](https://github.com/forcedotcom/packaging/commit/7d8b68a0432e14dc6bad0f46b795edd047bc665a))
+
+
+
 ## [2.3.5](https://github.com/forcedotcom/packaging/compare/2.3.4...2.3.5) (2023-08-26)
 
 
