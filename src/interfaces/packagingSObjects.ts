@@ -346,4 +346,11 @@ export namespace PackagingSObjects {
     IsDeprecated: boolean;
     MetadataZip?: string;
   };
+
+  export type MetadataPackage = {
+    Id: string;
+    Name: string;
+    NamespacePrefix: string;
+    PackageCategory: 'Application' | 'Module' | 'Package' | 'Package2';
+  };
 }

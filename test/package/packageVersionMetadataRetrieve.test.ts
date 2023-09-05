@@ -6,29 +6,100 @@
  */
 import * as path from 'path';
 import * as fs from 'fs';
+import sinon = require('sinon');
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { assert, expect } from 'chai';
 import { Connection, SfProject, SfError } from '@salesforce/core';
+import * as packageUtils from '../../src/utils/packageUtils';
 import { Package } from '../../src/package/package';
+import { PackageVersion } from '../../src/package/packageVersion';
+import { PackageType } from '../../src/interfaces/packagingInterfacesAndType';
 
-describe('Package Version Metadata Retrieve', () => {
+describe('Package Version Retrieve', () => {
   const $$ = instantiateContext();
   const testOrg = new MockTestOrgData();
+  const namespacePrefix = 'MyNamespace';
   const packageName = 'TESTPACKAGE';
-  const packageVersionId = '04txx0000004HjmAAE';
+  const packageVersionId2GP = '04txx00000000002gp';
+  const packageVersionId1GP = '04txx00000000001gp';
   const destinationFolder = 'downloaded-metadata';
-  const metadataZipURL = `/services/data/v59.0/tooling/sobjects/MetadataPackageVersion/${packageVersionId}/MetadataZip`;
+  const packageId1GP = '033xx00000001gp';
+  const packageId2GP = '033xx00000002gp';
+  const package2Id = '0Ho000000000001';
+  const package2VersionId = '05i00000000001';
+  const metadataZipURL2GP = `/services/data/v59.0/tooling/sobjects/MetadataPackageVersion/${packageVersionId2GP}/MetadataZip`;
+  const metadataZipURL1GP = `/services/data/v59.0/tooling/sobjects/MetadataPackageVersion/${packageVersionId1GP}/MetadataZip`;
   const firstGenBytesBase64 = fs.readFileSync('test/data/package-1gp.zip').toString('base64');
   const secondGenBytesBase64 = fs.readFileSync('test/data/package-2gp.zip').toString('base64');
 
-  const downloadOptions = {
-    subscriberPackageVersionId: packageVersionId,
+  const mockPackage2Version = {
+    Id: package2VersionId,
+    IsDeleted: false,
+    CreatedDate: 0,
+    CreatedById: '',
+    LastModifiedDate: 0,
+    LastModifiedById: '',
+    SystemModstamp: 0,
+    Package2Id: package2Id,
+    SubscriberPackageVersionId: packageVersionId2GP,
+    Tag: '',
+    Branch: '',
+    AncestorId: '',
+    ValidationSkipped: false,
+    Name: '',
+    Description: '',
+    MajorVersion: 0,
+    MinorVersion: 1,
+    PatchVersion: 0,
+    BuildNumber: 0,
+    IsDeprecated: false,
+    IsPasswordProtected: false,
+    CodeCoverage: null,
+    CodeCoveragePercentages: null,
+    HasPassedCodeCoverageCheck: true,
+    InstallKey: '',
+    IsReleased: true,
+    ConvertedFromVersionId: '',
+    ReleaseVersion: 248,
+    BuildDurationInSeconds: 0,
+    HasMetadataRemoved: false,
+    Language: '',
+  };
+
+  const mockPackage2 = {
+    Id: package2Id,
+    IsDeleted: false,
+    CreatedDate: 0,
+    CreatedById: '',
+    LastModifiedDate: 0,
+    LastModifiedById: '',
+    SystemModstamp: 0,
+    SubscriberPackageId: '033000000000000',
+    Name: packageName,
+    Description: 'My package description',
+    NamespacePrefix: 'myNS',
+    ContainerOptions: 'Managed' as PackageType,
+    IsDeprecated: false,
+    IsOrgDependent: false,
+    ConvertedFromPackageId: '',
+    PackageErrorUsername: '',
+  };
+
+  const downloadOptions2GP = {
+    subscriberPackageVersionId: packageVersionId2GP,
+    destinationFolder,
+  };
+
+  const downloadOptions1GP = {
+    subscriberPackageVersionId: packageVersionId1GP,
     destinationFolder,
   };
 
   let project: SfProject;
   let connection: Connection;
-  let packageVersionRetrieveStub: sinon.SinonStub;
+  let toolingRetrieveStub: sinon.SinonStub;
+  let queryPackage2VersionStub: sinon.SinonStub;
+  let requestMetadataZipStub: sinon.SinonStub;
 
   beforeEach(async () => {
     $$.inProject(true);
@@ -37,9 +108,6 @@ describe('Package Version Metadata Retrieve', () => {
       packageDirectories: [
         {
           path: 'force-app',
-          package: packageName,
-          versionName: 'ver 0.1',
-          versionNumber: '0.1.0.NEXT',
           default: true,
         },
       ],
@@ -48,10 +116,48 @@ describe('Package Version Metadata Retrieve', () => {
     await $$.stubAuths(testOrg);
     connection = await testOrg.getConnection();
 
-    packageVersionRetrieveStub = $$.SANDBOX.stub(connection.tooling, 'retrieve').resolves({
-      Id: packageVersionId,
-      MetadataZip: metadataZipURL,
+    toolingRetrieveStub = $$.SANDBOX.stub(connection.tooling, 'retrieve');
+    toolingRetrieveStub.withArgs('MetadataPackageVersion', packageVersionId2GP).resolves({
+      Id: packageVersionId2GP,
+      MetadataPackageId: packageId2GP,
+      MetadataZip: metadataZipURL2GP,
     });
+
+    toolingRetrieveStub.withArgs('MetadataPackageVersion', packageVersionId1GP).resolves({
+      Id: packageVersionId1GP,
+      MetadataPackageId: packageId1GP,
+      MetadataZip: metadataZipURL1GP,
+    });
+
+    toolingRetrieveStub.withArgs('MetadataPackage', packageId2GP).resolves({
+      Name: packageName,
+      NamespacePrefix: namespacePrefix,
+      PackageCategory: 'Package2',
+    });
+
+    toolingRetrieveStub.withArgs('MetadataPackage', packageId1GP).resolves({
+      Name: packageName,
+      NamespacePrefix: namespacePrefix,
+      PackageCategory: 'Package',
+    });
+
+    $$.SANDBOX.stub(Package.prototype, 'getPackageData').resolves(mockPackage2);
+
+    requestMetadataZipStub = $$.SANDBOX.stub(connection.tooling, 'request');
+    requestMetadataZipStub.withArgs(metadataZipURL2GP, { encoding: 'base64' }).resolves(secondGenBytesBase64);
+    requestMetadataZipStub.withArgs(metadataZipURL1GP, { encoding: 'base64' }).resolves(firstGenBytesBase64);
+
+    queryPackage2VersionStub = $$.SANDBOX.stub(PackageVersion, 'queryPackage2Version');
+    queryPackage2VersionStub
+      .withArgs(connection, { whereClause: `WHERE SubscriberPackageVersionId = '${packageVersionId2GP}'` })
+      .resolves([mockPackage2Version]);
+
+    $$.SANDBOX.stub(packageUtils, 'generatePackageAliasEntry').resolves([
+      `${packageName}@0.1.0-1-main`,
+      packageVersionId2GP,
+    ]);
+
+    delete process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE;
   });
 
   afterEach(async () => {
@@ -63,36 +169,72 @@ describe('Package Version Metadata Retrieve', () => {
     }
     // @ts-ignore
     project.packageDirectories = undefined;
+    delete process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE;
+  });
+
+  it('should add a correctly formed packageDirectory entry after retrieving a managed 2GP version', async () => {
+    const result = await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
+    expect(result.converted).to.not.be.undefined;
+    expect(project.getSfProjectJson().getContents().packageDirectories.length).to.equal(2);
+    expect(project.getSfProjectJson().getContents().packageDirectories[1]).to.deep.equal({
+      path: destinationFolder,
+      default: false,
+      package: packageName,
+      versionName: '<set version name>',
+      versionNumber: '<set version number>',
+      ancestorVersion: '<set ancestor version>',
+      versionDescription: 'My package description',
+    });
+  });
+
+  it('should not add a packageDirectory entry to sfdx-project.json after retrieving a managed 1GP version', async () => {
+    queryPackage2VersionStub.withArgs(connection, sinon.match.any).resolves([]);
+    expect(project.getSfProjectJson().getContents().packageDirectories.length).to.equal(1);
+    const result = await Package.downloadPackageVersionMetadata(project, downloadOptions1GP, connection);
+    expect(result.converted).to.not.be.undefined;
+    expect(project.getSfProjectJson().getContents().packageDirectories.length).to.equal(1);
+  });
+
+  it('should not add a packageDirectory to sfdx-project.json when SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE env var is set', async () => {
+    process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE = '1';
+    expect(project.getSfProjectJson().getContents().packageDirectories.length).to.equal(1);
+    const result = await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
+    expect(result.converted).to.not.be.undefined;
+    expect(project.getSfProjectJson().getContents().packageDirectories.length).to.equal(1);
+  });
+
+  it('should add a a package alias to sfdx-project.json for the retrieved package version', async () => {
+    const result = await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
+    expect(result.converted).to.not.be.undefined;
+    expect(project.getSfProjectJson().getPackageAliases()?.[`${packageName}@0.1.0-1-main`]).to.equal(
+      packageVersionId2GP
+    );
   });
 
   it('should succeed for a valid package version when the destination dir is nonexistent', async () => {
-    $$.SANDBOX.stub(connection.tooling, 'request').resolves(firstGenBytesBase64);
-    const result = await Package.downloadPackageVersionMetadata(project, downloadOptions, connection);
+    const result = await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
     expect(result.converted).to.not.be.undefined;
     expect(result.converted?.length).to.equal(4);
   });
 
   it('should succeed for a valid package version when the destination dir is present but empty', async () => {
-    $$.SANDBOX.stub(connection.tooling, 'request').resolves(firstGenBytesBase64);
     fs.mkdirSync(path.join(project.getPath(), destinationFolder), { recursive: true });
-    const result = await Package.downloadPackageVersionMetadata(project, downloadOptions, connection);
+    const result = await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
     expect(result.converted).to.not.be.undefined;
     expect(result.converted?.length).to.equal(4);
   });
 
   it('should succeed for a valid package version when the destination dir is a newly created package directory', async () => {
-    $$.SANDBOX.stub(connection.tooling, 'request').resolves(firstGenBytesBase64);
     const apexPath = path.join(project.getPath(), destinationFolder, 'main', 'default', 'classes');
     fs.mkdirSync(apexPath, { recursive: true });
-    fs.writeFileSync(path.join(apexPath, '.eslint.json'), '{ }');
-    const result = await Package.downloadPackageVersionMetadata(project, downloadOptions, connection);
+    fs.writeFileSync(path.join(apexPath, '.eslintrc.json'), '{ }');
+    const result = await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
     expect(result.converted).to.not.be.undefined;
     expect(result.converted?.length).to.equal(4);
   });
 
   it('should succeed for a valid 2gp package', async () => {
-    $$.SANDBOX.stub(connection.tooling, 'request').resolves(secondGenBytesBase64);
-    const result = await Package.downloadPackageVersionMetadata(project, downloadOptions, connection);
+    const result = await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
     expect(result.converted).to.not.be.undefined;
     expect(result.converted?.length).to.equal(4);
   });
@@ -103,7 +245,7 @@ describe('Package Version Metadata Retrieve', () => {
     const testFilePath = path.join(directoryToCreate, 'test.txt');
     fs.writeFileSync(testFilePath, 'Some content to make this directory not empty');
     try {
-      await Package.downloadPackageVersionMetadata(project, downloadOptions, connection);
+      await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
       assert.fail('Expected test execution to raise an error');
     } catch (e) {
       const error = e as SfError;
@@ -119,7 +261,7 @@ describe('Package Version Metadata Retrieve', () => {
     try {
       await Package.downloadPackageVersionMetadata(
         project,
-        { ...downloadOptions, destinationFolder: filename },
+        { ...downloadOptions2GP, destinationFolder: filename },
         connection
       );
       assert.fail('Expected test execution to raise an error');
@@ -136,7 +278,7 @@ describe('Package Version Metadata Retrieve', () => {
     try {
       await Package.downloadPackageVersionMetadata(
         project,
-        { ...downloadOptions, destinationFolder: absolutePath },
+        { ...downloadOptions2GP, destinationFolder: absolutePath },
         connection
       );
       assert.fail('Expected test execution to raise an error');
@@ -149,11 +291,11 @@ describe('Package Version Metadata Retrieve', () => {
   });
 
   it('should fail if the MetadataZip field is inaccessible to the user', async () => {
-    packageVersionRetrieveStub.resolves({
-      Id: packageVersionId,
+    toolingRetrieveStub.withArgs('MetadataPackageVersion', packageVersionId2GP).resolves({
+      Id: packageVersionId2GP,
     });
     try {
-      await Package.downloadPackageVersionMetadata(project, downloadOptions, connection);
+      await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
       assert.fail('Expected test execution to raise an error');
     } catch (e) {
       const error = e as SfError;

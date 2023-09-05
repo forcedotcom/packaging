@@ -47,7 +47,7 @@ export function createPackageDirEntry(project: SfProject, options: PackageCreate
   if (!packageDir) {
     // no match - create a new one
     isNew = true;
-    packageDir = pkgUtils.DEFAULT_PACKAGE_DIR as NamedPackageDir;
+    packageDir = { ...pkgUtils.DEFAULT_PACKAGE_DIR } as NamedPackageDir;
     packageDir.path = replaceIfEmpty(packageDir.path, options.path);
   }
 
