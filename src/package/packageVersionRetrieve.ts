@@ -73,8 +73,22 @@ export async function retrievePackageVersionMetadata(
   });
   const buffer = Buffer.from(responseBase64, 'base64');
 
-  // 2GP packages have the package.zip wrapped in an outer zip.
   let tree = await ZipTreeContainer.create(buffer);
+  let dependencies: string[] = [];
+
+  // 2GP packages declare their dependencies in dependency-ids.json within the outer zip.
+  if (tree.exists('dependency-ids.json')) {
+    interface DependencyIds {
+      ids: string[];
+    }
+    const f = await tree.readFile('dependency-ids.json');
+    const idsObj: DependencyIds = JSON.parse(f.toString()) as DependencyIds;
+    if (idsObj?.ids) {
+      dependencies = idsObj.ids;
+    }
+  }
+
+  // 2GP packages have the package.zip wrapped in an outer zip.
   if (tree.exists('package.zip')) {
     tree = await ZipTreeContainer.create(await tree.readFile('package.zip'));
   }
@@ -97,6 +111,7 @@ export async function retrievePackageVersionMetadata(
     connection,
     versionInfo.MetadataPackageId,
     subscriberPackageVersionId,
+    dependencies,
     destinationFolder
   );
 
@@ -113,11 +128,12 @@ async function attemptToUpdateProjectJson(
   connection: Connection,
   packageId: string,
   subscriberPackageVersionId: string,
+  dependencies: string[],
   destinationFolder: string
 ): Promise<void> {
-  if (process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE) {
+  if (process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_RETRIEVE) {
     getLogger().info(
-      'Skipping sfdx-project.json updates because SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE is set'
+      'Skipping sfdx-project.json updates because SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_RETRIEVE is set'
     );
     return;
   }
@@ -164,6 +180,10 @@ async function attemptToUpdateProjectJson(
           versionNumber: '<set version number>',
           versionName: '<set version name>',
           ancestorVersion: '<set ancestor version>',
+          dependencies: dependencies.map((dependencyId) => ({
+            package: 'Unknown',
+            subscriberPackageVersionId: dependencyId,
+          })),
         } as NamedPackageDir;
 
         project.getSfProjectJson().addPackageDirectory(namedDir);
@@ -179,6 +199,9 @@ async function attemptToUpdateProjectJson(
         );
 
         project.getSfProjectJson().addPackageAlias(alias, writtenId);
+        if (pkgData.ContainerOptions === 'Managed' && !project.getSfProjectJson().getContents().namespace) {
+          project.getSfProjectJson().getContents().namespace = pkgData.NamespacePrefix;
+        }
 
         await project.getSfProjectJson().write();
       } else {

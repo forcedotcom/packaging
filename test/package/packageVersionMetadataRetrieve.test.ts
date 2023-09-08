@@ -22,7 +22,7 @@ describe('Package Version Retrieve', () => {
   const packageName = 'TESTPACKAGE';
   const packageVersionId2GP = '04txx00000000002gp';
   const packageVersionId1GP = '04txx00000000001gp';
-  const destinationFolder = 'downloaded-metadata';
+  const destinationFolder = 'force-app';
   const packageId1GP = '033xx00000001gp';
   const packageId2GP = '033xx00000002gp';
   const package2Id = '0Ho000000000001';
@@ -77,7 +77,7 @@ describe('Package Version Retrieve', () => {
     SubscriberPackageId: '033000000000000',
     Name: packageName,
     Description: 'My package description',
-    NamespacePrefix: 'myNS',
+    NamespacePrefix: namespacePrefix,
     ContainerOptions: 'Managed' as PackageType,
     IsDeprecated: false,
     IsOrgDependent: false,
@@ -100,6 +100,7 @@ describe('Package Version Retrieve', () => {
   let toolingRetrieveStub: sinon.SinonStub;
   let queryPackage2VersionStub: sinon.SinonStub;
   let requestMetadataZipStub: sinon.SinonStub;
+  let getPackageDataStub: sinon.SinonStub;
 
   beforeEach(async () => {
     $$.inProject(true);
@@ -141,7 +142,8 @@ describe('Package Version Retrieve', () => {
       PackageCategory: 'Package',
     });
 
-    $$.SANDBOX.stub(Package.prototype, 'getPackageData').resolves(mockPackage2);
+    getPackageDataStub = $$.SANDBOX.stub(Package.prototype, 'getPackageData');
+    getPackageDataStub.resolves(mockPackage2);
 
     requestMetadataZipStub = $$.SANDBOX.stub(connection.tooling, 'request');
     requestMetadataZipStub.withArgs(metadataZipURL2GP, { encoding: 'base64' }).resolves(secondGenBytesBase64);
@@ -157,7 +159,7 @@ describe('Package Version Retrieve', () => {
       packageVersionId2GP,
     ]);
 
-    delete process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE;
+    delete process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_RETRIEVE;
   });
 
   afterEach(async () => {
@@ -169,21 +171,60 @@ describe('Package Version Retrieve', () => {
     }
     // @ts-ignore
     project.packageDirectories = undefined;
-    delete process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE;
+    delete process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_RETRIEVE;
+  });
+
+  it('should set the namespace in sfdx-project.json when retrieving a managed 2GP if it is not already set', async () => {
+    const result = await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
+    expect(result.converted).to.not.be.undefined;
+    expect(project.getSfProjectJson().getContents().namespace).to.equal(namespacePrefix);
+  });
+
+  it('should not set the namespace in sfdx-project.json when retrieving an unlocked 2GP if it is not already set', async () => {
+    getPackageDataStub.resolves({ ...mockPackage2, ContainerOptions: 'Unlocked' as PackageType });
+    const result = await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
+    expect(result.converted).to.not.be.undefined;
+    expect(project.getSfProjectJson().getContents().namespace).to.be.undefined;
+  });
+
+  it('should not change the namespace in sfdx-project.json if it is already set', async () => {
+    await project.getSfProjectJson().write({
+      packageDirectories: [
+        {
+          path: 'force-app',
+          default: true,
+        },
+      ],
+      namespace: 'existingNS',
+    });
+
+    const result = await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
+    expect(result.converted).to.not.be.undefined;
+    expect(project.getSfProjectJson().getContents().namespace).to.equal('existingNS');
   });
 
   it('should add a correctly formed packageDirectory entry after retrieving a managed 2GP version', async () => {
     const result = await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
     expect(result.converted).to.not.be.undefined;
-    expect(project.getSfProjectJson().getContents().packageDirectories.length).to.equal(2);
-    expect(project.getSfProjectJson().getContents().packageDirectories[1]).to.deep.equal({
+    expect(project.getSfProjectJson().getContents().packageDirectories.length).to.equal(1);
+    expect(project.getSfProjectJson().getContents().packageDirectories[0]).to.deep.equal({
       path: destinationFolder,
-      default: false,
+      default: true,
       package: packageName,
       versionName: '<set version name>',
       versionNumber: '<set version number>',
       ancestorVersion: '<set ancestor version>',
       versionDescription: 'My package description',
+      dependencies: [
+        {
+          package: 'Unknown',
+          subscriberPackageVersionId: '04txx000000dep1',
+        },
+        {
+          package: 'Unknown',
+          subscriberPackageVersionId: '04txx000000dep2',
+        },
+      ],
     });
   });
 
@@ -195,8 +236,8 @@ describe('Package Version Retrieve', () => {
     expect(project.getSfProjectJson().getContents().packageDirectories.length).to.equal(1);
   });
 
-  it('should not add a packageDirectory to sfdx-project.json when SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE env var is set', async () => {
-    process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE = '1';
+  it('should not add a packageDirectory to sfdx-project.json when SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_RETRIEVE env var is set', async () => {
+    process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_RETRIEVE = '1';
     expect(project.getSfProjectJson().getContents().packageDirectories.length).to.equal(1);
     const result = await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
     expect(result.converted).to.not.be.undefined;
