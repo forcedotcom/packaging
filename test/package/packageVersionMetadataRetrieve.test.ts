@@ -27,6 +27,10 @@ describe('Package Version Retrieve', () => {
   const packageId2GP = '033xx00000002gp';
   const package2Id = '0Ho000000000001';
   const package2VersionId = '05i00000000001';
+  const dependencyPackageVersion1 = '04txx000000dep1';
+  const dependencyPackageVersion2 = '04txx000000dep2';
+  const dependencyPackage1 = '033xx000000dep1';
+  const dependencyPackage2 = '033xx000000dep2';
   const metadataZipURL2GP = `/services/data/v59.0/tooling/sobjects/MetadataPackageVersion/${packageVersionId2GP}/MetadataZip`;
   const metadataZipURL1GP = `/services/data/v59.0/tooling/sobjects/MetadataPackageVersion/${packageVersionId1GP}/MetadataZip`;
   const firstGenBytesBase64 = fs.readFileSync('test/data/package-1gp.zip').toString('base64');
@@ -101,6 +105,7 @@ describe('Package Version Retrieve', () => {
   let queryPackage2VersionStub: sinon.SinonStub;
   let requestMetadataZipStub: sinon.SinonStub;
   let getPackageDataStub: sinon.SinonStub;
+  let toolingQueryStub: sinon.SinonStub;
 
   beforeEach(async () => {
     $$.inProject(true);
@@ -153,6 +158,23 @@ describe('Package Version Retrieve', () => {
     queryPackage2VersionStub
       .withArgs(connection, { whereClause: `WHERE SubscriberPackageVersionId = '${packageVersionId2GP}'` })
       .resolves([mockPackage2Version]);
+
+    toolingQueryStub = $$.SANDBOX.stub(connection.tooling, 'query');
+    toolingQueryStub
+      .withArgs(`SELECT SubscriberPackageId FROM SubscriberPackageVersion WHERE Id = '${dependencyPackageVersion1}'`)
+      .resolves({ records: [{ SubscriberPackageId: dependencyPackage1 }] });
+
+    toolingQueryStub
+      .withArgs(`SELECT SubscriberPackageId FROM SubscriberPackageVersion WHERE Id = '${dependencyPackageVersion2}'`)
+      .resolves({ records: [{ SubscriberPackageId: dependencyPackage2 }] });
+
+    toolingQueryStub
+      .withArgs(`SELECT Name FROM SubscriberPackage WHERE Id = '${dependencyPackage1}'`)
+      .resolves({ records: [{ Name: 'Dependency1' }] });
+
+    toolingQueryStub
+      .withArgs(`SELECT Name FROM SubscriberPackage WHERE Id = '${dependencyPackage2}'`)
+      .resolves({ records: [{ Name: 'Dependency2' }] });
 
     $$.SANDBOX.stub(packageUtils, 'generatePackageAliasEntry').resolves([
       `${packageName}@0.1.0-1-main`,
@@ -217,12 +239,12 @@ describe('Package Version Retrieve', () => {
       versionDescription: 'My package description',
       dependencies: [
         {
-          package: 'Unknown',
-          subscriberPackageVersionId: '04txx000000dep1',
+          package: 'Dependency1',
+          subscriberPackageVersionId: dependencyPackageVersion1,
         },
         {
-          package: 'Unknown',
-          subscriberPackageVersionId: '04txx000000dep2',
+          package: 'Dependency2',
+          subscriberPackageVersionId: dependencyPackageVersion2,
         },
       ],
     });

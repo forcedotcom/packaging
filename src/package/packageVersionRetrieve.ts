@@ -6,7 +6,7 @@
  */
 import * as path from 'path';
 import * as fs from 'fs';
-import { Connection, Logger, Messages, NamedPackageDir, SfProject } from '@salesforce/core';
+import { Connection, Logger, Messages, NamedPackageDir, PackageDirDependency, SfProject } from '@salesforce/core';
 import { ComponentSet, MetadataConverter, ZipTreeContainer } from '@salesforce/source-deploy-retrieve';
 import {
   PackagingSObjects,
@@ -128,7 +128,7 @@ async function attemptToUpdateProjectJson(
   connection: Connection,
   packageId: string,
   subscriberPackageVersionId: string,
-  dependencies: string[],
+  dependencyIds: string[],
   destinationFolder: string
 ): Promise<void> {
   if (process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_RETRIEVE) {
@@ -175,15 +175,24 @@ async function attemptToUpdateProjectJson(
           errorNotificationUsername: pkgData.PackageErrorUsername,
         });
 
+        // Dependencies listed in a package dir need a 'package' (name), which we don't have in the retrieved zip.
+        // We only have a list of 04t... ids so we will make a couple of queries to look up the name of each dependency.
+        const dependencies: PackageDirDependency[] = [];
+        for (const dep of dependencyIds) {
+          // eslint-disable-next-line no-await-in-loop
+          const name = await getPackageNameForSubscriberPackageVersionId(connection, dep);
+          dependencies.push({
+            package: name,
+            subscriberPackageVersionId: dep,
+          });
+        }
+
         const namedDir = {
           ...dirEntry,
           versionNumber: '<set version number>',
           versionName: '<set version name>',
           ancestorVersion: '<set ancestor version>',
-          dependencies: dependencies.map((dependencyId) => ({
-            package: 'Unknown',
-            subscriberPackageVersionId: dependencyId,
-          })),
+          dependencies,
         } as NamedPackageDir;
 
         project.getSfProjectJson().addPackageDirectory(namedDir);
@@ -220,4 +229,16 @@ async function attemptToUpdateProjectJson(
       `Encountered error trying to update sfdx-project.json after retrieving package version metadata: ${msg as string}`
     );
   }
+}
+
+async function getPackageNameForSubscriberPackageVersionId(connection: Connection, versionId: string): Promise<string> {
+  const pkgVersionResult = (
+    await connection.tooling.query(`SELECT SubscriberPackageId FROM SubscriberPackageVersion WHERE Id = '${versionId}'`)
+  )?.records[0];
+  const pkgResult = (
+    await connection.tooling.query(
+      `SELECT Name FROM SubscriberPackage WHERE Id = '${pkgVersionResult.SubscriberPackageId as string}'`
+    )
+  )?.records[0];
+  return pkgResult.Name as string;
 }
