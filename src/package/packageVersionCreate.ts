@@ -1140,6 +1140,7 @@ export const packageXmlStringToPackageXmlJson = (rawXml: string): PackageXml => 
     isArray: (name: string) => ['types', 'members'].includes(name),
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   return (parser.parse(rawXml) as { Package: PackageXml }).Package;
 };
 

@@ -175,17 +175,9 @@ async function attemptToUpdateProjectJson(
           errorNotificationUsername: pkgData.PackageErrorUsername,
         });
 
-        // Dependencies listed in a package dir need a 'package' (name), which we don't have in the retrieved zip.
-        // We only have a list of 04t... ids so we will make a couple of queries to look up the name of each dependency.
-        const dependencies: PackageDirDependency[] = [];
-        for (const dep of dependencyIds) {
-          // eslint-disable-next-line no-await-in-loop
-          const name = await getPackageNameForSubscriberPackageVersionId(connection, dep);
-          dependencies.push({
-            package: name,
-            subscriberPackageVersionId: dep,
-          });
-        }
+        const dependencies: PackageDirDependency[] = dependencyIds.map(
+          (dep) => ({ package: dep } as PackageDirDependency)
+        );
 
         const namedDir = {
           ...dirEntry,
@@ -229,16 +221,4 @@ async function attemptToUpdateProjectJson(
       `Encountered error trying to update sfdx-project.json after retrieving package version metadata: ${msg as string}`
     );
   }
-}
-
-async function getPackageNameForSubscriberPackageVersionId(connection: Connection, versionId: string): Promise<string> {
-  const pkgVersionResult = (
-    await connection.tooling.query(`SELECT SubscriberPackageId FROM SubscriberPackageVersion WHERE Id = '${versionId}'`)
-  )?.records[0];
-  const pkgResult = (
-    await connection.tooling.query(
-      `SELECT Name FROM SubscriberPackage WHERE Id = '${pkgVersionResult.SubscriberPackageId as string}'`
-    )
-  )?.records[0];
-  return pkgResult.Name as string;
 }
