@@ -22,9 +22,9 @@ Messages.importMessagesDirectory(__dirname);
 const profileApiMessages = Messages.loadMessages('@salesforce/packaging', 'profile_api');
 
 /*
- * This class provides functions used to re-write .profiles in the workspace when creating a package2 version.
- * All profiles found in the workspaces are extracted out and then re-written to only include metadata in the profile
- * that is relevant to the source in the package directory being packaged.
+ * This class provides functions used to re-write .profiles in the project package directories when creating a package2 version.
+ * All profiles found in the project package directories are extracted out and then re-written to only include metadata in the
+ * profile that is relevant to the source in the package directory being packaged.
  */
 export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
   public project: SfProject;
@@ -40,8 +40,8 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
   public async init(): Promise<void> {}
 
   /**
-   * For any profile present in the workspace, this function generates a subset of data that only contains references
-   * to items in the manifest.
+   * For any profile present in the project package directories, this function generates a subset of data that only
+   * contains references to items in the manifest.
    *
    * return a list of profile file locations that need to be removed from the package because they are empty
    *
@@ -57,10 +57,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
     const logger = Logger.childFromRoot('PackageProfileApi');
 
     return (
-      getProfilesWithNamesAndPaths({
-        projectPath: this.project.getPath(),
-        excludedDirectories,
-      })
+      this.getProfilesWithNamesAndPaths(excludedDirectories)
         .map(({ profilePath, name: profileName }) => {
           const originalProfile = profileStringToProfile(fs.readFileSync(profilePath, 'utf-8'));
           const adjustedProfile = profileRewriter(
@@ -97,7 +94,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
   }
 
   /**
-   * Filter out all profiles in the manifest and if any profiles exists in the workspace, add them to the manifest.
+   * Filter out all profiles in the manifest and if any profiles exist in the project package directories, add them to the manifest.
    *
    * @param typesArr array of objects { name[], members[] } that represent package types JSON.
    * @param excludedDirectories Direcotires not to generate profiles for
@@ -106,28 +103,32 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
     typesArr: PackageXml['types'],
     excludedDirectories: string[] = []
   ): PackageXml['types'] {
-    const profilePathsWithNames = getProfilesWithNamesAndPaths({
-      projectPath: this.project.getPath(),
-      excludedDirectories,
-    });
+    const profilePathsWithNames = this.getProfilesWithNamesAndPaths(excludedDirectories);
 
     // Filter all profiles, and add back the ones we found names for
     return typesArr
       .filter((kvp) => kvp.name !== 'Profile')
       .concat([{ name: 'Profile', members: profilePathsWithNames.map((i) => i.name) }]);
   }
-}
 
-const findAllProfiles = ({
-  projectPath,
-  excludedDirectories = [],
-}: {
-  projectPath: string;
-  excludedDirectories?: string[];
-}): string[] =>
-  glob.sync(path.join(projectPath, '**', '*.profile-meta.xml'), {
-    ignore: excludedDirectories.map((dir) => `**/${dir}/**`),
-  });
+  // Look for profiles in all package directories
+  private findAllProfiles(excludedDirectories: string[] = []): string[] {
+    const pkgDirs = this.project.getUniquePackageDirectories().map((pDir) => pDir.fullPath);
+    return pkgDirs
+      .map((pDir) =>
+        glob.sync(path.join(pDir, '**', '*.profile-meta.xml'), {
+          ignore: excludedDirectories.map((dir) => `**/${dir}/**`),
+        })
+      )
+      .flat();
+  }
+
+  private getProfilesWithNamesAndPaths(excludedDirectories: string[]): Array<Required<ProfilePathWithName>> {
+    return this.findAllProfiles(excludedDirectories)
+      .map((profilePath) => ({ profilePath, name: profilePathToName(profilePath) }))
+      .filter(isProfilePathWithName);
+  }
+}
 
 type ProfilePathWithName = { profilePath: string; name?: string };
 
@@ -137,17 +138,6 @@ const isProfilePathWithName = (
 
 const profilePathToName = (profilePath: string): string | undefined =>
   profilePath.match(/([^/]+)\.profile-meta.xml/)?.[1];
-
-const getProfilesWithNamesAndPaths = ({
-  projectPath,
-  excludedDirectories,
-}: {
-  projectPath: string;
-  excludedDirectories: string[];
-}): Array<Required<ProfilePathWithName>> =>
-  findAllProfiles({ projectPath, excludedDirectories })
-    .map((profilePath) => ({ profilePath, name: profilePathToName(profilePath) }))
-    .filter(isProfilePathWithName);
 
 const getXmlFileLocation = (destPath: string, profilePath: string): string =>
   path.join(destPath, path.basename(profilePath).replace(/(.*)(-meta.xml)/, '$1'));
