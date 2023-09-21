@@ -107,7 +107,7 @@ describe('Package Version Create', () => {
 
   afterEach(async () => {
     restoreContext($$);
-    await fs.promises.rmdir(path.join(project.getPath(), 'force-app'));
+    await fs.promises.rm(path.join(project.getPath(), 'force-app'), { recursive: true, force: true });
     // @ts-ignore
     project.packageDirectories = undefined;
   });
@@ -772,6 +772,26 @@ describe('Package Version Create', () => {
     expect(excludedDirsFilter?.length).to.equal(2);
     expect(excludedDirsFilter).to.contain('unpackaged-pkg');
     expect(excludedDirsFilter).to.contain('unpackaged-force-app');
+  });
+
+  it('should not package profiles from outside of project package directories', async () => {
+    const pkgProfileApi = await PackageProfileApi.create({ project, includeUserLicenses: false });
+    const types = [
+      { name: 'Layout', members: ['Test Layout'] },
+      { name: 'Profile', members: ['Test Profile'] },
+    ];
+    // write a Profile in the project but outside of the package dirs
+    const outsideDir = path.join(project.getPath(), 'outside-pkg-dirs');
+    const forceAppDir = path.join(project.getPath(), 'force-app');
+    await fs.promises.mkdir(outsideDir);
+    const fileContents = '<?xml version="1.0" encoding="UTF-8"?>';
+    await fs.promises.writeFile(path.join(outsideDir, 'Outside Profile.profile-meta.xml'), fileContents);
+    await fs.promises.writeFile(path.join(forceAppDir, 'Test Profile.profile-meta.xml'), fileContents);
+
+    const pkgTypeMembers = pkgProfileApi.filterAndGenerateProfilesForManifest(types);
+    expect(pkgTypeMembers.length).to.equal(2);
+    expect(pkgTypeMembers[0].members).to.deep.equal(['Test Layout']);
+    expect(pkgTypeMembers[1].members).to.deep.equal(['Test Profile']);
   });
 
   describe('validateAncestorId', () => {
