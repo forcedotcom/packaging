@@ -1,3 +1,9 @@
+## [2.3.10](https://github.com/forcedotcom/packaging/compare/2.3.9...2.3.10) (2023-09-21)
+
+### Bug Fixes
+
+- profiles are searched only within package directories ([#397](https://github.com/forcedotcom/packaging/issues/397)) ([be50af0](https://github.com/forcedotcom/packaging/commit/be50af011d7f4fcc3d5570ba4732d2f1ad7b361b))
+
 ## [2.3.9](https://github.com/forcedotcom/packaging/compare/2.3.8...2.3.9) (2023-09-16)
 
 ### Bug Fixes
