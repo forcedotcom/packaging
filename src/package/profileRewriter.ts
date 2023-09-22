@@ -140,6 +140,7 @@ export const profileStringToProfile = (profileString: string): CorrectedProfile 
     numberParseOptions: { leadingZeros: false, hex: false },
     isArray: (name: string) => rewriteProps.includes(name as keyof RewriteProps),
   });
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   return (parser.parse(profileString) as { Profile: CorrectedProfile }).Profile;
 };
 

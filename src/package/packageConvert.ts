@@ -19,7 +19,7 @@ import {
   SfProject,
   StatusResult,
 } from '@salesforce/core';
-import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
+import { camelCaseToTitleCase, Duration, env } from '@salesforce/kit';
 import { Many } from '@salesforce/ts-types';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import * as pkgUtils from '../utils/packageUtils';
@@ -47,8 +47,12 @@ const getLogger = (): Logger => {
   return logger;
 };
 
-export async function findOrCreatePackage2(seedPackage: string, connection: Connection): Promise<string> {
-  const query = `SELECT Id FROM Package2 WHERE ConvertedFromPackageId = '${seedPackage}'`;
+export async function findOrCreatePackage2(
+  seedPackage: string,
+  connection: Connection,
+  project?: SfProject
+): Promise<string> {
+  const query = `SELECT Id, Name FROM Package2 WHERE ConvertedFromPackageId = '${seedPackage}'`;
   const queryResult = (await connection.tooling.query<PackagingSObjects.Package2>(query)).records;
   if (queryResult?.length > 1) {
     const ids = queryResult.map((r) => r.Id);
@@ -57,6 +61,9 @@ export async function findOrCreatePackage2(seedPackage: string, connection: Conn
 
   if (queryResult?.length === 1) {
     // return the package2 object
+    if (project) {
+      await addPackageAlias(project, queryResult[0].Name, queryResult[0].Id);
+    }
     return queryResult[0].Id;
   }
 
@@ -83,6 +90,11 @@ export async function findOrCreatePackage2(seedPackage: string, connection: Conn
   if (!createResult.success) {
     throw pkgUtils.combineSaveErrors('Package2', 'create', createResult.errors);
   }
+
+  if (project) {
+    await addPackageAlias(project, subscriberResult.Name, createResult.id);
+  }
+
   return createResult.id;
 }
 
@@ -98,7 +110,7 @@ export async function convertPackage(
     maxRetries = (60 / pkgUtils.POLL_INTERVAL_SECONDS) * options.wait.minutes;
   }
 
-  const packageId = await findOrCreatePackage2(pkg, connection);
+  const packageId = await findOrCreatePackage2(pkg, connection, project);
 
   const apiVersion = project?.getSfProjectJson()?.get('sourceApiVersion') as string;
 
@@ -260,7 +272,7 @@ async function pollForStatusWithInterval(
         if (isStatusEqualTo(results, [Package2VersionStatus.success])) {
           // update sfdx-project.json
           let projectUpdated = false;
-          if (project && !process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE) {
+          if (project && !env.getBoolean('SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE')) {
             projectUpdated = true;
             const query = `SELECT MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version WHERE Id = '${results[0].Package2VersionId}'`;
             const packageVersionVersionString: string = await connection.tooling
@@ -330,6 +342,13 @@ async function pollForStatusWithInterval(
   });
 
   return pollingClient.subscribe<PackageVersionCreateRequestResult>();
+}
+
+async function addPackageAlias(project: SfProject, packageName: string, packageId: string): Promise<void> {
+  if (!env.getBoolean('SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE')) {
+    project.getSfProjectJson().addPackageAlias(packageName, packageId);
+    await project.getSfProjectJson().write();
+  }
 }
 
 /**

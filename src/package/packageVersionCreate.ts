@@ -28,7 +28,7 @@ import {
 } from '@salesforce/source-deploy-retrieve';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import { PackageDirDependency } from '@salesforce/core/lib/sfProject';
-import { cloneJson, ensureArray } from '@salesforce/kit';
+import { cloneJson, ensureArray, env } from '@salesforce/kit';
 import { XMLParser, XMLBuilder } from 'fast-xml-parser';
 import * as pkgUtils from '../utils/packageUtils';
 import {
@@ -308,7 +308,7 @@ export class PackageVersionCreate {
    * @private
    */
   private async createPackageVersionCreateRequestFromOptions(): Promise<PackageVersionCreateRequest> {
-    const preserveFiles = !!(this.options.preserve ?? process.env.SFDX_PACKAGE2_VERSION_CREATE_PRESERVE);
+    const preserveFiles = !!(this.options.preserve ?? env.getBoolean('SFDX_PACKAGE2_VERSION_CREATE_PRESERVE'));
     const uniqueHash = uniqid({ template: `${this.packageId}-%s` });
     const packageVersTmpRoot = path.join(os.tmpdir(), `${uniqueHash}`);
     const packageVersMetadataFolder = path.join(packageVersTmpRoot, 'md-files');
@@ -1140,6 +1140,7 @@ export const packageXmlStringToPackageXmlJson = (rawXml: string): PackageXml => 
     isArray: (name: string) => ['types', 'members'].includes(name),
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   return (parser.parse(rawXml) as { Package: PackageXml }).Package;
 };
 

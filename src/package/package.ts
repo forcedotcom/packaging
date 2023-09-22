@@ -4,10 +4,7 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import * as path from 'path';
-import * as fs from 'fs';
 import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
-import { ComponentSet, MetadataConverter, ZipTreeContainer } from '@salesforce/source-deploy-retrieve';
 import {
   ConvertPackageOptions,
   PackageCreateOptions,
@@ -18,19 +15,14 @@ import {
   PackageVersionCreateRequestResult,
   PackageVersionListOptions,
   PackageVersionListResult,
-  PackagingSObjects,
   PackageVersionMetadataDownloadOptions,
   PackageVersionMetadataDownloadResult,
+  PackagingSObjects,
 } from '../interfaces';
-import {
-  applyErrorAction,
-  BY_LABEL,
-  massageErrorMessage,
-  validateId,
-  isPackageDirectoryEffectivelyEmpty,
-} from '../utils/packageUtils';
+import { applyErrorAction, BY_LABEL, massageErrorMessage, validateId } from '../utils/packageUtils';
 import { createPackage } from './packageCreate';
 import { convertPackage } from './packageConvert';
+import { retrievePackageVersionMetadata } from './packageVersionRetrieve';
 import { listPackageVersions } from './packageVersionList';
 import { deletePackage } from './packageDelete';
 import { PackageAncestry } from './packageAncestry';
@@ -218,55 +210,7 @@ export class Package {
     options: PackageVersionMetadataDownloadOptions,
     connection: Connection
   ): Promise<PackageVersionMetadataDownloadResult> {
-    // Validate the destination path is suitable to extract package version metadata (must be new or empty)
-    const destinationFolder = options.destinationFolder ?? 'force-app';
-
-    if (path.isAbsolute(destinationFolder)) {
-      throw messages.createError('sourcesDownloadDirectoryMustBeRelative');
-    }
-
-    const destinationPath = path.join(project.getPath(), destinationFolder);
-    if (!fs.existsSync(destinationPath)) {
-      fs.mkdirSync(destinationPath, { recursive: true });
-    }
-    if (!isPackageDirectoryEffectivelyEmpty(destinationPath)) {
-      throw messages.createError('sourcesDownloadDirectoryNotEmpty');
-    }
-
-    // Get the MetadataZip URL from the MetadataPackageVersion record
-    const subscriberPackageVersionId =
-      project.getPackageIdFromAlias(options.subscriberPackageVersionId) ?? options.subscriberPackageVersionId;
-    const versionInfo: PackagingSObjects.MetadataPackageVersion = (await connection.tooling
-      .sobject('MetadataPackageVersion')
-      .retrieve(subscriberPackageVersionId)) as PackagingSObjects.MetadataPackageVersion;
-
-    if (!versionInfo.MetadataZip) {
-      throw messages.createError('unableToAccessMetadataZip');
-    }
-
-    const responseBase64 = await connection.tooling.request<string>(versionInfo.MetadataZip, {
-      encoding: 'base64',
-    });
-    const buffer = Buffer.from(responseBase64, 'base64');
-
-    // 2GP packages have the package.zip wrapped in an outer zip.
-    let tree = await ZipTreeContainer.create(buffer);
-    if (tree.exists('package.zip')) {
-      tree = await ZipTreeContainer.create(await tree.readFile('package.zip'));
-    }
-
-    const zipComponents = ComponentSet.fromSource({
-      fsPaths: ['.'],
-      tree,
-    })
-      .getSourceComponents()
-      .toArray();
-
-    return new MetadataConverter().convert(zipComponents, 'source', {
-      type: 'directory',
-      outputDirectory: destinationPath,
-      genUniqueDir: false,
-    });
+    return retrievePackageVersionMetadata(project, options, connection);
   }
 
   private static getPackage2Fields(connection: Connection): string[] {

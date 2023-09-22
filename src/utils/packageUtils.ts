@@ -522,12 +522,12 @@ export function replaceIfEmpty<T>(value: T, replacement: T): T {
 
 /**
  * Brand new SFDX projects contain a force-app directory tree contiaining empty folders
- * and a few .eslint.json files. We still want to consider such a directory tree
+ * and a few .eslintrc.json files. We still want to consider such a directory tree
  * as 'empty' for the sake of operations like downloading package version metadata.
  *
  * @param directory The absolute path to a directory
  * @returns true if the directory contains nothing except empty directories or
- * directories containing only an .eslint.json file.
+ * directories containing only an .eslintrc.json file.
  */
 export function isPackageDirectoryEffectivelyEmpty(directory: string): boolean {
   if (!fs.lstatSync(directory).isDirectory()) {
@@ -537,6 +537,6 @@ export function isPackageDirectoryEffectivelyEmpty(directory: string): boolean {
   return entries.every((entry) =>
     entry.isDirectory()
       ? isPackageDirectoryEffectivelyEmpty(join(directory, entry.name))
-      : entry.name === '.eslint.json'
+      : entry.name === '.eslintrc.json'
   );
 }

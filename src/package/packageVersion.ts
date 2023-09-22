@@ -6,7 +6,7 @@
  */
 
 import { Connection, Lifecycle, Messages, PollingClient, SfProject, StatusResult } from '@salesforce/core';
-import { Duration } from '@salesforce/kit';
+import { Duration, env } from '@salesforce/kit';
 import { Optional } from '@salesforce/ts-types';
 import {
   PackageSaveResult,
@@ -611,7 +611,7 @@ export class PackageVersion {
   }
 
   private async updateProjectWithPackageVersion(results: PackageVersionCreateRequestResult): Promise<void> {
-    if (!process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE) {
+    if (!env.getBoolean('SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE')) {
       // get the newly created package version from the server
       const versionResult = (
         await this.connection.tooling.query<{
