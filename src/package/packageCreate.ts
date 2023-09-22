@@ -6,6 +6,7 @@
  */
 
 import { Connection, NamedPackageDir, PackageDir, SfError, SfProject } from '@salesforce/core';
+import { env } from '@salesforce/kit';
 import * as pkgUtils from '../utils/packageUtils';
 import { applyErrorAction, massageErrorMessage, replaceIfEmpty } from '../utils/packageUtils';
 import { PackageCreateOptions, PackagingSObjects } from '../interfaces';
@@ -87,7 +88,7 @@ export async function createPackage(
     throw pkgUtils.combineSaveErrors('Package2', 'create', createResult.errors);
   }
 
-  if (!process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE) {
+  if (!env.getBoolean('SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE')) {
     const packageDirectory = createPackageDirEntry(project, options);
     project.getSfProjectJson().addPackageDirectory(packageDirectory as NamedPackageDir);
     project.getSfProjectJson().addPackageAlias(options.name, createResult.id);

@@ -19,7 +19,7 @@ import {
   SfProject,
   StatusResult,
 } from '@salesforce/core';
-import { camelCaseToTitleCase, Duration } from '@salesforce/kit';
+import { camelCaseToTitleCase, Duration, env } from '@salesforce/kit';
 import { Many } from '@salesforce/ts-types';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import * as pkgUtils from '../utils/packageUtils';
@@ -272,7 +272,7 @@ async function pollForStatusWithInterval(
         if (isStatusEqualTo(results, [Package2VersionStatus.success])) {
           // update sfdx-project.json
           let projectUpdated = false;
-          if (project && !process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE) {
+          if (project && !env.getBoolean('SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE')) {
             projectUpdated = true;
             const query = `SELECT MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version WHERE Id = '${results[0].Package2VersionId}'`;
             const packageVersionVersionString: string = await connection.tooling
@@ -345,7 +345,7 @@ async function pollForStatusWithInterval(
 }
 
 async function addPackageAlias(project: SfProject, packageName: string, packageId: string): Promise<void> {
-  if (!process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE) {
+  if (!env.getBoolean('SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE')) {
     project.getSfProjectJson().addPackageAlias(packageName, packageId);
     await project.getSfProjectJson().write();
   }

@@ -8,6 +8,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { Connection, Logger, Messages, NamedPackageDir, PackageDirDependency, SfProject } from '@salesforce/core';
 import { ComponentSet, MetadataConverter, ZipTreeContainer } from '@salesforce/source-deploy-retrieve';
+import { env } from '@salesforce/kit';
 import {
   PackagingSObjects,
   PackageVersionMetadataDownloadOptions,
@@ -131,7 +132,7 @@ async function attemptToUpdateProjectJson(
   dependencyIds: string[],
   destinationFolder: string
 ): Promise<void> {
-  if (process.env.SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_RETRIEVE) {
+  if (env.getBoolean('SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_RETRIEVE')) {
     getLogger().info(
       'Skipping sfdx-project.json updates because SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_RETRIEVE is set'
     );
