@@ -1,3 +1,13 @@
+# [2.4.0](https://github.com/forcedotcom/packaging/compare/2.3.10...2.4.0) (2023-09-22)
+
+### Features
+
+- automatically update sfdx-project.json after package conversion / retrieval ([9b021df](https://github.com/forcedotcom/packaging/commit/9b021df6c8a676225d5457426435ab30f73cb23e))
+- automatically update sfdx-project.json after package conversion / retrieval ([a7cc401](https://github.com/forcedotcom/packaging/commit/a7cc4015ea614460b924fd76130a406ead2400a5))
+- automatically update sfdx-project.json after package conversion / retrieval ([be29404](https://github.com/forcedotcom/packaging/commit/be29404f80fcf18e6e47d23352ce391836b38970))
+- automatically update sfdx-project.json after package conversion / retrieval ([ea95cbf](https://github.com/forcedotcom/packaging/commit/ea95cbf8d00feafc1de9a724147689ca1a25dfed))
+- automatically update sfdx-project.json after package conversion / retrieval ([d411a07](https://github.com/forcedotcom/packaging/commit/d411a078eff7a8bf37bc4d35c723a9eb0dfd37b5))
+
 ## [2.3.10](https://github.com/forcedotcom/packaging/compare/2.3.9...2.3.10) (2023-09-21)
 
 ### Bug Fixes
