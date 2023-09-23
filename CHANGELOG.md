@@ -1,3 +1,9 @@
+## [2.4.1](https://github.com/forcedotcom/packaging/compare/2.4.0...2.4.1) (2023-09-23)
+
+### Bug Fixes
+
+- **deps:** bump fast-xml-parser from 4.2.7 to 4.3.0 ([04ed646](https://github.com/forcedotcom/packaging/commit/04ed646d3e81eb835a6921a72f869c1e5ca3325f))
+
 # [2.4.0](https://github.com/forcedotcom/packaging/compare/2.3.10...2.4.0) (2023-09-22)
 
 ### Features
