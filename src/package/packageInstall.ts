@@ -233,6 +233,9 @@ export async function pollStatus(
       // add the original stack to this new error
       error.stack += `\nDUE TO:\n${e.stack}`;
     }
+    if (e.message) {
+      error.actions = (error.actions ?? []).concat([e.message]);
+    }
     throw error;
   }
 }
