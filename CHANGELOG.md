@@ -1,3 +1,9 @@
+## [2.4.4](https://github.com/forcedotcom/packaging/compare/2.4.3...2.4.4) (2023-09-28)
+
+### Bug Fixes
+
+- **deps:** bump get-func-name from 2.0.0 to 2.0.2 ([d4e8277](https://github.com/forcedotcom/packaging/commit/d4e8277259a1c60106b52b49b3f922c0aff6e5d8))
+
 ## [2.4.3](https://github.com/forcedotcom/packaging/compare/2.4.2...2.4.3) (2023-09-23)
 
 ### Bug Fixes
