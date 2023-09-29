@@ -1,3 +1,9 @@
+## [2.4.5](https://github.com/forcedotcom/packaging/compare/2.4.4...2.4.5) (2023-09-29)
+
+### Bug Fixes
+
+- **deps:** bump sdr for new types ([#404](https://github.com/forcedotcom/packaging/issues/404)) ([40f2664](https://github.com/forcedotcom/packaging/commit/40f26642889d2554e2f3118ceccc0bf9b2a2c632))
+
 ## [2.4.4](https://github.com/forcedotcom/packaging/compare/2.4.3...2.4.4) (2023-09-28)
 
 ### Bug Fixes
