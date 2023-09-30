@@ -1,3 +1,9 @@
+## [2.4.7](https://github.com/forcedotcom/packaging/compare/2.4.6...2.4.7) (2023-09-30)
+
+### Bug Fixes
+
+- **deps:** bump @salesforce/source-deploy-retrieve from 9.7.18 to 9.7.19 ([b3d3198](https://github.com/forcedotcom/packaging/commit/b3d319815ce380758e3057b38d408ce9803b3545))
+
 ## [2.4.6](https://github.com/forcedotcom/packaging/compare/2.4.5...2.4.6) (2023-09-30)
 
 ### Bug Fixes
