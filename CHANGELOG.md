@@ -1,3 +1,9 @@
+## [2.4.8](https://github.com/forcedotcom/packaging/compare/2.4.7...2.4.8) (2023-10-02)
+
+### Bug Fixes
+
+- show underlying error message for pkgInstall errors ([c437b68](https://github.com/forcedotcom/packaging/commit/c437b68c7e49d2f06a6f1a8aa6b6e379cae8f0ec))
+
 ## [2.4.7](https://github.com/forcedotcom/packaging/compare/2.4.6...2.4.7) (2023-09-30)
 
 ### Bug Fixes
