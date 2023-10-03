@@ -1,3 +1,9 @@
+## [2.4.9](https://github.com/forcedotcom/packaging/compare/2.4.8...2.4.9) (2023-10-03)
+
+### Bug Fixes
+
+- revise error message for package version retrieve command ([223800b](https://github.com/forcedotcom/packaging/commit/223800b0904d137def8e34a3ec4500c520d50280))
+
 ## [2.4.8](https://github.com/forcedotcom/packaging/compare/2.4.7...2.4.8) (2023-10-02)
 
 ### Bug Fixes
