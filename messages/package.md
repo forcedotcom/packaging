@@ -36,7 +36,7 @@ Can’t retrieve package version metadata. The specified directory must be relat
 
 # unableToAccessMetadataZip
 
-Can’t retrieve package version metadata. Ensure that you’re using API version 59.0 or higher, and that you have the user permissions needed to access fields on the MetadataPackageVersion object.
+The sf package version retrieve command has been removed. This feature isn’t quite ready for prime time, so we’re removing it for now while we make improvements. We’ll let you know after it’s back up.
 
 # errorDownloadingMetadataZip
 
