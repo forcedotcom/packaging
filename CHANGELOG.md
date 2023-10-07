@@ -1,3 +1,9 @@
+## [2.4.10](https://github.com/forcedotcom/packaging/compare/2.4.9...2.4.10) (2023-10-07)
+
+### Bug Fixes
+
+- **deps:** bump @salesforce/core from 5.3.1 to 5.3.5 ([9db024e](https://github.com/forcedotcom/packaging/commit/9db024e1540c233351e702ff37436ba6f3f200ba))
+
 ## [2.4.9](https://github.com/forcedotcom/packaging/compare/2.4.8...2.4.9) (2023-10-03)
 
 ### Bug Fixes
