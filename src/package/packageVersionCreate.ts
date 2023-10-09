@@ -504,27 +504,39 @@ export class PackageVersionCreate {
       );
     }
 
-    // don't package the profiles from any un-packagedMetadata dir in the project
-    const profileExcludeDirs = this.project
-      .getPackageDirectories()
-      .map((packageDir) => (packageDir as PackageDescriptorJson).unpackagedMetadata?.path)
-      .filter((packageDirPath) => packageDirPath) as string[];
+    if (this.packageObject.scopeProfiles) {
+      this.logger.debug(
+        `packageDirectory: ${this.packageObject.name} has 'scopeProfiles' set, so only including profiles from within this directory`
+      );
+    } else {
+      // don't package the profiles from any un-packagedMetadata dir in the project
+      const profileExcludeDirs = this.project
+        .getPackageDirectories()
+        .map((packageDir) => (packageDir as PackageDescriptorJson).unpackagedMetadata?.path)
+        .filter((packageDirPath) => packageDirPath) as string[];
 
-    const typesArr =
-      this.options?.profileApi?.filterAndGenerateProfilesForManifest(packageXmlAsJson.types, profileExcludeDirs) ??
-      packageXmlAsJson.types;
+      let debugMsg = 'Searching for profiles to include from all packageDirectories';
+      if (profileExcludeDirs?.length) {
+        debugMsg += ` excluding these unpackagedMetadata dirs: ${profileExcludeDirs.toString()}`;
+      }
+      this.logger.debug(debugMsg);
 
-    // Next generate profiles and retrieve any profiles that were excluded because they had no matching nodes.
-    const excludedProfiles = this.options?.profileApi?.generateProfiles(
-      packageVersProfileFolder,
-      typesArr,
-      profileExcludeDirs
-    );
+      const typesArr =
+        this.options?.profileApi?.filterAndGenerateProfilesForManifest(packageXmlAsJson.types, profileExcludeDirs) ??
+        packageXmlAsJson.types;
 
-    packageXmlAsJson.types = typesArr.map((type) => {
-      if (type.name !== 'Profile') return type;
-      return { ...type, members: type.members.filter((m) => !excludedProfiles?.includes(m)) };
-    });
+      // Next generate profiles and retrieve any profiles that were excluded because they had no matching nodes.
+      const excludedProfiles = this.options?.profileApi?.generateProfiles(
+        packageVersProfileFolder,
+        typesArr,
+        profileExcludeDirs
+      );
+
+      packageXmlAsJson.types = typesArr.map((type) => {
+        if (type.name !== 'Profile') return type;
+        return { ...type, members: type.members.filter((m) => !excludedProfiles?.includes(m)) };
+      });
+    }
 
     const xml = packageXmlJsonToXmlString(packageXmlAsJson);
     await fs.promises.writeFile(path.join(packageVersMetadataFolder, 'package.xml'), xml, 'utf-8');
@@ -629,7 +641,10 @@ export class PackageVersionCreate {
 
     this.packageId = this.project.getPackageIdFromAlias(packageName) ?? packageName;
 
-    this.options.profileApi = await this.resolveUserLicenses(!!this.packageObject.includeProfileUserLicenses);
+    this.options.profileApi = await PackageProfileApi.create({
+      project: this.project,
+      includeUserLicenses: !!this.packageObject.includeProfileUserLicenses,
+    });
 
     // At this point, the packageIdFromAlias should have been resolved to an Id.  Now, we
     // need to validate that the Id is correct.
@@ -687,13 +702,6 @@ export class PackageVersionCreate {
     return this.pkg.getType();
   }
 
-  private async resolveUserLicenses(includeUserLicenses: boolean): Promise<PackageProfileApi> {
-    return PackageProfileApi.create({
-      project: this.project,
-      includeUserLicenses,
-    });
-  }
-
   private async validateOptionsForPackageType(): Promise<void> {
     if ((await this.getPackageType()) === 'Unlocked') {
       // Don't allow scripts in unlocked packages
@@ -720,6 +728,7 @@ export class PackageVersionCreate {
     delete packageDescriptorJson.branch; // for client-side use only, not needed
     delete packageDescriptorJson.fullPath; // for client-side use only, not needed
     delete packageDescriptorJson.name; // for client-side use only, not needed
+    delete packageDescriptorJson.scopeProfiles; // for client-side use only, not needed
     return packageDescriptorJson;
   }
 

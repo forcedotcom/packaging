@@ -8,7 +8,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { assert, expect } from 'chai';
-import { Connection, SfProject } from '@salesforce/core';
+import { Connection, Logger, SfProject } from '@salesforce/core';
 import {
   MetadataResolver,
   PackageVersionCreate,
@@ -120,6 +120,7 @@ describe('Package Version Create', () => {
     const pvc = new PackageVersionCreate({ connection, project, packageId });
     try {
       await pvc.createPackageVersion();
+      expect(false, 'package version create should have failed').to.be.true;
     } catch (e) {
       assert(e instanceof Error);
       expect(e.message).to.equal(
@@ -772,6 +773,83 @@ describe('Package Version Create', () => {
     expect(excludedDirsFilter?.length).to.equal(2);
     expect(excludedDirsFilter).to.contain('unpackaged-pkg');
     expect(excludedDirsFilter).to.contain('unpackaged-force-app');
+  });
+
+  it('should only package profiles in the package dir when scopeProfiles = true', async () => {
+    await project.getSfProjectJson().write({
+      packageDirectories: [
+        {
+          path: 'pkg',
+          package: 'dep',
+          versionName: 'ver 0.1',
+          versionNumber: '0.1.0.NEXT',
+          default: false,
+          name: 'pkg',
+          unpackagedMetadata: {
+            path: 'unpackaged-pkg',
+          },
+        },
+        {
+          path: 'force-app',
+          package: 'TEST',
+          versionName: 'ver 0.1',
+          versionNumber: '0.1.0.NEXT',
+          default: true,
+          ancestorId: 'TEST2',
+          scopeProfiles: true,
+          unpackagedMetadata: {
+            path: 'unpackaged-force-app',
+          },
+          seedMetadata: {
+            path: 'seed',
+          },
+          dependencies: [
+            {
+              package: 'DEP@0.1.0-1',
+            },
+          ],
+        },
+        {
+          path: 'unpackaged-pkg',
+        },
+        {
+          path: 'unpackaged-force-app',
+        },
+      ],
+      packageAliases: {
+        TEST: packageId,
+        TEST2: '05i3i000000Gmj6XXX',
+        DEP: '05i3i000000Gmj6XXX',
+        'DEP@0.1.0-1': '04t3i000002eyYXXXX',
+      },
+    });
+    const loggerSpy = $$.SANDBOX.spy(Logger.prototype, 'debug');
+    const pvc = new PackageVersionCreate({ connection, project, packageId });
+    const profileSpyGenerate = $$.SANDBOX.spy(PackageProfileApi.prototype, 'generateProfiles');
+    const profileSpyFilter = $$.SANDBOX.spy(PackageProfileApi.prototype, 'filterAndGenerateProfilesForManifest');
+    stubConvert();
+    const result = await pvc.createPackageVersion();
+
+    expect(result).to.have.all.keys(
+      'Branch',
+      'ConvertedFromVersionId',
+      'CreatedBy',
+      'CreatedDate',
+      'Error',
+      'HasMetadataRemoved',
+      'Id',
+      'Package2Id',
+      'Package2VersionId',
+      'Status',
+      'SubscriberPackageVersionId',
+      'Tag'
+    );
+    expect(loggerSpy.called).to.be.true;
+    const logMsg =
+      "packageDirectory: force-app has 'scopeProfiles' set, so only including profiles from within this directory";
+    expect(loggerSpy.calledWith(logMsg)).to.be.true;
+    expect(profileSpyGenerate.called).to.be.false;
+    expect(profileSpyFilter.called).to.be.false;
   });
 
   it('should not package profiles from outside of project package directories', async () => {
