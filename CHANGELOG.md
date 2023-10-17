@@ -1,3 +1,9 @@
+## [2.4.12](https://github.com/forcedotcom/packaging/compare/2.4.11...2.4.12) (2023-10-17)
+
+### Bug Fixes
+
+- **deps:** bump @babel/traverse from 7.20.1 to 7.23.2 ([c40126d](https://github.com/forcedotcom/packaging/commit/c40126d659596cea6ad0025058c2e9374bac702a))
+
 ## [2.4.11](https://github.com/forcedotcom/packaging/compare/2.4.10...2.4.11) (2023-10-07)
 
 ### Bug Fixes
