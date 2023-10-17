@@ -504,13 +504,23 @@ export class PackageVersionCreate {
       );
     }
 
+    let profileExcludeDirs: string[] = [];
     if (this.packageObject.scopeProfiles) {
       this.logger.debug(
         `packageDirectory: ${this.packageObject.name} has 'scopeProfiles' set, so only including profiles from within this directory`
       );
+      // exclude all package dirs except the one being packaged
+      profileExcludeDirs = this.project
+        .getPackageDirectories()
+        .map((packageDir) => {
+          if (packageDir.path !== this.packageObject.path) {
+            return packageDir.path;
+          }
+        })
+        .filter((packageDirPath) => packageDirPath) as string[];
     } else {
       // don't package the profiles from any un-packagedMetadata dir in the project
-      const profileExcludeDirs = this.project
+      profileExcludeDirs = this.project
         .getPackageDirectories()
         .map((packageDir) => (packageDir as PackageDescriptorJson).unpackagedMetadata?.path)
         .filter((packageDirPath) => packageDirPath) as string[];
@@ -520,23 +530,23 @@ export class PackageVersionCreate {
         debugMsg += ` excluding these unpackagedMetadata dirs: ${profileExcludeDirs.toString()}`;
       }
       this.logger.debug(debugMsg);
-
-      const typesArr =
-        this.options?.profileApi?.filterAndGenerateProfilesForManifest(packageXmlAsJson.types, profileExcludeDirs) ??
-        packageXmlAsJson.types;
-
-      // Next generate profiles and retrieve any profiles that were excluded because they had no matching nodes.
-      const excludedProfiles = this.options?.profileApi?.generateProfiles(
-        packageVersProfileFolder,
-        typesArr,
-        profileExcludeDirs
-      );
-
-      packageXmlAsJson.types = typesArr.map((type) => {
-        if (type.name !== 'Profile') return type;
-        return { ...type, members: type.members.filter((m) => !excludedProfiles?.includes(m)) };
-      });
     }
+
+    const typesArr =
+      this.options?.profileApi?.filterAndGenerateProfilesForManifest(packageXmlAsJson.types, profileExcludeDirs) ??
+      packageXmlAsJson.types;
+
+    // Next generate profiles and retrieve any profiles that were excluded because they had no matching nodes.
+    const excludedProfiles = this.options?.profileApi?.generateProfiles(
+      packageVersProfileFolder,
+      typesArr,
+      profileExcludeDirs
+    );
+
+    packageXmlAsJson.types = typesArr.map((type) => {
+      if (type.name !== 'Profile') return type;
+      return { ...type, members: type.members.filter((m) => !excludedProfiles?.includes(m)) };
+    });
 
     const xml = packageXmlJsonToXmlString(packageXmlAsJson);
     await fs.promises.writeFile(path.join(packageVersMetadataFolder, 'package.xml'), xml, 'utf-8');

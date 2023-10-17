@@ -848,8 +848,10 @@ describe('Package Version Create', () => {
     const logMsg =
       "packageDirectory: force-app has 'scopeProfiles' set, so only including profiles from within this directory";
     expect(loggerSpy.calledWith(logMsg)).to.be.true;
-    expect(profileSpyGenerate.called).to.be.false;
-    expect(profileSpyFilter.called).to.be.false;
+    expect(profileSpyGenerate.called).to.be.true;
+    expect(profileSpyGenerate.firstCall.args[2]).to.deep.equal(['pkg', 'unpackaged-pkg', 'unpackaged-force-app']);
+    expect(profileSpyFilter.called).to.be.true;
+    expect(profileSpyFilter.firstCall.args[1]).to.deep.equal(['pkg', 'unpackaged-pkg', 'unpackaged-force-app']);
   });
 
   it('should not package profiles from outside of project package directories', async () => {
