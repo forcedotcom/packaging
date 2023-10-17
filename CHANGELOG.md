@@ -1,3 +1,9 @@
+## [2.4.15](https://github.com/forcedotcom/packaging/compare/2.4.14...2.4.15) (2023-10-17)
+
+### Bug Fixes
+
+- **deps:** bump jsforce from 2.0.0-beta.27 to 2.0.0-beta.28 ([55bb244](https://github.com/forcedotcom/packaging/commit/55bb244185bdfa2365ea37ad680c21479b75135e))
+
 ## [2.4.14](https://github.com/forcedotcom/packaging/compare/2.4.13...2.4.14) (2023-10-17)
 
 ### Bug Fixes
