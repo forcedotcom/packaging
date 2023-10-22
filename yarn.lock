@@ -775,12 +775,12 @@
     proxy-agent "^6.3.1"
     unzipper "0.10.14"
 
-"@salesforce/ts-sinon@^1.4.16":
-  version "1.4.16"
-  resolved "https://registry.yarnpkg.com/@salesforce/ts-sinon/-/ts-sinon-1.4.16.tgz#44ca058279d4009d7cc5d2de04d0ff764897f7c2"
-  integrity sha512-nl/zQ0z+W3C5VUgOh5i7N9ZgI7cEboDGBfPk7JXIz1R3U8yjSr3IIrJgmB3XSHFRNOQ/BjxdO8XSeuOehlaX3g==
+"@salesforce/ts-sinon@^1.4.18":
+  version "1.4.18"
+  resolved "https://registry.yarnpkg.com/@salesforce/ts-sinon/-/ts-sinon-1.4.18.tgz#a9ff91370bc3f682fbf964afcbc0fcf5f04d2912"
+  integrity sha512-YR+L5JEZRfZmPGYvamPs+urd753PfS/K6foygYdR9F6MM+e0VMbAQ8Zq2lmJKoZy4aDEencspmp+72wtZKJJpg==
   dependencies:
-    "@salesforce/ts-types" "^2.0.7"
+    "@salesforce/ts-types" "^2.0.8"
     sinon "^5.1.1"
     tslib "^2.6.1"
 
