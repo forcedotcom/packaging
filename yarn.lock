@@ -655,13 +655,13 @@
     wordwrap "^1.0.0"
     wrap-ansi "^7.0.0"
 
-"@salesforce/cli-plugins-testkit@^4.4.5":
-  version "4.4.5"
-  resolved "https://registry.yarnpkg.com/@salesforce/cli-plugins-testkit/-/cli-plugins-testkit-4.4.5.tgz#ffd8724fc1110c97e9511cc3fb19a3189f41b667"
-  integrity sha512-98ucjuEnwdaQiDci3X9c24ASdsaRajZefmXVYvHF6QIIb4Bav3SZVMngo11mQhcmPLyzbJWfT94aImmg1ch82A==
+"@salesforce/cli-plugins-testkit@^4.4.8":
+  version "4.4.8"
+  resolved "https://registry.yarnpkg.com/@salesforce/cli-plugins-testkit/-/cli-plugins-testkit-4.4.8.tgz#0c4a7e371f319f63c27b23ba6b89e3341655ff87"
+  integrity sha512-8IuVupRX8APj9FEx8HjfRxYXeTrq78/Nstch2S6FhZXbDShzqBbVfQ3DVf2uDejxgU7rehah0mwcVyWYjTcBGA==
   dependencies:
-    "@salesforce/core" "^5.3.1"
-    "@salesforce/kit" "^3.0.12"
+    "@salesforce/core" "^5.3.5"
+    "@salesforce/kit" "^3.0.13"
     "@salesforce/ts-types" "^2.0.6"
     "@types/shelljs" "^0.8.13"
     debug "^4.3.1"
