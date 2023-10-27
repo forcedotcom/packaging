@@ -1,3 +1,45 @@
+## [2.4.16](https://github.com/forcedotcom/packaging/compare/2.4.15...2.4.16) (2023-10-21)
+
+### Bug Fixes
+
+- **deps:** bump @salesforce/ts-types from 2.0.8 to 2.0.9 ([7e91726](https://github.com/forcedotcom/packaging/commit/7e917265cdd795b098d67cc23be4510180a77a0f))
+
+## [2.4.15](https://github.com/forcedotcom/packaging/compare/2.4.14...2.4.15) (2023-10-17)
+
+### Bug Fixes
+
+- **deps:** bump jsforce from 2.0.0-beta.27 to 2.0.0-beta.28 ([55bb244](https://github.com/forcedotcom/packaging/commit/55bb244185bdfa2365ea37ad680c21479b75135e))
+
+## [2.4.14](https://github.com/forcedotcom/packaging/compare/2.4.13...2.4.14) (2023-10-17)
+
+### Bug Fixes
+
+- **deps:** bump @salesforce/source-deploy-retrieve from 9.7.22 to 9.7.25 ([6f51f40](https://github.com/forcedotcom/packaging/commit/6f51f40fdc3dcbedab52906081be7bd5247103ad))
+
+## [2.4.13](https://github.com/forcedotcom/packaging/compare/2.4.12...2.4.13) (2023-10-17)
+
+### Bug Fixes
+
+- **deps:** bump @salesforce/core from 5.3.5 to 5.3.9 ([db92fbc](https://github.com/forcedotcom/packaging/commit/db92fbc2e923d533e9fefb4fe3bc933168dfefb5))
+
+## [2.4.12](https://github.com/forcedotcom/packaging/compare/2.4.11...2.4.12) (2023-10-17)
+
+### Bug Fixes
+
+- **deps:** bump @babel/traverse from 7.20.1 to 7.23.2 ([c40126d](https://github.com/forcedotcom/packaging/commit/c40126d659596cea6ad0025058c2e9374bac702a))
+
+## [2.4.11](https://github.com/forcedotcom/packaging/compare/2.4.10...2.4.11) (2023-10-07)
+
+### Bug Fixes
+
+- **deps:** bump @salesforce/source-deploy-retrieve from 9.7.19 to 9.7.22 ([92a71f2](https://github.com/forcedotcom/packaging/commit/92a71f2aeec0ae04eb8b367ee042b51662c7219d))
+
+## [2.4.10](https://github.com/forcedotcom/packaging/compare/2.4.9...2.4.10) (2023-10-07)
+
+### Bug Fixes
+
+- **deps:** bump @salesforce/core from 5.3.1 to 5.3.5 ([9db024e](https://github.com/forcedotcom/packaging/commit/9db024e1540c233351e702ff37436ba6f3f200ba))
+
 ## [2.4.9](https://github.com/forcedotcom/packaging/compare/2.4.8...2.4.9) (2023-10-03)
 
 ### Bug Fixes
