@@ -58,7 +58,7 @@
   "devDependencies": {
     "@salesforce/cli-plugins-testkit": "^4.4.8",
     "@salesforce/dev-config": "^4.1.0",
-    "@salesforce/dev-scripts": "^5.11.0",
+    "@salesforce/dev-scripts": "^5.12.2",
     "@salesforce/prettier-config": "^0.0.3",
     "@salesforce/ts-sinon": "^1.4.19",
     "@types/globby": "^9.1.0",
@@ -70,10 +70,10 @@
     "eslint-config-prettier": "^8.10.0",
     "eslint-config-salesforce": "^2.0.2",
     "eslint-config-salesforce-license": "^0.2.0",
-    "eslint-config-salesforce-typescript": "^1.1.2",
+    "eslint-config-salesforce-typescript": "^2.0.0",
     "eslint-plugin-header": "3.1.1",
     "eslint-plugin-import": "^2.28.1",
-    "eslint-plugin-jsdoc": "^44.2.7",
+    "eslint-plugin-jsdoc": "^46.8.2",
     "eslint-plugin-sf-plugin": "^1.16.9",
     "husky": "^8.0.3",
     "mocha": "^10.2.0",
@@ -83,7 +83,7 @@
     "shelljs": "0.8.5",
     "sinon": "14.0.2",
     "ts-node": "^10.9.1",
-    "typescript": "4.9.5",
+    "typescript": "^5.2.2",
     "wireit": "^0.14.1"
   },
   "publishConfig": {

@@ -4,13 +4,13 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import * as os from 'os';
-import * as fs from 'fs';
-import { join } from 'path';
-import { pipeline as cbPipeline } from 'stream';
-import * as util from 'util';
-import { promisify } from 'util';
-import { randomBytes } from 'crypto';
+import * as os from 'node:os';
+import * as fs from 'node:fs';
+import { join } from 'node:path';
+import { pipeline as cbPipeline } from 'node:stream';
+import * as util from 'node:util';
+import { promisify } from 'node:util';
+import { randomBytes } from 'node:crypto';
 import { Connection, Logger, Messages, ScratchOrgInfo, SfdcUrl, SfError, SfProject } from '@salesforce/core';
 import { isNumber, Many, Nullable, Optional } from '@salesforce/ts-types';
 import { SaveError } from 'jsforce';
