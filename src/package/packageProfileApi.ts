@@ -78,7 +78,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
         .filter(({ hasContent, profileName, removedSettings, profilePath, xmlFileLocation, adjustedProfile }) => {
           if (!hasContent) {
             logger.warn(
-              `Profile ${profileName} has no content after filtering. It will still be part of the package but you can remove if it it's not needed.`
+              `Profile ${profileName} has no content after filtering. It will still be part of the package but you can remove it if it's not needed.`
             );
             return true;
           } else {

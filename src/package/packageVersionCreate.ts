@@ -504,11 +504,33 @@ export class PackageVersionCreate {
       );
     }
 
-    // don't package the profiles from any un-packagedMetadata dir in the project
-    const profileExcludeDirs = this.project
-      .getPackageDirectories()
-      .map((packageDir) => (packageDir as PackageDescriptorJson).unpackagedMetadata?.path)
-      .filter((packageDirPath) => packageDirPath) as string[];
+    let profileExcludeDirs: string[] = [];
+    if (this.packageObject.scopeProfiles) {
+      this.logger.debug(
+        `packageDirectory: ${this.packageObject.name} has 'scopeProfiles' set, so only including profiles from within this directory`
+      );
+      // exclude all package dirs except the one being packaged
+      profileExcludeDirs = this.project
+        .getPackageDirectories()
+        .map((packageDir) => {
+          if (packageDir.path !== this.packageObject.path) {
+            return packageDir.path;
+          }
+        })
+        .filter((packageDirPath) => packageDirPath) as string[];
+    } else {
+      // don't package the profiles from any un-packagedMetadata dir in the project
+      profileExcludeDirs = this.project
+        .getPackageDirectories()
+        .map((packageDir) => (packageDir as PackageDescriptorJson).unpackagedMetadata?.path)
+        .filter((packageDirPath) => packageDirPath) as string[];
+
+      let debugMsg = 'Searching for profiles to include from all packageDirectories';
+      if (profileExcludeDirs?.length) {
+        debugMsg += ` excluding these unpackagedMetadata dirs: ${profileExcludeDirs.toString()}`;
+      }
+      this.logger.debug(debugMsg);
+    }
 
     const typesArr =
       this.options?.profileApi?.filterAndGenerateProfilesForManifest(packageXmlAsJson.types, profileExcludeDirs) ??
@@ -629,7 +651,10 @@ export class PackageVersionCreate {
 
     this.packageId = this.project.getPackageIdFromAlias(packageName) ?? packageName;
 
-    this.options.profileApi = await this.resolveUserLicenses(!!this.packageObject.includeProfileUserLicenses);
+    this.options.profileApi = await PackageProfileApi.create({
+      project: this.project,
+      includeUserLicenses: !!this.packageObject.includeProfileUserLicenses,
+    });
 
     // At this point, the packageIdFromAlias should have been resolved to an Id.  Now, we
     // need to validate that the Id is correct.
@@ -687,13 +712,6 @@ export class PackageVersionCreate {
     return this.pkg.getType();
   }
 
-  private async resolveUserLicenses(includeUserLicenses: boolean): Promise<PackageProfileApi> {
-    return PackageProfileApi.create({
-      project: this.project,
-      includeUserLicenses,
-    });
-  }
-
   private async validateOptionsForPackageType(): Promise<void> {
     if ((await this.getPackageType()) === 'Unlocked') {
       // Don't allow scripts in unlocked packages
@@ -720,6 +738,7 @@ export class PackageVersionCreate {
     delete packageDescriptorJson.branch; // for client-side use only, not needed
     delete packageDescriptorJson.fullPath; // for client-side use only, not needed
     delete packageDescriptorJson.name; // for client-side use only, not needed
+    delete packageDescriptorJson.scopeProfiles; // for client-side use only, not needed
     return packageDescriptorJson;
   }
 
