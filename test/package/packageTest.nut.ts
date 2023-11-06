@@ -201,7 +201,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
       const result = await PackageVersion.getCreateStatus(pkgCreateVersionRequestId, devHubOrg.getConnection());
       expect(result).to.include.keys(VERSION_CREATE_RESPONSE_KEYS);
 
-      if (result.Status === 'Error') {
+      if (result.Status === PackagingSObjects.Package2VersionStatus.error) {
         throw new Error(`pv.getCreateVersionReport failed with status Error: ${result.Error.join(';')}`);
       }
     });
@@ -236,7 +236,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
 
       subscriberPkgVersionId = result.SubscriberPackageVersionId ?? '';
 
-      if (result.Status === 'Error') {
+      if (result.Status === PackagingSObjects.Package2VersionStatus.error) {
         throw new Error(`pv.waitForCreateVersion failed with status Error: ${result.Error.join(';')}`);
       }
     });

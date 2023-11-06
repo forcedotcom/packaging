@@ -715,12 +715,12 @@ export class PackageVersionCreate {
   private async validateOptionsForPackageType(): Promise<void> {
     if ((await this.getPackageType()) === 'Unlocked') {
       // Don't allow scripts in unlocked packages
-      if (this.options.postinstallscript || this.options.uninstallscript) {
+      if (Boolean(this.options.postinstallscript) || this.options.uninstallscript) {
         throw messages.createError('errorScriptsNotApplicableToUnlockedPackage');
       }
 
       // Don't allow ancestor in unlocked packages
-      if (this.packageObject.ancestorId || this.packageObject.ancestorVersion) {
+      if (Boolean(this.packageObject.ancestorId) || this.packageObject.ancestorVersion) {
         throw messages.createError('errorAncestorNotApplicableToUnlockedPackage');
       }
     }
