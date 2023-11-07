@@ -351,7 +351,7 @@ export class SubscriberPackageVersion {
   public async getData(
     options: { force?: boolean; includeHighCostFields?: boolean } = { force: false, includeHighCostFields: false }
   ): Promise<PackagingSObjects.SubscriberPackageVersion | undefined> {
-    if (!this.data || options.force || options.includeHighCostFields) {
+    if (!this.data || Boolean(options.force) || options.includeHighCostFields) {
       const queryFields = this.getFieldsForQuery(options);
       if (queryFields.length === 0) {
         return this.data;

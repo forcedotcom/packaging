@@ -19,7 +19,6 @@ import Package2VersionCreateRequestError = PackagingSObjects.Package2VersionCrea
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
 
-const STATUS_ERROR = 'Error';
 const QUERY =
   'SELECT Id, Status, Package2Id, Package2VersionId, Package2Version.SubscriberPackageVersionId, Tag, Branch, ' +
   'CreatedDate, Package2Version.HasMetadataRemoved, CreatedById, IsConversionRequest, Package2Version.ConvertedFromVersionId ' +
@@ -54,7 +53,7 @@ export async function byId(
   connection: Connection
 ): Promise<PackageVersionCreateRequestResult[]> {
   const results = await query(util.format(QUERY, `WHERE Id = '${packageVersionCreateRequestId}' `), connection);
-  if (results && results.length === 1 && results[0].Status === STATUS_ERROR) {
+  if (results && results.length === 1 && results[0].Status === PackagingSObjects.Package2VersionStatus.error) {
     results[0].Error = await queryForErrors(packageVersionCreateRequestId, connection);
   }
 
