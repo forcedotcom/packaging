@@ -61,7 +61,7 @@
     "@salesforce/ts-sinon": "^1.4.19",
     "@types/globby": "^9.1.0",
     "@types/jszip": "^3.4.1",
-    "eslint-plugin-sf-plugin": "^1.16.13",
+    "eslint-plugin-sf-plugin": "^1.16.14",
     "shelljs": "0.8.5",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
