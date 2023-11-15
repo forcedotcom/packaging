@@ -14,6 +14,8 @@ import {
   PackageVersionCreate,
   packageXmlStringToPackageXmlJson,
   packageXmlJsonToXmlString,
+  validateAncestorId,
+  validateVersionNumber,
 } from '../../src/package/packageVersionCreate';
 import * as PVCStubs from '../../src/package/packageVersionCreate';
 import { PackagingSObjects } from '../../src/interfaces';
@@ -54,7 +56,6 @@ describe('Package Version Create', () => {
         versionName: 'ver 0.1',
         versionNumber: '0.1.0.NEXT',
         default: false,
-        name: 'pkg',
       },
       {
         path: 'force-app',
@@ -366,7 +367,6 @@ describe('Package Version Create', () => {
       config.packageDirectories[1].dependencies[0].versionNumber = '0.1.0.1';
     }
 
-    // @ts-expect-error : requires https://github.com/forcedotcom/sfdx-core/pull/989
     project.getSfProjectJson().set('packageDirectories', config.packageDirectories);
     await project.getSfProjectJson().write();
 
@@ -412,7 +412,6 @@ describe('Package Version Create', () => {
       config.packageDirectories[1].dependencies[0].versionNumber = '0.1.0.1';
       config.packageDirectories[1].dependencies[0].branch = 'dev';
     }
-    // @ts-expect-error : requires https://github.com/forcedotcom/sfdx-core/pull/989
     project.getSfProjectJson().set('packageDirectories', config.packageDirectories);
     await project.getSfProjectJson().write();
 
@@ -458,7 +457,6 @@ describe('Package Version Create', () => {
       config.packageDirectories[1].dependencies[0].versionNumber = '0.1.0.1';
       config.packageDirectories[1].dependencies[0].branch = '';
     }
-    // @ts-expect-error : requires https://github.com/forcedotcom/sfdx-core/pull/989
     project.getSfProjectJson().set('packageDirectories', config.packageDirectories);
     await project.getSfProjectJson().write();
 
@@ -717,7 +715,6 @@ describe('Package Version Create', () => {
         versionName: 'ver 0.1',
         versionNumber: '0.1.0.NEXT',
         default: false,
-        name: 'pkg',
         unpackagedMetadata: {
           path: 'unpackaged-pkg',
         },
@@ -793,7 +790,6 @@ describe('Package Version Create', () => {
         versionName: 'ver 0.1',
         versionNumber: '0.1.0.NEXT',
         default: false,
-        name: 'pkg',
         unpackagedMetadata: {
           path: 'unpackaged-pkg',
         },
@@ -884,10 +880,6 @@ describe('Package Version Create', () => {
   });
 
   describe('validateAncestorId', () => {
-    let pvc: PackageVersionCreate;
-    beforeEach(() => {
-      pvc = new PackageVersionCreate({ connection, project, packageId });
-    });
     it('should throw if the explicitUseNoAncestor is true and highestReleasedVersion is not undefined', () => {
       const ancestorId = 'ancestorId';
       const highestReleasedVersion = {
@@ -901,7 +893,7 @@ describe('Package Version Create', () => {
       const skipAncestorCheck = false;
       const origSpecifiedAncestor = 'orgAncestorId';
       expect(() =>
-        pvc['validateAncestorId'](
+        validateAncestorId(
           ancestorId,
           highestReleasedVersion,
           explicitUseNoAncestor,
@@ -924,7 +916,7 @@ describe('Package Version Create', () => {
       const skipAncestorCheck = false;
       const origSpecifiedAncestor = 'orgAncestorId';
       expect(() =>
-        pvc['validateAncestorId'](
+        validateAncestorId(
           ancestorId,
           highestReleasedVersion,
           explicitUseNoAncestor,
@@ -943,7 +935,7 @@ describe('Package Version Create', () => {
       const isPatch = false;
       const skipAncestorCheck = false;
       const origSpecifiedAncestor = 'orgAncestorId';
-      const result = pvc['validateAncestorId'](
+      const result = validateAncestorId(
         ancestorId,
         highestReleasedVersion,
         explicitUseNoAncestor,
@@ -960,7 +952,7 @@ describe('Package Version Create', () => {
       const isPatch = true;
       const skipAncestorCheck = true;
       const origSpecifiedAncestor = 'orgAncestorId';
-      const result = pvc['validateAncestorId'](
+      const result = validateAncestorId(
         ancestorId,
         highestReleasedVersion,
         explicitUseNoAncestor,
@@ -972,17 +964,13 @@ describe('Package Version Create', () => {
     });
   });
   describe('validateVersionNumber', () => {
-    let pvc: PackageVersionCreate;
-    beforeEach(() => {
-      pvc = new PackageVersionCreate({ connection, project, packageId });
-    });
     it('should return version number as valid', () => {
-      const versionNumber = pvc['validateVersionNumber']('1.2.3.NEXT', 'NEXT', 'LATEST');
+      const versionNumber = validateVersionNumber('1.2.3.NEXT', 'NEXT', 'LATEST');
       expect(versionNumber).to.be.equal('1.2.3.NEXT');
     });
     it('should throw error if version number is invalid', () => {
       expect(() => {
-        pvc['validateVersionNumber']('1.2.3.NEXT', 'foo', 'bar');
+        validateVersionNumber('1.2.3.NEXT', 'foo', 'bar');
       }).to.throw(
         Error,
         /The provided VersionNumber '1.2.3.NEXT' is invalid. Provide an integer value or use the keyword/
@@ -990,7 +978,7 @@ describe('Package Version Create', () => {
     });
     it('should throw error if build2 is undefined', () => {
       expect(() => {
-        pvc['validateVersionNumber']('1.2.3.NEXT', 'foo', undefined);
+        validateVersionNumber('1.2.3.NEXT', 'foo', undefined);
       }).to.throw(
         Error,
         /The provided VersionNumber '1.2.3.NEXT' is invalid. Provide an integer value or use the keyword/

@@ -30,6 +30,7 @@ import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenera
 import { PackageDirDependency } from '@salesforce/core/lib/sfProject';
 import { cloneJson, ensureArray, env } from '@salesforce/kit';
 import { XMLParser, XMLBuilder } from 'fast-xml-parser';
+import { isString } from '@salesforce/ts-types';
 import * as pkgUtils from '../utils/packageUtils';
 import {
   BY_LABEL,
@@ -122,7 +123,7 @@ export class PackageVersionCreate {
     dependency.packageId = packageIdFromAlias;
 
     pkgUtils.validateId(pkgUtils.BY_LABEL.PACKAGE_ID, dependency.packageId);
-    this.validateVersionNumber(
+    validateVersionNumber(
       dependency.versionNumber,
       BuildNumberToken.LATEST_BUILD_NUMBER_TOKEN,
       BuildNumberToken.RELEASED_BUILD_NUMBER_TOKEN
@@ -402,9 +403,8 @@ export class PackageVersionCreate {
     if (resultValues.length > 0) {
       packageDescriptorJson.dependencies = resultValues as PackageDirDependency[];
     }
-
-    this.cleanPackageDescriptorJson(packageDescriptorJson);
-    this.setPackageDescriptorJsonValues(packageDescriptorJson);
+    packageDescriptorJson = cleanPackageDescriptorJson(packageDescriptorJson);
+    packageDescriptorJson = setPackageDescriptorJsonValues(packageDescriptorJson, this.options, this.logger);
 
     await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
     await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
@@ -522,8 +522,8 @@ export class PackageVersionCreate {
       // don't package the profiles from any un-packagedMetadata dir in the project
       profileExcludeDirs = this.project
         .getPackageDirectories()
-        .map((packageDir) => (packageDir as PackageDescriptorJson).unpackagedMetadata?.path)
-        .filter((packageDirPath) => packageDirPath) as string[];
+        .map((packageDir) => packageDir.unpackagedMetadata?.path)
+        .filter(isString);
 
       let debugMsg = 'Searching for profiles to include from all packageDirectories';
       if (profileExcludeDirs?.length) {
@@ -618,7 +618,7 @@ export class PackageVersionCreate {
 
     // establish the package Id (0ho) and load the package directory
     let packageName: string | undefined;
-    let packageObject: PackageDir | undefined;
+    let packageObject: NamedPackageDir | undefined;
     if (this.options.packageId) {
       const pkg = this.options.packageId;
       // for backward compatibility allow for a packageDirectory package property to be an id (0Ho) instead of an alias.
@@ -646,7 +646,7 @@ export class PackageVersionCreate {
         this.options.packageId ?? this.options.path,
       ]);
     } else {
-      this.packageObject = packageObject as NamedPackageDir;
+      this.packageObject = packageObject;
     }
 
     this.packageId = this.project.getPackageIdFromAlias(packageName) ?? packageName;
@@ -691,9 +691,8 @@ export class PackageVersionCreate {
   }
 
   private async getPackageDirFromId(pkg: string): Promise<PackageDir | undefined> {
-    let dir: PackageDir[];
     if (pkg.startsWith('0Ho')) {
-      dir = (await this.project.getSfProjectJson().getPackageDirectories()).filter((p) => p.package === pkg);
+      const dir = (await this.project.getSfProjectJson().getPackageDirectories()).filter((p) => p.package === pkg);
       if (dir.length === 1) {
         return dir[0];
       }
@@ -724,100 +723,6 @@ export class PackageVersionCreate {
         throw messages.createError('errorAncestorNotApplicableToUnlockedPackage');
       }
     }
-  }
-
-  /**
-   * Cleans invalid attribute(s) from the packageDescriptorJSON
-   */
-  // eslint-disable-next-line class-methods-use-this
-  private cleanPackageDescriptorJson(packageDescriptorJson: PackageDescriptorJson): PackageDescriptorJson {
-    delete packageDescriptorJson.default; // for client-side use only, not needed
-    delete packageDescriptorJson.includeProfileUserLicenses; // for client-side use only, not needed
-    delete packageDescriptorJson.unpackagedMetadata; // for client-side use only, not needed
-    delete packageDescriptorJson.seedMetadata; // for client-side use only, not needed
-    delete packageDescriptorJson.branch; // for client-side use only, not needed
-    delete packageDescriptorJson.fullPath; // for client-side use only, not needed
-    delete packageDescriptorJson.name; // for client-side use only, not needed
-    delete packageDescriptorJson.scopeProfiles; // for client-side use only, not needed
-    return packageDescriptorJson;
-  }
-
-  /**
-   * Sets default or override values for packageDescriptorJSON attribs
-   */
-  private setPackageDescriptorJsonValues(packageDescriptorJson: PackageDescriptorJson): void {
-    const options = this.options;
-    if (options.versionname) {
-      packageDescriptorJson.versionName = options.versionname;
-    }
-    if (options.versiondescription) {
-      packageDescriptorJson.versionDescription = options.versiondescription;
-    }
-    if (options.versionnumber) {
-      packageDescriptorJson.versionNumber = options.versionnumber;
-    }
-
-    // default versionName to versionNumber if unset, stripping .NEXT if present
-    if (!packageDescriptorJson.versionName) {
-      const versionNumber = packageDescriptorJson.versionNumber;
-      packageDescriptorJson.versionName =
-        versionNumber?.split(pkgUtils.VERSION_NUMBER_SEP)[3] === BuildNumberToken.NEXT_BUILD_NUMBER_TOKEN
-          ? versionNumber.substring(
-              0,
-              versionNumber.indexOf(pkgUtils.VERSION_NUMBER_SEP + BuildNumberToken.NEXT_BUILD_NUMBER_TOKEN)
-            )
-          : versionNumber;
-
-      this.logger.warn(messages.getMessage('defaultVersionName', [packageDescriptorJson.versionName]));
-    }
-
-    if (options.releasenotesurl) {
-      packageDescriptorJson.releaseNotesUrl = options.releasenotesurl;
-    }
-    if (packageDescriptorJson.releaseNotesUrl && !SfdcUrl.isValidUrl(packageDescriptorJson.releaseNotesUrl)) {
-      throw messages.createError('malformedUrl', ['releaseNotesUrl', packageDescriptorJson.releaseNotesUrl]);
-    }
-
-    if (options.postinstallurl) {
-      packageDescriptorJson.postInstallUrl = options.postinstallurl;
-    }
-    if (packageDescriptorJson.postInstallUrl && !SfdcUrl.isValidUrl(packageDescriptorJson.postInstallUrl)) {
-      throw messages.createError('malformedUrl', ['postInstallUrl', packageDescriptorJson.postInstallUrl]);
-    }
-
-    if (options.postinstallscript) {
-      packageDescriptorJson.postInstallScript = options.postinstallscript;
-    }
-    if (options.uninstallscript) {
-      packageDescriptorJson.uninstallScript = options.uninstallscript;
-    }
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  private validateVersionNumber(
-    versionNumberString: string,
-    supportedBuildNumberToken: string,
-    supportedBuildNumberToken2?: string
-  ): string {
-    const versionNumber = VersionNumber.from(versionNumberString);
-    // build number can be a number or valid token
-    if (
-      Number.isNaN(parseInt(`${versionNumber.build}`, 10)) &&
-      versionNumber.build !== supportedBuildNumberToken &&
-      versionNumber.build !== supportedBuildNumberToken2
-    ) {
-      if (supportedBuildNumberToken2) {
-        throw messages.createError('errorInvalidBuildNumberForKeywords', [
-          versionNumberString,
-          supportedBuildNumberToken,
-          supportedBuildNumberToken2,
-        ]);
-      } else {
-        throw messages.createError('errorInvalidBuildNumber', [versionNumberString, supportedBuildNumberToken]);
-      }
-    }
-
-    return versionNumberString;
   }
 
   private async validatePatchVersion(versionNumberString: string, packageId: string): Promise<void> {
@@ -950,7 +855,7 @@ export class PackageVersionCreate {
       origSpecifiedAncestor = packageDescriptorJson.ancestorVersion;
     }
 
-    return this.validateAncestorId(
+    return validateAncestorId(
       ancestorId,
       highestReleasedVersion,
       explicitUseNoAncestor,
@@ -958,39 +863,6 @@ export class PackageVersionCreate {
       skipAncestorCheck,
       origSpecifiedAncestor
     );
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  private validateAncestorId(
-    ancestorId: string,
-    highestReleasedVersion: PackagingSObjects.Package2Version | null | undefined,
-    explicitUseNoAncestor: boolean,
-    isPatch: boolean,
-    skipAncestorCheck: boolean,
-    origSpecifiedAncestor: string
-  ): string {
-    if (explicitUseNoAncestor) {
-      if (!highestReleasedVersion) {
-        return '';
-      } else {
-        // the explicitUseNoAncestor && skipAncestorCheck case is handled above
-        throw messages.createError('errorAncestorNoneNotAllowed', [getPackageVersionNumber(highestReleasedVersion)]);
-      }
-    }
-    if (!isPatch && !skipAncestorCheck) {
-      if (highestReleasedVersion) {
-        if (highestReleasedVersion.Id !== ancestorId) {
-          throw messages.createError('errorAncestorNotHighest', [
-            origSpecifiedAncestor,
-            getPackageVersionNumber(highestReleasedVersion),
-          ]);
-        }
-      } else {
-        // looks like the initial version:create - allow
-        ancestorId = '';
-      }
-    }
-    return ancestorId;
   }
 
   private async getAncestorIdHighestRelease(
@@ -1184,4 +1056,119 @@ export const packageXmlJsonToXmlString = (packageXmlJson: PackageXml): string =>
       Package: { ...packageXmlJson, '@@@xmlns': 'http://soap.sforce.com/2006/04/metadata' },
     })
   );
+};
+
+// exported for UT
+export const validateAncestorId = (
+  ancestorId: string,
+  highestReleasedVersion: PackagingSObjects.Package2Version | null | undefined,
+  explicitUseNoAncestor: boolean,
+  isPatch: boolean,
+  skipAncestorCheck: boolean,
+  origSpecifiedAncestor: string
+): string => {
+  if (explicitUseNoAncestor) {
+    if (!highestReleasedVersion) {
+      return '';
+    } else {
+      // the explicitUseNoAncestor && skipAncestorCheck case is handled above
+      throw messages.createError('errorAncestorNoneNotAllowed', [getPackageVersionNumber(highestReleasedVersion)]);
+    }
+  }
+  if (!isPatch && !skipAncestorCheck) {
+    if (highestReleasedVersion) {
+      if (highestReleasedVersion.Id !== ancestorId) {
+        throw messages.createError('errorAncestorNotHighest', [
+          origSpecifiedAncestor,
+          getPackageVersionNumber(highestReleasedVersion),
+        ]);
+      }
+    } else {
+      // looks like the initial version:create - allow
+      ancestorId = '';
+    }
+  }
+  return ancestorId;
+};
+
+export const validateVersionNumber = (
+  versionNumberString: string,
+  supportedBuildNumberToken: string,
+  supportedBuildNumberToken2?: string
+): string => {
+  const versionNumber = VersionNumber.from(versionNumberString);
+  // build number can be a number or valid token
+  if (
+    Number.isNaN(parseInt(`${versionNumber.build}`, 10)) &&
+    versionNumber.build !== supportedBuildNumberToken &&
+    versionNumber.build !== supportedBuildNumberToken2
+  ) {
+    if (supportedBuildNumberToken2) {
+      throw messages.createError('errorInvalidBuildNumberForKeywords', [
+        versionNumberString,
+        supportedBuildNumberToken,
+        supportedBuildNumberToken2,
+      ]);
+    } else {
+      throw messages.createError('errorInvalidBuildNumber', [versionNumberString, supportedBuildNumberToken]);
+    }
+  }
+
+  return versionNumberString;
+};
+
+/**
+ * Sets default or override values for packageDescriptorJSON attribs
+ */
+const setPackageDescriptorJsonValues = (
+  packageDescriptorJson: PackageDescriptorJson,
+  options: PackageVersionCreateOptions,
+  logger: Logger
+): PackageDescriptorJson => {
+  const merged = {
+    ...packageDescriptorJson,
+    ...(options.versionname ? { versionName: options.versionname } : {}),
+    ...(options.versiondescription ? { versionDescription: options.versiondescription } : {}),
+    ...(options.versionnumber ? { versionNumber: options.versionnumber } : {}),
+    ...(options.releasenotesurl ? { releaseNotesUrl: options.releasenotesurl } : {}),
+    ...(options.postinstallurl ? { postInstallUrl: options.postinstallurl } : {}),
+    ...(options.postinstallscript ? { postInstallScript: options.postinstallscript } : {}),
+    ...(options.postinstallurl ? { postInstallUrl: options.postinstallurl } : {}),
+  };
+  if (merged.postInstallUrl && !SfdcUrl.isValidUrl(merged.postInstallUrl)) {
+    throw messages.createError('malformedUrl', ['postInstallUrl', merged.postInstallUrl]);
+  }
+
+  // default versionName to versionNumber if unset, stripping .NEXT if present
+  if (!merged.versionName) {
+    const versionNumber = merged.versionNumber;
+    merged.versionName =
+      versionNumber?.split(pkgUtils.VERSION_NUMBER_SEP)[3] === BuildNumberToken.NEXT_BUILD_NUMBER_TOKEN
+        ? versionNumber.substring(
+            0,
+            versionNumber.indexOf(pkgUtils.VERSION_NUMBER_SEP + BuildNumberToken.NEXT_BUILD_NUMBER_TOKEN)
+          )
+        : versionNumber;
+
+    logger.warn(messages.getMessage('defaultVersionName', [merged.versionName]));
+  }
+  return merged;
+};
+
+/**
+ * Cleans client-side-only attribute(s) from the packageDescriptorJSON so it can go to API
+ */
+const cleanPackageDescriptorJson = (packageDescriptorJson: PackageDescriptorJson): PackageDescriptorJson => {
+  // properties only used by the client side
+  const clientOnlyProps = [
+    'default',
+    'includeProfileUserLicenses',
+    'unpackagedMetadata',
+    'seedMetadata',
+    'branch',
+    'fullPath',
+    'name',
+    'scopeProfiles',
+  ];
+  return Object.fromEntries(Object.entries(packageDescriptorJson).filter(([key]) => !clientOnlyProps.includes(key)));
 };
