@@ -597,10 +597,10 @@
     semver "^7.5.4"
     ts-retry-promise "^0.7.1"
 
-"@salesforce/core@^6.1.0":
-  version "6.1.0"
-  resolved "https://registry.yarnpkg.com/@salesforce/core/-/core-6.1.0.tgz#8ed2775366d8b659efd27717bfb35fa0f223ba05"
-  integrity sha512-KyExbJAGnL87ExbiLkWGDGDGXXJSvANrdFsaEdSV3kTJNeCCcKw8GCtKlULMfNJieSB4VpfxNhKKVRht1SoMdg==
+"@salesforce/core@^6.1.0", "@salesforce/core@^6.1.1":
+  version "6.1.1"
+  resolved "https://registry.yarnpkg.com/@salesforce/core/-/core-6.1.1.tgz#ef55ca6a1f16304ebe3826c6974a30c489772f79"
+  integrity sha512-hmvgF6/y04i/lP4Qspg6tmmApdJ6QR2vs9PNsl08rUwwePvHtI0fzjqEFZEMOMYSyKdFrSZYY6U3CAO1CLyTKg==
   dependencies:
     "@salesforce/kit" "^3.0.15"
     "@salesforce/schemas" "^1.6.1"
