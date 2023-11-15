@@ -597,10 +597,34 @@
     semver "^7.5.4"
     ts-retry-promise "^0.7.1"
 
-"@salesforce/core@^6.1.0", "@salesforce/core@^6.1.1":
+"@salesforce/core@^6.1.0":
   version "6.1.1"
   resolved "https://registry.yarnpkg.com/@salesforce/core/-/core-6.1.1.tgz#ef55ca6a1f16304ebe3826c6974a30c489772f79"
   integrity sha512-hmvgF6/y04i/lP4Qspg6tmmApdJ6QR2vs9PNsl08rUwwePvHtI0fzjqEFZEMOMYSyKdFrSZYY6U3CAO1CLyTKg==
+  dependencies:
+    "@salesforce/kit" "^3.0.15"
+    "@salesforce/schemas" "^1.6.1"
+    "@salesforce/ts-types" "^2.0.9"
+    "@types/semver" "^7.5.4"
+    ajv "^8.12.0"
+    change-case "^4.1.2"
+    faye "^1.4.0"
+    form-data "^4.0.0"
+    js2xmlparser "^4.0.1"
+    jsforce "^2.0.0-beta.28"
+    jsonwebtoken "9.0.2"
+    jszip "3.10.1"
+    pino "^8.16.1"
+    pino-abstract-transport "^1.1.0"
+    pino-pretty "^10.2.3"
+    proper-lockfile "^4.1.2"
+    semver "^7.5.4"
+    ts-retry-promise "^0.7.1"
+
+"@salesforce/core@^6.1.2":
+  version "6.1.2"
+  resolved "https://registry.yarnpkg.com/@salesforce/core/-/core-6.1.2.tgz#604c0cd3e3858e2f51c37b1a0904825015a07765"
+  integrity sha512-h1sGWUfAMVtBvh+wXlSA+e2aJAJ/DnkUD+GLgRje6qUsgxKRNJcoKBCNZgjwAf+xAqJ5IprUZ+arTkU5ME86Mw==
   dependencies:
     "@salesforce/kit" "^3.0.15"
     "@salesforce/schemas" "^1.6.1"
