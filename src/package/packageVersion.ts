@@ -634,12 +634,16 @@ export class PackageVersion {
       }`;
       const build = versionResult.BuildNumber ? `-${versionResult.BuildNumber}` : '';
       const branch = versionResult.Branch ? `-${versionResult.Branch}` : '';
-      // set packageAliases entry '<package>@<major>.<minor>.<patch>-<build>-<branch>: <result.subscriberPackageVersionId>'
-      const packageAliases = this.project.getSfProjectJson().getContents().packageAliases ?? {};
-      if (results.SubscriberPackageVersionId) {
-        packageAliases[`${version}${build}${branch}`] = results.SubscriberPackageVersionId;
-      }
-      this.project.getSfProjectJson().getContents().packageAliases = packageAliases;
+      const originalPackageAliases = this.project.getSfProjectJson().get('packageAliases') ?? {};
+      const updatedPackageAliases = {
+        ...originalPackageAliases,
+        ...(results.SubscriberPackageVersionId
+          ? // set packageAliases entry '<package>@<major>.<minor>.<patch>-<build>-<branch>: <result.subscriberPackageVersionId>'
+            { [`${version}${build}${branch}`]: results.SubscriberPackageVersionId }
+          : {}),
+      };
+
+      this.project.getSfProjectJson().set('packageAliases', updatedPackageAliases);
       await this.project.getSfProjectJson().write();
     }
   }
