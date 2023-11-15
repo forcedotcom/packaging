@@ -601,6 +601,7 @@ describe('ancestry tests', () => {
     pkg.package = pkgName;
     pkg.versionNumber = sortedVersions[0].toString();
     pkg.versionName = 'v1';
+    // @ts-expect-error requires https://github.com/forcedotcom/sfdx-core/pull/989
     pjson.set('packageDirectories', [pkg]);
     aliases = Object.fromEntries([
       ...pvRecords.map((pv, index) => [

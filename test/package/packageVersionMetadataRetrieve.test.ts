@@ -107,14 +107,13 @@ describe('Package Version Retrieve', () => {
   beforeEach(async () => {
     $$.inProject(true);
     project = SfProject.getInstance();
-    await project.getSfProjectJson().write({
-      packageDirectories: [
-        {
-          path: 'force-app',
-          default: true,
-        },
-      ],
-    });
+    project.getSfProjectJson().set('packageDirectories', [
+      {
+        path: 'force-app',
+        default: true,
+      },
+    ]);
+    await project.getSfProjectJson().write();
     stubContext($$);
     await $$.stubAuths(testOrg);
     connection = await testOrg.getConnection();
@@ -167,6 +166,7 @@ describe('Package Version Retrieve', () => {
   afterEach(async () => {
     restoreContext($$);
     $$.restore();
+    project.getSfProjectJson().unsetAll(['namespace', 'packageAliases']);
     const pathToClean = path.join(project.getPath(), destinationFolder);
     if (fs.existsSync(pathToClean)) {
       await fs.promises.rm(pathToClean, { recursive: true });
@@ -190,15 +190,14 @@ describe('Package Version Retrieve', () => {
   });
 
   it('should not change the namespace in sfdx-project.json if it is already set', async () => {
-    await project.getSfProjectJson().write({
-      packageDirectories: [
-        {
-          path: 'force-app',
-          default: true,
-        },
-      ],
-      namespace: 'existingNS',
-    });
+    project.getSfProjectJson().set('packageDirectories', [
+      {
+        path: 'force-app',
+        default: true,
+      },
+    ]);
+    project.getSfProjectJson().set('namespace', 'existingNS');
+    await project.getSfProjectJson().write();
 
     const result = await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
     expect(result.converted).to.not.be.undefined;
