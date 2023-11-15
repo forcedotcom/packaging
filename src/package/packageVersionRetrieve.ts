@@ -201,8 +201,8 @@ async function attemptToUpdateProjectJson(
         );
 
         project.getSfProjectJson().addPackageAlias(alias, writtenId);
-        if (pkgData.ContainerOptions === 'Managed' && !project.getSfProjectJson().getContents().namespace) {
-          project.getSfProjectJson().getContents().namespace = pkgData.NamespacePrefix;
+        if (pkgData.ContainerOptions === 'Managed' && !project.getSfProjectJson().get('namespace')) {
+          project.getSfProjectJson().set('namespace', pkgData.NamespacePrefix);
         }
 
         await project.getSfProjectJson().write();
