@@ -173,7 +173,6 @@ describe('packageCreate', () => {
             versionName: 'ver 0.1',
             versionNumber: '0.1.0.NEXT',
           });
-          // @ts-expect-error requires https://github.com/forcedotcom/sfdx-core/pull/989
           proj.getSfProjectJson().set('packageDirectories', packageDirectories);
         });
         const packageDirEntry = createPackageDirEntry(project, {

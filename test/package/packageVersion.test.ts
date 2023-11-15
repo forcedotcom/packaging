@@ -31,7 +31,6 @@ describe('Package Version', () => {
         versionName: 'ver 0.1',
         versionNumber: '0.1.0.NEXT',
         default: false,
-        name: 'pkg',
       },
       {
         path: 'force-app',
