@@ -611,7 +611,7 @@ describe('ancestry tests', () => {
     ]) as { [alias: string]: string };
     pjson.set('packageAliases', aliases);
     pjson.set('namespace', pvRecords[0].Package2.NamespacePrefix);
-    pjson.writeSync();
+    await pjson.write();
   });
 
   after(async () => {
