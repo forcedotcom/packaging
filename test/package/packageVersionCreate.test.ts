@@ -14,6 +14,8 @@ import {
   PackageVersionCreate,
   packageXmlStringToPackageXmlJson,
   packageXmlJsonToXmlString,
+  validateAncestorId,
+  validateVersionNumber,
 } from '../../src/package/packageVersionCreate';
 import * as PVCStubs from '../../src/package/packageVersionCreate';
 import { PackagingSObjects } from '../../src/interfaces';
@@ -47,43 +49,45 @@ describe('Package Version Create', () => {
   beforeEach(async () => {
     $$.inProject(true);
     project = SfProject.getInstance();
-    await project.getSfProjectJson().write({
-      packageDirectories: [
-        {
-          path: 'pkg',
-          package: 'DEP',
-          versionName: 'ver 0.1',
-          versionNumber: '0.1.0.NEXT',
-          default: false,
-          name: 'pkg',
+    project.getSfProjectJson().set('packageDirectories', [
+      {
+        path: 'pkg',
+        package: 'DEP',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        default: false,
+      },
+      {
+        path: 'force-app',
+        package: 'TEST',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        default: true,
+        ancestorId: 'TEST2',
+        unpackagedMetadata: {
+          path: 'unpackaged',
         },
-        {
-          path: 'force-app',
-          package: 'TEST',
-          versionName: 'ver 0.1',
-          versionNumber: '0.1.0.NEXT',
-          default: true,
-          ancestorId: 'TEST2',
-          unpackagedMetadata: {
-            path: 'unpackaged',
-          },
-          seedMetadata: {
-            path: 'seed',
-          },
-          dependencies: [
-            {
-              package: 'DEP@0.1.0-1',
-            },
-          ],
+        seedMetadata: {
+          path: 'seed',
         },
-      ],
-      packageAliases: {
+        dependencies: [
+          {
+            package: 'DEP@0.1.0-1',
+          },
+        ],
+      },
+    ]);
+    project.getSfProjectJson().set(
+      'packageAliases',
+
+      {
         TEST: packageId,
         TEST2: '05i3i000000Gmj6XXX',
         DEP: '0Ho4J000000TNmPXXX',
         'DEP@0.1.0-1': '04t3i000002eyYXXXX',
-      },
-    });
+      }
+    );
+    await project.getSfProjectJson().write();
     await fs.promises.mkdir(path.join(project.getPath(), 'force-app'));
     stubContext($$);
     await $$.stubAuths(testOrg);
@@ -113,10 +117,10 @@ describe('Package Version Create', () => {
   });
 
   it('should throw an error when no package directories exist in the sfdx-project.json', async () => {
-    await project.getSfProjectJson().write({
-      packageDirectories: [],
-      packageAliases: {},
-    });
+    project.getSfProjectJson().set('packageDirectories', []);
+    project.getSfProjectJson().set('packageAliases', {});
+
+    await project.getSfProjectJson().write();
     const pvc = new PackageVersionCreate({ connection, project, packageId });
     try {
       await pvc.createPackageVersion();
@@ -362,7 +366,9 @@ describe('Package Version Create', () => {
       config.packageDirectories[1].dependencies[0].package = 'DEP';
       config.packageDirectories[1].dependencies[0].versionNumber = '0.1.0.1';
     }
-    await project.getSfProjectJson().write(config);
+
+    project.getSfProjectJson().set('packageDirectories', config.packageDirectories);
+    await project.getSfProjectJson().write();
 
     const pvc = new PackageVersionCreate({ connection, project, branch: 'main', packageId, skipancestorcheck: true });
     stubConvert();
@@ -406,7 +412,8 @@ describe('Package Version Create', () => {
       config.packageDirectories[1].dependencies[0].versionNumber = '0.1.0.1';
       config.packageDirectories[1].dependencies[0].branch = 'dev';
     }
-    await project.getSfProjectJson().write(config);
+    project.getSfProjectJson().set('packageDirectories', config.packageDirectories);
+    await project.getSfProjectJson().write();
 
     const pvc = new PackageVersionCreate({ connection, project, branch: 'main', packageId, skipancestorcheck: true });
     stubConvert();
@@ -450,7 +457,8 @@ describe('Package Version Create', () => {
       config.packageDirectories[1].dependencies[0].versionNumber = '0.1.0.1';
       config.packageDirectories[1].dependencies[0].branch = '';
     }
-    await project.getSfProjectJson().write(config);
+    project.getSfProjectJson().set('packageDirectories', config.packageDirectories);
+    await project.getSfProjectJson().write();
 
     const pvc = new PackageVersionCreate({ connection, project, branch: 'main', packageId, skipancestorcheck: true });
     stubConvert();
@@ -610,21 +618,22 @@ describe('Package Version Create', () => {
   });
 
   it('should validate options when package type = unlocked (ancestors)', async () => {
-    await project.getSfProjectJson().write({
-      packageDirectories: [
-        {
-          path: 'force-app',
-          package: 'TEST',
-          versionName: 'ver 0.1',
-          versionNumber: '0.1.0.NEXT',
-          default: true,
-          ancestorId: '123',
-        },
-      ],
-      packageAliases: {
-        TEST: '0Ho3i000000Gmj6XXX',
+    project.getSfProjectJson().set('packageDirectories', [
+      {
+        path: 'force-app',
+        package: 'TEST',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        default: true,
+        ancestorId: '123',
       },
+    ]);
+    project.getSfProjectJson().set('packageAliases', {
+      TEST: '0Ho3i000000Gmj6XXX',
     });
+
+    await project.getSfProjectJson().write();
+
     packageTypeQuery.restore();
     packageTypeQuery = $$.SANDBOX.stub(connection.tooling, 'query')
       .onFirstCall() // @ts-ignore
@@ -645,21 +654,21 @@ describe('Package Version Create', () => {
     }
 
     // check ancestorVersion
-    await project.getSfProjectJson().write({
-      packageDirectories: [
-        {
-          path: 'force-app',
-          package: 'TEST',
-          versionName: 'ver 0.1',
-          versionNumber: '0.1.0.NEXT',
-          default: true,
-          ancestorVersion: '123',
-        },
-      ],
-      packageAliases: {
-        TEST: '0Ho3i000000Gmj6XXX',
+    project.getSfProjectJson().set('packageDirectories', [
+      {
+        path: 'force-app',
+        package: 'TEST',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        default: true,
+        ancestorVersion: '123',
       },
+    ]);
+    project.getSfProjectJson().set('packageAliases', {
+      TEST: '0Ho3i000000Gmj6XXX',
     });
+    await project.getSfProjectJson().write();
+
     try {
       await pvc.createPackageVersion();
     } catch (e) {
@@ -699,52 +708,50 @@ describe('Package Version Create', () => {
   });
 
   it('should not package the profiles from unpackaged metadata dirs', async () => {
-    await project.getSfProjectJson().write({
-      packageDirectories: [
-        {
-          path: 'pkg',
-          package: 'dep',
-          versionName: 'ver 0.1',
-          versionNumber: '0.1.0.NEXT',
-          default: false,
-          name: 'pkg',
-          unpackagedMetadata: {
-            path: 'unpackaged-pkg',
-          },
-        },
-        {
-          path: 'force-app',
-          package: 'TEST',
-          versionName: 'ver 0.1',
-          versionNumber: '0.1.0.NEXT',
-          default: true,
-          ancestorId: 'TEST2',
-          unpackagedMetadata: {
-            path: 'unpackaged-force-app',
-          },
-          seedMetadata: {
-            path: 'seed',
-          },
-          dependencies: [
-            {
-              package: 'DEP@0.1.0-1',
-            },
-          ],
-        },
-        {
+    project.getSfProjectJson().set('packageDirectories', [
+      {
+        path: 'pkg',
+        package: 'dep',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        default: false,
+        unpackagedMetadata: {
           path: 'unpackaged-pkg',
         },
-        {
+      },
+      {
+        path: 'force-app',
+        package: 'TEST',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        default: true,
+        ancestorId: 'TEST2',
+        unpackagedMetadata: {
           path: 'unpackaged-force-app',
         },
-      ],
-      packageAliases: {
-        TEST: packageId,
-        TEST2: '05i3i000000Gmj6XXX',
-        DEP: '05i3i000000Gmj6XXX',
-        'DEP@0.1.0-1': '04t3i000002eyYXXXX',
+        seedMetadata: {
+          path: 'seed',
+        },
+        dependencies: [
+          {
+            package: 'DEP@0.1.0-1',
+          },
+        ],
       },
+      {
+        path: 'unpackaged-pkg',
+      },
+      {
+        path: 'unpackaged-force-app',
+      },
+    ]);
+    project.getSfProjectJson().set('packageAliases', {
+      TEST: packageId,
+      TEST2: '05i3i000000Gmj6XXX',
+      DEP: '05i3i000000Gmj6XXX',
+      'DEP@0.1.0-1': '04t3i000002eyYXXXX',
     });
+    await project.getSfProjectJson().write();
     const pvc = new PackageVersionCreate({ connection, project, codecoverage: true, packageId });
     const profileSpyGenerate = $$.SANDBOX.spy(PackageProfileApi.prototype, 'generateProfiles');
     const profileSpyFilter = $$.SANDBOX.spy(PackageProfileApi.prototype, 'filterAndGenerateProfilesForManifest');
@@ -776,53 +783,51 @@ describe('Package Version Create', () => {
   });
 
   it('should only package profiles in the package dir when scopeProfiles = true', async () => {
-    await project.getSfProjectJson().write({
-      packageDirectories: [
-        {
-          path: 'pkg',
-          package: 'dep',
-          versionName: 'ver 0.1',
-          versionNumber: '0.1.0.NEXT',
-          default: false,
-          name: 'pkg',
-          unpackagedMetadata: {
-            path: 'unpackaged-pkg',
-          },
-        },
-        {
-          path: 'force-app',
-          package: 'TEST',
-          versionName: 'ver 0.1',
-          versionNumber: '0.1.0.NEXT',
-          default: true,
-          ancestorId: 'TEST2',
-          scopeProfiles: true,
-          unpackagedMetadata: {
-            path: 'unpackaged-force-app',
-          },
-          seedMetadata: {
-            path: 'seed',
-          },
-          dependencies: [
-            {
-              package: 'DEP@0.1.0-1',
-            },
-          ],
-        },
-        {
+    project.getSfProjectJson().set('packageDirectories', [
+      {
+        path: 'pkg',
+        package: 'dep',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        default: false,
+        unpackagedMetadata: {
           path: 'unpackaged-pkg',
         },
-        {
+      },
+      {
+        path: 'force-app',
+        package: 'TEST',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        default: true,
+        ancestorId: 'TEST2',
+        scopeProfiles: true,
+        unpackagedMetadata: {
           path: 'unpackaged-force-app',
         },
-      ],
-      packageAliases: {
-        TEST: packageId,
-        TEST2: '05i3i000000Gmj6XXX',
-        DEP: '05i3i000000Gmj6XXX',
-        'DEP@0.1.0-1': '04t3i000002eyYXXXX',
+        seedMetadata: {
+          path: 'seed',
+        },
+        dependencies: [
+          {
+            package: 'DEP@0.1.0-1',
+          },
+        ],
       },
+      {
+        path: 'unpackaged-pkg',
+      },
+      {
+        path: 'unpackaged-force-app',
+      },
+    ]);
+    project.getSfProjectJson().set('packageAliases', {
+      TEST: packageId,
+      TEST2: '05i3i000000Gmj6XXX',
+      DEP: '05i3i000000Gmj6XXX',
+      'DEP@0.1.0-1': '04t3i000002eyYXXXX',
     });
+    await project.getSfProjectJson().write();
     const loggerSpy = $$.SANDBOX.spy(Logger.prototype, 'debug');
     const pvc = new PackageVersionCreate({ connection, project, packageId });
     const profileSpyGenerate = $$.SANDBOX.spy(PackageProfileApi.prototype, 'generateProfiles');
@@ -875,10 +880,6 @@ describe('Package Version Create', () => {
   });
 
   describe('validateAncestorId', () => {
-    let pvc: PackageVersionCreate;
-    beforeEach(() => {
-      pvc = new PackageVersionCreate({ connection, project, packageId });
-    });
     it('should throw if the explicitUseNoAncestor is true and highestReleasedVersion is not undefined', () => {
       const ancestorId = 'ancestorId';
       const highestReleasedVersion = {
@@ -892,7 +893,7 @@ describe('Package Version Create', () => {
       const skipAncestorCheck = false;
       const origSpecifiedAncestor = 'orgAncestorId';
       expect(() =>
-        pvc['validateAncestorId'](
+        validateAncestorId(
           ancestorId,
           highestReleasedVersion,
           explicitUseNoAncestor,
@@ -915,7 +916,7 @@ describe('Package Version Create', () => {
       const skipAncestorCheck = false;
       const origSpecifiedAncestor = 'orgAncestorId';
       expect(() =>
-        pvc['validateAncestorId'](
+        validateAncestorId(
           ancestorId,
           highestReleasedVersion,
           explicitUseNoAncestor,
@@ -934,7 +935,7 @@ describe('Package Version Create', () => {
       const isPatch = false;
       const skipAncestorCheck = false;
       const origSpecifiedAncestor = 'orgAncestorId';
-      const result = pvc['validateAncestorId'](
+      const result = validateAncestorId(
         ancestorId,
         highestReleasedVersion,
         explicitUseNoAncestor,
@@ -951,7 +952,7 @@ describe('Package Version Create', () => {
       const isPatch = true;
       const skipAncestorCheck = true;
       const origSpecifiedAncestor = 'orgAncestorId';
-      const result = pvc['validateAncestorId'](
+      const result = validateAncestorId(
         ancestorId,
         highestReleasedVersion,
         explicitUseNoAncestor,
@@ -963,17 +964,13 @@ describe('Package Version Create', () => {
     });
   });
   describe('validateVersionNumber', () => {
-    let pvc: PackageVersionCreate;
-    beforeEach(() => {
-      pvc = new PackageVersionCreate({ connection, project, packageId });
-    });
     it('should return version number as valid', () => {
-      const versionNumber = pvc['validateVersionNumber']('1.2.3.NEXT', 'NEXT', 'LATEST');
+      const versionNumber = validateVersionNumber('1.2.3.NEXT', 'NEXT', 'LATEST');
       expect(versionNumber).to.be.equal('1.2.3.NEXT');
     });
     it('should throw error if version number is invalid', () => {
       expect(() => {
-        pvc['validateVersionNumber']('1.2.3.NEXT', 'foo', 'bar');
+        validateVersionNumber('1.2.3.NEXT', 'foo', 'bar');
       }).to.throw(
         Error,
         /The provided VersionNumber '1.2.3.NEXT' is invalid. Provide an integer value or use the keyword/
@@ -981,7 +978,7 @@ describe('Package Version Create', () => {
     });
     it('should throw error if build2 is undefined', () => {
       expect(() => {
-        pvc['validateVersionNumber']('1.2.3.NEXT', 'foo', undefined);
+        validateVersionNumber('1.2.3.NEXT', 'foo', undefined);
       }).to.throw(
         Error,
         /The provided VersionNumber '1.2.3.NEXT' is invalid. Provide an integer value or use the keyword/

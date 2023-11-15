@@ -24,39 +24,38 @@ describe('Package Version', () => {
   beforeEach(async () => {
     $$.inProject(true);
     project = SfProject.getInstance();
-    await project.getSfProjectJson().write({
-      packageDirectories: [
-        {
-          path: 'pkg',
-          package: 'dep',
-          versionName: 'ver 0.1',
-          versionNumber: '0.1.0.NEXT',
-          default: false,
-          name: 'pkg',
-        },
-        {
-          path: 'force-app',
-          package: 'TEST',
-          versionName: 'ver 0.1',
-          versionNumber: '0.1.0.NEXT',
-          default: true,
-          ancestorId: 'TEST2',
-          unpackagedMetadata: {
-            path: 'unpackaged',
-          },
-          dependencies: [
-            {
-              package: 'DEP@0.1.0-1',
-            },
-          ],
-        },
-      ],
-      packageAliases: {
-        dupPkg1: packageId,
-        dupPkg2: packageId,
-        uniquePkg: uniquePackageId,
+    project.getSfProjectJson().set('packageDirectories', [
+      {
+        path: 'pkg',
+        package: 'dep',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        default: false,
       },
+      {
+        path: 'force-app',
+        package: 'TEST',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        default: true,
+        ancestorId: 'TEST2',
+        unpackagedMetadata: {
+          path: 'unpackaged',
+        },
+        dependencies: [
+          {
+            package: 'DEP@0.1.0-1',
+          },
+        ],
+      },
+    ]);
+    project.getSfProjectJson().set('packageAliases', {
+      dupPkg1: packageId,
+      dupPkg2: packageId,
+      uniquePkg: uniquePackageId,
     });
+    await project.getSfProjectJson().write();
+
     await fs.promises.mkdir(path.join(project.getPath(), 'force-app'));
     stubContext($$);
     await $$.stubAuths(testOrg);
