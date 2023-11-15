@@ -1,3 +1,34 @@
+# [3.0.0](https://github.com/forcedotcom/packaging/compare/2.4.21...3.0.0) (2023-11-15)
+
+
+* feat!: use core v6 ([06192ff](https://github.com/forcedotcom/packaging/commit/06192ffb2a7052a3bbe2bd33661335fd8127aadc))
+
+
+### BREAKING CHANGES
+
+* use core v6
+* require node 18+
+
+* chore: bump SDR
+
+* fix: safe mod of the namespace in project file
+
+* test: adjustments for core6 breaking changes
+
+* chore: core bump
+
+* fix: crdt-safe update for packageAliases
+
+* refactor: use corrected types in sfdx-core
+
+* chore: core bump
+
+* refactor: more immutable methods, less eslint warnings
+
+* test: use async write for project updates
+
+
+
 ## [2.4.21](https://github.com/forcedotcom/packaging/compare/2.4.20...2.4.21) (2023-11-11)
 
 
