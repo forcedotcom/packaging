@@ -1,3 +1,12 @@
+## [3.0.2](https://github.com/forcedotcom/packaging/compare/3.0.1...3.0.2) (2023-11-25)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/core from 6.1.3 to 6.2.0 ([2db1a8f](https://github.com/forcedotcom/packaging/commit/2db1a8fd3071b87465926b2629d20678dd9ae778))
+
+
+
 ## [3.0.1](https://github.com/forcedotcom/packaging/compare/3.0.0...3.0.1) (2023-11-18)
 
 
