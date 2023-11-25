@@ -63,7 +63,7 @@
     "eslint-plugin-sf-plugin": "^1.16.15",
     "shelljs": "0.8.5",
     "ts-node": "^10.9.1",
-    "typescript": "^5.2.2"
+    "typescript": "^5.3.2"
   },
   "publishConfig": {
     "access": "public"
