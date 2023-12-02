@@ -525,9 +525,9 @@
     fastq "^1.6.0"
 
 "@oclif/core@^3":
-  version "3.13.0"
-  resolved "https://registry.yarnpkg.com/@oclif/core/-/core-3.13.0.tgz#17797cd18ae723d313b1edd19f7ed68b5def0649"
-  integrity sha512-G4zicsAH3k4uFHa5yNVBvbtDUK+6lee26w75yQX2ElUJc5JvECMdOEea8PIz0WnHSNE3aXuj5IXf936EUy38/Q==
+  version "3.13.1"
+  resolved "https://registry.yarnpkg.com/@oclif/core/-/core-3.13.1.tgz#dbd5e604ec78a716a33bfa6fec6c988a507b7f38"
+  integrity sha512-bpnF6BL+j7D0k0T+dZ4g7LwcZzctCoKjIYm8zcSNgrItS2pgIlvsRf8SdkGNu6djzRD7vzM657ZO9fWU6goz0g==
   dependencies:
     ansi-escapes "^4.3.2"
     ansi-styles "^4.3.0"
