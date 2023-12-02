@@ -1,3 +1,12 @@
+## [3.0.8](https://github.com/forcedotcom/packaging/compare/3.0.7...3.0.8) (2023-12-02)
+
+
+### Bug Fixes
+
+* env var to sf ([c3655b4](https://github.com/forcedotcom/packaging/commit/c3655b4bfa6e0fb2f471097cef8eb80a83224d8c))
+
+
+
 ## [3.0.7](https://github.com/forcedotcom/packaging/compare/3.0.6...3.0.7) (2023-12-02)
 
 
