@@ -309,7 +309,7 @@ export class PackageVersionCreate {
    * @private
    */
   private async createPackageVersionCreateRequestFromOptions(): Promise<PackageVersionCreateRequest> {
-    const preserveFiles = !!(this.options.preserve ?? env.getBoolean('SFDX_PACKAGE2_VERSION_CREATE_PRESERVE'));
+    const preserveFiles = !!(this.options.preserve ?? env.getBoolean('SF_PACKAGE2_VERSION_CREATE_PRESERVE'));
     const uniqueHash = uniqid({ template: `${this.packageId}-%s` });
     const packageVersTmpRoot = path.join(os.tmpdir(), `${uniqueHash}`);
     const packageVersMetadataFolder = path.join(packageVersTmpRoot, 'md-files');
