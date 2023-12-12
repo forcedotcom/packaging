@@ -93,6 +93,8 @@ describe('Integration tests for @salesforce/packaging library', () => {
     devHubOrg = await Org.create({ aliasOrUsername: session.hubOrg.username });
     scratchOrg = await Org.create({ aliasOrUsername: SUB_ORG_ALIAS });
     project = await SfProject.resolve();
+    execCmd(`config:set org-max-query-limit 20000
+`);
   });
 
   after(async () => {
