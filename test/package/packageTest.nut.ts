@@ -262,7 +262,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
     });
 
     it('package version should be in results of static Package#listVersions', async () => {
-      const pkgVersions = await Package.listVersions(devHubOrg.getConnection(), project);
+      const pkgVersions = await Package.listVersions(devHubOrg.getConnection(), project, { createdLastDays: 5 });
       expect(pkgVersions.some((pvlr) => pvlr.SubscriberPackageVersionId === subscriberPkgVersionId)).to.be.true;
     });
 
