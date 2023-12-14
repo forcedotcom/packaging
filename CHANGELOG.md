@@ -1,3 +1,13 @@
+## [3.0.10](https://github.com/forcedotcom/packaging/compare/3.0.9...3.0.10) (2023-12-14)
+
+
+### Bug Fixes
+
+* add missing dep ([2321f37](https://github.com/forcedotcom/packaging/commit/2321f37f40402da8fcb6ac241b615c637786d68e))
+* undeclared dep => module not found ([2b3a70f](https://github.com/forcedotcom/packaging/commit/2b3a70f1e37e2f958e38f64de723c50e0d5a8ed9))
+
+
+
 ## [3.0.9](https://github.com/forcedotcom/packaging/compare/3.0.8...3.0.9) (2023-12-03)
 
 
