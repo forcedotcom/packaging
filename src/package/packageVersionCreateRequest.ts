@@ -20,7 +20,7 @@ Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
 
 const QUERY =
-  'SELECT Id, Status, Package2Id, Package2VersionId, Package2Version.SubscriberPackageVersionId, Tag, Branch, ' +
+  'SELECT Id, Status, Package2Id, Package2.Name, Package2VersionId, Package2Version.SubscriberPackageVersionId, Tag, Branch, ' +
   'CreatedDate, Package2Version.HasMetadataRemoved, CreatedById, IsConversionRequest, Package2Version.ConvertedFromVersionId ' +
   'FROM Package2VersionCreateRequest ' +
   '%s' + // WHERE, if applicable
@@ -68,12 +68,15 @@ async function query(query: string, connection: Connection): Promise<PackageVers
         PackagingSObjects.Package2Version,
         'HasMetadataRemoved' | 'SubscriberPackageVersionId' | 'ConvertedFromVersionId'
       >;
+    } & {
+      Package2: Pick<PackagingSObjects.Package2, 'Name'>;
     };
   const queryResult = await connection.autoFetchQuery<QueryRecord>(query, { tooling: true });
   return (queryResult.records ? queryResult.records : []).map((record) => ({
     Id: record.Id,
     Status: record.Status,
     Package2Id: record.Package2Id,
+    Package2Name: record.Package2 != null ? record.Package2.Name : null,
     Package2VersionId: record.Package2VersionId,
     SubscriberPackageVersionId:
       record.Package2Version != null ? record.Package2Version.SubscriberPackageVersionId : null,
