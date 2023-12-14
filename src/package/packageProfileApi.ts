@@ -6,7 +6,7 @@
  */
 import * as path from 'node:path';
 import * as fs from 'node:fs';
-import * as glob from 'glob';
+import * as globby from 'globby';
 import { Logger, Messages, SfProject } from '@salesforce/core';
 import { AsyncCreatable } from '@salesforce/kit';
 import { PackageXml, ProfileApiOptions } from '../interfaces';
@@ -114,13 +114,11 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
   // Look for profiles in all package directories
   private findAllProfiles(excludedDirectories: string[] = []): string[] {
     const pkgDirs = this.project.getUniquePackageDirectories().map((pDir) => pDir.fullPath);
-    return pkgDirs
-      .map((pDir) =>
-        glob.sync(path.join(pDir, '**', '*.profile-meta.xml'), {
-          ignore: excludedDirectories.map((dir) => `**/${dir}/**`),
-        })
-      )
-      .flat();
+    return pkgDirs.flatMap((pDir) =>
+      globby.sync(path.posix.join(path.posix.normalize(pDir), '**', '*.profile-meta.xml'), {
+        ignore: excludedDirectories.map((dir) => `**/${dir}/**`),
+      })
+    );
   }
 
   private getProfilesWithNamesAndPaths(excludedDirectories: string[]): Array<Required<ProfilePathWithName>> {
