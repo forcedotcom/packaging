@@ -74,6 +74,7 @@ export type PackageVersionCreateRequestResult = {
   Error: any[];
   CreatedDate: string;
   HasMetadataRemoved: boolean | null;
+  HasPassedCodeCoverageCheck: boolean | null;
   CreatedBy: string;
   ConvertedFromVersionId: string | null;
 };
