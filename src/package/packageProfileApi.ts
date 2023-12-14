@@ -116,7 +116,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
     const pkgDirs = this.project.getUniquePackageDirectories().map((pDir) => pDir.fullPath);
     return pkgDirs.flatMap((pDir) =>
       globby.sync(path.posix.join(path.posix.normalize(pDir), '**', '*.profile-meta.xml'), {
-        ignore: excludedDirectories.map((dir) => `**/${dir}/**`),
+        ignore: excludedDirectories.map((dir) => `**/${path.posix.normalize(dir)}/**`),
       })
     );
   }
