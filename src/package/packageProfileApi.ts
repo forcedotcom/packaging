@@ -114,12 +114,15 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
 
   // Look for profiles in all package directories
   private findAllProfiles(excludedDirectories: string[] = []): string[] {
-    const ignore = excludedDirectories.map((dir) => path.join('**', posixPath(dir), '**'));
+    const ignore = excludedDirectories.map((dir) => `**/${dir.split(path.sep).join(path.posix.sep)}/**`);
     const patterns = this.project
       .getUniquePackageDirectories()
-      .map((pDir) => posixPath(pDir.fullPath))
-      .map((fullDir) => path.join(fullDir, '**', '*.profile-meta.xml'));
-
+      .map((pDir) => pDir.fullPath)
+      .map((fullDir) =>
+        os.type() === 'Windows_NT'
+          ? path.posix.join(...fullDir.split(path.sep), '**', '*.profile-meta.xml')
+          : path.join(fullDir, '**', '*.profile-meta.xml')
+      );
     return globby.sync(patterns, { ignore });
   }
 
@@ -147,6 +150,3 @@ const getRemovedSettings = (originalProfile: CorrectedProfile, adjustedProfile: 
   const adjustedProfileSettings = new Set(Object.keys(adjustedProfile));
   return originalProfileSettings.filter((setting) => !adjustedProfileSettings.has(setting));
 };
-
-const posixPath = (inputPath: string): string =>
-  os.type() === 'Windows_NT' ? inputPath.split(path.sep).join(path.posix.sep) : inputPath;
