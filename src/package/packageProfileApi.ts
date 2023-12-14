@@ -5,6 +5,7 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import * as path from 'node:path';
+import * as os from 'node:os';
 import * as fs from 'node:fs';
 import * as globby from 'globby';
 import { Logger, Messages, SfProject } from '@salesforce/core';
@@ -113,12 +114,16 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
 
   // Look for profiles in all package directories
   private findAllProfiles(excludedDirectories: string[] = []): string[] {
-    const pkgDirs = this.project.getUniquePackageDirectories().map((pDir) => pDir.fullPath);
-    return pkgDirs.flatMap((pDir) =>
-      globby.sync(path.posix.join(path.posix.normalize(pDir), '**', '*.profile-meta.xml'), {
-        ignore: excludedDirectories.map((dir) => `**/${path.posix.normalize(dir)}/**`),
-      })
-    );
+    const ignore = excludedDirectories.map((dir) => `**/${dir.split(path.sep).join(path.posix.sep)}/**`);
+    const patterns = this.project
+      .getUniquePackageDirectories()
+      .map((pDir) => pDir.fullPath)
+      .map((fullDir) =>
+        os.type() === 'Windows_NT'
+          ? path.posix.join(...fullDir.split(path.sep), '**', '*.profile-meta.xml')
+          : path.join(fullDir, '**', '*.profile-meta.xml')
+      );
+    return globby.sync(patterns, { ignore });
   }
 
   private getProfilesWithNamesAndPaths(excludedDirectories: string[]): Array<Required<ProfilePathWithName>> {
