@@ -6,7 +6,7 @@
  */
 import * as path from 'node:path';
 import * as fs from 'node:fs';
-import * as glob from 'glob';
+import * as globby from 'globby';
 import { Logger, Messages, SfProject } from '@salesforce/core';
 import { AsyncCreatable } from '@salesforce/kit';
 import { PackageXml, ProfileApiOptions } from '../interfaces';
@@ -116,7 +116,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
     const pkgDirs = this.project.getUniquePackageDirectories().map((pDir) => pDir.fullPath);
     return pkgDirs
       .map((pDir) =>
-        glob.sync(path.join(pDir, '**', '*.profile-meta.xml'), {
+        globby.sync(path.join(pDir, '**', '*.profile-meta.xml'), {
           ignore: excludedDirectories.map((dir) => `**/${dir}/**`),
         })
       )
