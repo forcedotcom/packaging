@@ -28,7 +28,7 @@ import {
 } from '@salesforce/source-deploy-retrieve';
 import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import { PackageDirDependency } from '@salesforce/core/lib/sfProject';
-import { cloneJson, ensureArray, env } from '@salesforce/kit';
+import { ensureArray, env } from '@salesforce/kit';
 import { XMLParser, XMLBuilder } from 'fast-xml-parser';
 import { isString } from '@salesforce/ts-types';
 import * as pkgUtils from '../utils/packageUtils';
@@ -332,7 +332,7 @@ export class PackageVersionCreate {
 
     await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
     const settingsGenerator = new SettingsGenerator({ asDirectory: true });
-    let packageDescriptorJson = cloneJson(this.packageObject) as PackageDescriptorJson;
+    let packageDescriptorJson = structuredClone(this.packageObject) as PackageDescriptorJson;
     const apvLanguage = packageDescriptorJson.language;
 
     // Copy all the metadata from the workspace to a tmp folder
@@ -345,7 +345,7 @@ export class PackageVersionCreate {
     }
 
     if (packageDescriptorJson.language) {
-      // the cloneJson() call above added the packageDir's language to the descriptor;
+      // the structuredClone() call above added the packageDir's language to the descriptor;
       // remove that from the descriptor here; it will be set correctly from the definitionFile values below
       delete packageDescriptorJson.language;
     }
