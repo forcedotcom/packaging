@@ -478,6 +478,15 @@ export class SubscriberPackageVersion {
   }
 
   /**
+   * Return dependencies for the SubscriberPackageVersion.
+   *
+   * @returns {Dependencies} The dependencies.
+   */
+  public async getDependencies(): Promise<PackagingSObjects.SubscriberPackageDependencies> {
+    return this.getField<SPV['Dependencies']>('Dependencies');
+  }
+
+  /**
    * Return a field value from the SubscriberPackageVersion SObject using the field name.
    *
    * @param field
