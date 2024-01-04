@@ -1,3 +1,12 @@
+# [3.1.0](https://github.com/forcedotcom/packaging/compare/3.0.15...3.1.0) (2024-01-04)
+
+
+### Features
+
+* add dependencies getter ([e055890](https://github.com/forcedotcom/packaging/commit/e05589088b76e82c48cd960dbec8d73e5a43806f))
+
+
+
 ## [3.0.15](https://github.com/forcedotcom/packaging/compare/3.0.14...3.0.15) (2023-12-30)
 
 
