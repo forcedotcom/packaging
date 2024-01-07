@@ -57,7 +57,7 @@
   },
   "devDependencies": {
     "@salesforce/cli-plugins-testkit": "^4.4.12",
-    "@salesforce/dev-scripts": "^8.1.2",
+    "@salesforce/dev-scripts": "^8.2.0",
     "@salesforce/ts-sinon": "^1.4.19",
     "@types/globby": "^9.1.0",
     "@types/jszip": "^3.4.1",
@@ -142,7 +142,7 @@
       "output": []
     },
     "link-check": {
-      "command": "node -e \"process.exit(process.env.CI ? 0 : 1)\" || linkinator \"**/*.md\" --skip \"CHANGELOG.md|node_modules|test/|confluence.internal.salesforce.com|%s\" --markdown --retry --directory-listing --verbosity error",
+      "command": "node -e \"process.exit(process.env.CI ? 0 : 1)\" || linkinator \"**/*.md\" --skip \"CHANGELOG.md|node_modules|test/|confluence.internal.salesforce.com|my.salesforce.com|%s\" --markdown --retry --directory-listing --verbosity error",
       "files": [
         "./*.md",
         "./!(CHANGELOG).md",
