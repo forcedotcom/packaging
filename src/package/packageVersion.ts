@@ -5,7 +5,7 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { Connection, Lifecycle, Messages, PollingClient, SfProject, StatusResult } from '@salesforce/core';
+import { Connection, Lifecycle, Messages, PollingClient, SfError, SfProject, StatusResult } from '@salesforce/core';
 import { Duration, env } from '@salesforce/kit';
 import { Optional } from '@salesforce/ts-types';
 import {
@@ -150,8 +150,9 @@ export class PackageVersion {
 
     if (createResult.Id) {
       return PackageVersion.pollCreateStatus(createResult.Id, options.connection, options.project, polling).catch(
-        (err: Error) => {
+        (err: SfError) => {
           if (err.name === 'PollingClientTimeout') {
+            err.setData({ VersionCreateRequestId: createResult.Id });
             err.message += ` Run 'sf package version create report -i ${createResult.Id}' to check the status.`;
           }
           // TODO
