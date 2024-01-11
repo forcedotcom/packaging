@@ -151,6 +151,9 @@ export class PackageVersion {
     if (createResult.Id) {
       return PackageVersion.pollCreateStatus(createResult.Id, options.connection, options.project, polling).catch(
         (err: Error) => {
+          if (err.name === 'PollingClientTimeout') {
+            err.message += ` Run 'sf package version create report -i ${createResult.Id}' to check the status.`;
+          }
           // TODO
           // until package2 is GA, wrap perm-based errors w/ 'contact sfdc' action (REMOVE once package2 is GA'd)
           throw applyErrorAction(massageErrorMessage(err));
