@@ -65,6 +65,7 @@ export type PackageVersionCreateRequestResult = {
   Id: string;
   Status: Package2VersionStatus;
   Package2Id: string;
+  Package2Name: string | null;
   Package2VersionId: string;
   SubscriberPackageVersionId: string | null;
   Tag: string;
@@ -73,6 +74,7 @@ export type PackageVersionCreateRequestResult = {
   Error: any[];
   CreatedDate: string;
   HasMetadataRemoved: boolean | null;
+  HasPassedCodeCoverageCheck: boolean | null;
   CreatedBy: string;
   ConvertedFromVersionId: string | null;
 };
