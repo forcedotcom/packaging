@@ -20,7 +20,7 @@ Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
 
 const QUERY =
-  'SELECT Id, Status, Package2Id, Package2VersionId, Package2Version.SubscriberPackageVersionId, Tag, Branch, ' +
+  'SELECT Id, Status, Package2Id, Package2.Name, Package2VersionId, Package2Version.SubscriberPackageVersionId, Package2Version.HasPassedCodeCoverageCheck, Tag, Branch, ' +
   'CreatedDate, Package2Version.HasMetadataRemoved, CreatedById, IsConversionRequest, Package2Version.ConvertedFromVersionId ' +
   'FROM Package2VersionCreateRequest ' +
   '%s' + // WHERE, if applicable
@@ -66,14 +66,17 @@ async function query(query: string, connection: Connection): Promise<PackageVers
     Schema & {
       Package2Version: Pick<
         PackagingSObjects.Package2Version,
-        'HasMetadataRemoved' | 'SubscriberPackageVersionId' | 'ConvertedFromVersionId'
+        'HasMetadataRemoved' | 'SubscriberPackageVersionId' | 'ConvertedFromVersionId' | 'HasPassedCodeCoverageCheck'
       >;
+    } & {
+      Package2: Pick<PackagingSObjects.Package2, 'Name'>;
     };
   const queryResult = await connection.autoFetchQuery<QueryRecord>(query, { tooling: true });
   return (queryResult.records ? queryResult.records : []).map((record) => ({
     Id: record.Id,
     Status: record.Status,
     Package2Id: record.Package2Id,
+    Package2Name: record.Package2 != null ? record.Package2.Name : null,
     Package2VersionId: record.Package2VersionId,
     SubscriberPackageVersionId:
       record.Package2Version != null ? record.Package2Version.SubscriberPackageVersionId : null,
@@ -82,6 +85,8 @@ async function query(query: string, connection: Connection): Promise<PackageVers
     Error: [],
     CreatedDate: formatDate(new Date(record.CreatedDate)),
     HasMetadataRemoved: record.Package2Version != null ? record.Package2Version.HasMetadataRemoved : null,
+    HasPassedCodeCoverageCheck:
+      record.Package2Version != null ? record.Package2Version.HasPassedCodeCoverageCheck : null,
     CreatedBy: record.CreatedById,
     ConvertedFromVersionId: convertedFromVersionMessage(record.Status, record.Package2Version?.ConvertedFromVersionId),
   }));
