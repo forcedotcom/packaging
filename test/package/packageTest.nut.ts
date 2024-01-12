@@ -36,6 +36,7 @@ const VERSION_CREATE_RESPONSE_KEYS = [
   'Id',
   'Status',
   'Package2Id',
+  'Package2Name',
   'Package2VersionId',
   'SubscriberPackageVersionId',
   'Tag',
@@ -43,6 +44,7 @@ const VERSION_CREATE_RESPONSE_KEYS = [
   'Error',
   'CreatedDate',
   'HasMetadataRemoved',
+  'HasPassedCodeCoverageCheck',
   'CreatedBy',
   'ConvertedFromVersionId',
 ];
@@ -346,20 +348,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
       result.map((res) => {
         // we should've filtered to only successful package versions1
         expect(res.Status).to.equal('Success');
-        expect(res).to.have.all.keys(
-          'Id',
-          'Status',
-          'Package2Id',
-          'Package2VersionId',
-          'SubscriberPackageVersionId',
-          'Tag',
-          'Branch',
-          'Error',
-          'CreatedDate',
-          'HasMetadataRemoved',
-          'CreatedBy',
-          'ConvertedFromVersionId'
-        );
+        expect(res).to.have.all.keys(VERSION_CREATE_RESPONSE_KEYS);
         expect(res.Id.startsWith('08c')).to.be.true;
         expect(res.Package2Id.startsWith('0Ho')).to.be.true;
         expect(res.Package2VersionId.startsWith('05i')).to.be.true;
@@ -372,20 +361,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
         createdlastdays: 3,
       });
       expect(result).to.have.length.at.least(1);
-      expect(result[0]).to.have.all.keys(
-        'Id',
-        'Status',
-        'Package2Id',
-        'Package2VersionId',
-        'SubscriberPackageVersionId',
-        'Tag',
-        'Branch',
-        'Error',
-        'CreatedDate',
-        'HasMetadataRemoved',
-        'CreatedBy',
-        'ConvertedFromVersionId'
-      );
+      expect(result[0]).to.have.all.keys(VERSION_CREATE_RESPONSE_KEYS);
       const createdDate = new Date(result[0].CreatedDate);
       const currentDate = new Date();
       expect(currentDate > createdDate).to.be.true;
