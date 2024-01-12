@@ -1,3 +1,13 @@
+# [3.2.0](https://github.com/forcedotcom/packaging/compare/3.1.4...3.2.0) (2024-01-12)
+
+
+### Features
+
+* add code coverage result to package version output ([c28e75f](https://github.com/forcedotcom/packaging/commit/c28e75ff219718c761714333f8019b6108b90376))
+* set package2name in lifecycle hook results ([62f3b10](https://github.com/forcedotcom/packaging/commit/62f3b10d8fc860801662746071bfe139cd80c6b1))
+
+
+
 ## [3.1.4](https://github.com/forcedotcom/packaging/compare/3.1.3...3.1.4) (2024-01-12)
 
 
