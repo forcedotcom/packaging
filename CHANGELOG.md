@@ -1,3 +1,13 @@
+## [3.1.4](https://github.com/forcedotcom/packaging/compare/3.1.3...3.1.4) (2024-01-12)
+
+
+### Bug Fixes
+
+* add id on version create timeout ([6abaa79](https://github.com/forcedotcom/packaging/commit/6abaa79d0a9bb744ec0a3675a4e02dbee0f78600))
+* add request id to error data ([abd11d1](https://github.com/forcedotcom/packaging/commit/abd11d1460937e57269f9c5c9c4fbbc0334d55de))
+
+
+
 ## [3.1.3](https://github.com/forcedotcom/packaging/compare/3.1.2...3.1.3) (2024-01-06)
 
 
