@@ -8,9 +8,10 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { expect } from 'chai';
-import { Connection, SfProject } from '@salesforce/core';
+import { Connection, SfError, SfProject } from '@salesforce/core';
 
 import { PackageVersion } from '../../src/package';
+import { PackageVersionCreate } from '../../src/package/packageVersionCreate';
 
 describe('Package Version', () => {
   const $$ = instantiateContext();
@@ -18,8 +19,10 @@ describe('Package Version', () => {
   const packageId = '0Ho3i000000Gmj6XXX';
   const uniquePackageId = '0Ho3i000000Gmj7XXX';
   const idOrAlias = '04t4p000001ztuFAAQ';
+  const versionCreateRequestId = '08c5d00000blah';
   let connection: Connection;
   let project: SfProject;
+  let packageVersion: PackageVersion;
 
   beforeEach(async () => {
     $$.inProject(true);
@@ -74,30 +77,56 @@ describe('Package Version', () => {
       });
   });
 
+  beforeEach(() => {
+    packageVersion = new PackageVersion({ connection, project, idOrAlias });
+  });
+
   afterEach(async () => {
     restoreContext($$);
     await fs.promises.rmdir(path.join(project.getPath(), 'force-app'));
     // @ts-ignore
     project.packageDirectories = undefined;
   });
-  let packageVersion: PackageVersion;
-  beforeEach(() => {
-    packageVersion = new PackageVersion({ connection, project, idOrAlias });
-  });
-  it('should save alias for the first duplicate 0Ho in aliases', async () => {
-    // @ts-ignore
-    await packageVersion.updateProjectWithPackageVersion({
-      Package2Id: uniquePackageId,
-      SubscriberPackageVersionId: idOrAlias,
+
+  describe('updateProjectWithPackageVersion', () => {
+    it('should save alias for the first duplicate 0Ho in aliases', async () => {
+      // @ts-ignore
+      await packageVersion.updateProjectWithPackageVersion({
+        Package2Id: uniquePackageId,
+        SubscriberPackageVersionId: idOrAlias,
+      });
+      expect(project.getSfProjectJson().getPackageAliases()?.['uniquePkg@1.2.3']).to.equal(idOrAlias);
     });
-    expect(project.getSfProjectJson().getPackageAliases()?.['uniquePkg@1.2.3']).to.equal(idOrAlias);
-  });
-  it('should save alias for unique 0Ho in aliases', async () => {
-    // @ts-ignore
-    await packageVersion.updateProjectWithPackageVersion({
-      Package2Id: packageId,
-      SubscriberPackageVersionId: idOrAlias,
+
+    it('should save alias for unique 0Ho in aliases', async () => {
+      // @ts-ignore
+      await packageVersion.updateProjectWithPackageVersion({
+        Package2Id: packageId,
+        SubscriberPackageVersionId: idOrAlias,
+      });
+      expect(project.getSfProjectJson().getPackageAliases()?.['dupPkg1@1.2.3']).to.equal(idOrAlias);
     });
-    expect(project.getSfProjectJson().getPackageAliases()?.['dupPkg1@1.2.3']).to.equal(idOrAlias);
+  });
+
+  describe('create', () => {
+    it('should include the package version create request ID', async () => {
+      $$.SANDBOX.stub(PackageVersionCreate.prototype, 'createPackageVersion').resolves({
+        Id: versionCreateRequestId,
+      });
+      const pollingTimeoutError = new SfError('polling timed out', 'PollingClientTimeout');
+      $$.SANDBOX.stub(PackageVersion, 'pollCreateStatus').rejects(pollingTimeoutError);
+
+      try {
+        await PackageVersion.create({ connection, project });
+        expect(false).to.equal(true, 'Expected a PollingClientTimeout to be thrown');
+      } catch (err) {
+        expect(err).to.be.instanceOf(SfError);
+        expect(err).to.have.property('name', 'PollingClientTimeout');
+        expect(err).to.have.deep.property('data', { VersionCreateRequestId: versionCreateRequestId });
+        expect(err)
+          .to.have.property('message')
+          .and.include(`Run 'sf package version create report -i ${versionCreateRequestId}`);
+      }
+    });
   });
 });
