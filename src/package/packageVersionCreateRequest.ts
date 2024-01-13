@@ -20,7 +20,8 @@ Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
 
 const QUERY =
-  'SELECT Id, Status, Package2Id, Package2.Name, Package2VersionId, Package2Version.SubscriberPackageVersionId, Package2Version.HasPassedCodeCoverageCheck, Tag, Branch, ' +
+  'SELECT Id, Status, Package2Id, Package2.Name, Package2VersionId, Package2Version.SubscriberPackageVersionId, Package2Version.HasPassedCodeCoverageCheck,Package2Version.CodeCoverage, Tag, Branch, ' +
+  'Package2Version.MajorVersion, Package2Version.MinorVersion, Package2Version.PatchVersion, Package2Version.BuildNumber, ' +
   'CreatedDate, Package2Version.HasMetadataRemoved, CreatedById, IsConversionRequest, Package2Version.ConvertedFromVersionId ' +
   'FROM Package2VersionCreateRequest ' +
   '%s' + // WHERE, if applicable
@@ -66,7 +67,15 @@ async function query(query: string, connection: Connection): Promise<PackageVers
     Schema & {
       Package2Version: Pick<
         PackagingSObjects.Package2Version,
-        'HasMetadataRemoved' | 'SubscriberPackageVersionId' | 'ConvertedFromVersionId' | 'HasPassedCodeCoverageCheck'
+        | 'HasMetadataRemoved'
+        | 'SubscriberPackageVersionId'
+        | 'ConvertedFromVersionId'
+        | 'HasPassedCodeCoverageCheck'
+        | 'CodeCoverage'
+        | 'MajorVersion'
+        | 'MinorVersion'
+        | 'PatchVersion'
+        | 'BuildNumber'
       >;
     } & {
       Package2: Pick<PackagingSObjects.Package2, 'Name'>;
@@ -85,6 +94,14 @@ async function query(query: string, connection: Connection): Promise<PackageVers
     Error: [],
     CreatedDate: formatDate(new Date(record.CreatedDate)),
     HasMetadataRemoved: record.Package2Version != null ? record.Package2Version.HasMetadataRemoved : null,
+    CodeCoverage:
+      record.Package2Version?.CodeCoverage != null
+        ? record.Package2Version.CodeCoverage.apexCodeCoveragePercentage
+        : null,
+    VersionNumber:
+      record.Package2Version != null
+        ? `${record.Package2Version.MajorVersion}.${record.Package2Version.MinorVersion}.${record.Package2Version.PatchVersion}.${record.Package2Version.BuildNumber}`
+        : null,
     HasPassedCodeCoverageCheck:
       record.Package2Version != null ? record.Package2Version.HasPassedCodeCoverageCheck : null,
     CreatedBy: record.CreatedById,
