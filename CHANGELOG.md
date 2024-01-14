@@ -1,3 +1,12 @@
+## [3.2.4](https://github.com/forcedotcom/packaging/compare/3.2.3...3.2.4) (2024-01-14)
+
+
+### Bug Fixes
+
+* **deps:** bump @oclif/core from 3.16.0 to 3.18.1 ([9918b38](https://github.com/forcedotcom/packaging/commit/9918b384c44a5d3a11d3b444f3cc4b4136637765))
+
+
+
 ## [3.2.3](https://github.com/forcedotcom/packaging/compare/3.2.2...3.2.3) (2024-01-14)
 
 
