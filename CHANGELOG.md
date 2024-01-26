@@ -1,3 +1,12 @@
+## [3.2.6](https://github.com/forcedotcom/packaging/compare/3.2.5...3.2.6) (2024-01-26)
+
+
+### Bug Fixes
+
+* zero handling ([21ac9b8](https://github.com/forcedotcom/packaging/commit/21ac9b8c19a1b78e08e2f9141bb356c03007eeec))
+
+
+
 ## [3.2.5](https://github.com/forcedotcom/packaging/compare/3.2.4...3.2.5) (2024-01-20)
 
 
