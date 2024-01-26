@@ -121,7 +121,7 @@ function constructWhere(options?: PackageVersionCreateRequestQueryOptions): stri
     where.push(`Id = '${options.id}'`);
   }
   // filter on created date, days ago: 0 for today, etc
-  if (options?.createdlastdays) {
+  if (options?.createdlastdays !== undefined) {
     if (options.createdlastdays < 0) {
       throw messages.createError('invalidDaysNumber', ['createdlastdays', options.createdlastdays]);
     }
