@@ -1010,12 +1010,24 @@ export class MetadataResolver {
     packageName: string | undefined
   ): Promise<ConvertResult> {
     const converter = new MetadataConverter();
-    return converter.convert(componentSet, 'metadata', {
-      type: 'directory',
-      outputDirectory,
-      packageName,
-      genUniqueDir: false,
-    });
+    // Set the SF_APPLY_REPLACEMENTS_ON_CONVERT env var so that
+    // string replacements happen automatically.
+    const replaceOnConvert = process.env.SF_APPLY_REPLACEMENTS_ON_CONVERT;
+    try {
+      env.setBoolean('SF_APPLY_REPLACEMENTS_ON_CONVERT', true);
+      return await converter.convert(componentSet, 'metadata', {
+        type: 'directory',
+        outputDirectory,
+        packageName,
+        genUniqueDir: false,
+      });
+    } finally {
+      if (replaceOnConvert === undefined) {
+        env.unset('SF_APPLY_REPLACEMENTS_ON_CONVERT');
+      } else {
+        env.setBoolean('SF_APPLY_REPLACEMENTS_ON_CONVERT', replaceOnConvert.toLowerCase() === 'true');
+      }
+    }
   }
 }
 

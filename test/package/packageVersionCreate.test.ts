@@ -9,6 +9,7 @@ import * as fs from 'node:fs';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
 import { assert, expect } from 'chai';
 import { Connection, Logger, SfProject } from '@salesforce/core';
+import { env } from '@salesforce/kit';
 import {
   MetadataResolver,
   PackageVersionCreate,
@@ -140,9 +141,15 @@ describe('Package Version Create', () => {
     pjsonXmlConversionStub = $$.SANDBOX.stub(PVCStubs, 'packageXmlStringToPackageXmlJson').returns({});
     const pvc = new PackageVersionCreate({ connection, project, packageId });
 
+    // pvc.convertMetadata() is called, so ensure SF_APPLY_REPLACEMENTS_ON_CONVERT is set
+    // for the convert
+    const envSpy = $$.SANDBOX.spy(env, 'setBoolean').withArgs('SF_APPLY_REPLACEMENTS_ON_CONVERT', true);
+
     try {
       await pvc.createPackageVersion();
+      assert(false, 'should have thrown an error');
     } catch (e) {
+      expect(envSpy.calledOnce).to.equal(true);
       assert(e instanceof Error);
       expect(e.message).to.equal('No matching source was found within the package root directory: force-app');
     }
