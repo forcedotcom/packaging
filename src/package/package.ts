@@ -5,6 +5,7 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
+import { env } from '@salesforce/kit';
 import {
   ConvertPackageOptions,
   PackageCreateOptions,
@@ -118,12 +119,13 @@ export class Package {
    * @param connection
    */
   public static async list(connection: Connection): Promise<PackagingSObjects.Package2[]> {
+    const maxFetch = env.getNumber('SF_ORG_MAX_QUERY_LIMIT') ?? 10_000;
     return (
       await connection.tooling.query<PackagingSObjects.Package2>(
         `select ${this.getPackage2Fields(connection).toString()} from Package2 ORDER BY NamespacePrefix, Name`,
         {
           autoFetch: true,
-          maxFetch: 10_000,
+          maxFetch,
         }
       )
     )?.records;

@@ -6,6 +6,7 @@
  */
 
 import { Connection, Logger, Messages } from '@salesforce/core';
+import { env } from '@salesforce/kit';
 import { QueryResult, Schema } from 'jsforce';
 import { isNumber } from '@salesforce/ts-types';
 import { BY_LABEL, validateId } from '../utils/packageUtils';
@@ -63,10 +64,12 @@ export async function listPackageVersions(
   connection: Connection,
   options?: PackageVersionListOptions
 ): Promise<QueryResult<PackageVersionListResult>> {
+  const maxFetch = env.getNumber('SF_ORG_MAX_QUERY_LIMIT') ?? 10_000;
   return connection.autoFetchQuery<PackageVersionListResult & Schema>(
     constructQuery(Number(connection.version), options),
     {
       tooling: true,
+      maxFetch,
     }
   );
 }

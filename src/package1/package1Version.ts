@@ -6,7 +6,7 @@
  */
 import * as os from 'node:os';
 import { Connection, Lifecycle, Messages, PollingClient, StatusResult } from '@salesforce/core';
-import { Duration } from '@salesforce/kit';
+import { Duration, env } from '@salesforce/kit';
 import {
   IPackageVersion1GP,
   Package1VersionCreateRequest,
@@ -125,8 +125,14 @@ export class Package1Version implements IPackageVersion1GP {
     const query = `SELECT Id,MetadataPackageId,Name,ReleaseState,MajorVersion,MinorVersion,PatchVersion,BuildNumber FROM MetadataPackageVersion ${
       id ? `WHERE MetadataPackageId = '${id}'` : ''
     } ORDER BY MetadataPackageId, MajorVersion, MinorVersion, PatchVersion, BuildNumber`;
+    const maxFetch = env.getNumber('SF_ORG_MAX_QUERY_LIMIT') ?? 10_000;
 
-    return (await connection.tooling.query<PackagingSObjects.MetadataPackageVersion>(query)).records;
+    return (
+      await connection.tooling.query<PackagingSObjects.MetadataPackageVersion>(query, {
+        autoFetch: true,
+        maxFetch,
+      })
+    )?.records;
   }
 
   private static async packageUploadPolling(
