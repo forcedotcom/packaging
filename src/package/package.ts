@@ -4,8 +4,8 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
+import { Schema } from 'jsforce';
 import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
-import { env } from '@salesforce/kit';
 import {
   ConvertPackageOptions,
   PackageCreateOptions,
@@ -114,21 +114,16 @@ export class Package {
   }
 
   /**
-   * Returns all the packages that are available in the org.
+   * Returns all the packages that are available in the org, up to 10,000. If more records are
+   * needed use the `SF_ORG_MAX_QUERY_LIMIT` env var.
    *
    * @param connection
    */
   public static async list(connection: Connection): Promise<PackagingSObjects.Package2[]> {
-    const maxFetch = env.getNumber('SF_ORG_MAX_QUERY_LIMIT') ?? 10_000;
-    return (
-      await connection.tooling.query<PackagingSObjects.Package2>(
-        `select ${this.getPackage2Fields(connection).toString()} from Package2 ORDER BY NamespacePrefix, Name`,
-        {
-          autoFetch: true,
-          maxFetch,
-        }
-      )
-    )?.records;
+    const query = `select ${this.getPackage2Fields(
+      connection
+    ).toString()} from Package2 ORDER BY NamespacePrefix, Name`;
+    return (await connection.autoFetchQuery<PackagingSObjects.Package2 & Schema>(query, { tooling: true }))?.records;
   }
 
   /**

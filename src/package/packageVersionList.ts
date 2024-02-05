@@ -6,7 +6,6 @@
  */
 
 import { Connection, Logger, Messages } from '@salesforce/core';
-import { env } from '@salesforce/kit';
 import { QueryResult, Schema } from 'jsforce';
 import { isNumber } from '@salesforce/ts-types';
 import { BY_LABEL, validateId } from '../utils/packageUtils';
@@ -60,18 +59,19 @@ const getLogger = (): Logger => {
   return logger;
 };
 
+/**
+ * Returns all the package versions that are available in the org, up to 10,000.
+ * If more records are needed use the `SF_ORG_MAX_QUERY_LIMIT` env var.
+ *
+ * @param connection
+ * @param options (optional) PackageVersionListOptions
+ */
 export async function listPackageVersions(
   connection: Connection,
   options?: PackageVersionListOptions
 ): Promise<QueryResult<PackageVersionListResult>> {
-  const maxFetch = env.getNumber('SF_ORG_MAX_QUERY_LIMIT') ?? 10_000;
-  return connection.autoFetchQuery<PackageVersionListResult & Schema>(
-    constructQuery(Number(connection.version), options),
-    {
-      tooling: true,
-      maxFetch,
-    }
-  );
+  const query = constructQuery(Number(connection.version), options);
+  return connection.autoFetchQuery<PackageVersionListResult & Schema>(query, { tooling: true });
 }
 
 function constructQuery(connectionVersion: number, options?: PackageVersionListOptions): string {

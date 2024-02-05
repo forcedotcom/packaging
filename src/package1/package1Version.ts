@@ -5,8 +5,9 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import * as os from 'node:os';
+import { Schema } from 'jsforce';
 import { Connection, Lifecycle, Messages, PollingClient, StatusResult } from '@salesforce/core';
-import { Duration, env } from '@salesforce/kit';
+import { Duration } from '@salesforce/kit';
 import {
   IPackageVersion1GP,
   Package1VersionCreateRequest,
@@ -110,7 +111,7 @@ export class Package1Version implements IPackageVersion1GP {
 
   /**
    * Lists package versions available in the org. If package ID is supplied, only list versions of that package,
-   * otherwise, list all package versions
+   * otherwise, list all package versions, up to 10,000. If more records are needed use the `SF_ORG_MAX_QUERY_LIMIT` env var.
    *
    * @param connection Connection to the org
    * @param id: optional, if present, ID of package to list versions for (starts with 033)
@@ -125,12 +126,10 @@ export class Package1Version implements IPackageVersion1GP {
     const query = `SELECT Id,MetadataPackageId,Name,ReleaseState,MajorVersion,MinorVersion,PatchVersion,BuildNumber FROM MetadataPackageVersion ${
       id ? `WHERE MetadataPackageId = '${id}'` : ''
     } ORDER BY MetadataPackageId, MajorVersion, MinorVersion, PatchVersion, BuildNumber`;
-    const maxFetch = env.getNumber('SF_ORG_MAX_QUERY_LIMIT') ?? 10_000;
 
     return (
-      await connection.tooling.query<PackagingSObjects.MetadataPackageVersion>(query, {
-        autoFetch: true,
-        maxFetch,
+      await connection.autoFetchQuery<PackagingSObjects.MetadataPackageVersion & Schema>(query, {
+        tooling: true,
       })
     )?.records;
   }
