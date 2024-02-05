@@ -1,3 +1,12 @@
+## [3.2.12](https://github.com/forcedotcom/packaging/compare/3.2.11...3.2.12) (2024-02-05)
+
+
+### Bug Fixes
+
+* allow increased query fetch limits ([#500](https://github.com/forcedotcom/packaging/issues/500)) ([665dc19](https://github.com/forcedotcom/packaging/commit/665dc190b076ce324d5bb7cbc229579145b406a7))
+
+
+
 ## [3.2.11](https://github.com/forcedotcom/packaging/compare/3.2.10...3.2.11) (2024-02-03)
 
 
