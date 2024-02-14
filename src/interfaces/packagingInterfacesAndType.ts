@@ -75,6 +75,8 @@ export type PackageVersionCreateRequestResult = {
   CreatedDate: string;
   HasMetadataRemoved: boolean | null;
   HasPassedCodeCoverageCheck: boolean | null;
+  CodeCoverage: number | null;
+  VersionNumber: string | null;
   CreatedBy: string;
   ConvertedFromVersionId: string | null;
 };
