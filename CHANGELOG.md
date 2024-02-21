@@ -1,3 +1,12 @@
+## [3.2.18](https://github.com/forcedotcom/packaging/compare/3.2.17...3.2.18) (2024-02-21)
+
+
+### Bug Fixes
+
+* **deps:** bump ip from 1.1.8 to 1.1.9 ([c4edb34](https://github.com/forcedotcom/packaging/commit/c4edb349a158a0683ca83be7a9fbc58a615dee91))
+
+
+
 ## [3.2.17](https://github.com/forcedotcom/packaging/compare/3.2.16...3.2.17) (2024-02-17)
 
 
