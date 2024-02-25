@@ -1,6 +1,6 @@
 # -- CLEAN
-.eslintcache
-.wireit
+
+
 
 # use yarn by default, so ignore npm
 package-lock.json
@@ -33,6 +33,10 @@ docs
 # -- CLEAN ALL
 *.tsbuildinfo
 node_modules
+
+
+.eslintcache
+.wireit
 
 # --
 # put files here you don't want cleaned with sf-clean
