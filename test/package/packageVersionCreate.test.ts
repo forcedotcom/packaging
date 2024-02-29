@@ -593,6 +593,61 @@ describe('Package Version Create', () => {
     expect(package2DescriptorJson).to.have.string('buildOrgLanguage');
   });
 
+  it('should set packageMetadataPermissions in package2descriptor.json when specified in sfdx-project.json ', async () => {
+    project.getSfProjectJson().set('packageDirectories', [
+      {
+        path: 'force-app',
+        package: 'TEST',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        default: true,
+        packageMetadataAccess: {
+          permissionSets: ['Allow_Trial_Permission'],
+          permissionSetLicenses: ['B2BBuyerPsl'],
+        },
+      },
+    ]);
+
+    await project.getSfProjectJson().write();
+
+    const validationSpy = $$.SANDBOX.spy(project.getSfProjectJson(), 'schemaValidate');
+    const pvc = new PackageVersionCreate({
+      connection,
+      project,
+      validateschema: true,
+      packageId,
+      skipancestorcheck: true,
+    });
+    stubConvert();
+
+    const writeFileSpy = $$.SANDBOX.spy(fs.promises, 'writeFile');
+
+    const result = await pvc.createPackageVersion();
+    expect(validationSpy.callCount).to.equal(1);
+    expect(result).to.have.all.keys(
+      'Branch',
+      'ConvertedFromVersionId',
+      'CreatedBy',
+      'CreatedDate',
+      'Error',
+      'HasMetadataRemoved',
+      'HasPassedCodeCoverageCheck',
+      'Id',
+      'Package2Id',
+      'Package2Name',
+      'Package2VersionId',
+      'Status',
+      'SubscriberPackageVersionId',
+      'Tag'
+    );
+
+    const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // package2-descriptor.json contents
+    expect(package2DescriptorJson).to.have.string('packageMetadataPermissionSetNames');
+    expect(package2DescriptorJson).to.have.string('packageMetadataPermissionSetLicenseNames');
+    expect(package2DescriptorJson).to.have.string('Allow_Trial_Permission');
+    expect(package2DescriptorJson).to.have.string('B2BBuyerPsl');
+  });
+
   it('should validate options when package type = unlocked (scripts) - postinstall script', async () => {
     packageTypeQuery.restore();
     // @ts-ignore
