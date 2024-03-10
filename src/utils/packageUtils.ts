@@ -484,7 +484,7 @@ export async function zipDir(dir: string, zipfile: string): Promise<void> {
 
 function getElapsedTime(timer: [number, number]): string {
   const elapsed = process.hrtime(timer);
-  return (elapsed[0] * 1000 + elapsed[1] / 1000000).toFixed(3);
+  return (elapsed[0] * 1000 + elapsed[1] / 1_000_000).toFixed(3);
 }
 
 export function copyDir(src: string, dest: string): void {
