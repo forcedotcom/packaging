@@ -174,9 +174,12 @@ export type PackageDescriptorJson = Partial<NamedPackageDir> &
     features: string[];
     orgPreferences: string[];
     snapshot: string;
+    packageMetadataAccess: { permissionSets: string[] | string; permissionSetLicenses: string[] | string };
     apexTestAccess: { permissionSets: string[] | string; permissionSetLicenses: string[] | string };
     permissionSetNames: string[];
     permissionSetLicenseDeveloperNames: string[];
+    packageMetadataPermissionSetNames: string[];
+    packageMetadataPermissionSetLicenseNames: string[];
     branch: string;
     subscriberPackageVersionId: string;
     packageId: string;

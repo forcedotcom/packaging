@@ -374,7 +374,7 @@ export class PackageVersionCreate {
       packageDescriptorJson = copyDescriptorProperties(packageDescriptorJson, definitionFileJson);
     }
 
-    this.resolveApexTestPermissions(packageDescriptorJson);
+    this.resolveBuildUserPermissions(packageDescriptorJson);
 
     // All dependencies for the packaging dir should be resolved to an 04t id to be passed to the server.
     // (see _retrieveSubscriberPackageVersionId for details)
@@ -573,7 +573,7 @@ export class PackageVersionCreate {
     await zipDir(packageVersBlobDirectory, packageVersBlobZipFile);
   }
 
-  private resolveApexTestPermissions(packageDescriptorJson: PackageDescriptorJson): void {
+  private resolveBuildUserPermissions(packageDescriptorJson: PackageDescriptorJson): void {
     // Process permissionSet and permissionSetLicenses that should be enabled when running Apex tests
     // This only applies if code coverage is enabled
     if (this.options.codecoverage) {
@@ -595,7 +595,25 @@ export class PackageVersionCreate {
       }
     }
 
+    // Process permissionSet and permissionsetLicenses that should be enabled for the package metadata deploy
+    if (packageDescriptorJson.packageMetadataAccess?.permissionSets) {
+      let permSets = packageDescriptorJson.packageMetadataAccess.permissionSets;
+      if (!Array.isArray(permSets)) {
+        permSets = permSets.split(',');
+      }
+      packageDescriptorJson.packageMetadataPermissionSetNames = permSets.map((s) => s.trim());
+    }
+
+    if (packageDescriptorJson.packageMetadataAccess?.permissionSetLicenses) {
+      let permissionSetLicenses = packageDescriptorJson.packageMetadataAccess.permissionSetLicenses;
+      if (!Array.isArray(permissionSetLicenses)) {
+        permissionSetLicenses = permissionSetLicenses.split(',');
+      }
+      packageDescriptorJson.packageMetadataPermissionSetLicenseNames = permissionSetLicenses.map((s) => s.trim());
+    }
+
     delete packageDescriptorJson.apexTestAccess;
+    delete packageDescriptorJson.packageMetadataAccess;
   }
 
   // eslint-disable-next-line complexity
