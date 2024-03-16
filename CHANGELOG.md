@@ -1,3 +1,12 @@
+## [3.2.27](https://github.com/forcedotcom/packaging/compare/3.2.26...3.2.27) (2024-03-16)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/core from 6.7.0 to 6.7.1 ([dbe3095](https://github.com/forcedotcom/packaging/commit/dbe3095d5d925c82b9adfc3a0bced5ddb936dd8f))
+
+
+
 ## [3.2.26](https://github.com/forcedotcom/packaging/compare/3.2.25...3.2.26) (2024-03-10)
 
 
