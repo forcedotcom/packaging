@@ -1,3 +1,12 @@
+## [3.2.33](https://github.com/forcedotcom/packaging/compare/3.2.32...3.2.33) (2024-03-24)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/source-deploy-retrieve from 10.5.2 to 10.5.5 ([133aee9](https://github.com/forcedotcom/packaging/commit/133aee973c151326bb45cac0c0772428c5044de3))
+
+
+
 ## [3.2.32](https://github.com/forcedotcom/packaging/compare/3.2.31...3.2.32) (2024-03-24)
 
 
