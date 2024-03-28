@@ -436,8 +436,8 @@ export class PackageVersionCreate {
     return this.createRequestObject(preserveFiles, packageVersTmpRoot, packageVersBlobZipFile);
   }
 
-  private verifyHasSource(componentSet: ConvertResult): void {
-    if (componentSet?.converted?.length === 0) {
+  private verifyHasSource(result: ConvertResult): void {
+    if (!result.converted || result?.converted.length === 0) {
       throw messages.createError('noSourceInRootDirectory', [this.packageObject.path ?? '<unknown>']);
     }
   }
