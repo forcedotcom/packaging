@@ -510,7 +510,10 @@ export function copyDescriptorProperties(
     packageDescriptorJsonCopy,
     Object.fromEntries(
       ['country', 'edition', 'language', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].map(
-        (prop) => [[prop], definitionFileJsonCopy[prop]]
+        (prop) => {
+          const matchCase = Object.keys(definitionFileJsonCopy).find((key) => key.toLowerCase() === prop.toLowerCase());
+          return [[prop], matchCase ? definitionFileJsonCopy[matchCase] : undefined];
+        }
       )
     )
   ) as PackageDescriptorJson;
