@@ -1,3 +1,12 @@
+## [3.2.34](https://github.com/forcedotcom/packaging/compare/3.2.33...3.2.34) (2024-03-28)
+
+
+### Bug Fixes
+
+* bump SDR, update logic for optional properties ([030d94a](https://github.com/forcedotcom/packaging/commit/030d94a2c55cef4da124b52a261b6c6c3187f935))
+
+
+
 ## [3.2.33](https://github.com/forcedotcom/packaging/compare/3.2.32...3.2.33) (2024-03-24)
 
 
