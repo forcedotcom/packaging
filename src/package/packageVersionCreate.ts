@@ -437,7 +437,7 @@ export class PackageVersionCreate {
   }
 
   private verifyHasSource(result: ConvertResult): void {
-    if (!result.converted || result?.converted.length === 0) {
+    if (!result.converted || result.converted?.length === 0) {
       throw messages.createError('noSourceInRootDirectory', [this.packageObject.path ?? '<unknown>']);
     }
   }
