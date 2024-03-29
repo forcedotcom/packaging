@@ -498,7 +498,14 @@ export function copyDir(src: string, dest: string): void {
     return entry.isDirectory() ? copyDir(srcPath, destPath) : fs.copyFileSync(srcPath, destPath);
   });
 }
-
+/**
+ * Parse and copy properties from both of these arguments into a new object
+ *
+ * @param packageDescriptorJson
+ * @param definitionFileJson
+ * @returns the resulting object with specific properties
+ * overridden from definition file based on case-insensitive matches.
+ */
 export function copyDescriptorProperties(
   packageDescriptorJson: PackageDescriptorJson,
   definitionFileJson: ScratchOrgInfo
