@@ -1,3 +1,12 @@
+## [3.2.35](https://github.com/forcedotcom/packaging/compare/3.2.34...3.2.35) (2024-03-30)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/kit from 3.0.15 to 3.1.0 ([990e07c](https://github.com/forcedotcom/packaging/commit/990e07cd812358456c183ab29fb376ab13cc1459))
+
+
+
 ## [3.2.34](https://github.com/forcedotcom/packaging/compare/3.2.33...3.2.34) (2024-03-28)
 
 
