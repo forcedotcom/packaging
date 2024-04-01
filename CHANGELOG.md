@@ -1,3 +1,13 @@
+## [3.2.37](https://github.com/forcedotcom/packaging/compare/3.2.36...3.2.37) (2024-04-01)
+
+
+### Bug Fixes
+
+* add comment and lint ([da34bb5](https://github.com/forcedotcom/packaging/commit/da34bb5bb9b738d3d52de1d22593ca829c4fe5ca))
+* definition-file keys case sensitivity ([8d2f52d](https://github.com/forcedotcom/packaging/commit/8d2f52d935bc0bb1d9771c7d3e4a31b2215b3add))
+
+
+
 ## [3.2.36](https://github.com/forcedotcom/packaging/compare/3.2.35...3.2.36) (2024-03-30)
 
 
