@@ -37,15 +37,12 @@ const defaultFields = [
   'ValidationSkipped',
   'CreatedById',
   'ConvertedFromVersionId',
-];
-
-const verboseFields = [
-  'CodeCoverage',
-  'HasPassedCodeCoverageCheck',
   'ReleaseVersion',
   'BuildDurationInSeconds',
   'HasMetadataRemoved',
 ];
+
+const verboseFields = ['CodeCoverage', 'HasPassedCodeCoverageCheck'];
 
 const verbose57Fields = ['Language'];
 
