@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/packaging",
-  "version": "3.2.12",
+  "version": "3.2.37",
   "description": "Packaging library for the Salesforce packaging platform",
   "main": "lib/exported",
   "types": "lib/exported.d.ts",
@@ -43,11 +43,11 @@
   "dependencies": {
     "@oclif/core": "^3",
     "@salesforce/core": "^6.7.6",
-    "@salesforce/kit": "^3.0.15",
+    "@salesforce/kit": "^3.1.0",
     "@salesforce/schemas": "^1.7.0",
-    "@salesforce/source-deploy-retrieve": "^10.3.1",
+    "@salesforce/source-deploy-retrieve": "^10.7.0",
     "@salesforce/ts-types": "^2.0.9",
-    "fast-xml-parser": "^4.3.4",
+    "fast-xml-parser": "^4.3.6",
     "globby": "^11",
     "graphology": "^0.25.4",
     "graphology-traversal": "^0.3.1",
@@ -57,14 +57,14 @@
   },
   "devDependencies": {
     "@salesforce/cli-plugins-testkit": "^4.4.12",
-    "@salesforce/dev-scripts": "^8.3.0",
+    "@salesforce/dev-scripts": "^8.4.2",
     "@salesforce/ts-sinon": "^1.4.19",
     "@types/globby": "^9.1.0",
     "@types/jszip": "^3.4.1",
-    "eslint-plugin-sf-plugin": "^1.17.2",
+    "eslint-plugin-sf-plugin": "^1.17.5",
     "shelljs": "0.8.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.4.3"
   },
   "publishConfig": {
     "access": "public"

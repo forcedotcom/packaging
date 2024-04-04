@@ -484,7 +484,7 @@ export async function zipDir(dir: string, zipfile: string): Promise<void> {
 
 function getElapsedTime(timer: [number, number]): string {
   const elapsed = process.hrtime(timer);
-  return (elapsed[0] * 1000 + elapsed[1] / 1000000).toFixed(3);
+  return (elapsed[0] * 1000 + elapsed[1] / 1_000_000).toFixed(3);
 }
 
 export function copyDir(src: string, dest: string): void {
@@ -498,7 +498,14 @@ export function copyDir(src: string, dest: string): void {
     return entry.isDirectory() ? copyDir(srcPath, destPath) : fs.copyFileSync(srcPath, destPath);
   });
 }
-
+/**
+ * Parse and copy properties from both of these arguments into a new object
+ *
+ * @param packageDescriptorJson
+ * @param definitionFileJson
+ * @returns the resulting object with specific properties
+ * overridden from definition file based on case-insensitive matches.
+ */
 export function copyDescriptorProperties(
   packageDescriptorJson: PackageDescriptorJson,
   definitionFileJson: ScratchOrgInfo
@@ -510,7 +517,10 @@ export function copyDescriptorProperties(
     packageDescriptorJsonCopy,
     Object.fromEntries(
       ['country', 'edition', 'language', 'features', 'orgPreferences', 'snapshot', 'release', 'sourceOrg'].map(
-        (prop) => [[prop], definitionFileJsonCopy[prop]]
+        (prop) => {
+          const matchCase = Object.keys(definitionFileJsonCopy).find((key) => key.toLowerCase() === prop.toLowerCase());
+          return [[prop], matchCase ? definitionFileJsonCopy[matchCase] : undefined];
+        }
       )
     )
   ) as PackageDescriptorJson;

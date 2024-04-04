@@ -1074,6 +1074,74 @@ describe('Package Version Create', () => {
       );
     });
   });
+
+  describe('handle case sensitivity for project-scratch-def.json keys', () => {
+    it('should create package version from the snapshot (lower-case) property in definition file', async () => {
+      const scratchOrgDefFileContent = '{ "snapshot": "SnapScratchOrg" }';
+      const scratchOrgDefFileName = 'project-scratch-def.json';
+      $$.SANDBOX.stub(fs.promises, 'readFile').withArgs(scratchOrgDefFileName).resolves(scratchOrgDefFileContent);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      $$.SANDBOX.stub(MetadataResolver.prototype, 'generateMDFolderForArtifact' as any).resolves();
+      $$.SANDBOX.stub(fs, 'existsSync').returns(true);
+      const writeFileSpy = $$.SANDBOX.spy(fs.promises, 'writeFile');
+
+      const pvc = new PackageVersionCreate({ connection, project, definitionfile: scratchOrgDefFileName, packageId });
+      const result = await pvc.createPackageVersion();
+      expect(result).to.have.all.keys(
+        'Branch',
+        'ConvertedFromVersionId',
+        'CreatedBy',
+        'CreatedDate',
+        'Error',
+        'HasMetadataRemoved',
+        'HasPassedCodeCoverageCheck',
+        'Id',
+        'Package2Id',
+        'Package2Name',
+        'Package2VersionId',
+        'Status',
+        'SubscriberPackageVersionId',
+        'Tag'
+      );
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // package2-descriptor.json contents
+      expect(package2DescriptorJson).to.have.string('snapshot');
+    });
+
+    it("should create package version from the snapShot (camel-case or any-case) property in definition file's", async () => {
+      const scratchOrgDefFileContent = '{ "snapShot": "SnapScratchOrg2" }';
+      const scratchOrgDefFileName = 'project-scratch-def.json';
+      $$.SANDBOX.stub(fs.promises, 'readFile').withArgs(scratchOrgDefFileName).resolves(scratchOrgDefFileContent);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      $$.SANDBOX.stub(MetadataResolver.prototype, 'generateMDFolderForArtifact' as any).resolves();
+      $$.SANDBOX.stub(fs, 'existsSync').returns(true);
+      const writeFileSpy = $$.SANDBOX.spy(fs.promises, 'writeFile');
+
+      const pvc = new PackageVersionCreate({ connection, project, definitionfile: scratchOrgDefFileName, packageId });
+      const result = await pvc.createPackageVersion();
+      expect(result).to.have.all.keys(
+        'Branch',
+        'ConvertedFromVersionId',
+        'CreatedBy',
+        'CreatedDate',
+        'Error',
+        'HasMetadataRemoved',
+        'HasPassedCodeCoverageCheck',
+        'Id',
+        'Package2Id',
+        'Package2Name',
+        'Package2VersionId',
+        'Status',
+        'SubscriberPackageVersionId',
+        'Tag'
+      );
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // package2-descriptor.json contents
+      expect(package2DescriptorJson).to.have.string('snapshot');
+    });
+  });
 });
 
 describe('PackageXml read/write', () => {

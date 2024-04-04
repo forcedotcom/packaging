@@ -195,13 +195,13 @@ export async function waitForPublish(
 export async function pollStatus(
   connection: Connection,
   installRequestId: string,
-  options: PackageInstallOptions = { pollingFrequency: 5000, pollingTimeout: 300000 }
+  options: PackageInstallOptions = { pollingFrequency: 5000, pollingTimeout: 300_000 }
 ): Promise<PackageInstallRequest> {
   let packageInstallRequest = await getStatus(connection, installRequestId);
 
   const { pollingFrequency, pollingTimeout } = options;
   const frequency = numberToDuration(pollingFrequency ?? 5000);
-  const timeout = numberToDuration(pollingTimeout ?? 300000);
+  const timeout = numberToDuration(pollingTimeout ?? 300_000);
 
   const pollingOptions: PollingClient.Options = {
     frequency,
