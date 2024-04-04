@@ -42,9 +42,9 @@
   ],
   "dependencies": {
     "@oclif/core": "^3",
-    "@salesforce/core": "^6.5.1",
+    "@salesforce/core": "^6.7.6",
     "@salesforce/kit": "^3.0.15",
-    "@salesforce/schemas": "^1.6.1",
+    "@salesforce/schemas": "^1.7.0",
     "@salesforce/source-deploy-retrieve": "^10.3.1",
     "@salesforce/ts-types": "^2.0.9",
     "fast-xml-parser": "^4.3.4",
