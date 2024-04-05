@@ -45,6 +45,8 @@ const VERSION_CREATE_RESPONSE_KEYS = [
   'CreatedDate',
   'HasMetadataRemoved',
   'HasPassedCodeCoverageCheck',
+  'CodeCoverage',
+  'VersionNumber',
   'CreatedBy',
   'ConvertedFromVersionId',
 ];
