@@ -1,3 +1,12 @@
+# [3.4.0](https://github.com/forcedotcom/packaging/compare/3.3.0...3.4.0) (2024-04-05)
+
+
+### Features
+
+* additional fields for package version result ([c4375d2](https://github.com/forcedotcom/packaging/commit/c4375d248f34756f0c74485fd0cb641fb315433f))
+
+
+
 # [3.3.0](https://github.com/forcedotcom/packaging/compare/3.2.37...3.3.0) (2024-04-04)
 
 
