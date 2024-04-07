@@ -19,11 +19,11 @@ import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 import MetadataPackageVersion = PackagingSObjects.MetadataPackageVersion;
 
-export interface IPackageVersion1GP {
+export type IPackageVersion1GP = {
   getPackageVersion(id: string): Promise<MetadataPackageVersion[]>;
 }
 
-export interface IPackageVersion2GP {
+export type IPackageVersion2GP = {
   create(): Promise<void>;
 
   convert(): Promise<void>;
@@ -436,7 +436,7 @@ export type AncestryRepresentationProducerOptions = {
   logger?: (text: string) => void;
 };
 
-export interface AncestryRepresentationProducer {
+export type AncestryRepresentationProducer = {
   label: string;
   options?: AncestryRepresentationProducerOptions;
 
