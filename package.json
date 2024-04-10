@@ -41,27 +41,27 @@
     "!lib/**/*.map"
   ],
   "dependencies": {
+    "@jsforce/jsforce-node": "^3.1.0",
     "@oclif/core": "^3",
-    "@salesforce/core": "^6.7.6",
+    "@salesforce/core": "^7.1.0",
     "@salesforce/kit": "^3.1.0",
     "@salesforce/schemas": "^1.7.0",
-    "@salesforce/source-deploy-retrieve": "^10.7.0",
+    "@salesforce/source-deploy-retrieve": "^11.0.0",
     "@salesforce/ts-types": "^2.0.9",
     "fast-xml-parser": "^4.3.6",
     "globby": "^11",
     "graphology": "^0.25.4",
     "graphology-traversal": "^0.3.1",
     "graphology-types": "^0.24.7",
-    "jsforce": "^2.0.0-beta.29",
     "jszip": "^3.10.1"
   },
   "devDependencies": {
-    "@salesforce/cli-plugins-testkit": "^4.4.12",
+    "@salesforce/cli-plugins-testkit": "^5.2.0",
     "@salesforce/dev-scripts": "^8.4.2",
     "@salesforce/ts-sinon": "^1.4.19",
     "@types/globby": "^9.1.0",
     "@types/jszip": "^3.4.1",
-    "eslint-plugin-sf-plugin": "^1.17.5",
+    "eslint-plugin-sf-plugin": "^1.18.0",
     "shelljs": "0.8.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.3"

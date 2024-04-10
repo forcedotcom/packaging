@@ -4,10 +4,10 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import * as path from 'node:path';
-import * as os from 'node:os';
-import * as fs from 'node:fs';
-import * as globby from 'globby';
+import path from 'node:path';
+import os from 'node:os';
+import fs from 'node:fs';
+import globby from 'globby';
 import { Logger, Messages, SfProject } from '@salesforce/core';
 import { AsyncCreatable } from '@salesforce/kit';
 import { PackageXml, ProfileApiOptions } from '../interfaces';

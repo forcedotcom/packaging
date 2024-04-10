@@ -6,7 +6,7 @@
  */
 
 import { Connection, Logger, Messages } from '@salesforce/core';
-import { QueryResult, Schema } from 'jsforce';
+import { QueryResult, Schema } from '@jsforce/jsforce-node';
 import { isNumber } from '@salesforce/ts-types';
 import { BY_LABEL, validateId } from '../utils/packageUtils';
 import { PackageVersionListOptions, PackageVersionListResult } from '../interfaces';

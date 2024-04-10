@@ -7,11 +7,11 @@
 
 import { Duration } from '@salesforce/kit';
 import { Connection, NamedPackageDir, SfProject } from '@salesforce/core';
-import { SaveResult } from 'jsforce';
+import type { SaveResult } from '@jsforce/jsforce-node';
 import { Attributes } from 'graphology-types';
 import { Optional } from '@salesforce/ts-types';
 import { ConvertResult } from '@salesforce/source-deploy-retrieve';
-import { Package } from 'jsforce/lib/api/metadata';
+import { Package } from '@jsforce/jsforce-node/lib/api/metadata';
 import { PackageProfileApi } from '../package/packageProfileApi';
 import { PackageAncestryNode } from '../package/packageAncestry';
 import { PackagingSObjects } from './packagingSObjects';

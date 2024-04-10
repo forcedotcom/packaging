@@ -7,7 +7,7 @@
 
 import { Connection, Lifecycle, Logger, Messages, PollingClient, SfError, StatusResult } from '@salesforce/core';
 import { isString, Nullable } from '@salesforce/ts-types';
-import { QueryResult } from 'jsforce';
+import type { QueryResult } from '@jsforce/jsforce-node';
 import { Duration } from '@salesforce/kit';
 import { escapeInstallationKey, numberToDuration } from '../utils/packageUtils';
 import {
@@ -179,7 +179,9 @@ export async function waitForPublish(
   } catch (e) {
     // if polling timed out
     const error = installMsgs.createError('subscriberPackageVersionNotPublished');
-    error.setData(queryResult?.records[0]);
+    if (queryResult?.records[0]) {
+      error.setData(queryResult?.records[0]);
+    }
     if (error.stack && e instanceof Error && e.stack) {
       getLogger().debug(`Error during waitForPublish polling:\n${e.stack}`);
       // append the original stack to this new error

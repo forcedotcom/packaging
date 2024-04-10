@@ -5,14 +5,14 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import * as fs from 'node:fs';
-import * as os from 'node:os';
-import * as path from 'node:path';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { assert, expect } from 'chai';
-import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
-import { SaveError } from 'jsforce';
+import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/testSetup';
+import type { SaveError } from '@jsforce/jsforce-node';
 import { Duration } from '@salesforce/kit';
-import * as JSZIP from 'jszip';
+import JSZIP from 'jszip';
 import {
   applyErrorAction,
   combineSaveErrors,

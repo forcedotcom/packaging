@@ -5,9 +5,9 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import * as path from 'node:path';
-import * as os from 'node:os';
-import * as fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+import fs from 'node:fs';
 import {
   Connection,
   Lifecycle,
@@ -18,10 +18,10 @@ import {
   SfError,
   SfProject,
   StatusResult,
+  ScratchOrgSettingsGenerator,
 } from '@salesforce/core';
 import { camelCaseToTitleCase, Duration, env } from '@salesforce/kit';
 import { Many } from '@salesforce/ts-types';
-import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
 import * as pkgUtils from '../utils/packageUtils';
 import { copyDescriptorProperties, generatePackageAliasEntry, uniqid } from '../utils/packageUtils';
 import {
@@ -178,7 +178,7 @@ export async function createPackageVersionCreateRequest(
     id: packageId,
   };
 
-  const settingsGenerator = new SettingsGenerator({ asDirectory: true });
+  const settingsGenerator = new ScratchOrgSettingsGenerator({ asDirectory: true });
   const definitionFile = context.definitionfile;
   let definitionFileJson: ScratchOrgInfo;
   if (definitionFile) {

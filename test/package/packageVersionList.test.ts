@@ -6,7 +6,7 @@
  */
 import { expect } from 'chai';
 import { SfProject } from '@salesforce/core';
-import { instantiateContext, restoreContext, stubContext } from '@salesforce/core/lib/testSetup';
+import { instantiateContext, restoreContext, stubContext } from '@salesforce/core/testSetup';
 import {
   assembleQueryParts,
   constructWhere,
