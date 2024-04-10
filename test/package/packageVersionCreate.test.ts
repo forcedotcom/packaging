@@ -654,6 +654,7 @@ describe('Package Version Create', () => {
     expect(validationSpy.callCount).to.equal(1);
     expect(result).to.have.all.keys(
       'Branch',
+      'CodeCoverage',
       'ConvertedFromVersionId',
       'CreatedBy',
       'CreatedDate',
@@ -666,7 +667,8 @@ describe('Package Version Create', () => {
       'Package2VersionId',
       'Status',
       'SubscriberPackageVersionId',
-      'Tag'
+      'Tag',
+      'VersionNumber'
     );
 
     const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // package2-descriptor.json contents
@@ -1123,6 +1125,7 @@ describe('Package Version Create', () => {
       const result = await pvc.createPackageVersion();
       expect(result).to.have.all.keys(
         'Branch',
+        'CodeCoverage',
         'ConvertedFromVersionId',
         'CreatedBy',
         'CreatedDate',
@@ -1135,7 +1138,8 @@ describe('Package Version Create', () => {
         'Package2VersionId',
         'Status',
         'SubscriberPackageVersionId',
-        'Tag'
+        'Tag',
+        'VersionNumber'
       );
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -1156,6 +1160,7 @@ describe('Package Version Create', () => {
       const result = await pvc.createPackageVersion();
       expect(result).to.have.all.keys(
         'Branch',
+        'CodeCoverage',
         'ConvertedFromVersionId',
         'CreatedBy',
         'CreatedDate',
@@ -1168,7 +1173,8 @@ describe('Package Version Create', () => {
         'Package2VersionId',
         'Status',
         'SubscriberPackageVersionId',
-        'Tag'
+        'Tag',
+        'VersionNumber'
       );
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
