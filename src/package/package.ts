@@ -4,7 +4,7 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import { Schema } from 'jsforce';
+import type { Schema } from '@jsforce/jsforce-node';
 import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
 import {
   ConvertPackageOptions,

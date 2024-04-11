@@ -6,7 +6,7 @@
  */
 
 // Node
-import * as util from 'node:util';
+import util from 'node:util';
 
 // Local
 import { Connection, Logger, SfProject } from '@salesforce/core';

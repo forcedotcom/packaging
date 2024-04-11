@@ -5,9 +5,9 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import * as path from 'node:path';
-import * as os from 'node:os';
-import * as fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+import fs from 'node:fs';
 import {
   Connection,
   Lifecycle,
@@ -18,6 +18,7 @@ import {
   ScratchOrgInfo,
   SfdcUrl,
   SfProject,
+  ScratchOrgSettingsGenerator,
 } from '@salesforce/core';
 import {
   ComponentSet,
@@ -26,8 +27,7 @@ import {
   ConvertResult,
   MetadataConverter,
 } from '@salesforce/source-deploy-retrieve';
-import SettingsGenerator from '@salesforce/core/lib/org/scratchOrgSettingsGenerator';
-import { PackageDirDependency } from '@salesforce/core/lib/sfProject';
+import { PackageDirDependency } from '@salesforce/core/project';
 import { ensureArray, env } from '@salesforce/kit';
 import { XMLParser, XMLBuilder } from 'fast-xml-parser';
 import { isString } from '@salesforce/ts-types';
@@ -331,7 +331,7 @@ export class PackageVersionCreate {
     };
 
     await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
-    const settingsGenerator = new SettingsGenerator({ asDirectory: true });
+    const settingsGenerator = new ScratchOrgSettingsGenerator({ asDirectory: true });
     let packageDescriptorJson = structuredClone(this.packageObject) as PackageDescriptorJson;
     const apvLanguage = packageDescriptorJson.language;
 
@@ -465,7 +465,7 @@ export class PackageVersionCreate {
     packageVersBlobZipFile: string;
     unpackagedMetadataZipFile: string;
     seedMetadataZipFile: string;
-    settingsGenerator: SettingsGenerator;
+    settingsGenerator: ScratchOrgSettingsGenerator;
   }): Promise<void> {
     // As part of the source convert process, the package.xml has been written into the tmp metadata directory.
     // The package.xml may need to be manipulated due to processing profiles in the workspace or additional

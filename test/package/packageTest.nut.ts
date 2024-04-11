@@ -4,15 +4,15 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import * as os from 'node:os';
-import * as path from 'node:path';
-import * as fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import fs from 'node:fs/promises';
 import { expect } from 'chai';
 import { execCmd, TestSession } from '@salesforce/cli-plugins-testkit';
 import { Duration, sleep } from '@salesforce/kit';
-import { ProjectJson } from '@salesforce/core/lib/sfProject';
+import { ProjectJson } from '@salesforce/core/project';
 import { Lifecycle, Org, SfProject } from '@salesforce/core';
-import { uniqid } from '@salesforce/core/lib/testSetup';
+import { uniqid } from '@salesforce/core/testSetup';
 import {
   AncestryRepresentationProducer,
   AncestryRepresentationProducerOptions,

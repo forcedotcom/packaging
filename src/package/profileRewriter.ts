@@ -4,7 +4,7 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import { Profile } from 'jsforce/api/metadata';
+import type { Profile } from '@jsforce/jsforce-node/lib/api/metadata';
 import { XMLBuilder, XMLParser } from 'fast-xml-parser';
 import { PackageXml } from '../interfaces';
 
