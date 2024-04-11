@@ -1,3 +1,12 @@
+# [3.5.0](https://github.com/forcedotcom/packaging/compare/3.4.0...3.5.0) (2024-04-11)
+
+
+### Features
+
+* core7 ([#543](https://github.com/forcedotcom/packaging/issues/543)) ([7dbc043](https://github.com/forcedotcom/packaging/commit/7dbc04347f9fa32faeca5ff5f951967f3d438e34))
+
+
+
 # [3.4.0](https://github.com/forcedotcom/packaging/compare/3.3.0...3.4.0) (2024-04-05)
 
 
