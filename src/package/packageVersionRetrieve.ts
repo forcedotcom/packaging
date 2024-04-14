@@ -79,7 +79,7 @@ export async function retrievePackageVersionMetadata(
 
   // 2GP packages declare their dependencies in dependency-ids.json within the outer zip.
   if (tree.exists('dependency-ids.json')) {
-    interface DependencyIds {
+    type DependencyIds = {
       ids: string[];
     }
     const f = await tree.readFile('dependency-ids.json');
