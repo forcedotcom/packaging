@@ -71,7 +71,7 @@ export async function listPackageVersions(
   return connection.autoFetchQuery<PackageVersionListResult & Schema>(query, { tooling: true });
 }
 
-function constructQuery(connectionVersion: number, options?: PackageVersionListOptions): string {
+export function constructQuery(connectionVersion: number, options?: PackageVersionListOptions): string {
   // construct custom WHERE clause, if applicable
   const where = constructWhere(options);
 
