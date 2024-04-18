@@ -31,14 +31,11 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'windows-latest']
-        command:
-          - 'yarn test:nuts:package'
-          - 'yarn test:nuts:package1'
     with:
       packageName: '@salesforce/packaging'
       externalProjectGitUrl: 'https://github.com/salesforcecli/plugin-packaging'
-      command: ${{ matrix.command }}
+      command: 'yarn test:nuts:package'
       os: ${{ matrix.os }}
-      preExternalBuildCommands: 'shx rm -rf node_modules/@salesforce/packaging/node_modules/@salesforce/core node_modules/@salesforce/sf-plugins-core/node_modules/@salesforce/core node_modules/@salesforce/cli-plugins-testkit/node_modules/@salesforce/core'
+      preSwapCommands: 'yarn upgrade @salesforce/core npx yarn-deduplicate; yarn install'
       useCache: false
     secrets: inherit
