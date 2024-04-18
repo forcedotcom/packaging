@@ -36,6 +36,6 @@ jobs:
       externalProjectGitUrl: 'https://github.com/salesforcecli/plugin-packaging'
       command: 'yarn test:nuts:package'
       os: ${{ matrix.os }}
-      preSwapCommands: 'yarn upgrade @salesforce/core'
+      preExternalBuildCommands: 'yarn upgrade @salesforce/core'
       useCache: false
     secrets: inherit
