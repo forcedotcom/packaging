@@ -1,3 +1,12 @@
+## [3.5.3](https://github.com/forcedotcom/packaging/compare/3.5.2...3.5.3) (2024-04-18)
+
+
+### Bug Fixes
+
+* move verbose field to default fields ([f3583f8](https://github.com/forcedotcom/packaging/commit/f3583f80aa6f9b07ffabb133fcb64988c21dc6f5))
+
+
+
 ## [3.5.2](https://github.com/forcedotcom/packaging/compare/3.5.1...3.5.2) (2024-04-13)
 
 
