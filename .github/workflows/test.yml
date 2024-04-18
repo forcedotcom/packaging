@@ -31,14 +31,13 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'windows-latest']
-        externalProjectGitUrl:
-          - https://github.com/salesforcecli/plugin-packaging
+        command:
+          - 'yarn test:nuts:package'
+          - 'yarn test:nuts:package1'
     with:
       packageName: '@salesforce/packaging'
-      externalProjectGitUrl: ${{ matrix.externalProjectGitUrl }}
-      command:
-        - 'yarn test:nuts:package'
-        - 'yarn test:nuts:package1'
+      externalProjectGitUrl: 'https://github.com/salesforcecli/plugin-packaging'
+      command: ${{ matrix.command }}
       os: ${{ matrix.os }}
       useCache: false
     secrets: inherit
