@@ -24,3 +24,21 @@ jobs:
       fail-fast: false
     with:
       os: ${{ matrix.os }}
+  xNuts:
+    needs: linux-unit-tests
+    uses: salesforcecli/github-workflows/.github/workflows/externalNut.yml@main
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest', 'windows-latest']
+        externalProjectGitUrl:
+          - https://github.com/salesforcecli/plugin-packaging
+    with:
+      packageName: '@salesforce/packaging'
+      externalProjectGitUrl: ${{ matrix.externalProjectGitUrl }}
+      command:
+        - 'yarn test:nuts:package'
+        - 'yarn test:nuts:package1'
+      os: ${{ matrix.os }}
+      useCache: false
+    secrets: inherit
