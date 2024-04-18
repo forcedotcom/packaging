@@ -36,6 +36,7 @@ jobs:
       externalProjectGitUrl: 'https://github.com/salesforcecli/plugin-packaging'
       command: 'yarn test:nuts:package'
       os: ${{ matrix.os }}
-      preExternalBuildCommands: 'shx rm -rf node_modules/@salesforce/core'
+      preSwapCommands: 'yarn upgrade @salesforce/core; npx yarn-deduplicate; yarn install'
+      preExternalBuildCommands: 'npm why @salesforce/core --json'
       useCache: false
     secrets: inherit
