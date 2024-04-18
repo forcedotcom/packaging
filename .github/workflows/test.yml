@@ -39,5 +39,6 @@ jobs:
       externalProjectGitUrl: 'https://github.com/salesforcecli/plugin-packaging'
       command: ${{ matrix.command }}
       os: ${{ matrix.os }}
+      preSwapCommands: 'npx yarn-deduplicate; yarn install'
       useCache: false
     secrets: inherit
