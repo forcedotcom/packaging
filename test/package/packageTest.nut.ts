@@ -105,6 +105,8 @@ describe('Integration tests for @salesforce/packaging library', () => {
   });
 
   describe('create package/package version, report on pvc, update package/promote package', () => {
+    // An abbreviated list of the default keys that should be on a package version entry
+    const expectedVersionListKeys = ['Id', 'Package2Id', 'SubscriberPackageVersionId', 'Name', 'Package2'];
     it('package create', async () => {
       const options: PackageCreateOptions = {
         name: pkgName,
@@ -265,7 +267,27 @@ describe('Integration tests for @salesforce/packaging library', () => {
 
     it('package version should be in results of static Package#listVersions', async () => {
       const pkgVersions = await Package.listVersions(devHubOrg.getConnection(), project, { createdLastDays: 5 });
+      expect(pkgVersions.length).to.be.greaterThan(0);
       expect(pkgVersions.some((pvlr) => pvlr.SubscriberPackageVersionId === subscriberPkgVersionId)).to.be.true;
+      const pkgVersion = pkgVersions[0];
+      // expect some of the default keys
+      expect(pkgVersion).to.include.keys(expectedVersionListKeys);
+      expect(pkgVersion).to.not.have.property('CodeCoverage');
+      expect(pkgVersion).to.not.have.property('HasPassedCodeCoverageCheck');
+    });
+
+    it('package version should include CodeCoverage in results of static Package#listVersions for verbose query', async () => {
+      const pkgVersions = await Package.listVersions(devHubOrg.getConnection(), project, {
+        createdLastDays: 5,
+        verbose: true,
+      });
+      expect(pkgVersions.length).to.be.greaterThan(0);
+      expect(pkgVersions.some((pvlr) => pvlr.SubscriberPackageVersionId === subscriberPkgVersionId)).to.be.true;
+      const pkgVersion = pkgVersions[0];
+      // expect some of the default keys
+      expect(pkgVersion).to.include.keys(expectedVersionListKeys);
+      expect(pkgVersion).to.have.property('CodeCoverage');
+      expect(pkgVersion).to.have.property('HasPassedCodeCoverageCheck');
     });
 
     it('package version report', async () => {
@@ -276,7 +298,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
       });
       const result = await pv.report();
 
-      expect(result).to.not.have.property('Id');
+      expect(result).to.have.property('Id');
       expect(result.Package2Id).to.equal(
         pkgId,
         `Package Version Report Package Id mismatch: expected '${pkgId}', got '${result.Package2Id}'`
