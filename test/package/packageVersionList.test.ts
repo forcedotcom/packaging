@@ -12,6 +12,7 @@ import {
   constructWhere,
   DEFAULT_ORDER_BY_FIELDS,
   validateDays,
+  constructQuery,
 } from '../../src/package/packageVersionList';
 
 describe('package version list', () => {
@@ -75,6 +76,50 @@ describe('package version list', () => {
       expect(where).to.include('LastModifiedDate = LAST_N_DAYS:2');
     });
   });
+
+  describe('_constructQuery', () => {
+    it('should include verbose fields', async () => {
+      const options = {
+        packages: ['0Ho3h000000xxxxCAG'],
+        createdLastDays: 1,
+        modifiedLastDays: 2,
+        isReleased: true,
+        verbose: true,
+      };
+      const constQuery = constructQuery(50, options);
+      expect(constQuery).to.include('CodeCoverage');
+      expect(constQuery).to.include('HasPassedCodeCoverageCheck');
+      expect(constQuery).to.not.include('Language');
+    });
+
+    it('should include verbose fields with langage', async () => {
+      const options = {
+        packages: ['0Ho3h000000xxxxCAG'],
+        createdLastDays: 1,
+        modifiedLastDays: 2,
+        isReleased: true,
+        verbose: true,
+      };
+      const constQuery = constructQuery(59, options);
+      expect(constQuery).to.include('CodeCoverage');
+      expect(constQuery).to.include('HasPassedCodeCoverageCheck');
+      expect(constQuery).to.include('Language');
+    });
+
+    it('should not include verbose fields', async () => {
+      const options = {
+        packages: ['0Ho3h000000xxxxCAG'],
+        createdLastDays: 1,
+        modifiedLastDays: 2,
+        isReleased: true,
+      };
+      const constQuery = constructQuery(59, options);
+      expect(constQuery).to.not.include('CodeCoverage');
+      expect(constQuery).to.not.include('HasPassedCodeCoverageCheck');
+      expect(constQuery).to.not.include('Language');
+    });
+  });
+
   describe('_assembleQueryParts', () => {
     it('should return the proper query', () => {
       const assembly = assembleQueryParts('select foo,bar,baz from foobarbaz', ['foo=1', "bar='2'"], 'foo,bar,baz');

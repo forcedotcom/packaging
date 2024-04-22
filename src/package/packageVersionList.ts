@@ -37,15 +37,12 @@ const defaultFields = [
   'ValidationSkipped',
   'CreatedById',
   'ConvertedFromVersionId',
-];
-
-const verboseFields = [
-  'CodeCoverage',
-  'HasPassedCodeCoverageCheck',
   'ReleaseVersion',
   'BuildDurationInSeconds',
   'HasMetadataRemoved',
 ];
+
+const verboseFields = ['CodeCoverage', 'HasPassedCodeCoverageCheck'];
 
 const verbose57Fields = ['Language'];
 
@@ -74,7 +71,7 @@ export async function listPackageVersions(
   return connection.autoFetchQuery<PackageVersionListResult & Schema>(query, { tooling: true });
 }
 
-function constructQuery(connectionVersion: number, options?: PackageVersionListOptions): string {
+export function constructQuery(connectionVersion: number, options?: PackageVersionListOptions): string {
   // construct custom WHERE clause, if applicable
   const where = constructWhere(options);
 
