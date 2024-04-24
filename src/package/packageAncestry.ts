@@ -8,9 +8,10 @@ import { EOL } from 'node:os';
 import { Messages } from '@salesforce/core';
 import { DirectedGraph } from 'graphology';
 import { AsyncCreatable } from '@salesforce/kit';
-import { Tree } from '@oclif/core/lib/cli-ux/styled/tree';
 import { Attributes } from 'graphology-types';
 import { dfs, dfsFromNode } from 'graphology-traversal';
+// @ts-expect-error because object-treeify v2 is not typed
+import treeify from 'object-treeify';
 import {
   AncestryRepresentationProducer,
   AncestryRepresentationProducerOptions,
@@ -376,6 +377,46 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
     const query = `${SELECT_PACKAGE_VERSION} WHERE AncestorId = '${ancestor.SubscriberPackageVersionId}' ${releasedOnlyFilter}`;
     const results = await this.options.connection.tooling.query<PackageAncestryNode>(query);
     return results.records.map((result) => new PackageAncestryNode(result));
+  }
+}
+
+type TreeObject = {
+  [key: string]: TreeObject | boolean | string | number | null | undefined;
+};
+
+export class Tree {
+  public nodes: { [key: string]: Tree } = {};
+
+  // eslint-disable-next-line no-console
+  public display(logger: (text: string) => void = console.log): void {
+    const addNodes = function (nodes: { [key: string]: Tree }): TreeObject {
+      const tree: TreeObject = {};
+      for (const p of Object.keys(nodes)) {
+        tree[p] = addNodes(nodes[p].nodes);
+      }
+
+      return tree;
+    };
+
+    const tree = addNodes(this.nodes);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call
+    logger(treeify(tree));
+  }
+
+  public insert(child: string, value: Tree = new Tree()): Tree {
+    this.nodes[child] = value;
+    return this;
+  }
+
+  public search(key: string): Tree | undefined {
+    for (const child of Object.keys(this.nodes)) {
+      if (child === key) {
+        return this.nodes[child];
+      }
+
+      const c = this.nodes[child].search(key);
+      if (c) return c;
+    }
   }
 }
 
