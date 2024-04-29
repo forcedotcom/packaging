@@ -384,7 +384,7 @@ type TreeObject = {
   [key: string]: TreeObject | boolean | string | number | null | undefined;
 };
 
-export class Tree {
+class Tree {
   public nodes: { [key: string]: Tree } = {};
 
   // eslint-disable-next-line no-console
