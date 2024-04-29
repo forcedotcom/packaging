@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/packaging",
-  "version": "3.5.8",
+  "version": "3.5.10",
   "description": "Packaging library for the Salesforce packaging platform",
   "main": "lib/exported",
   "types": "lib/exported.d.ts",
@@ -41,11 +41,11 @@
     "!lib/**/*.map"
   ],
   "dependencies": {
-    "@jsforce/jsforce-node": "^3.1.0",
+    "@jsforce/jsforce-node": "^3.2.0",
     "@salesforce/core": "^7.3.1",
     "@salesforce/kit": "^3.1.1",
     "@salesforce/schemas": "^1.7.0",
-    "@salesforce/source-deploy-retrieve": "^11.0.1",
+    "@salesforce/source-deploy-retrieve": "^11.1.2",
     "@salesforce/ts-types": "^2.0.9",
     "fast-xml-parser": "^4.3.6",
     "globby": "^11",
@@ -56,12 +56,12 @@
     "object-treeify": "^2"
   },
   "devDependencies": {
-    "@salesforce/cli-plugins-testkit": "^5.2.0",
+    "@salesforce/cli-plugins-testkit": "^5.3.0",
     "@salesforce/dev-scripts": "^9.0.0",
     "@salesforce/ts-sinon": "^1.4.19",
     "@types/globby": "^9.1.0",
     "@types/jszip": "^3.4.1",
-    "eslint-plugin-sf-plugin": "^1.18.1",
+    "eslint-plugin-sf-plugin": "^1.18.2",
     "shelljs": "0.8.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
