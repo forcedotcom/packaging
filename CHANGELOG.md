@@ -1,3 +1,48 @@
+## [3.5.13](https://github.com/forcedotcom/packaging/compare/3.5.12...3.5.13) (2024-05-04)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/source-deploy-retrieve from 11.1.2 to 11.3.0 ([d102f95](https://github.com/forcedotcom/packaging/commit/d102f95cd6654a148f18431c5e066a610dd2798c))
+
+
+
+## [3.5.12](https://github.com/forcedotcom/packaging/compare/3.5.11...3.5.12) (2024-05-04)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/core from 7.3.2 to 7.3.3 ([f71cc33](https://github.com/forcedotcom/packaging/commit/f71cc33f81a8db445b9badc18e838ff0c6babe44))
+
+
+
+## [3.5.11](https://github.com/forcedotcom/packaging/compare/3.5.10...3.5.11) (2024-04-30)
+
+
+### Bug Fixes
+
+* use object-treeify directly ([#556](https://github.com/forcedotcom/packaging/issues/556)) ([9d453f4](https://github.com/forcedotcom/packaging/commit/9d453f4be290ea63a3c50897a9566939cede7601))
+
+
+
+## [3.5.10](https://github.com/forcedotcom/packaging/compare/3.5.9...3.5.10) (2024-04-28)
+
+
+### Bug Fixes
+
+* **deps:** bump @jsforce/jsforce-node from 3.1.0 to 3.2.0 ([a9ff94f](https://github.com/forcedotcom/packaging/commit/a9ff94f590f2ce1a229d34b5f6039feb84a6a78b))
+
+
+
+## [3.5.9](https://github.com/forcedotcom/packaging/compare/3.5.8...3.5.9) (2024-04-27)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/source-deploy-retrieve from 11.0.1 to 11.1.2 ([c85788b](https://github.com/forcedotcom/packaging/commit/c85788b401e9703731127aa67a5487194f74f047))
+
+
+
 ## [3.5.8](https://github.com/forcedotcom/packaging/compare/3.5.7...3.5.8) (2024-04-22)
 
 
