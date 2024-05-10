@@ -107,7 +107,9 @@ export function isErrorFromSPVQueryRestriction(err: Error): boolean {
 }
 
 export function isErrorPackageNotAvailable(err: Error): boolean {
-  return err.name === 'UNKNOWN_EXCEPTION' || err.name === 'PACKAGE_UNAVAILABLE';
+  return ['UNKNOWN_EXCEPTION', 'PACKAGE_UNAVAILABLE', 'PACKAGE_UNAVAILABLE_CRC', 'PACKAGE_UNAVAILABLE_ZIP'].includes(
+    err.name
+  );
 }
 
 export async function getInstallationStatus(
@@ -155,13 +157,21 @@ export async function waitForPublish(
       // Continue retrying if there is no record
       // or for an InstallValidationStatus of PACKAGE_UNAVAILABLE (replication to the subscriber's instance has not completed)
       // or for an InstallValidationStatus of UNINSTALL_IN_PROGRESS
+      // or PACKAGE_UNAVAILABLE_ZIP or PACKAGE_UNAVAILABLE_CRC
 
       if (queryResult?.records?.length) {
         installValidationStatus = queryResult.records[0].InstallValidationStatus;
       }
       getLogger().debug(installMsgs.getMessage('publishWaitProgress', [` Status = ${installValidationStatus}`]));
       await Lifecycle.getInstance().emit(PackageEvents.install['subscriber-status'], installValidationStatus);
-      if (!['PACKAGE_UNAVAILABLE', 'UNINSTALL_IN_PROGRESS'].includes(installValidationStatus)) {
+      if (
+        ![
+          'PACKAGE_UNAVAILABLE',
+          'PACKAGE_UNAVAILABLE_CRC',
+          'PACKAGE_UNAVAILABLE_ZIP',
+          'UNINSTALL_IN_PROGRESS',
+        ].includes(installValidationStatus)
+      ) {
         return { completed: true, payload: installValidationStatus };
       }
 

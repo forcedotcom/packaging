@@ -287,7 +287,7 @@ describe('Package Install', () => {
   // When querying SubscriberPackageVersion for the InstallValidationStatus
   // (i.e., waitForPublish polling) an error can be thrown.  If the error
   // is either UNKNOWN_EXCEPTION or PACKAGE_UNAVAILABLE the polling should continue.
-  it('should continue polling publish status on certain query errors', async () => {
+  it('should continue polling publish status on UNKNOWN_EXCEPTION and PACKAGE_UNAVAILABLE query errors', async () => {
     const publishFrequency = Duration.milliseconds(10);
     const publishTimeout = Duration.milliseconds(500);
 
@@ -302,6 +302,40 @@ describe('Package Install', () => {
       .rejects(unknownExceptionError)
       .onSecondCall()
       .rejects(packageUnavailableError)
+      .onThirdCall()
+      .resolves({
+        done: false,
+        totalSize: 0,
+        records: [{ InstallValidationStatus: 'NO_ERRORS_DETECTED' }],
+      });
+
+    await waitForPublish(connection, myPackageVersion04t, publishFrequency, publishTimeout);
+
+    expect(spvQueryStub.callCount).to.equal(3);
+    expect(lifecycleStub.callCount).to.equal(3);
+    expect(lifecycleStub.args[0][0]).to.equal(PackageEvents.install['subscriber-status']);
+    expect(lifecycleStub.args[0][1]).to.equal('PACKAGE_UNAVAILABLE');
+    expect(lifecycleStub.args[1][0]).to.equal(PackageEvents.install['subscriber-status']);
+    expect(lifecycleStub.args[1][1]).to.equal('PACKAGE_UNAVAILABLE');
+    expect(lifecycleStub.args[2][0]).to.equal(PackageEvents.install['subscriber-status']);
+    expect(lifecycleStub.args[2][1]).to.equal('NO_ERRORS_DETECTED');
+  });
+
+  it('should continue polling publish status on PACKAGE_UNAVAILABLE_CRC and PACKAGE_UNAVAILABLE_ZIP query errors', async () => {
+    const publishFrequency = Duration.milliseconds(10);
+    const publishTimeout = Duration.milliseconds(500);
+
+    const unavailableCrcError = new Error();
+    unavailableCrcError.name = 'PACKAGE_UNAVAILABLE_CRC';
+    const unavailableZipError = new Error();
+    unavailableZipError.name = 'PACKAGE_UNAVAILABLE_ZIP';
+
+    queryStub.restore();
+    const spvQueryStub = $$.SANDBOX.stub(connection.tooling, 'query')
+      .onFirstCall()
+      .rejects(unavailableCrcError)
+      .onSecondCall()
+      .rejects(unavailableZipError)
       .onThirdCall()
       .resolves({
         done: false,
