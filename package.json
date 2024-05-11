@@ -42,7 +42,7 @@
   ],
   "dependencies": {
     "@jsforce/jsforce-node": "^3.2.0",
-    "@salesforce/core": "^7.3.3",
+    "@salesforce/core": "^7.3.5",
     "@salesforce/kit": "^3.1.1",
     "@salesforce/schemas": "^1.7.0",
     "@salesforce/source-deploy-retrieve": "^11.3.0",
