@@ -42,11 +42,12 @@
   ],
   "dependencies": {
     "@jsforce/jsforce-node": "^3.2.0",
-    "@salesforce/core": "^7.3.5",
+    "@salesforce/core": "^7.3.6",
     "@salesforce/kit": "^3.1.1",
     "@salesforce/schemas": "^1.7.0",
     "@salesforce/source-deploy-retrieve": "^11.4.3",
     "@salesforce/ts-types": "^2.0.9",
+    "@salesforce/types": "^1.1.0",
     "fast-xml-parser": "^4.3.6",
     "globby": "^11",
     "graphology": "^0.25.4",

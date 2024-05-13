@@ -11,7 +11,7 @@ import type { SaveResult } from '@jsforce/jsforce-node';
 import { Attributes } from 'graphology-types';
 import { Optional } from '@salesforce/ts-types';
 import { ConvertResult } from '@salesforce/source-deploy-retrieve';
-import { Package } from '@jsforce/jsforce-node/lib/api/metadata';
+import type { Package } from '@salesforce/types/metadata';
 import { PackageProfileApi } from '../package/packageProfileApi';
 import { PackageAncestryNode } from '../package/packageAncestry';
 import { PackagingSObjects } from './packagingSObjects';
@@ -21,7 +21,7 @@ import MetadataPackageVersion = PackagingSObjects.MetadataPackageVersion;
 
 export type IPackageVersion1GP = {
   getPackageVersion(id: string): Promise<MetadataPackageVersion[]>;
-}
+};
 
 export type IPackageVersion2GP = {
   create(): Promise<void>;
@@ -37,7 +37,7 @@ export type IPackageVersion2GP = {
   uninstall(): Promise<void>;
 
   update(): Promise<void>;
-}
+};
 
 export type PackageOptions = {
   connection: Connection;
@@ -443,7 +443,7 @@ export type AncestryRepresentationProducer = {
   addNode(node: AncestryRepresentationProducer): void;
 
   produce(): PackageAncestryNodeData | string | void;
-}
+};
 
 export const PackageEvents = {
   convert: {
