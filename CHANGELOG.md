@@ -1,3 +1,12 @@
+## [3.5.16](https://github.com/forcedotcom/packaging/compare/3.5.15...3.5.16) (2024-05-13)
+
+
+### Bug Fixes
+
+* add more exception names to continue install polling ([9c1abb8](https://github.com/forcedotcom/packaging/commit/9c1abb8ca5076619fd9f69efeba7a43576687598))
+
+
+
 ## [3.5.15](https://github.com/forcedotcom/packaging/compare/3.5.14...3.5.15) (2024-05-11)
 
 
