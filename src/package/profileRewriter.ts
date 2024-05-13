@@ -4,19 +4,12 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import type { Profile } from '@jsforce/jsforce-node/lib/api/metadata';
+import type { Profile } from '@salesforce/types/metadata';
 import { XMLBuilder, XMLParser } from 'fast-xml-parser';
 import { PackageXml } from '../interfaces';
 
-// missing from jsforce, so we need to add it since Profiles code uses it
-type ProfileCustomSettingAccess = {
-  name: string;
-  enabled: boolean;
-};
-
-export type CorrectedProfile = Profile & {
-  customSettingAccesses: ProfileCustomSettingAccess[];
-};
+// TODO: NEXT MAJOR remove type, just use profile from @salesforce/types
+export type CorrectedProfile = Profile;
 
 /**
  *
