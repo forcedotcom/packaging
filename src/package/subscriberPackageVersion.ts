@@ -10,6 +10,7 @@ import { Duration } from '@salesforce/kit';
 import { Nullable, Optional } from '@salesforce/ts-types';
 import {
   InstalledPackages,
+  PackageDescriptorJson,
   PackageInstallCreateRequest,
   PackageInstallOptions,
   PackageType,
@@ -19,6 +20,7 @@ import {
 import { applyErrorAction, escapeInstallationKey, massageErrorMessage, numberToDuration } from '../utils/packageUtils';
 import { createPackageInstallRequest, getStatus, pollStatus, waitForPublish } from './packageInstall';
 import { getUninstallErrors, uninstallPackage } from './packageUninstall';
+import { PackageVersionCreate } from './packageVersionCreate';
 import { VersionNumber } from './versionNumber';
 
 Messages.importMessagesDirectory(__dirname);
@@ -233,6 +235,25 @@ export class SubscriberPackageVersion {
   }
 
   /**
+   * Resolve fields from a packageDirectories entry to a SubscriberPackageVersionId (04t).
+   * Specifically uses the `versionNumber` and `packageId` fields, as well as an optional
+   * `branch` field.
+   *
+   * @param connection A connection object to the org
+   * @param pkgDescriptor Fields from a packageDirectories entry in sfdx-project.json.
+   * The `versionNumber` and `packageId` fields are required. Optionally, the `branch` and
+   * `package` fields can be passed.
+   * @returns the SubscriberPackageVersionId (04t)
+   */
+  public static async resolveId(
+    connection: Connection,
+    pkgDescriptor: Partial<PackageDescriptorJson>
+  ): Promise<string> {
+    const pvc = new PackageVersionCreate({ connection, project: SfProject.getInstance() });
+    return pvc.retrieveSubscriberPackageVersionId(pkgDescriptor);
+  }
+
+  /**
    * Get the package version ID for this SubscriberPackageVersion.
    *
    * @returns The SubscriberPackageVersion Id (04t).
@@ -244,7 +265,7 @@ export class SubscriberPackageVersion {
   /**
    * Get the package type for this SubscriberPackageVersion.
    *
-   * @returns {PackageType} The package type.
+   * @returns {PackageType} The package type ("Managed" or "Unlocked") for this SubscriberPackageVersion.
    */
   public async getPackageType(): Promise<PackageType> {
     return this.getField<SPV['Package2ContainerOptions']>('Package2ContainerOptions');
@@ -262,7 +283,7 @@ export class SubscriberPackageVersion {
   /**
    * Get the subscriber package Id (033) for this SubscriberPackageVersion.
    *
-   * @returns {string} The subscriber package Id.
+   * @returns {string} The subscriber package Id (033).
    */
   public async getSubscriberPackageId(): Promise<string> {
     return this.getField<SPV['SubscriberPackageId']>('SubscriberPackageId');

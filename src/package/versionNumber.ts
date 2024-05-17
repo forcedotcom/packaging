@@ -82,13 +82,6 @@ export class VersionNumber {
     }
   }
 
-  /**
-   * @deprecated use isBuildKeyword instead
-   */
-  public isbuildKeyword(): boolean {
-    return this.isBuildKeyword();
-  }
-
   public isBuildKeyword(): boolean {
     return VersionNumber.isABuildKeyword(this.build);
   }

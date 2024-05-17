@@ -451,10 +451,8 @@ const pipeline = promisify(cbPipeline);
 /**
  * Zips directory to given zipfile.
  *
- * https://github.com/archiverjs/node-archiver
- *
- * @param dir to zip
- * @param zipfile
+ * @param dir directory to zip
+ * @param zipfile path to the zip file to create
  */
 export async function zipDir(dir: string, zipfile: string): Promise<void> {
   const logger = Logger.childFromRoot('srcDevUtils#zipDir');

@@ -91,6 +91,96 @@ export class PackageVersionCreate {
     }
   }
 
+  /**
+   * A dependency in the project config file may be specified using either a subscriber package version id (04t)
+   * or a package Id (0Ho) + a version number.  Additionally, a build number may be the actual build number, or a
+   * keyword: LATEST or RELEASED (meaning the latest or released build number for a given major.minor.patch).
+   *
+   * This method resolves a package Id + version number to a subscriber package version id (04t)
+   * and adds it as a SubscriberPackageVersionId parameter in the dependency object.
+   */
+  public async retrieveSubscriberPackageVersionId(dependency: PackageDescriptorJson): Promise<string> {
+    if (!dependency.versionNumber) {
+      throw messages.createError('errorDependencyPair', [JSON.stringify(dependency)]);
+    }
+    if (!dependency.packageId) {
+      throw messages.createError('errorDependencyPair', [JSON.stringify(dependency)]);
+    }
+
+    const versionNumber = VersionNumber.from(dependency.versionNumber);
+    const buildNumber = versionNumber.build;
+
+    // use the dependency.branch if present otherwise use the branch of the version being created
+    const branch = dependency.branch ?? this.options.branch;
+    const branchString = !branch ? 'null' : `'${branch}'`;
+
+    // resolve a build number keyword to an actual number, if needed
+    const resolvedBuildNumber = await this.resolveBuildNumber(versionNumber, dependency.packageId, branch);
+
+    // now that we have a full build number, query for the associated 04t.
+    // because the build number may not be unique across versions, add in conditionals for
+    // the branch or the RELEASED token (if used)
+    const branchOrReleasedCondition =
+      buildNumber === BuildNumberToken.RELEASED_BUILD_NUMBER_TOKEN
+        ? 'AND IsReleased = true'
+        : `AND Branch = ${branchString}`;
+    const query = `SELECT SubscriberPackageVersionId FROM Package2Version WHERE Package2Id = '${dependency.packageId}' AND MajorVersion = ${versionNumber.major} AND MinorVersion = ${versionNumber.minor} AND PatchVersion = ${versionNumber.patch} AND BuildNumber = ${resolvedBuildNumber} ${branchOrReleasedCondition}`;
+    const pkgVerQueryResult = await this.connection.tooling.query<PackagingSObjects.Package2Version>(query);
+    const subRecords = pkgVerQueryResult.records;
+    if (!subRecords || subRecords.length !== 1) {
+      throw messages.createError('versionNumberNotFoundInDevHub', [
+        dependency.packageId,
+        branchString,
+        versionNumber.toString(),
+        resolvedBuildNumber,
+      ]);
+    }
+
+    // warn user of the resolved build number when LATEST and RELEASED keywords are used
+    if (versionNumber.isBuildKeyword()) {
+      versionNumber.build = resolvedBuildNumber;
+
+      if (buildNumber === BuildNumberToken.LATEST_BUILD_NUMBER_TOKEN) {
+        this.logger.info(
+          messages.getMessage('buildNumberResolvedForLatest', [
+            dependency.package,
+            versionNumber.toString(),
+            branchString,
+            dependency.subscriberPackageVersionId,
+          ])
+        );
+      } else if (buildNumber === BuildNumberToken.RELEASED_BUILD_NUMBER_TOKEN) {
+        this.logger.info(
+          messages.getMessage('buildNumberResolvedForReleased', [
+            dependency.package,
+            versionNumber.toString(),
+            dependency.subscriberPackageVersionId,
+          ])
+        );
+      }
+    }
+
+    return pkgVerQueryResult.records[0].SubscriberPackageVersionId;
+  }
+
+  private async resolveSubscriberPackageVersionId(dependency: PackageDescriptorJson): Promise<PackageDescriptorJson> {
+    await this.validateDependencyValues(dependency);
+    if (dependency.subscriberPackageVersionId) {
+      delete dependency.package;
+
+      // if a 04t id is specified just use it.
+      return dependency;
+    }
+
+    dependency.subscriberPackageVersionId = await this.retrieveSubscriberPackageVersionId(dependency);
+    delete dependency.packageId;
+    delete dependency.package;
+    delete dependency.versionNumber;
+    delete dependency.branch;
+
+    return dependency;
+  }
+
   private async validateDependencyValues(dependency: PackageDescriptorJson): Promise<void> {
     // If valid 04t package, just return it to be used straight away.
     if (dependency.subscriberPackageVersionId) {
@@ -139,99 +229,12 @@ export class PackageVersionCreate {
     }
   }
 
-  /**
-   * A dependency in the workspace config file may be specified using either a subscriber package version id (04t)
-   * or a package Id (0Ho) + a version number.  Additionally, a build number may be the actual build number, or a
-   * keyword: LATEST or RELEASED (meaning the latest or released build number for a given major.minor.patch).
-   *
-   * This method resolves a package Id + version number to a subscriber package version id (04t)
-   * and adds it as a SubscriberPackageVersionId parameter in the dependency object.
-   */
-  private async retrieveSubscriberPackageVersionId(dependency: PackageDescriptorJson): Promise<PackageDescriptorJson> {
-    await this.validateDependencyValues(dependency);
-    if (dependency.subscriberPackageVersionId) {
-      delete dependency.package;
-
-      // if a 04t id is specified just use it.
-      return dependency;
-    }
-
-    if (!dependency.versionNumber) {
-      throw messages.createError('errorDependencyPair', [JSON.stringify(dependency)]);
-    }
-    if (!dependency.packageId) {
-      throw messages.createError('errorDependencyPair', [JSON.stringify(dependency)]);
-    }
-
-    const versionNumber = VersionNumber.from(dependency.versionNumber);
-    const buildNumber = versionNumber.build;
-
-    // use the dependency.branch if present otherwise use the branch of the version being created
-    const branch = dependency.branch ?? this.options.branch;
-    const branchString = !branch || branch === '' ? 'null' : `'${branch}'`;
-
-    // resolve a build number keyword to an actual number, if needed
-    const resolvedBuildNumber = await this.resolveBuildNumber(versionNumber, dependency.packageId, branch);
-
-    // now that we have a full build number, query for the associated 04t.
-    // because the build number may not be unique across versions, add in conditionals for
-    // the branch or the RELEASED token (if used)
-    const branchOrReleasedCondition =
-      buildNumber === BuildNumberToken.RELEASED_BUILD_NUMBER_TOKEN
-        ? 'AND IsReleased = true'
-        : `AND Branch = ${branchString}`;
-    const query = `SELECT SubscriberPackageVersionId FROM Package2Version WHERE Package2Id = '${dependency.packageId}' AND MajorVersion = ${versionNumber.major} AND MinorVersion = ${versionNumber.minor} AND PatchVersion = ${versionNumber.patch} AND BuildNumber = ${resolvedBuildNumber} ${branchOrReleasedCondition}`;
-    const pkgVerQueryResult = await this.connection.tooling.query<PackagingSObjects.Package2Version>(query);
-    const subRecords = pkgVerQueryResult.records;
-    if (!subRecords || subRecords.length !== 1) {
-      throw messages.createError('versionNumberNotFoundInDevHub', [
-        dependency.packageId,
-        branchString,
-        versionNumber.toString(),
-        resolvedBuildNumber,
-      ]);
-    }
-
-    dependency.subscriberPackageVersionId = pkgVerQueryResult.records[0].SubscriberPackageVersionId;
-
-    // warn user of the resolved build number when LATEST and RELEASED keywords are used
-    if (versionNumber.isbuildKeyword()) {
-      versionNumber.build = resolvedBuildNumber;
-
-      if (buildNumber === BuildNumberToken.LATEST_BUILD_NUMBER_TOKEN) {
-        this.logger.info(
-          messages.getMessage('buildNumberResolvedForLatest', [
-            dependency.package,
-            versionNumber.toString(),
-            branchString,
-            dependency.subscriberPackageVersionId,
-          ])
-        );
-      } else if (buildNumber === BuildNumberToken.RELEASED_BUILD_NUMBER_TOKEN) {
-        this.logger.info(
-          messages.getMessage('buildNumberResolvedForReleased', [
-            dependency.package,
-            versionNumber.toString(),
-            dependency.subscriberPackageVersionId,
-          ])
-        );
-      }
-    }
-
-    delete dependency.packageId;
-    delete dependency.package;
-    delete dependency.versionNumber;
-    delete dependency.branch;
-
-    return dependency;
-  }
-
   private async resolveBuildNumber(
     versionNumber: VersionNumber,
     packageId: string,
     branch: string | undefined
   ): Promise<string> {
-    if (!versionNumber.isbuildKeyword()) {
+    if (!versionNumber.isBuildKeyword()) {
       // The build number is already specified so just return it using the tooling query result obj structure
       return `${versionNumber.build}`;
     }
@@ -377,7 +380,7 @@ export class PackageVersionCreate {
     this.resolveBuildUserPermissions(packageDescriptorJson);
 
     // All dependencies for the packaging dir should be resolved to an 04t id to be passed to the server.
-    // (see _retrieveSubscriberPackageVersionId for details)
+    // (see resolveSubscriberPackageVersionId() for details)
     const dependencies = packageDescriptorJson.dependencies;
 
     // branch and APV language can be set via options or packageDirectory; option takes precedence
@@ -385,7 +388,7 @@ export class PackageVersionCreate {
     this.options.language = this.options.language ?? apvLanguage;
 
     const resultValues = await Promise.all(
-      !dependencies ? [] : dependencies.map((dependency) => this.retrieveSubscriberPackageVersionId(dependency))
+      !dependencies ? [] : dependencies.map((dependency) => this.resolveSubscriberPackageVersionId(dependency))
     );
 
     const versionNumber = this.options.versionnumber ?? packageDescriptorJson.versionNumber;
