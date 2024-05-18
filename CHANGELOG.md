@@ -1,3 +1,12 @@
+## [3.5.18](https://github.com/forcedotcom/packaging/compare/3.5.17...3.5.18) (2024-05-18)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/schemas from 1.7.0 to 1.9.0 ([b748e03](https://github.com/forcedotcom/packaging/commit/b748e035a338b02b1651667482bf0fecad0609ac))
+
+
+
 ## [3.5.17](https://github.com/forcedotcom/packaging/compare/3.5.16...3.5.17) (2024-05-17)
 
 
