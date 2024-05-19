@@ -58,7 +58,7 @@
   },
   "devDependencies": {
     "@salesforce/cli-plugins-testkit": "^5.3.4",
-    "@salesforce/dev-scripts": "^9.0.0",
+    "@salesforce/dev-scripts": "^9.1.2",
     "@salesforce/ts-sinon": "^1.4.19",
     "@types/globby": "^9.1.0",
     "@types/jszip": "^3.4.1",
