@@ -371,29 +371,33 @@ export class SubscriberPackageVersion {
    */
   public async getData(
     options: { force?: boolean; includeHighCostFields?: boolean } = { force: false, includeHighCostFields: false }
-  ): Promise<PackagingSObjects.SubscriberPackageVersion | undefined> {
+  ): Promise<SPV | undefined> {
     if (!this.data || Boolean(options.force) || options.includeHighCostFields) {
       const queryFields = this.getFieldsForQuery(options);
       if (queryFields.length === 0) {
         return this.data;
       }
       try {
-        const queryNoKey = `SELECT ${queryFields.toString()} FROM SubscriberPackageVersion WHERE Id ='${await this.getId()}'`;
-        const escapedInstallationKey = this.password ? escapeInstallationKey(this.password) : null;
-        const queryWithKey = `${queryNoKey} AND InstallationKey ='${escapedInstallationKey}'`;
-        this.data = await this.connection.singleRecordQuery<PackagingSObjects.SubscriberPackageVersion>(queryWithKey, {
-          tooling: true,
-        });
+        let query = `SELECT ${queryFields.toString()} FROM SubscriberPackageVersion WHERE Id ='${await this.getId()}'`;
+        if (this.password) {
+          query = `${query} AND InstallationKey ='${escapeInstallationKey(this.password)}'`;
+        }
+        this.data = await this.connection.singleRecordQuery<SPV>(query, { tooling: true });
       } catch (err) {
-        const error =
-          err instanceof Error
-            ? err
-            : typeof err === 'string'
-            ? new Error(err)
-            : typeof err === 'number'
-            ? err
-            : new Error('Unknown error');
-        throw messages.createError('errorInvalidIdNoRecordFound', [this.options.aliasOrId], undefined, error);
+        if (err instanceof Error) {
+          if (err.message === 'Request failed') {
+            // Use a better error message. This is typically a bad ID.
+            const errMsg = messages.getMessage('errorInvalidIdNoRecordFound', [this.options.aliasOrId]);
+            err.message = `${errMsg} - (${err.message})`;
+          }
+          throw SfError.create({
+            name: err.name,
+            message: err.message,
+            cause: err,
+          });
+        } else {
+          throw SfError.wrap(err);
+        }
       }
     }
     return this.data;

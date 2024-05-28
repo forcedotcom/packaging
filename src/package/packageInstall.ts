@@ -187,6 +187,14 @@ export async function waitForPublish(
     getLogger().debug(`Polling timeout (min): ${pollingOptions.timeout.minutes}`);
     await pollingClient.subscribe();
   } catch (e) {
+    // For installation key problems throw that error.
+    if (e instanceof Error && e.name.includes('INSTALL_KEY')) {
+      throw SfError.create({
+        name: e.name,
+        message: e.message,
+        cause: e,
+      });
+    }
     // if polling timed out
     const error = installMsgs.createError('subscriberPackageVersionNotPublished');
     if (queryResult?.records[0]) {

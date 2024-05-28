@@ -148,7 +148,7 @@ describe('subscriberPackageVersion', () => {
 
     const id = '04txxxxxxxxxxxxxxy';
     const subscriberPackageVersion = new SubscriberPackageVersion({ connection, aliasOrId: id, password });
-    queryStub = $$.SANDBOX.stub(connection, 'singleRecordQuery').throws('No record found');
+    queryStub = $$.SANDBOX.stub(connection, 'singleRecordQuery').throws(Error('Request failed'));
     expect(queryStub.called).to.be.false;
     try {
       await subscriberPackageVersion.getPackageType();
@@ -159,6 +159,24 @@ describe('subscriberPackageVersion', () => {
         /The subscriber package version 04txxxxxxxxxxxxxxy is invalid, no subscriber package version record found/,
         error.message
       );
+      expect(queryStub.called).to.be.true;
+    }
+  });
+  it('should propagate the same error from the SPV query', async () => {
+    connection = await testOrg.getConnection();
+
+    const id = '04txxxxxxxxxxxxxxy';
+    const subscriberPackageVersion = new SubscriberPackageVersion({ connection, aliasOrId: id, password });
+    queryStub = $$.SANDBOX.stub(connection, 'singleRecordQuery').throws(
+      Error('Invalid InstallationKey for SubscriberPackageVersion')
+    );
+    expect(queryStub.called).to.be.false;
+    try {
+      await subscriberPackageVersion.getPackageType();
+      expect.fail('should have thrown "Invalid InstallationKey for SubscriberPackageVersion"');
+    } catch (e) {
+      const error = e as Error;
+      expect(error.message).to.equal('Invalid InstallationKey for SubscriberPackageVersion');
       expect(queryStub.called).to.be.true;
     }
   });
