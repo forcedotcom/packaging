@@ -368,15 +368,16 @@ describe('Integration tests for @salesforce/packaging library', () => {
     it('will list all of the created package versions (status = Success)', async () => {
       const result = await PackageVersion.getPackageVersionCreateRequests(devHubOrg.getConnection(), {
         status: 'Success',
+        createdlastdays: 3,
       });
       result.map((res) => {
         // we should've filtered to only successful package versions1
         expect(res.Status).to.equal('Success');
         expect(res).to.have.all.keys(VERSION_CREATE_RESPONSE_KEYS);
-        expect(res.Id.startsWith('08c')).to.be.true;
-        expect(res.Package2Id.startsWith('0Ho')).to.be.true;
-        expect(res.Package2VersionId.startsWith('05i')).to.be.true;
-        expect(res.SubscriberPackageVersionId?.startsWith('04t')).to.be.true;
+        expect(res.Id.startsWith('08c'), 'res.Id').to.be.true;
+        expect(res.Package2Id.startsWith('0Ho'), 'res.Package2Id').to.be.true;
+        expect(res.Package2VersionId.startsWith('05i'), 'res.Package2VersionId').to.be.true;
+        expect(res.SubscriberPackageVersionId?.startsWith('04t'), 'res.SubscriberPackageVersionId').to.be.true;
       });
     });
 
