@@ -1,3 +1,13 @@
+## [3.5.20](https://github.com/forcedotcom/packaging/compare/3.5.19...3.5.20) (2024-05-30)
+
+
+### Bug Fixes
+
+* better error handling when installing packages ([3b2c856](https://github.com/forcedotcom/packaging/commit/3b2c85691f5b66fb3d18b1c67ce81d9beac368f7))
+* limit test to last 3 days of package version creates ([5442264](https://github.com/forcedotcom/packaging/commit/5442264436e3e2297efff0f395d859796167ca51))
+
+
+
 ## [3.5.19](https://github.com/forcedotcom/packaging/compare/3.5.18...3.5.19) (2024-05-18)
 
 
