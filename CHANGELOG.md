@@ -1,3 +1,12 @@
+## [3.5.21](https://github.com/forcedotcom/packaging/compare/3.5.20...3.5.21) (2024-05-31)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/source-deploy-retrieve from 11.4.4 to 11.6.3 ([6fb1ad3](https://github.com/forcedotcom/packaging/commit/6fb1ad33cf4c0840bae787c4429c2dbeab52ad08))
+
+
+
 ## [3.5.20](https://github.com/forcedotcom/packaging/compare/3.5.19...3.5.20) (2024-05-30)
 
 
