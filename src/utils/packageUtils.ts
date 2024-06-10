@@ -60,7 +60,7 @@ export const DEFAULT_PACKAGE_DIR = {
   versionName: 'ver 0.1',
   versionNumber: '0.1.0.NEXT',
   default: true,
-};
+}
 
 export const BY_LABEL = ((): IdRegistry =>
   Object.fromEntries(
