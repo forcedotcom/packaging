@@ -21,7 +21,7 @@ import {
   ScratchOrgSettingsGenerator,
 } from '@salesforce/core';
 import { camelCaseToTitleCase, Duration, env } from '@salesforce/kit';
-import { Many } from '@salesforce/ts-types';
+import { Many, ensureString } from '@salesforce/ts-types';
 import * as pkgUtils from '../utils/packageUtils';
 import { copyDescriptorProperties, generatePackageAliasEntry, uniqid } from '../utils/packageUtils';
 import {
@@ -113,7 +113,10 @@ export async function convertPackage(
 
   const packageId = await findOrCreatePackage2(pkg, connection, project);
 
-  const apiVersion = project?.getSfProjectJson()?.get('sourceApiVersion') as string;
+  const apiVersion = ensureString(
+    project?.getSfProjectJson()?.get('sourceApiVersion'),
+    'sfProjectJson is missing sourceApiVersion'
+  );
 
   const request = await createPackageVersionCreateRequest(
     {
