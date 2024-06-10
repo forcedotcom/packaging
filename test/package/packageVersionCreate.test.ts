@@ -9,6 +9,8 @@ import fs from 'node:fs';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/testSetup';
 import { assert, expect } from 'chai';
 import { Connection, Logger, SfProject } from '@salesforce/core';
+import { isPackagingDirectory } from '@salesforce/core/project';
+import { PackageDir, PackagePackageDir } from '@salesforce/schemas';
 import {
   MetadataResolver,
   PackageVersionCreate,
@@ -23,6 +25,25 @@ import { PackageProfileApi } from '../../src/package/packageProfileApi';
 import { VersionNumber } from '../../src/package/versionNumber';
 
 describe('Package Version Create', () => {
+  const expectedKeys = [
+    'Branch',
+    'CodeCoverage',
+    'ConvertedFromVersionId',
+    'CreatedBy',
+    'CreatedDate',
+    'Error',
+    'HasMetadataRemoved',
+    'HasPassedCodeCoverageCheck',
+    'Id',
+    'Package2Id',
+    'Package2Name',
+    'Package2VersionId',
+    'Status',
+    'SubscriberPackageVersionId',
+    'Tag',
+    'VersionNumber',
+  ];
+
   const $$ = instantiateContext();
   const testOrg = new MockTestOrgData();
   const packageId = '0Ho3i000000Gmj6XXX';
@@ -153,26 +174,10 @@ describe('Package Version Create', () => {
     stubConvert();
 
     const result = await pvc.createPackageVersion();
-    expect(result).to.have.all.keys(
-      'Branch',
-      'ConvertedFromVersionId',
-      'CreatedBy',
-      'CreatedDate',
-      'Error',
-      'HasMetadataRemoved',
-      'HasPassedCodeCoverageCheck',
-      'CodeCoverage',
-      'VersionNumber',
-      'Id',
-      'Package2Id',
-      'Package2Name',
-      'Package2VersionId',
-      'Status',
-      'SubscriberPackageVersionId',
-      'Tag'
-    );
-
-    expect(project.getSfProjectJson().getContents().packageDirectories[1].dependencies).to.deep.equal([
+    expect(result).to.have.all.keys(expectedKeys);
+    const dir1 = project.getSfProjectJson().getContents().packageDirectories[1];
+    assert(isPackagingDirectory(dir1));
+    expect(dir1.dependencies).to.deep.equal([
       {
         package: 'DEP@0.1.0-1',
       },
@@ -185,24 +190,7 @@ describe('Package Version Create', () => {
     stubConvert();
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].CalculateCodeCoverage).to.equal(true);
-    expect(result).to.have.all.keys(
-      'Branch',
-      'ConvertedFromVersionId',
-      'CreatedBy',
-      'CreatedDate',
-      'Error',
-      'HasMetadataRemoved',
-      'HasPassedCodeCoverageCheck',
-      'CodeCoverage',
-      'VersionNumber',
-      'Id',
-      'Package2Id',
-      'Package2Name',
-      'Package2VersionId',
-      'Status',
-      'SubscriberPackageVersionId',
-      'Tag'
-    );
+    expect(result).to.have.all.keys(expectedKeys);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const unpackagedMD = hasUnpackagedMdSpy.secondCall.args[0];
     expect(unpackagedMD).to.equal('unpackaged');
@@ -215,24 +203,7 @@ describe('Package Version Create', () => {
 
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].CalculateCodeCoverage).to.equal(false);
-    expect(result).to.have.all.keys(
-      'Branch',
-      'ConvertedFromVersionId',
-      'CreatedBy',
-      'CreatedDate',
-      'Error',
-      'HasMetadataRemoved',
-      'HasPassedCodeCoverageCheck',
-      'CodeCoverage',
-      'VersionNumber',
-      'Id',
-      'Package2Id',
-      'Package2Name',
-      'Package2VersionId',
-      'Status',
-      'SubscriberPackageVersionId',
-      'Tag'
-    );
+    expect(result).to.have.all.keys(expectedKeys);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const hasSeedMd = hasSeedMdSpy.firstCall.args[0];
     expect(hasSeedMd).to.equal('seed');
@@ -249,24 +220,7 @@ describe('Package Version Create', () => {
 
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].Tag).to.equal('DancingBears');
-    expect(result).to.have.all.keys(
-      'Branch',
-      'ConvertedFromVersionId',
-      'CreatedBy',
-      'CreatedDate',
-      'Error',
-      'HasMetadataRemoved',
-      'HasPassedCodeCoverageCheck',
-      'CodeCoverage',
-      'VersionNumber',
-      'Id',
-      'Package2Id',
-      'Package2Name',
-      'Package2VersionId',
-      'Status',
-      'SubscriberPackageVersionId',
-      'Tag'
-    );
+    expect(result).to.have.all.keys(expectedKeys);
   });
 
   it('should create the package version create request with skipancestorcheck info', async () => {
@@ -281,24 +235,7 @@ describe('Package Version Create', () => {
 
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].skipancestorcheck).to.equal(undefined);
-    expect(result).to.have.all.keys(
-      'Branch',
-      'ConvertedFromVersionId',
-      'CreatedBy',
-      'CreatedDate',
-      'Error',
-      'HasMetadataRemoved',
-      'HasPassedCodeCoverageCheck',
-      'CodeCoverage',
-      'VersionNumber',
-      'Id',
-      'Package2Id',
-      'Package2Name',
-      'Package2VersionId',
-      'Status',
-      'SubscriberPackageVersionId',
-      'Tag'
-    );
+    expect(result).to.have.all.keys(expectedKeys);
   });
 
   it('should create the package version create request with skip validation', async () => {
@@ -312,24 +249,7 @@ describe('Package Version Create', () => {
 
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].SkipValidation).to.equal(true);
-    expect(result).to.have.all.keys(
-      'Branch',
-      'ConvertedFromVersionId',
-      'CreatedBy',
-      'CreatedDate',
-      'Error',
-      'HasMetadataRemoved',
-      'HasPassedCodeCoverageCheck',
-      'CodeCoverage',
-      'VersionNumber',
-      'Id',
-      'Package2Id',
-      'Package2Name',
-      'Package2VersionId',
-      'Status',
-      'SubscriberPackageVersionId',
-      'Tag'
-    );
+    expect(result).to.have.all.keys(expectedKeys);
   });
 
   it('should create the package version create request with installationkey', async () => {
@@ -344,24 +264,7 @@ describe('Package Version Create', () => {
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].InstallKey).to.equal('guessMyPassword');
     expect(packageCreateStub.firstCall.args[1].SkipValidation).to.equal(false);
-    expect(result).to.have.all.keys(
-      'Branch',
-      'ConvertedFromVersionId',
-      'CreatedBy',
-      'CreatedDate',
-      'Error',
-      'HasMetadataRemoved',
-      'HasPassedCodeCoverageCheck',
-      'CodeCoverage',
-      'VersionNumber',
-      'Id',
-      'Package2Id',
-      'Package2Name',
-      'Package2VersionId',
-      'Status',
-      'SubscriberPackageVersionId',
-      'Tag'
-    );
+    expect(result).to.have.all.keys(expectedKeys);
   });
 
   it('should create the package version create request with branch', async () => {
@@ -369,24 +272,7 @@ describe('Package Version Create', () => {
     stubConvert();
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].Branch).to.equal('main');
-    expect(result).to.have.all.keys(
-      'Branch',
-      'ConvertedFromVersionId',
-      'CreatedBy',
-      'CreatedDate',
-      'Error',
-      'HasMetadataRemoved',
-      'HasPassedCodeCoverageCheck',
-      'CodeCoverage',
-      'VersionNumber',
-      'Id',
-      'Package2Id',
-      'Package2Name',
-      'Package2VersionId',
-      'Status',
-      'SubscriberPackageVersionId',
-      'Tag'
-    );
+    expect(result).to.have.all.keys(expectedKeys);
   });
 
   it('should resolve dependency version using the --branch parameter only if the branch is undefined in config', async () => {
@@ -394,7 +280,7 @@ describe('Package Version Create', () => {
     const packageVersionCreateSpy = $$.SANDBOX.spy(PackageVersionCreate.prototype, 'resolveBuildNumber');
 
     const config = project.getSfProjectJson().getContents();
-    if (config.packageDirectories[1].dependencies !== undefined) {
+    if (isDirWithDependencies(config.packageDirectories[1])) {
       config.packageDirectories[1].dependencies[0].package = 'DEP';
       config.packageDirectories[1].dependencies[0].versionNumber = '0.1.0.1';
     }
@@ -418,24 +304,7 @@ describe('Package Version Create', () => {
       true
     );
 
-    expect(result).to.have.all.keys(
-      'Branch',
-      'ConvertedFromVersionId',
-      'CreatedBy',
-      'CreatedDate',
-      'Error',
-      'HasMetadataRemoved',
-      'HasPassedCodeCoverageCheck',
-      'CodeCoverage',
-      'VersionNumber',
-      'Id',
-      'Package2Id',
-      'Package2Name',
-      'Package2VersionId',
-      'Status',
-      'SubscriberPackageVersionId',
-      'Tag'
-    );
+    expect(result).to.have.all.keys(expectedKeys);
   });
 
   it('should resolve dependency version ignoring the --branch parameter if the branch is explicitly set in config', async () => {
@@ -443,7 +312,7 @@ describe('Package Version Create', () => {
     const packageVersionCreateSpy = $$.SANDBOX.spy(PackageVersionCreate.prototype, 'resolveBuildNumber');
 
     const config = project.getSfProjectJson().getContents();
-    if (config.packageDirectories[1].dependencies !== undefined) {
+    if (isDirWithDependencies(config.packageDirectories[1])) {
       config.packageDirectories[1].dependencies[0].package = 'DEP';
       config.packageDirectories[1].dependencies[0].versionNumber = '0.1.0.1';
       config.packageDirectories[1].dependencies[0].branch = 'dev';
@@ -467,24 +336,7 @@ describe('Package Version Create', () => {
       true
     );
 
-    expect(result).to.have.all.keys(
-      'Branch',
-      'ConvertedFromVersionId',
-      'CreatedBy',
-      'CreatedDate',
-      'Error',
-      'HasMetadataRemoved',
-      'HasPassedCodeCoverageCheck',
-      'CodeCoverage',
-      'VersionNumber',
-      'Id',
-      'Package2Id',
-      'Package2Name',
-      'Package2VersionId',
-      'Status',
-      'SubscriberPackageVersionId',
-      'Tag'
-    );
+    expect(result).to.have.all.keys(expectedKeys);
   });
 
   it("should resolve dependency version to `null` if the --branch parameter is set but the branch is explicitly '' in config", async () => {
@@ -492,7 +344,7 @@ describe('Package Version Create', () => {
     const packageVersionCreateSpy = $$.SANDBOX.spy(PackageVersionCreate.prototype, 'resolveBuildNumber');
 
     const config = project.getSfProjectJson().getContents();
-    if (config.packageDirectories[1].dependencies !== undefined) {
+    if (isDirWithDependencies(config.packageDirectories[1])) {
       config.packageDirectories[1].dependencies[0].package = 'DEP';
       config.packageDirectories[1].dependencies[0].versionNumber = '0.1.0.1';
       config.packageDirectories[1].dependencies[0].branch = '';
@@ -514,24 +366,7 @@ describe('Package Version Create', () => {
     // @ts-ignore: Expected 0 arguments, but got 3
     expect(packageVersionCreateSpy.calledWith(VersionNumber.from('0.1.0.1'), '0Ho4J000000TNmPXXX', '')).to.equal(true);
 
-    expect(result).to.have.all.keys(
-      'Branch',
-      'ConvertedFromVersionId',
-      'CreatedBy',
-      'CreatedDate',
-      'Error',
-      'HasMetadataRemoved',
-      'HasPassedCodeCoverageCheck',
-      'CodeCoverage',
-      'VersionNumber',
-      'Id',
-      'Package2Id',
-      'Package2Name',
-      'Package2VersionId',
-      'Status',
-      'SubscriberPackageVersionId',
-      'Tag'
-    );
+    expect(result).to.have.all.keys(expectedKeys);
   });
 
   it('should create the package version create request with language and API version >= 57.0', async () => {
@@ -540,24 +375,7 @@ describe('Package Version Create', () => {
     stubConvert();
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].Language).to.equal('en_US');
-    expect(result).to.have.all.keys(
-      'Branch',
-      'ConvertedFromVersionId',
-      'CreatedBy',
-      'CreatedDate',
-      'Error',
-      'HasMetadataRemoved',
-      'HasPassedCodeCoverageCheck',
-      'CodeCoverage',
-      'VersionNumber',
-      'Id',
-      'Package2Id',
-      'Package2Name',
-      'Package2VersionId',
-      'Status',
-      'SubscriberPackageVersionId',
-      'Tag'
-    );
+    expect(result).to.have.all.keys(expectedKeys);
   });
 
   it('should NOT create the package version create request with language and API version < 57.0', async () => {
@@ -566,24 +384,7 @@ describe('Package Version Create', () => {
     const pvc = new PackageVersionCreate({ connection, project, language: 'en_US', packageId });
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].Language).to.be.undefined;
-    expect(result).to.have.all.keys(
-      'Branch',
-      'ConvertedFromVersionId',
-      'CreatedBy',
-      'CreatedDate',
-      'Error',
-      'HasMetadataRemoved',
-      'HasPassedCodeCoverageCheck',
-      'CodeCoverage',
-      'VersionNumber',
-      'Id',
-      'Package2Id',
-      'Package2Name',
-      'Package2VersionId',
-      'Status',
-      'SubscriberPackageVersionId',
-      'Tag'
-    );
+    expect(result).to.have.all.keys(expectedKeys);
   });
 
   it("should set the build org language (i.e., package2-descriptor.json's language) from the scratch org definition file's language", async () => {
@@ -597,24 +398,7 @@ describe('Package Version Create', () => {
 
     const pvc = new PackageVersionCreate({ connection, project, definitionfile: scratchOrgDefFileName, packageId });
     const result = await pvc.createPackageVersion();
-    expect(result).to.have.all.keys(
-      'Branch',
-      'ConvertedFromVersionId',
-      'CreatedBy',
-      'CreatedDate',
-      'Error',
-      'HasMetadataRemoved',
-      'HasPassedCodeCoverageCheck',
-      'CodeCoverage',
-      'VersionNumber',
-      'Id',
-      'Package2Id',
-      'Package2Name',
-      'Package2VersionId',
-      'Status',
-      'SubscriberPackageVersionId',
-      'Tag'
-    );
+    expect(result).to.have.all.keys(expectedKeys);
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // package2-descriptor.json contents
@@ -652,24 +436,7 @@ describe('Package Version Create', () => {
 
     const result = await pvc.createPackageVersion();
     expect(validationSpy.callCount).to.equal(1);
-    expect(result).to.have.all.keys(
-      'Branch',
-      'CodeCoverage',
-      'ConvertedFromVersionId',
-      'CreatedBy',
-      'CreatedDate',
-      'Error',
-      'HasMetadataRemoved',
-      'HasPassedCodeCoverageCheck',
-      'Id',
-      'Package2Id',
-      'Package2Name',
-      'Package2VersionId',
-      'Status',
-      'SubscriberPackageVersionId',
-      'Tag',
-      'VersionNumber'
-    );
+    expect(result).to.have.all.keys(expectedKeys);
 
     const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // package2-descriptor.json contents
     expect(package2DescriptorJson).to.have.string('packageMetadataPermissionSetNames');
@@ -804,24 +571,7 @@ describe('Package Version Create', () => {
 
     const result = await pvc.createPackageVersion();
     expect(validationSpy.callCount).to.equal(1);
-    expect(result).to.have.all.keys(
-      'Branch',
-      'ConvertedFromVersionId',
-      'CreatedBy',
-      'CreatedDate',
-      'Error',
-      'HasMetadataRemoved',
-      'HasPassedCodeCoverageCheck',
-      'CodeCoverage',
-      'VersionNumber',
-      'Id',
-      'Package2Id',
-      'Package2Name',
-      'Package2VersionId',
-      'Status',
-      'SubscriberPackageVersionId',
-      'Tag'
-    );
+    expect(result).to.have.all.keys(expectedKeys);
   });
 
   it('should not package the profiles from unpackaged metadata dirs', async () => {
@@ -874,24 +624,7 @@ describe('Package Version Create', () => {
     const profileSpyFilter = $$.SANDBOX.spy(PackageProfileApi.prototype, 'filterAndGenerateProfilesForManifest');
     stubConvert();
     const result = await pvc.createPackageVersion();
-    expect(result).to.have.all.keys(
-      'Branch',
-      'ConvertedFromVersionId',
-      'CreatedBy',
-      'CreatedDate',
-      'Error',
-      'HasMetadataRemoved',
-      'HasPassedCodeCoverageCheck',
-      'CodeCoverage',
-      'VersionNumber',
-      'Id',
-      'Package2Id',
-      'Package2Name',
-      'Package2VersionId',
-      'Status',
-      'SubscriberPackageVersionId',
-      'Tag'
-    );
+    expect(result).to.have.all.keys(expectedKeys);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const excludedDirsGenerate = profileSpyGenerate.firstCall.args[2];
     expect(excludedDirsGenerate?.length).to.equal(2);
@@ -956,24 +689,7 @@ describe('Package Version Create', () => {
     stubConvert();
     const result = await pvc.createPackageVersion();
 
-    expect(result).to.have.all.keys(
-      'Branch',
-      'ConvertedFromVersionId',
-      'CreatedBy',
-      'CreatedDate',
-      'Error',
-      'HasMetadataRemoved',
-      'HasPassedCodeCoverageCheck',
-      'CodeCoverage',
-      'VersionNumber',
-      'Id',
-      'Package2Id',
-      'Package2Name',
-      'Package2VersionId',
-      'Status',
-      'SubscriberPackageVersionId',
-      'Tag'
-    );
+    expect(result).to.have.all.keys(expectedKeys);
     expect(loggerSpy.called).to.be.true;
     const logMsg =
       "packageDirectory: force-app has 'scopeProfiles' set, so only including profiles from within this directory";
@@ -1123,24 +839,7 @@ describe('Package Version Create', () => {
 
       const pvc = new PackageVersionCreate({ connection, project, definitionfile: scratchOrgDefFileName, packageId });
       const result = await pvc.createPackageVersion();
-      expect(result).to.have.all.keys(
-        'Branch',
-        'CodeCoverage',
-        'ConvertedFromVersionId',
-        'CreatedBy',
-        'CreatedDate',
-        'Error',
-        'HasMetadataRemoved',
-        'HasPassedCodeCoverageCheck',
-        'Id',
-        'Package2Id',
-        'Package2Name',
-        'Package2VersionId',
-        'Status',
-        'SubscriberPackageVersionId',
-        'Tag',
-        'VersionNumber'
-      );
+      expect(result).to.have.all.keys(expectedKeys);
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // package2-descriptor.json contents
@@ -1158,24 +857,7 @@ describe('Package Version Create', () => {
 
       const pvc = new PackageVersionCreate({ connection, project, definitionfile: scratchOrgDefFileName, packageId });
       const result = await pvc.createPackageVersion();
-      expect(result).to.have.all.keys(
-        'Branch',
-        'CodeCoverage',
-        'ConvertedFromVersionId',
-        'CreatedBy',
-        'CreatedDate',
-        'Error',
-        'HasMetadataRemoved',
-        'HasPassedCodeCoverageCheck',
-        'Id',
-        'Package2Id',
-        'Package2Name',
-        'Package2VersionId',
-        'Status',
-        'SubscriberPackageVersionId',
-        'Tag',
-        'VersionNumber'
-      );
+      expect(result).to.have.all.keys(expectedKeys);
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // package2-descriptor.json contents
@@ -1260,3 +942,8 @@ describe('PackageXml read/write', () => {
     });
   });
 });
+
+const isDirWithDependencies = (
+  dir: PackageDir
+): dir is PackagePackageDir & Required<Pick<PackagePackageDir, 'dependencies'>> =>
+  isPackagingDirectory(dir) && dir.dependencies !== undefined;
