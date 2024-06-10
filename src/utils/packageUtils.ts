@@ -11,7 +11,7 @@ import { pipeline as cbPipeline } from 'node:stream';
 import util, { promisify } from 'node:util';
 import { randomBytes } from 'node:crypto';
 import { Connection, Logger, Messages, ScratchOrgInfo, SfdcUrl, SfError, SfProject } from '@salesforce/core';
-import { isNumber, Many, Nullable, Optional } from '@salesforce/ts-types';
+import { isNumber, isString, Many, Nullable, Optional } from '@salesforce/ts-types';
 import type { SaveError } from '@jsforce/jsforce-node';
 import { Duration, ensureArray } from '@salesforce/kit';
 import globby from 'globby';
@@ -218,7 +218,7 @@ export async function getContainerOptions(
   packageIds: string | undefined | Array<string | undefined>,
   connection: Connection
 ): Promise<Map<string, PackageType>> {
-  const ids = ensureArray(packageIds).filter((id) => id) as string[];
+  const ids = ensureArray(packageIds).filter(isString);
   if (ids.length === 0) {
     return new Map<string, PackageType>();
   }
@@ -497,8 +497,8 @@ export function copyDescriptorProperties(
   packageDescriptorJson: PackageDescriptorJson,
   definitionFileJson: ScratchOrgInfo
 ): PackageDescriptorJson {
-  const packageDescriptorJsonCopy = Object.assign({}, packageDescriptorJson) as Record<string, unknown>;
-  const definitionFileJsonCopy = Object.assign({}, definitionFileJson) as unknown as { [key: string]: unknown };
+  const packageDescriptorJsonCopy = structuredClone(packageDescriptorJson);
+  const definitionFileJsonCopy = structuredClone(definitionFileJson) as unknown as { [key: string]: unknown };
   return Object.assign(
     {},
     packageDescriptorJsonCopy,

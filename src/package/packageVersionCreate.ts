@@ -330,7 +330,7 @@ export class PackageVersionCreate {
     const mdOptions: MDFolderForArtifactOptions = {
       deploydir: packageVersMetadataFolder,
       sourceDir: sourceBaseDir,
-      sourceApiVersion: (this.project?.getSfProjectJson()?.get('sourceApiVersion') as string) ?? undefined,
+      sourceApiVersion: this.project?.getSfProjectJson()?.get('sourceApiVersion'),
     };
 
     await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });

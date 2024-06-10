@@ -5,10 +5,11 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { Connection, NamedPackageDir, PackageDir, SfError, SfProject } from '@salesforce/core';
+import { Connection, PackageDir, SfError, SfProject } from '@salesforce/core';
 import { env } from '@salesforce/kit';
+import { PackagePackageDir } from '@salesforce/schemas';
 import * as pkgUtils from '../utils/packageUtils';
-import { applyErrorAction, massageErrorMessage, replaceIfEmpty } from '../utils/packageUtils';
+import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
 import { PackageCreateOptions, PackagingSObjects } from '../interfaces';
 
 type Package2Request = Pick<
@@ -36,34 +37,19 @@ export function createPackageRequestFromContext(project: SfProject, options: Pac
  * @private
  */
 
-export function createPackageDirEntry(project: SfProject, options: PackageCreateOptions): PackageDir | NamedPackageDir {
+export function createPackageDirEntry(project: SfProject, options: PackageCreateOptions): PackagePackageDir {
   const packageDirs: PackageDir[] = project.getSfProjectJson().getContents().packageDirectories ?? [];
-  let isNew = false;
-
-  // see if package exists (exists means it has an id or package)
-  let packageDir: PackageDir | undefined = packageDirs
-    .map((pd: PackageDir) => pd as NamedPackageDir & { id: string })
-    .find((pd: NamedPackageDir & { id: string }) => pd.path === options.path && !pd.id && !pd.package);
-
-  if (!packageDir) {
-    // no match - create a new one
-    isNew = true;
-    packageDir = { ...pkgUtils.DEFAULT_PACKAGE_DIR } as NamedPackageDir;
-    packageDir.path = replaceIfEmpty(packageDir.path, options.path);
-  }
-
-  if (packageDirs.length === 0) {
-    packageDir.default = true;
-  } else if (isNew) {
-    packageDir.default = !packageDirs.find((pd: PackageDir) => pd.default);
-  }
-
-  packageDir.package = replaceIfEmpty(packageDir.package, options.name);
-  packageDir.versionName = replaceIfEmpty(packageDir.versionName, pkgUtils.DEFAULT_PACKAGE_DIR.versionName);
-  packageDir.versionNumber = replaceIfEmpty(packageDir.versionNumber, pkgUtils.DEFAULT_PACKAGE_DIR.versionNumber);
-  packageDir.versionDescription = replaceIfEmpty(packageDir.versionDescription, options.description);
-
-  return packageDir;
+  return {
+    package: options.name,
+    versionName: 'ver 0.1',
+    versionNumber: '0.1.0.NEXT',
+    ...(packageDirs.filter((pd: PackageDir) => pd.path === options.path).find((pd) => !('id' in pd)) ?? {
+      // no match - create a new one
+      path: options.path,
+      default: packageDirs.length === 0 ? true : !packageDirs.some((pd) => pd.default === true),
+    }),
+    versionDescription: options.description,
+  };
 }
 
 export async function createPackage(
@@ -71,11 +57,8 @@ export async function createPackage(
   project: SfProject,
   options: PackageCreateOptions
 ): Promise<{ Id: string }> {
-  // strip trailing slash from path param
-  options.path = options.path.replace(/\/$/, '');
-
-  const request = createPackageRequestFromContext(project, options);
-
+  const cleanOptions = sanitizePackageCreateOptions(options);
+  const request = createPackageRequestFromContext(project, cleanOptions);
   const createResult = await connection.tooling
     .sobject('Package2')
     .create(request)
@@ -89,11 +72,17 @@ export async function createPackage(
   }
 
   if (!env.getBoolean('SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE')) {
-    const packageDirectory = createPackageDirEntry(project, options);
-    project.getSfProjectJson().addPackageDirectory(packageDirectory as NamedPackageDir);
-    project.getSfProjectJson().addPackageAlias(options.name, createResult.id);
+    const packageDirectory = createPackageDirEntry(project, cleanOptions);
+    project.getSfProjectJson().addPackageDirectory(packageDirectory);
+    project.getSfProjectJson().addPackageAlias(cleanOptions.name, createResult.id);
     await project.getSfProjectJson().write();
   }
 
   return { Id: createResult.id };
 }
+
+/** strip trailing slash from path param */
+const sanitizePackageCreateOptions = (options: PackageCreateOptions): PackageCreateOptions => ({
+  ...options,
+  path: options.path.replace(/\/$/, ''),
+});

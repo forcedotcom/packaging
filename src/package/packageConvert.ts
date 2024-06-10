@@ -21,7 +21,7 @@ import {
   ScratchOrgSettingsGenerator,
 } from '@salesforce/core';
 import { camelCaseToTitleCase, Duration, env } from '@salesforce/kit';
-import { Many, ensureString } from '@salesforce/ts-types';
+import { Many } from '@salesforce/ts-types';
 import * as pkgUtils from '../utils/packageUtils';
 import { copyDescriptorProperties, generatePackageAliasEntry, uniqid } from '../utils/packageUtils';
 import {
@@ -39,13 +39,6 @@ import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
 
-let logger: Logger;
-const getLogger = (): Logger => {
-  if (!logger) {
-    logger = Logger.childFromRoot('packageConvert');
-  }
-  return logger;
-};
 const POLL_INTERVAL_SECONDS = 30;
 
 export async function findOrCreatePackage2(
@@ -105,18 +98,12 @@ export async function convertPackage(
   options: ConvertPackageOptions,
   project?: SfProject
 ): Promise<PackageVersionCreateRequestResult> {
-  let maxRetries = 0;
+  const maxRetries = options.wait ? (60 / POLL_INTERVAL_SECONDS) * options.wait.minutes : 0;
   const branch = 'main';
-  if (options.wait) {
-    maxRetries = (60 / POLL_INTERVAL_SECONDS) * options.wait.minutes;
-  }
 
   const packageId = await findOrCreatePackage2(pkg, connection, project);
 
-  const apiVersion = ensureString(
-    project?.getSfProjectJson()?.get('sourceApiVersion'),
-    'sfProjectJson is missing sourceApiVersion'
-  );
+  const apiVersion = project?.getSfProjectJson()?.get('sourceApiVersion');
 
   const request = await createPackageVersionCreateRequest(
     {
@@ -126,7 +113,9 @@ export async function convertPackage(
       seedmetadata: options.seedMetadata,
     },
     packageId,
-    apiVersion
+    // TODO: createPackageVersionCreateRequest requires apiVersion exist.
+    // UT fail if we validate that it exists (there might not even be a project)
+    apiVersion as string
   );
 
   // TODO: a lot of this is duplicated from PC, PVC, and PVCR.
@@ -215,7 +204,9 @@ export async function createPackageVersionCreateRequest(
 
   if (hasSeedMetadata) {
     // Zip the seedMetadataFolder folder and put the zip in {packageVersBlobDirectory}/{seedMetadataZipFile}
-    getLogger().debug(`Including metadata found in '${context.seedmetadata}'.`);
+    Logger.childFromRoot('packageConvert:pollForStatusWithInterval').debug(
+      `Including metadata found in '${context.seedmetadata}'.`
+    );
     await pkgUtils.zipDir(seedMetadataFolder, seedMetadataZipFile);
   }
 
@@ -267,6 +258,7 @@ async function pollForStatusWithInterval(
   connection: Connection,
   interval: Duration
 ): Promise<PackageVersionCreateRequestResult> {
+  const logger = Logger.childFromRoot('packageConvert:pollForStatusWithInterval');
   let remainingRetries = retries;
   const pollingClient = await PollingClient.create({
     poll: async (): Promise<StatusResult> => {
@@ -332,7 +324,7 @@ async function pollForStatusWithInterval(
           timeRemaining: remainingTime,
         });
 
-        getLogger().info(
+        logger.info(
           `Request in progress. Sleeping ${interval.seconds} seconds. Will wait a total of ${
             remainingTime.seconds
           } more seconds before timing out. Current Status='${camelCaseToTitleCase(results[0]?.Status)}'`
@@ -362,9 +354,7 @@ async function addPackageAlias(project: SfProject, packageName: string, packageI
  * @param statuses array of statuses to look for
  * @returns {boolean} if one of the values in status is found.
  */
-function isStatusEqualTo(
+const isStatusEqualTo = (
   results: PackageVersionCreateRequestResult[],
   statuses: Package2VersionStatus[] = []
-): boolean {
-  return !results?.length ? false : statuses.some((status) => results[0].Status === status);
-}
+): boolean => (!results?.length ? false : statuses.some((status) => results[0].Status === status));
