@@ -13,7 +13,7 @@ import { randomBytes } from 'node:crypto';
 import { Connection, Logger, Messages, ScratchOrgInfo, SfdcUrl, SfError, SfProject } from '@salesforce/core';
 import { isNumber, Many, Nullable, Optional } from '@salesforce/ts-types';
 import type { SaveError } from '@jsforce/jsforce-node';
-import { Duration, ensureArray, isEmpty } from '@salesforce/kit';
+import { Duration, ensureArray } from '@salesforce/kit';
 import globby from 'globby';
 import JSZIP from 'jszip';
 import { PackageDescriptorJson, PackageType, PackagingSObjects } from '../interfaces';
@@ -51,16 +51,6 @@ export const INSTALL_URL_BASE = new SfdcUrl('https://login.salesforce.com/packag
 
 // https://developer.salesforce.com/docs/atlas.en-us.salesforce_app_limits_cheatsheet.meta/salesforce_app_limits_cheatsheet/salesforce_app_limits_platform_soslsoql.htm
 const SOQL_WHERE_CLAUSE_MAX_LENGTH = 4000;
-
-export const POLL_INTERVAL_SECONDS = 30;
-
-export const DEFAULT_PACKAGE_DIR = {
-  path: '',
-  package: '',
-  versionName: 'ver 0.1',
-  versionNumber: '0.1.0.NEXT',
-  default: true,
-}
 
 export const BY_LABEL = ((): IdRegistry =>
   Object.fromEntries(
@@ -521,10 +511,6 @@ export function copyDescriptorProperties(
       )
     )
   ) as PackageDescriptorJson;
-}
-
-export function replaceIfEmpty<T>(value: T, replacement: T): T {
-  return !isEmpty(value) ? value : replacement;
 }
 
 /**

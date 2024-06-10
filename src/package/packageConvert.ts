@@ -46,6 +46,7 @@ const getLogger = (): Logger => {
   }
   return logger;
 };
+const POLL_INTERVAL_SECONDS = 30;
 
 export async function findOrCreatePackage2(
   seedPackage: string,
@@ -107,7 +108,7 @@ export async function convertPackage(
   let maxRetries = 0;
   const branch = 'main';
   if (options.wait) {
-    maxRetries = (60 / pkgUtils.POLL_INTERVAL_SECONDS) * options.wait.minutes;
+    maxRetries = (60 / POLL_INTERVAL_SECONDS) * options.wait.minutes;
   }
 
   const packageId = await findOrCreatePackage2(pkg, connection, project);
@@ -142,7 +143,7 @@ export async function convertPackage(
       branch,
       project,
       connection,
-      options.frequency ?? Duration.seconds(pkgUtils.POLL_INTERVAL_SECONDS)
+      options.frequency ?? Duration.seconds(POLL_INTERVAL_SECONDS)
     );
   } else {
     results = await byId(packageId, connection);

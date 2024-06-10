@@ -7,10 +7,10 @@
 import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import { expect } from 'chai';
+import { expect, assert } from 'chai';
 import { execCmd, TestSession } from '@salesforce/cli-plugins-testkit';
 import { Duration, sleep } from '@salesforce/kit';
-import { ProjectJson } from '@salesforce/core/project';
+import { ProjectJson, isPackagingDirectory } from '@salesforce/core/project';
 import { Lifecycle, Org, SfProject } from '@salesforce/core';
 import { uniqid } from '@salesforce/core/testSetup';
 import {
@@ -128,6 +128,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
       const projectFile = JSON.parse(dxPjsonData) as ProjectJson;
       expect(projectFile).to.have.property('packageDirectories').with.length(1);
       expect(projectFile.packageDirectories[0]).to.include.keys(['package', 'versionName', 'versionNumber']);
+      assert(isPackagingDirectory(projectFile.packageDirectories[0]));
       expect(projectFile.packageDirectories[0].package).to.equal(pkgName);
       expect(projectFile.packageAliases).to.deep.equal({
         [pkgName]: pkgId,
@@ -312,6 +313,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       const dxPjsonData = await fs.readFile(path.join(session.project.dir, 'sfdx-project.json'), 'utf8');
       const projectFile = JSON.parse(dxPjsonData) as ProjectJson;
+      assert(isPackagingDirectory(projectFile.packageDirectories[0]));
 
       expect(result.Name).to.equal(
         projectFile.packageDirectories[0].versionName,
@@ -599,6 +601,8 @@ describe('ancestry tests', () => {
     project = await SfProject.resolve();
     const pjson = project.getSfProjectJson();
     const pkg = project.getDefaultPackage();
+    assert(isPackagingDirectory(pkg));
+
     pkg.package = pkgName;
     pkg.versionNumber = sortedVersions[0].toString();
     pkg.versionName = 'v1';
