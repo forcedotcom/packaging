@@ -9,7 +9,6 @@ import fs from 'node:fs';
 import { Connection, SfProject } from '@salesforce/core';
 import { expect } from 'chai';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/testSetup';
-import { Optional } from '@salesforce/ts-types';
 import { SubscriberPackageVersion } from '../../src/package';
 import { PackagingSObjects } from '../../src/interfaces';
 
@@ -74,7 +73,7 @@ async function setupProject(setup: (project: SfProject) => void = () => {}) {
 
 describe('subscriberPackageVersion', () => {
   const testOrg = new MockTestOrgData();
-  const password: Optional<string> = undefined;
+  const password: string | undefined = undefined;
   let connection: Connection;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

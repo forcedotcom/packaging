@@ -7,7 +7,6 @@
 
 import { Connection, Lifecycle, Messages, PollingClient, SfError, SfProject, StatusResult } from '@salesforce/core';
 import { Duration, env } from '@salesforce/kit';
-import { Optional } from '@salesforce/ts-types';
 import {
   PackageSaveResult,
   PackageType,
@@ -120,7 +119,7 @@ export class PackageVersion {
   private readonly connection: Connection;
 
   private data?: Package2Version;
-  private packageType: Optional<PackageType>;
+  private packageType?: PackageType;
   private id: string;
 
   public constructor(private options: PackageVersionOptions) {
