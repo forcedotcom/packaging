@@ -42,10 +42,10 @@
   ],
   "dependencies": {
     "@jsforce/jsforce-node": "^3.2.0",
-    "@salesforce/core": "^7.3.9",
+    "@salesforce/core": "^7.3.12",
     "@salesforce/kit": "^3.1.2",
     "@salesforce/schemas": "^1.9.0",
-    "@salesforce/source-deploy-retrieve": "^11.6.4",
+    "@salesforce/source-deploy-retrieve": "^11.6.6",
     "@salesforce/ts-types": "^2.0.9",
     "@salesforce/types": "^1.1.0",
     "fast-xml-parser": "^4.4.0",
@@ -59,7 +59,6 @@
   "devDependencies": {
     "@salesforce/cli-plugins-testkit": "^5.3.8",
     "@salesforce/dev-scripts": "^9.1.2",
-    "@salesforce/ts-sinon": "^1.4.19",
     "@types/globby": "^9.1.0",
     "@types/jszip": "^3.4.1",
     "eslint-plugin-sf-plugin": "^1.18.5",
