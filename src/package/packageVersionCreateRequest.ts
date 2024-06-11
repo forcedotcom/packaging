@@ -22,7 +22,7 @@ const messages = Messages.loadMessages('@salesforce/packaging', 'package_version
 const QUERY =
   'SELECT Id, Status, Package2Id, Package2.Name, Package2VersionId, Package2Version.SubscriberPackageVersionId, Package2Version.HasPassedCodeCoverageCheck,Package2Version.CodeCoverage, Tag, Branch, ' +
   'Package2Version.MajorVersion, Package2Version.MinorVersion, Package2Version.PatchVersion, Package2Version.BuildNumber, ' +
-  'CreatedDate, Package2Version.HasMetadataRemoved, CreatedById, IsConversionRequest, Package2Version.ConvertedFromVersionId ' +
+  'CreatedDate, Package2Version.HasMetadataRemoved, CreatedById, IsConversionRequest, Package2Version.ConvertedFromVersionId, AsyncValidation ' +
   'FROM Package2VersionCreateRequest ' +
   '%s' + // WHERE, if applicable
   'ORDER BY CreatedDate desc';

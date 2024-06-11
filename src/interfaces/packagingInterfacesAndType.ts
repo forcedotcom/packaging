@@ -121,6 +121,7 @@ export type PackageVersionListResult = {
   IsPasswordProtected: boolean;
   AncestorId: string;
   ValidationSkipped: boolean;
+  ValidatedAsync: boolean;
   CreatedById: string;
   CodeCoverage?: {
     [key: string]: unknown;
@@ -200,6 +201,7 @@ export type PackageVersionCreateRequest = {
   Language?: string;
   CalculateCodeCoverage: boolean;
   SkipValidation: boolean;
+  AsyncValidation: boolean;
 };
 
 export type PackageVersionListOptions = {
@@ -322,6 +324,7 @@ export type PackageVersionCreateOptions = {
   releasenotesurl: string;
   skipancestorcheck: boolean;
   skipvalidation: boolean;
+  asyncvalidation: boolean;
   sourceorg: string;
   tag: string;
   uninstallscript: string;

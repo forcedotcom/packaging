@@ -277,6 +277,7 @@ export class PackageVersionCreate {
       SourceOrg: this.options.sourceorg,
       CalculateCodeCoverage: this.options.codecoverage ?? false,
       SkipValidation: this.options.skipvalidation ?? false,
+      AsyncValidation: this.options.asyncvalidation ?? false,
       // note: the createRequest's Language corresponds to the AllPackageVersion's language
       Language: this.options.language,
     };

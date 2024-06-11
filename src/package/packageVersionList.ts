@@ -35,6 +35,7 @@ const defaultFields = [
   'IsPasswordProtected',
   'AncestorId',
   'ValidationSkipped',
+  'ValidatedAsync',
   'CreatedById',
   'ConvertedFromVersionId',
   'ReleaseVersion',

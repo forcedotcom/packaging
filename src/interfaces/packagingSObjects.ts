@@ -42,6 +42,7 @@ export namespace PackagingSObjects {
     Branch: string;
     AncestorId: string;
     ValidationSkipped: boolean;
+    ValidatedAsync: boolean;
     Name: string;
     Description: string;
     MajorVersion: number;
@@ -72,6 +73,7 @@ export namespace PackagingSObjects {
     verifyingDependencies = 'VerifyingDependencies',
     verifyingMetadata = 'VerifyingMetadata',
     finalizingPackageVersion = 'FinalizingPackageVersion',
+    performingValidations = 'PerformingValidations',
   }
 
   export type Package2VersionCreateRequest = {

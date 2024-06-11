@@ -54,6 +54,7 @@ export const Package2VersionFields: Array<keyof Package2Version> = [
   'Branch',
   'AncestorId',
   'ValidationSkipped',
+  'ValidatedAsync',
   'Name',
   'Description',
   'MajorVersion',
@@ -246,6 +247,7 @@ export class PackageVersion {
               completed: false,
               payload: report,
             };
+          case Package2VersionStatus.performingValidations:
           case Package2VersionStatus.success: {
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.success, report);
             const packageVersion = new PackageVersion({
@@ -345,6 +347,7 @@ export class PackageVersion {
               completed: false,
               payload: report,
             };
+          case Package2VersionStatus.performingValidations:
           case Package2VersionStatus.success:
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.success, report);
             await new PackageVersion({
