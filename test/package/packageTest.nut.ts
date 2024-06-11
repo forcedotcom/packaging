@@ -506,7 +506,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
         const pollResult = await SubscriberPackageVersion.uninstallStatus(uninstallReqId, scratchOrg.getConnection());
         if (pollResult.Status === 'InProgress' && counter < MAX_TRIES) {
           return sleep(WAIT_INTERVAL_MS, Duration.Unit.MILLISECONDS).then(() =>
-            waitForUninstallRequestAndValidate(counter++)
+            waitForUninstallRequestAndValidate(counter + 1)
           );
         } else {
           // break out of recursion, validate result
