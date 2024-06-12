@@ -535,7 +535,7 @@ describe('Package Version Create', () => {
   });
 
   it('should create the package version create request with language and API version >= 57.0', async () => {
-    $$.SANDBOX.stub(connection, 'getApiVersion').returns('57.0');
+    $$.SANDBOX.stub(connection, 'getApiVersion').returns('61.0');
     const pvc = new PackageVersionCreate({ connection, project, language: 'en_US', packageId });
     stubConvert();
     const result = await pvc.createPackageVersion();
