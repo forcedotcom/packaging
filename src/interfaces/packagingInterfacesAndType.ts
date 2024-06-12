@@ -201,7 +201,7 @@ export type PackageVersionCreateRequest = {
   Language?: string;
   CalculateCodeCoverage: boolean;
   SkipValidation: boolean;
-  AsyncValidation: boolean;
+  AsyncValidation?: boolean;
 };
 
 export type PackageVersionListOptions = {
@@ -324,7 +324,7 @@ export type PackageVersionCreateOptions = {
   releasenotesurl: string;
   skipancestorcheck: boolean;
   skipvalidation: boolean;
-  asyncvalidation: boolean;
+  asyncvalidation?: boolean;
   sourceorg: string;
   tag: string;
   uninstallscript: string;
