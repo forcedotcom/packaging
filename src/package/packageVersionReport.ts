@@ -14,7 +14,7 @@ import * as pkgUtils from '../utils/packageUtils';
 import { PackageVersionReportResult } from '../interfaces';
 
 const QUERY =
-  'SELECT Id, Package2Id, SubscriberPackageVersionId, Name, Description, Tag, Branch, AncestorId, ValidationSkipped, ValidatedAsync, ' +
+  'SELECT Id, Package2Id, SubscriberPackageVersionId, Name, Description, Tag, Branch, AncestorId, ValidationSkipped, ' +
   'MajorVersion, MinorVersion, PatchVersion, BuildNumber, IsReleased, CodeCoverage, HasPassedCodeCoverageCheck, ' +
   'Package2.IsOrgDependent, ReleaseVersion, BuildDurationInSeconds, HasMetadataRemoved, CreatedById, ConvertedFromVersionId  ' +
   'FROM Package2Version ' +
@@ -23,7 +23,7 @@ const QUERY =
 
 // verbose adds: ConvertedFromVersionId, SubscriberPackageVersion.Dependencies
 const QUERY_VERBOSE =
-  'SELECT Package2Id, SubscriberPackageVersionId, Name, Description, Tag, Branch, AncestorId, ValidationSkipped, ValidatedAsync, ' +
+  'SELECT Package2Id, SubscriberPackageVersionId, Name, Description, Tag, Branch, AncestorId, ValidationSkipped, ' +
   'MajorVersion, MinorVersion, PatchVersion, BuildNumber, IsReleased, CodeCoverage, HasPassedCodeCoverageCheck, ConvertedFromVersionId, ' +
   'Package2.IsOrgDependent, ReleaseVersion, BuildDurationInSeconds, HasMetadataRemoved, SubscriberPackageVersion.Dependencies, ' +
   'CreatedById, CodeCoveragePercentages ' +
