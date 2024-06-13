@@ -295,7 +295,7 @@ export class PackageVersionCreate {
 
     // Ensure we only include the async validation property for a connection api version
     // of v60.0 or higher.
-    if (this.connection.getApiVersion() < '60.0') {
+    if (this.connection.getApiVersion() <= '60.0') {
       if (requestObject.AsyncValidation) {
         this.logger.warn(
           `The async validation option is only valid for API version 60.0 and higher. Ignoring ${requestObject.AsyncValidation}`
