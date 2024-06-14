@@ -374,11 +374,6 @@ export class PackageVersion {
     }
   }
 
-  public static getPackage2VersionFields(connection: Connection): string[] {
-    const apiVersion = connection.getApiVersion();
-    return Package2VersionFields.filter((field) => (apiVersion > '60.0' ? true : field !== 'ValidatedAsync'));
-  }
-
   /**
    * Query the Package2Version SObject and return data with the provided type.
    *
@@ -394,7 +389,7 @@ export class PackageVersion {
     connection: Connection,
     options: Package2VersionQueryOptions = {}
   ): Promise<Partial<Package2Version[]>> {
-    const fields = options.fields ?? this.getPackage2VersionFields(connection);
+    const fields = options.fields ?? PackageVersion.getPackage2VersionFields(connection);
     const { whereClause, whereClauseItems } = options;
     const orderBy = options.orderBy ?? 'ORDER BY LastModifiedDate DESC';
     let query = `SELECT ${fields.toString()} FROM Package2Version`;
@@ -413,6 +408,11 @@ export class PackageVersion {
       await Lifecycle.getInstance().emitWarning(warningMsg);
     }
     return result.records ?? [];
+  }
+
+  private static getPackage2VersionFields(connection: Connection): string[] {
+    const apiVersion = connection.getApiVersion();
+    return Package2VersionFields.filter((field) => (apiVersion > '60.0' ? true : field !== 'ValidatedAsync'));
   }
 
   /**
