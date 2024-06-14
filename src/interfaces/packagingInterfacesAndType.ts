@@ -211,6 +211,7 @@ export type PackageVersionListOptions = {
   concise?: boolean;
   isReleased?: boolean;
   showConversionsOnly?: boolean;
+  branch?: string;
 };
 
 export type PackageVersionUpdateOptions = {
