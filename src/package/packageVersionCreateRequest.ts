@@ -19,13 +19,18 @@ import Package2VersionCreateRequestError = PackagingSObjects.Package2VersionCrea
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
 
-const QUERY =
-  'SELECT Id, Status, Package2Id, Package2.Name, Package2VersionId, Package2Version.SubscriberPackageVersionId, Package2Version.HasPassedCodeCoverageCheck,Package2Version.CodeCoverage, Tag, Branch, ' +
-  'Package2Version.MajorVersion, Package2Version.MinorVersion, Package2Version.PatchVersion, Package2Version.BuildNumber, ' +
-  'CreatedDate, Package2Version.HasMetadataRemoved, CreatedById, IsConversionRequest, Package2Version.ConvertedFromVersionId ' +
-  'FROM Package2VersionCreateRequest ' +
-  '%s' + // WHERE, if applicable
-  'ORDER BY CreatedDate desc';
+export function getQuery(connection: Connection): string {
+  const QUERY =
+    'SELECT Id, Status, Package2Id, Package2.Name, Package2VersionId, Package2Version.SubscriberPackageVersionId, Package2Version.HasPassedCodeCoverageCheck,Package2Version.CodeCoverage, Tag, Branch, ' +
+    'Package2Version.MajorVersion, Package2Version.MinorVersion, Package2Version.PatchVersion, Package2Version.BuildNumber, ' +
+    'CreatedDate, Package2Version.HasMetadataRemoved, CreatedById, IsConversionRequest, Package2Version.ConvertedFromVersionId ' +
+    (Number(connection.version) > 60.0 ? ', AsyncValidation ' : '') +
+    'FROM Package2VersionCreateRequest ' +
+    '%s' + // WHERE, if applicable
+    'ORDER BY CreatedDate desc';
+
+  return QUERY;
+}
 
 function formatDate(date: Date): string {
   const pad = (num: number): string => (num < 10 ? `0${num}` : `${num}`);
@@ -40,7 +45,7 @@ export async function list(
 ): Promise<PackageVersionCreateRequestResult[]> {
   try {
     const whereClause = constructWhere(options);
-    return await query(util.format(QUERY, whereClause), connection);
+    return await query(util.format(getQuery(connection), whereClause), connection);
   } catch (err) {
     if (err instanceof Error) {
       throw applyErrorAction(massageErrorMessage(err));
@@ -53,7 +58,10 @@ export async function byId(
   packageVersionCreateRequestId: string,
   connection: Connection
 ): Promise<PackageVersionCreateRequestResult[]> {
-  const results = await query(util.format(QUERY, `WHERE Id = '${packageVersionCreateRequestId}' `), connection);
+  const results = await query(
+    util.format(getQuery(connection), `WHERE Id = '${packageVersionCreateRequestId}' `),
+    connection
+  );
   if (results && results.length === 1 && results[0].Status === PackagingSObjects.Package2VersionStatus.error) {
     results[0].Error = await queryForErrors(packageVersionCreateRequestId, connection);
   }
