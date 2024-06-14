@@ -74,11 +74,6 @@ export const Package2VersionFields: Array<keyof Package2Version> = [
   'HasMetadataRemoved',
 ];
 
-function getPackage2VersionFields(connection: Connection): string[] {
-  const apiVersion = connection.getApiVersion();
-  return Package2VersionFields.filter((field) => (apiVersion > '60.0' ? true : field !== 'ValidatedAsync'));
-}
-
 export type Package2VersionFieldTypes = Array<(typeof Package2VersionFields)[number]>;
 
 export type Package2VersionQueryOptions = {
@@ -379,6 +374,11 @@ export class PackageVersion {
     }
   }
 
+  public static getPackage2VersionFields(connection: Connection): string[] {
+    const apiVersion = connection.getApiVersion();
+    return Package2VersionFields.filter((field) => (apiVersion > '60.0' ? true : field !== 'ValidatedAsync'));
+  }
+
   /**
    * Query the Package2Version SObject and return data with the provided type.
    *
@@ -394,7 +394,7 @@ export class PackageVersion {
     connection: Connection,
     options: Package2VersionQueryOptions = {}
   ): Promise<Partial<Package2Version[]>> {
-    const fields = options.fields ?? getPackage2VersionFields(connection);
+    const fields = options.fields ?? this.getPackage2VersionFields(connection);
     const { whereClause, whereClauseItems } = options;
     const orderBy = options.orderBy ?? 'ORDER BY LastModifiedDate DESC';
     let query = `SELECT ${fields.toString()} FROM Package2Version`;
@@ -504,7 +504,7 @@ export class PackageVersion {
           label2: BY_LABEL.PACKAGE_VERSION_ID.label,
         };
       }
-      const allFields = getPackage2VersionFields(this.connection).toString();
+      const allFields = PackageVersion.getPackage2VersionFields(this.connection).toString();
       const query = `SELECT ${allFields} FROM Package2Version WHERE ${queryConfig.clause} LIMIT 1`;
       try {
         this.data = await this.connection.singleRecordQuery<Package2Version>(query, { tooling: true });
