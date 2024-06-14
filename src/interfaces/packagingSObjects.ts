@@ -42,7 +42,7 @@ export namespace PackagingSObjects {
     Branch: string;
     AncestorId: string;
     ValidationSkipped: boolean;
-    ValidatedAsync: boolean;
+    ValidatedAsync?: boolean;
     Name: string;
     Description: string;
     MajorVersion: number;
