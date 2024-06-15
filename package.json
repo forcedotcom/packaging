@@ -59,7 +59,7 @@
   "devDependencies": {
     "@salesforce/cli-plugins-testkit": "^5.3.8",
     "@salesforce/dev-scripts": "^9.1.2",
-    "@salesforce/ts-sinon": "^1.4.19",
+    "@salesforce/ts-sinon": "^1.4.20",
     "@types/globby": "^9.1.0",
     "@types/jszip": "^3.4.1",
     "eslint-plugin-sf-plugin": "^1.18.5",
