@@ -1,6 +1,6 @@
 # errorInvalidIdNoRecordFound
 
-The subscriber package version %s is invalid, no subscriber package version record found.
+The subscriber package version %s is either invalid or not yet available on your instance of salesforce.com. First double-check the ID to ensure it's correct. If it is, check back after a while and retry the package install.
 
 # errorInvalidAliasOrId
 
