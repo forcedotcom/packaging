@@ -1,3 +1,12 @@
+# [3.7.0](https://github.com/forcedotcom/packaging/compare/3.6.0...3.7.0) (2024-06-17)
+
+
+### Features
+
+* add a branch parameter/filter to PVL ([a9e2cf0](https://github.com/forcedotcom/packaging/commit/a9e2cf083f760653b5f70a610f4dfbdb4a51440c))
+
+
+
 # [3.6.0](https://github.com/forcedotcom/packaging/compare/3.5.25...3.6.0) (2024-06-14)
 
 
