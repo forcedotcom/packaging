@@ -135,6 +135,10 @@ export function constructWhere(options?: PackageVersionListOptions): string[] {
     where.push('ConvertedFromVersionId != null');
   }
 
+  if (options?.branch) {
+    where.push(`Branch='${options.branch}'`);
+  }
+
   // exclude deleted
   where.push('IsDeprecated = false');
   return where;

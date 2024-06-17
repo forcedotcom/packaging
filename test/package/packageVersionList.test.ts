@@ -75,6 +75,25 @@ describe('package version list', () => {
       expect(where).to.include('CreatedDate = LAST_N_DAYS:1');
       expect(where).to.include('LastModifiedDate = LAST_N_DAYS:2');
     });
+
+    it('should create where clause contain proper values and branch', async () => {
+      $$.inProject(true);
+      const sfProject = await SfProject.resolve();
+      sfProject.getSfProjectJson().set('packageDirectories', packageDirectories);
+      sfProject.getSfProjectJson().set('packageAliases', packageAliases);
+      const where = constructWhere({
+        packages: ['0Ho3h000000xxxxCAG'],
+        createdLastDays: 1,
+        modifiedLastDays: 2,
+        isReleased: true,
+        branch: 'main',
+      });
+      expect(where).to.include("Package2Id IN ('0Ho3h000000xxxxCAG')");
+      expect(where).to.include('IsDeprecated = false');
+      expect(where).to.include('CreatedDate = LAST_N_DAYS:1');
+      expect(where).to.include('LastModifiedDate = LAST_N_DAYS:2');
+      expect(where).to.include("Branch='main'");
+    });
   });
 
   describe('_constructQuery', () => {
