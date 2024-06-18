@@ -1,3 +1,12 @@
+## [3.7.1](https://github.com/forcedotcom/packaging/compare/3.7.0...3.7.1) (2024-06-18)
+
+
+### Bug Fixes
+
+* bump core and kit ([20aca5e](https://github.com/forcedotcom/packaging/commit/20aca5ed1a907c07f72be3a04a455f0d42655ee4))
+
+
+
 # [3.7.0](https://github.com/forcedotcom/packaging/compare/3.6.0...3.7.0) (2024-06-17)
 
 
