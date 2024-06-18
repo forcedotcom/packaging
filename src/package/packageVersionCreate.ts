@@ -26,11 +26,11 @@ import {
   ConvertResult,
   MetadataConverter,
 } from '@salesforce/source-deploy-retrieve';
-import { PackageDirDependency, isNamedPackagingDirectory, isPackagingDirectory } from '@salesforce/core/project';
+import { isNamedPackagingDirectory, isPackagingDirectory } from '@salesforce/core/project';
 import { ensureArray, env } from '@salesforce/kit';
 import { XMLParser, XMLBuilder } from 'fast-xml-parser';
 import { isString } from '@salesforce/ts-types';
-import { PackagePackageDir } from '@salesforce/schemas';
+import { PackagePackageDir, PackageDirDependency } from '@salesforce/schemas';
 import * as pkgUtils from '../utils/packageUtils';
 import {
   BY_LABEL,

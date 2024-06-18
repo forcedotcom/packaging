@@ -5,9 +5,9 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { Connection, PackageDir, SfError, SfProject } from '@salesforce/core';
+import { Connection, SfError, SfProject } from '@salesforce/core';
 import { env } from '@salesforce/kit';
-import { PackagePackageDir } from '@salesforce/schemas';
+import { PackagePackageDir, PackageDir } from '@salesforce/schemas';
 import * as pkgUtils from '../utils/packageUtils';
 import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
 import { PackageCreateOptions, PackagingSObjects } from '../interfaces';
