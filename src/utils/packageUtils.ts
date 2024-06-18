@@ -514,7 +514,7 @@ export function copyDescriptorProperties(
 }
 
 /**
- * Brand new SFDX projects contain a force-app directory tree contiaining empty folders
+ * Brand new SFDX projects contain a force-app directory tree containing empty folders
  * and a few .eslintrc.json files. We still want to consider such a directory tree
  * as 'empty' for the sake of operations like downloading package version metadata.
  *

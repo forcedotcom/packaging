@@ -28,7 +28,7 @@ const messages = Messages.loadMessages('@salesforce/packaging', 'package1Version
  *
  * `const pkgList = await Package1Version.list(connection);`
  *
- * Create a new 1GP package vesion in the org:
+ * Create a new 1GP package version in the org:
  *
  * `const myPkg = await Package1Version.create(connection, options, pollingOptions);`
  *
