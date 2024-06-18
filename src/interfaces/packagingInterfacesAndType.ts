@@ -295,11 +295,12 @@ export type SubscriberPackageVersionOptions = {
 };
 
 export type ConvertPackageOptions = {
-  installationKey: string;
-  definitionfile: string;
+  installationKey?: string;
+  definitionfile?: string;
+  /** @deprecated stop using it*/
   installationKeyBypass: boolean;
   wait: Duration;
-  buildInstance: string;
+  buildInstance?: string;
   frequency?: Duration;
   seedMetadata?: string;
 };
