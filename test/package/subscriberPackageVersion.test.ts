@@ -156,7 +156,7 @@ describe('subscriberPackageVersion', () => {
     } catch (e) {
       const error = e as Error;
       expect(error.message).to.match(
-        /The subscriber package version 04txxxxxxxxxxxxxxy is invalid, no subscriber package version record found/,
+        /The subscriber package version 04txxxxxxxxxxxxxxy is either invalid or not yet available on your instance of salesforce.com. First double-check the ID to ensure it's correct. If it is, check back after a while and retry the package install./,
         error.message
       );
       expect(queryStub.called).to.be.true;
