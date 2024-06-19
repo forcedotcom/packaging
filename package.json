@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/packaging",
-  "version": "3.7.0",
+  "version": "3.7.1",
   "description": "Packaging library for the Salesforce packaging platform",
   "main": "lib/exported",
   "types": "lib/exported.d.ts",
@@ -43,7 +43,7 @@
   "dependencies": {
     "@jsforce/jsforce-node": "^3.2.0",
     "@salesforce/core": "^7.4.1",
-    "@salesforce/kit": "^3.1.2",
+    "@salesforce/kit": "^3.1.6",
     "@salesforce/schemas": "^1.9.0",
     "@salesforce/source-deploy-retrieve": "^11.6.9",
     "@salesforce/ts-types": "^2.0.9",
