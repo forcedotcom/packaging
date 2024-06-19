@@ -651,8 +651,8 @@ export class PackageVersionCreate {
       }
       packageObject = this.project.findPackage(
         (namedPackageDir) =>
-          (isPackagingDirectory(namedPackageDir) && namedPackageDir.package === packageName) ||
-          namedPackageDir.name === packageName
+          isPackagingDirectory(namedPackageDir) &&
+          (namedPackageDir.package === packageName || namedPackageDir.name === packageName)
       );
     } else {
       // We'll either have a package ID or alias, or a directory path
