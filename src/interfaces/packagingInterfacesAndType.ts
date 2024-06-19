@@ -201,6 +201,7 @@ export type PackageVersionCreateRequest = {
   Language?: string;
   CalculateCodeCoverage: boolean;
   SkipValidation: boolean;
+  AsyncValidation?: boolean;
 };
 
 export type PackageVersionListOptions = {
@@ -212,6 +213,7 @@ export type PackageVersionListOptions = {
   concise?: boolean;
   isReleased?: boolean;
   showConversionsOnly?: boolean;
+  branch?: string;
 };
 
 export type PackageVersionUpdateOptions = {
@@ -324,6 +326,7 @@ export type PackageVersionCreateOptions = {
   releasenotesurl: string;
   skipancestorcheck: boolean;
   skipvalidation: boolean;
+  asyncvalidation: boolean;
   sourceorg: string;
   tag: string;
   uninstallscript: string;

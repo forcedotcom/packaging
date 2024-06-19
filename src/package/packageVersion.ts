@@ -53,6 +53,7 @@ export const Package2VersionFields: Array<keyof Package2Version> = [
   'Branch',
   'AncestorId',
   'ValidationSkipped',
+  'ValidatedAsync',
   'Name',
   'Description',
   'MajorVersion',
@@ -245,6 +246,7 @@ export class PackageVersion {
               completed: false,
               payload: report,
             };
+          case Package2VersionStatus.performingValidations:
           case Package2VersionStatus.success: {
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.success, report);
             const packageVersion = new PackageVersion({
@@ -344,6 +346,7 @@ export class PackageVersion {
               completed: false,
               payload: report,
             };
+          case Package2VersionStatus.performingValidations:
           case Package2VersionStatus.success:
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.success, report);
             await new PackageVersion({
@@ -385,7 +388,7 @@ export class PackageVersion {
     connection: Connection,
     options: Package2VersionQueryOptions = {}
   ): Promise<Partial<Package2Version[]>> {
-    const fields = options.fields ?? Package2VersionFields;
+    const fields = options.fields ?? PackageVersion.getPackage2VersionFields(connection);
     const { whereClause, whereClauseItems } = options;
     const orderBy = options.orderBy ?? 'ORDER BY LastModifiedDate DESC';
     let query = `SELECT ${fields.toString()} FROM Package2Version`;
@@ -404,6 +407,11 @@ export class PackageVersion {
       await Lifecycle.getInstance().emitWarning(warningMsg);
     }
     return result.records ?? [];
+  }
+
+  private static getPackage2VersionFields(connection: Connection): string[] {
+    const apiVersion = connection.getApiVersion();
+    return Package2VersionFields.filter((field) => (apiVersion > '60.0' ? true : field !== 'ValidatedAsync'));
   }
 
   /**
@@ -495,7 +503,7 @@ export class PackageVersion {
           label2: BY_LABEL.PACKAGE_VERSION_ID.label,
         };
       }
-      const allFields = Package2VersionFields.toString();
+      const allFields = PackageVersion.getPackage2VersionFields(this.connection).toString();
       const query = `SELECT ${allFields} FROM Package2Version WHERE ${queryConfig.clause} LIMIT 1`;
       try {
         this.data = await this.connection.singleRecordQuery<Package2Version>(query, { tooling: true });

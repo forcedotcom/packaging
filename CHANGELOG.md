@@ -1,3 +1,32 @@
+## [3.7.1](https://github.com/forcedotcom/packaging/compare/3.7.0...3.7.1) (2024-06-18)
+
+### Bug Fixes
+
+- bump core and kit ([20aca5e](https://github.com/forcedotcom/packaging/commit/20aca5ed1a907c07f72be3a04a455f0d42655ee4))
+
+# [3.7.0](https://github.com/forcedotcom/packaging/compare/3.6.0...3.7.0) (2024-06-17)
+
+### Features
+
+- add a branch parameter/filter to PVL ([a9e2cf0](https://github.com/forcedotcom/packaging/commit/a9e2cf083f760653b5f70a610f4dfbdb4a51440c))
+
+# [3.6.0](https://github.com/forcedotcom/packaging/compare/3.5.25...3.6.0) (2024-06-14)
+
+### Bug Fixes
+
+- add conditional query field ([95b4b98](https://github.com/forcedotcom/packaging/commit/95b4b984b0e208a1293b8781f4fba31418d93308))
+- async validation start version ([705e3dd](https://github.com/forcedotcom/packaging/commit/705e3dd9f7b641365274d0c1422ea1099d026731))
+- fix nuts to use version specific fields ([be8f614](https://github.com/forcedotcom/packaging/commit/be8f614e3b622f07df1c63b754e58510cabd08ab))
+- nuts based on api version ([d5b72fe](https://github.com/forcedotcom/packaging/commit/d5b72fe42be6e1490d39759ebe771d1c177a912a))
+- nuts making asyncValidation optional ([44f2219](https://github.com/forcedotcom/packaging/commit/44f2219d4023ee5a2e4f0a28ae3b3794c44aab4a))
+- switch to private method ([cbe070e](https://github.com/forcedotcom/packaging/commit/cbe070e1d8103a8f77ca8441e4cd4323f8201c5a))
+- unit tests ([baa349e](https://github.com/forcedotcom/packaging/commit/baa349e18e6d6b35467e89a08c8f99a793488778))
+
+### Features
+
+- async validation ([fbe1377](https://github.com/forcedotcom/packaging/commit/fbe13773a77d89a3a48c53cdda29ebcbfbf6b1b0))
+- remove async validation for list and report ([8b62c6b](https://github.com/forcedotcom/packaging/commit/8b62c6b354362a6ff086642d487fc66ddc8de5ee))
+
 ## [3.5.25](https://github.com/forcedotcom/packaging/compare/3.5.24...3.5.25) (2024-06-08)
 
 ### Bug Fixes
