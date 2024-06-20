@@ -1,3 +1,12 @@
+## [4.0.3](https://github.com/forcedotcom/packaging/compare/4.0.2...4.0.3) (2024-06-20)
+
+
+### Bug Fixes
+
+* fix mpd paths packages ([#605](https://github.com/forcedotcom/packaging/issues/605)) ([5da4c9f](https://github.com/forcedotcom/packaging/commit/5da4c9f03f1fb85823d173074be38ab8fea81286))
+
+
+
 ## [4.0.2](https://github.com/forcedotcom/packaging/compare/4.0.1...4.0.2) (2024-06-20)
 
 
