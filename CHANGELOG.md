@@ -1,3 +1,12 @@
+## [4.0.1](https://github.com/forcedotcom/packaging/compare/3.7.3...4.0.1) (2024-06-20)
+
+
+### Bug Fixes
+
+* bump major ([#603](https://github.com/forcedotcom/packaging/issues/603)) ([05ad642](https://github.com/forcedotcom/packaging/commit/05ad6422f3bc988e706118c0569e1db4911f4970))
+
+
+
 ## [3.7.3](https://github.com/forcedotcom/packaging/compare/3.7.2...3.7.3) (2024-06-20)
 
 
