@@ -1,3 +1,9 @@
+## [3.7.2](https://github.com/forcedotcom/packaging/compare/3.7.1...3.7.2) (2024-06-19)
+
+### Bug Fixes
+
+- update error message to provide alternative scenario ([#600](https://github.com/forcedotcom/packaging/issues/600)) ([942daab](https://github.com/forcedotcom/packaging/commit/942daab596476faafc740d857a1d69e04fc2928f)), closes [#602](https://github.com/forcedotcom/packaging/issues/602)
+
 ## [3.7.1](https://github.com/forcedotcom/packaging/compare/3.7.0...3.7.1) (2024-06-18)
 
 ### Bug Fixes
