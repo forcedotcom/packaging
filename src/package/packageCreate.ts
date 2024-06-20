@@ -8,6 +8,7 @@
 import { Connection, SfError, SfProject } from '@salesforce/core';
 import { env } from '@salesforce/kit';
 import { PackagePackageDir, PackageDir } from '@salesforce/schemas';
+import { isPackagingDirectory } from '@salesforce/core/project';
 import * as pkgUtils from '../utils/packageUtils';
 import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
 import { PackageCreateOptions, PackagingSObjects } from '../interfaces';
@@ -40,14 +41,16 @@ export function createPackageRequestFromContext(project: SfProject, options: Pac
 export function createPackageDirEntry(project: SfProject, options: PackageCreateOptions): PackagePackageDir {
   const packageDirs: PackageDir[] = project.getSfProjectJson().getContents().packageDirectories ?? [];
   return {
-    package: options.name,
     versionName: 'ver 0.1',
     versionNumber: '0.1.0.NEXT',
-    ...(packageDirs.filter((pd: PackageDir) => pd.path === options.path).find((pd) => !('id' in pd)) ?? {
+    ...(packageDirs
+      .filter((pd: PackageDir) => pd.path === options.path && !isPackagingDirectory(pd))
+      .find((pd) => !('id' in pd)) ?? {
       // no match - create a new one
       path: options.path,
       default: packageDirs.length === 0 ? true : !packageDirs.some((pd) => pd.default === true),
     }),
+    package: options.name,
     versionDescription: options.description,
   };
 }
