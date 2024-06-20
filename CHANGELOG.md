@@ -1,3 +1,12 @@
+## [4.0.2](https://github.com/forcedotcom/packaging/compare/4.0.1...4.0.2) (2024-06-20)
+
+
+### Bug Fixes
+
+* bump core [skip-validate-pr] ([b500c1d](https://github.com/forcedotcom/packaging/commit/b500c1d3923618164c5cb5acf455f06bbe6cf15e))
+
+
+
 ## [4.0.1](https://github.com/forcedotcom/packaging/compare/3.7.3...4.0.1) (2024-06-20)
 
 
