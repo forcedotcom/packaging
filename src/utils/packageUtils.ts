@@ -11,9 +11,9 @@ import { pipeline as cbPipeline } from 'node:stream';
 import util, { promisify } from 'node:util';
 import { randomBytes } from 'node:crypto';
 import { Connection, Logger, Messages, ScratchOrgInfo, SfdcUrl, SfError, SfProject } from '@salesforce/core';
-import { isNumber, Many, Nullable, Optional } from '@salesforce/ts-types';
+import { isNumber, isString, Many, Nullable, Optional } from '@salesforce/ts-types';
 import type { SaveError } from '@jsforce/jsforce-node';
-import { Duration, ensureArray, isEmpty } from '@salesforce/kit';
+import { Duration, ensureArray } from '@salesforce/kit';
 import globby from 'globby';
 import JSZIP from 'jszip';
 import { PackageDescriptorJson, PackageType, PackagingSObjects } from '../interfaces';
@@ -51,16 +51,6 @@ export const INSTALL_URL_BASE = new SfdcUrl('https://login.salesforce.com/packag
 
 // https://developer.salesforce.com/docs/atlas.en-us.salesforce_app_limits_cheatsheet.meta/salesforce_app_limits_cheatsheet/salesforce_app_limits_platform_soslsoql.htm
 const SOQL_WHERE_CLAUSE_MAX_LENGTH = 4000;
-
-export const POLL_INTERVAL_SECONDS = 30;
-
-export const DEFAULT_PACKAGE_DIR = {
-  path: '',
-  package: '',
-  versionName: 'ver 0.1',
-  versionNumber: '0.1.0.NEXT',
-  default: true,
-};
 
 export const BY_LABEL = ((): IdRegistry =>
   Object.fromEntries(
@@ -228,7 +218,7 @@ export async function getContainerOptions(
   packageIds: string | undefined | Array<string | undefined>,
   connection: Connection
 ): Promise<Map<string, PackageType>> {
-  const ids = ensureArray(packageIds).filter((id) => id) as string[];
+  const ids = ensureArray(packageIds).filter(isString);
   if (ids.length === 0) {
     return new Map<string, PackageType>();
   }
@@ -507,8 +497,8 @@ export function copyDescriptorProperties(
   packageDescriptorJson: PackageDescriptorJson,
   definitionFileJson: ScratchOrgInfo
 ): PackageDescriptorJson {
-  const packageDescriptorJsonCopy = Object.assign({}, packageDescriptorJson) as Record<string, unknown>;
-  const definitionFileJsonCopy = Object.assign({}, definitionFileJson) as unknown as { [key: string]: unknown };
+  const packageDescriptorJsonCopy = structuredClone(packageDescriptorJson);
+  const definitionFileJsonCopy = structuredClone(definitionFileJson) as unknown as { [key: string]: unknown };
   return Object.assign(
     {},
     packageDescriptorJsonCopy,
@@ -523,12 +513,8 @@ export function copyDescriptorProperties(
   ) as PackageDescriptorJson;
 }
 
-export function replaceIfEmpty<T>(value: T, replacement: T): T {
-  return !isEmpty(value) ? value : replacement;
-}
-
 /**
- * Brand new SFDX projects contain a force-app directory tree contiaining empty folders
+ * Brand new SFDX projects contain a force-app directory tree containing empty folders
  * and a few .eslintrc.json files. We still want to consider such a directory tree
  * as 'empty' for the sake of operations like downloading package version metadata.
  *

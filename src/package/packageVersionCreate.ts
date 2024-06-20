@@ -14,7 +14,6 @@ import {
   Logger,
   Messages,
   NamedPackageDir,
-  PackageDir,
   ScratchOrgInfo,
   SfdcUrl,
   SfProject,
@@ -27,10 +26,11 @@ import {
   ConvertResult,
   MetadataConverter,
 } from '@salesforce/source-deploy-retrieve';
-import { PackageDirDependency } from '@salesforce/core/project';
+import { isNamedPackagingDirectory, isPackagingDirectory } from '@salesforce/core/project';
 import { ensureArray, env } from '@salesforce/kit';
 import { XMLParser, XMLBuilder } from 'fast-xml-parser';
 import { isString } from '@salesforce/ts-types';
+import { PackagePackageDir, PackageDirDependency } from '@salesforce/schemas';
 import * as pkgUtils from '../utils/packageUtils';
 import {
   BY_LABEL,
@@ -342,7 +342,7 @@ export class PackageVersionCreate {
     const mdOptions: MDFolderForArtifactOptions = {
       deploydir: packageVersMetadataFolder,
       sourceDir: sourceBaseDir,
-      sourceApiVersion: (this.project?.getSfProjectJson()?.get('sourceApiVersion') as string) ?? undefined,
+      sourceApiVersion: this.project?.getSfProjectJson()?.get('sourceApiVersion'),
     };
 
     await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
@@ -537,6 +537,7 @@ export class PackageVersionCreate {
       // don't package the profiles from any un-packagedMetadata dir in the project
       profileExcludeDirs = this.project
         .getPackageDirectories()
+        .filter(isNamedPackagingDirectory)
         .map((packageDir) => packageDir.unpackagedMetadata?.path)
         .filter(isString);
 
@@ -661,7 +662,9 @@ export class PackageVersionCreate {
         if (!packageName) throw messages.createError('errorMissingPackage', [this.options.packageId]);
       }
       packageObject = this.project.findPackage(
-        (namedPackageDir) => namedPackageDir.package === packageName || namedPackageDir.name === packageName
+        (namedPackageDir) =>
+          isPackagingDirectory(namedPackageDir) &&
+          (namedPackageDir.package === packageName || namedPackageDir.name === packageName)
       );
     } else {
       // We'll either have a package ID or alias, or a directory path
@@ -669,8 +672,9 @@ export class PackageVersionCreate {
         throw messages.createError('errorMissingPackagePath', [JSON.stringify(this.options)]);
       }
       packageObject = this.project.getPackageFromPath(this.options.path);
+      if (!packageObject || !isPackagingDirectory(packageObject))
+        throw messages.createError('errorCouldNotFindPackageUsingPath', [this.options.path]);
       packageName = packageObject?.package;
-      if (!packageName) throw messages.createError('errorCouldNotFindPackageUsingPath', [this.options.path]);
     }
 
     if (!packageObject) {
@@ -723,9 +727,11 @@ export class PackageVersionCreate {
     return (await byId(createResult.id, this.connection))[0];
   }
 
-  private async getPackageDirFromId(pkg: string): Promise<PackageDir | undefined> {
+  private async getPackageDirFromId(pkg: string): Promise<PackagePackageDir | undefined> {
     if (pkg.startsWith('0Ho')) {
-      const dir = (await this.project.getSfProjectJson().getPackageDirectories()).filter((p) => p.package === pkg);
+      const dir = (await this.project.getSfProjectJson().getPackageDirectories())
+        .filter(isPackagingDirectory)
+        .filter((p) => p.package === pkg);
       if (dir.length === 1) {
         return dir[0];
       }

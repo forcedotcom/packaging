@@ -18,10 +18,7 @@ export async function deletePackage(
   const packageId = project.getPackageIdFromAlias(idOrAlias) ?? idOrAlias;
   validateId(BY_LABEL.PACKAGE_ID, packageId);
 
-  const request = {} as { Id: string; IsDeprecated: boolean };
-  request.Id = packageId;
-  const isUndelete = undelete;
-  request.IsDeprecated = !isUndelete;
+  const request = { Id: packageId, IsDeprecated: !undelete };
 
   const updateResult = await connection.tooling.update('Package2', request).catch((err) => {
     if (err instanceof Error) {

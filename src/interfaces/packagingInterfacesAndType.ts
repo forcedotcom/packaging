@@ -6,7 +6,8 @@
  */
 
 import { Duration } from '@salesforce/kit';
-import { Connection, NamedPackageDir, SfProject } from '@salesforce/core';
+import { Connection } from '@salesforce/core';
+import { NamedPackagingDir, SfProject } from '@salesforce/core/project';
 import type { SaveResult } from '@jsforce/jsforce-node';
 import { Attributes } from 'graphology-types';
 import { Optional } from '@salesforce/ts-types';
@@ -170,7 +171,7 @@ export type PackageCreateOptions = {
   path: string;
 };
 
-export type PackageDescriptorJson = Partial<NamedPackageDir> &
+export type PackageDescriptorJson = Partial<NamedPackagingDir> &
   Partial<{
     id: string;
     features: string[];
@@ -296,11 +297,12 @@ export type SubscriberPackageVersionOptions = {
 };
 
 export type ConvertPackageOptions = {
-  installationKey: string;
-  definitionfile: string;
+  installationKey?: string;
+  definitionfile?: string;
+  /** @deprecated stop using it*/
   installationKeyBypass: boolean;
   wait: Duration;
-  buildInstance: string;
+  buildInstance?: string;
   frequency?: Duration;
   seedMetadata?: string;
 };

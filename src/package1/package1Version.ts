@@ -28,7 +28,7 @@ const messages = Messages.loadMessages('@salesforce/packaging', 'package1Version
  *
  * `const pkgList = await Package1Version.list(connection);`
  *
- * Create a new 1GP package vesion in the org:
+ * Create a new 1GP package version in the org:
  *
  * `const myPkg = await Package1Version.create(connection, options, pollingOptions);`
  *
@@ -70,13 +70,7 @@ export class Package1Version implements IPackageVersion1GP {
       if (pollingOptions.timeout.seconds) {
         const timeout = pollingOptions.timeout.seconds;
         const pollingClient = await PollingClient.create({
-          poll: () =>
-            Package1Version.packageUploadPolling(
-              connection,
-              createRequest.id,
-              timeout,
-              pollingOptions.frequency.seconds
-            ),
+          poll: () => packageUploadPolling(connection, createRequest.id, timeout, pollingOptions.frequency.seconds),
           ...pollingOptions,
         });
         return pollingClient.subscribe<PackagingSObjects.PackageUploadRequest>();
@@ -134,36 +128,6 @@ export class Package1Version implements IPackageVersion1GP {
     )?.records;
   }
 
-  private static async packageUploadPolling(
-    connection: Connection,
-    id: string,
-    timeout: number,
-    frequency: number
-  ): Promise<StatusResult> {
-    const pollingResult = await connection.tooling.sobject('PackageUploadRequest').retrieve(id);
-    switch (pollingResult.Status) {
-      case 'SUCCESS':
-        return { completed: true, payload: pollingResult };
-      case 'IN_PROGRESS':
-      case 'QUEUED':
-        timeout -= frequency;
-        await Lifecycle.getInstance().emit(Package1VersionEvents.create.progress, { timeout, pollingResult });
-
-        return { completed: false, payload: pollingResult };
-      default: {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        const errors = pollingResult?.Errors?.errors as Error[];
-        if (errors?.length > 0) {
-          throw messages.createError('package1VersionCreateCommandUploadFailure', [
-            errors.map((e: Error) => e.message).join(os.EOL),
-          ]);
-        } else {
-          throw messages.createError('package1VersionCreateCommandUploadFailureDefault');
-        }
-      }
-    }
-  }
-
   /**
    * Queries the org for the package version with the given ID
    */
@@ -172,3 +136,32 @@ export class Package1Version implements IPackageVersion1GP {
     return (await this.connection.tooling.query<PackagingSObjects.MetadataPackageVersion>(query)).records;
   }
 }
+
+const packageUploadPolling = async (
+  connection: Connection,
+  id: string,
+  timeout: number,
+  frequency: number
+): Promise<StatusResult> => {
+  const pollingResult = await connection.tooling.sobject('PackageUploadRequest').retrieve(id);
+  switch (pollingResult.Status) {
+    case 'SUCCESS':
+      return { completed: true, payload: pollingResult };
+    case 'IN_PROGRESS':
+    case 'QUEUED':
+      timeout -= frequency;
+      await Lifecycle.getInstance().emit(Package1VersionEvents.create.progress, { timeout, pollingResult });
+      return { completed: false, payload: pollingResult };
+    default: {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      const errors = pollingResult?.Errors?.errors as Error[];
+      if (errors?.length > 0) {
+        throw messages.createError('package1VersionCreateCommandUploadFailure', [
+          errors.map((e: Error) => e.message).join(os.EOL),
+        ]);
+      } else {
+        throw messages.createError('package1VersionCreateCommandUploadFailureDefault');
+      }
+    }
+  }
+};

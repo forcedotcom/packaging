@@ -6,9 +6,10 @@
  */
 import path from 'node:path';
 import fs from 'node:fs';
-import { Connection, Logger, Messages, NamedPackageDir, PackageDirDependency, SfProject } from '@salesforce/core';
+import { Connection, Logger, Messages, SfProject } from '@salesforce/core';
 import { ComponentSet, MetadataConverter, ZipTreeContainer } from '@salesforce/source-deploy-retrieve';
 import { env } from '@salesforce/kit';
+import { PackageDir } from '@salesforce/schemas';
 import {
   PackagingSObjects,
   PackageVersionMetadataDownloadOptions,
@@ -21,14 +22,6 @@ import { PackageVersion } from './packageVersion';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package');
-
-let logger: Logger;
-const getLogger = (): Logger => {
-  if (!logger) {
-    logger = Logger.childFromRoot('packageVersionRetrieve');
-  }
-  return logger;
-};
 
 /**
  * Download the metadata files for a previously published package version, convert them to source format, and put them into a new project folder within the sfdx project.
@@ -79,11 +72,10 @@ export async function retrievePackageVersionMetadata(
 
   // 2GP packages declare their dependencies in dependency-ids.json within the outer zip.
   if (tree.exists('dependency-ids.json')) {
-    type DependencyIds = {
-      ids: string[];
-    }
     const f = await tree.readFile('dependency-ids.json');
-    const idsObj: DependencyIds = JSON.parse(f.toString()) as DependencyIds;
+    const idsObj = JSON.parse(f.toString()) as {
+      ids: string[];
+    };
     if (idsObj?.ids) {
       dependencies = idsObj.ids;
     }
@@ -132,8 +124,9 @@ async function attemptToUpdateProjectJson(
   dependencyIds: string[],
   destinationFolder: string
 ): Promise<void> {
+  const logger = Logger.childFromRoot('packageVersionRetrieve');
   if (env.getBoolean('SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_RETRIEVE')) {
-    getLogger().info(
+    logger.info(
       'Skipping sfdx-project.json updates because SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_RETRIEVE is set'
     );
     return;
@@ -144,7 +137,7 @@ async function attemptToUpdateProjectJson(
       .retrieve(packageId)) as PackagingSObjects.MetadataPackage;
 
     if (packageInfo.PackageCategory !== 'Package2') {
-      getLogger().info(
+      logger.info(
         `Skipping sfdx-project.json updates because ${packageId} is not a 2GP package. It has a PackageCategory of '${packageInfo.PackageCategory}'`
       );
       return;
@@ -154,10 +147,9 @@ async function attemptToUpdateProjectJson(
       whereClause: `WHERE SubscriberPackageVersionId = '${subscriberPackageVersionId}'`,
     };
 
-    const versions = await PackageVersion.queryPackage2Version(connection, queryOptions);
+    const [version] = await PackageVersion.queryPackage2Version(connection, queryOptions);
 
-    if (versions.length && versions[0]) {
-      const version = versions[0];
+    if (version) {
       const pkg = new Package({
         packageAliasOrId: version.Package2Id,
         project,
@@ -176,17 +168,13 @@ async function attemptToUpdateProjectJson(
           errorNotificationUsername: pkgData.PackageErrorUsername,
         });
 
-        const dependencies: PackageDirDependency[] = dependencyIds.map(
-          (dep) => ({ package: dep } as PackageDirDependency)
-        );
-
-        const namedDir = {
+        const namedDir: PackageDir = {
           ...dirEntry,
           versionNumber: '<set version number>',
           versionName: '<set version name>',
           ancestorVersion: '<set ancestor version>',
-          dependencies,
-        } as NamedPackageDir;
+          dependencies: dependencyIds.map((dep) => ({ package: dep })),
+        };
 
         project.getSfProjectJson().addPackageDirectory(namedDir);
 
@@ -207,18 +195,18 @@ async function attemptToUpdateProjectJson(
 
         await project.getSfProjectJson().write();
       } else {
-        getLogger().warn(
+        logger.warn(
           `Failed to update sfdx-project.json. Could not find package for ${version.Package2Id}. This should never happen.`
         );
       }
     } else {
-      getLogger().info(
+      logger.info(
         `Could not find Package2Version record for ${subscriberPackageVersionId}. No updates to sfdx-project.json will be made.`
       );
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : e;
-    getLogger().error(
+    logger.error(
       `Encountered error trying to update sfdx-project.json after retrieving package version metadata: ${msg as string}`
     );
   }
