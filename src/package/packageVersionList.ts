@@ -74,8 +74,8 @@ export async function listPackageVersions(
 export function constructQuery(connectionVersion: number, options?: PackageVersionListOptions): string {
   // construct custom WHERE clause, if applicable
   const where = constructWhere(options);
-
-  let queryFields = defaultFields;
+  // Ensure we only include the async validation property for api version of v60.0 or higher.
+  let queryFields = connectionVersion > 60 ? [...defaultFields, 'ValidatedAsync'] : defaultFields;
   if (options?.verbose) {
     queryFields = [...queryFields, ...verboseFields];
     if (connectionVersion >= 57) {

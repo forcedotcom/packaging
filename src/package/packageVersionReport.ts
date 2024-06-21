@@ -13,23 +13,50 @@ import { Connection, Logger, SfProject } from '@salesforce/core';
 import * as pkgUtils from '../utils/packageUtils';
 import { PackageVersionReportResult } from '../interfaces';
 
-const QUERY =
-  'SELECT Id, Package2Id, SubscriberPackageVersionId, Name, Description, Tag, Branch, AncestorId, ValidationSkipped, ' +
-  'MajorVersion, MinorVersion, PatchVersion, BuildNumber, IsReleased, CodeCoverage, HasPassedCodeCoverageCheck, ' +
-  'Package2.IsOrgDependent, ReleaseVersion, BuildDurationInSeconds, HasMetadataRemoved, CreatedById, ConvertedFromVersionId  ' +
-  'FROM Package2Version ' +
-  "WHERE Id = '%s' AND IsDeprecated != true " +
-  'ORDER BY Package2Id, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber';
+// const QUERY =
+//   'SELECT Id, Package2Id, SubscriberPackageVersionId, Name, Description, Tag, Branch, AncestorId, ValidationSkipped, ' +
+//   'MajorVersion, MinorVersion, PatchVersion, BuildNumber, IsReleased, CodeCoverage, HasPassedCodeCoverageCheck, ' +
+//   'Package2.IsOrgDependent, ReleaseVersion, BuildDurationInSeconds, HasMetadataRemoved, CreatedById, ConvertedFromVersionId  ' +
+//   'FROM Package2Version ' +
+//   "WHERE Id = '%s' AND IsDeprecated != true " +
+//   'ORDER BY Package2Id, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber';
 
 // verbose adds: ConvertedFromVersionId, SubscriberPackageVersion.Dependencies
-const QUERY_VERBOSE =
-  'SELECT Package2Id, SubscriberPackageVersionId, Name, Description, Tag, Branch, AncestorId, ValidationSkipped, ' +
-  'MajorVersion, MinorVersion, PatchVersion, BuildNumber, IsReleased, CodeCoverage, HasPassedCodeCoverageCheck, ConvertedFromVersionId, ' +
-  'Package2.IsOrgDependent, ReleaseVersion, BuildDurationInSeconds, HasMetadataRemoved, SubscriberPackageVersion.Dependencies, ' +
-  'CreatedById, CodeCoveragePercentages ' +
-  'FROM Package2Version ' +
-  "WHERE Id = '%s' AND IsDeprecated != true " +
-  'ORDER BY Package2Id, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber';
+// const QUERY_VERBOSE =
+//   'SELECT Package2Id, SubscriberPackageVersionId, Name, Description, Tag, Branch, AncestorId, ValidationSkipped, ValidatedAsync, ' +
+//   'MajorVersion, MinorVersion, PatchVersion, BuildNumber, IsReleased, CodeCoverage, HasPassedCodeCoverageCheck, ConvertedFromVersionId, ' +
+//   'Package2.IsOrgDependent, ReleaseVersion, BuildDurationInSeconds, HasMetadataRemoved, SubscriberPackageVersion.Dependencies, ' +
+//   'CreatedById, CodeCoveragePercentages ' +
+//   'FROM Package2Version ' +
+//   "WHERE Id = '%s' AND IsDeprecated != true " +
+//   'ORDER BY Package2Id, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber';
+
+export function getQuery(connection: Connection): string {
+  const QUERY =
+    'SELECT Id, Package2Id, SubscriberPackageVersionId, Name, Description, Tag, Branch, AncestorId, ValidationSkipped, ' +
+    'MajorVersion, MinorVersion, PatchVersion, BuildNumber, IsReleased, CodeCoverage, HasPassedCodeCoverageCheck, ' +
+    'Package2.IsOrgDependent, ReleaseVersion, BuildDurationInSeconds, HasMetadataRemoved, CreatedById, ConvertedFromVersionId  ' +
+    (Number(connection.version) >= 60.0 ? ', ValidatedAsync ' : '') +
+    'FROM Package2Version ' +
+    "WHERE Id = '%s' AND IsDeprecated != true " +
+    'ORDER BY Package2Id, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber';
+
+  return QUERY;
+}
+
+export function getVerboseQuery(connection: Connection): string {
+  const QUERY =
+    'SELECT Package2Id, SubscriberPackageVersionId, Name, Description, Tag, Branch, AncestorId, ValidationSkipped, ' +
+    'MajorVersion, MinorVersion, PatchVersion, BuildNumber, IsReleased, CodeCoverage, HasPassedCodeCoverageCheck, ConvertedFromVersionId, ' +
+    'Package2.IsOrgDependent, ReleaseVersion, BuildDurationInSeconds, HasMetadataRemoved, SubscriberPackageVersion.Dependencies, ' +
+    'CreatedById, CodeCoveragePercentages ' +
+    (Number(connection.version) >= 60.0 ? ', ValidatedAsync ' : '') +
+    'FROM Package2Version ' +
+    "WHERE Id = '%s' AND IsDeprecated != true " +
+    'ORDER BY Package2Id, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber';
+
+  return QUERY;
+}
 
 let logger: Logger;
 const getLogger = (): Logger => {
@@ -47,7 +74,10 @@ export async function getPackageVersionReport(options: {
 }): Promise<PackageVersionReportResult[]> {
   getLogger().debug(`entering getPackageVersionReport(${util.inspect(options, { depth: null })})`);
   const queryResult = await options.connection.tooling.query<PackageVersionReportResult>(
-    util.format(options.verbose ? QUERY_VERBOSE : QUERY, options.packageVersionId)
+    util.format(
+      options.verbose ? getVerboseQuery(options.connection) : getQuery(options.connection),
+      options.packageVersionId
+    )
   );
   const records = queryResult.records;
   if (records?.length > 0) {
