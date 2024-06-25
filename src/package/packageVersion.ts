@@ -71,6 +71,7 @@ export const Package2VersionFields: Array<keyof Package2Version> = [
   'ReleaseVersion',
   'BuildDurationInSeconds',
   'HasMetadataRemoved',
+  'EndToEndBuildDuration',
 ];
 
 export type Package2VersionFieldTypes = Array<(typeof Package2VersionFields)[number]>;
