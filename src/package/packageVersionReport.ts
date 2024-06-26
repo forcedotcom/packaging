@@ -38,7 +38,7 @@ const defaultFields = [
   'ConvertedFromVersionId',
 ];
 
-const verboseFields = ['SubscriberPackageVersion.Dependencies', 'CodeCoveragePercentages', 'EndToEndBuildDuration'];
+let verboseFields = ['SubscriberPackageVersion.Dependencies', 'CodeCoveragePercentages'];
 
 const DEFAULT_ORDER_BY_FIELDS = 'Package2Id, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber';
 
@@ -53,6 +53,7 @@ const getLogger = (): Logger => {
 function constructQuery(connectionVersion: number, verbose: boolean): string {
   // Ensure we only include the async validation property for api version of v60.0 or higher.
   let queryFields = connectionVersion > 60 ? [...defaultFields, 'ValidatedAsync'] : defaultFields;
+  verboseFields = connectionVersion > 60 ? [...verboseFields, 'EndToEndBuildDurationInSeconds'] : verboseFields;
   if (verbose) {
     queryFields = [...queryFields, ...verboseFields];
   }
