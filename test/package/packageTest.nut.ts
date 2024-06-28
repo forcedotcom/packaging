@@ -270,6 +270,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
       const pkgVersion = pkgVersions[0];
       // expect some of the default keys
       expect(pkgVersion).to.include.keys(expectedVersionListKeys);
+      expect(pkgVersion).to.have.property('ValidatedAsync');
       expect(pkgVersion).to.not.have.property('CodeCoverage');
       expect(pkgVersion).to.not.have.property('HasPassedCodeCoverageCheck');
     });
@@ -324,6 +325,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
       );
 
       expect(result.IsReleased, 'Expected IsReleased to be false').to.be.false;
+      expect(result.ValidatedAsync, 'Expected ValidatedAsync to be false').to.be.false;
       expect(Object.values(projectFile.packageAliases ?? []).some((id) => id === subscriberPkgVersionId)).to.be.true;
     });
 
