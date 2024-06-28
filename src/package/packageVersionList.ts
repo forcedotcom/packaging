@@ -46,6 +46,9 @@ const verboseFields = ['CodeCoverage', 'HasPassedCodeCoverageCheck'];
 
 const verbose57Fields = ['Language'];
 
+// Ensure we only include the async validation property for api version of v60.0 or higher.
+const default61Fields = ['ValidatedAsync'];
+
 export const DEFAULT_ORDER_BY_FIELDS = 'Package2Id, Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber';
 
 let logger: Logger;
@@ -74,8 +77,7 @@ export async function listPackageVersions(
 export function constructQuery(connectionVersion: number, options?: PackageVersionListOptions): string {
   // construct custom WHERE clause, if applicable
   const where = constructWhere(options);
-
-  let queryFields = defaultFields;
+  let queryFields = connectionVersion > 60 ? [...defaultFields, ...default61Fields] : defaultFields;
   if (options?.verbose) {
     queryFields = [...queryFields, ...verboseFields];
     if (connectionVersion >= 57) {

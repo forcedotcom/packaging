@@ -122,6 +122,7 @@ export type PackageVersionListResult = {
   IsPasswordProtected: boolean;
   AncestorId: string;
   ValidationSkipped: boolean;
+  ValidatedAsync?: boolean;
   CreatedById: string;
   CodeCoverage?: {
     [key: string]: unknown;

@@ -137,6 +137,28 @@ describe('package version list', () => {
       expect(constQuery).to.not.include('HasPassedCodeCoverageCheck');
       expect(constQuery).to.not.include('Language');
     });
+
+    it('should include validatedAsync field', async () => {
+      const options = {
+        packages: ['0Ho3h000000xxxxCAG'],
+        createdLastDays: 1,
+        modifiedLastDays: 2,
+        isReleased: true,
+      };
+      const constQuery = constructQuery(61, options);
+      expect(constQuery).to.include('ValidatedAsync');
+    });
+
+    it('should not include validatedAsync field', async () => {
+      const options = {
+        packages: ['0Ho3h000000xxxxCAG'],
+        createdLastDays: 1,
+        modifiedLastDays: 2,
+        isReleased: true,
+      };
+      const constQuery = constructQuery(59, options);
+      expect(constQuery).to.not.include('ValidatedAsync');
+    });
   });
 
   describe('_assembleQueryParts', () => {
