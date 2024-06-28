@@ -1,3 +1,18 @@
+# [4.1.0](https://github.com/forcedotcom/packaging/compare/4.0.5...4.1.0) (2024-06-28)
+
+
+### Bug Fixes
+
+* nuts ([4cf65bc](https://github.com/forcedotcom/packaging/commit/4cf65bc945d5ef7b5ff256ac9cd0747a2dea6f9f))
+
+
+### Features
+
+* add end to end build duration ([9571d76](https://github.com/forcedotcom/packaging/commit/9571d76dd70cac7ffc6086369ecffeb201b42a85))
+* display validated-async in version list and report ([ce395c6](https://github.com/forcedotcom/packaging/commit/ce395c62000e2380bf045860008535be1f914496))
+
+
+
 ## [4.0.5](https://github.com/forcedotcom/packaging/compare/4.0.4...4.0.5) (2024-06-23)
 
 
