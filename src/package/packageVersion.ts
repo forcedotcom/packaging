@@ -145,7 +145,7 @@ export class PackageVersion {
       frequency: Duration.seconds(0),
       timeout: Duration.seconds(0),
     }
-  ): Promise<Partial<PackageVersionCreateRequestResult>> {
+  ): Promise<PackageVersionCreateRequestResult> {
     const pvc = new PackageVersionCreate({ ...options });
     const createResult = await pvc.createPackageVersion();
 
@@ -411,8 +411,9 @@ export class PackageVersion {
   }
 
   private static getPackage2VersionFields(connection: Connection): string[] {
-    const apiVersion = connection.getApiVersion();
-    return Package2VersionFields.filter((field) => (apiVersion > '60.0' ? true : field !== 'ValidatedAsync'));
+    return parseInt(connection.getApiVersion(), 10) > 60
+      ? Package2VersionFields
+      : Package2VersionFields.filter((field) => field !== 'ValidatedAsync');
   }
 
   /**
@@ -460,7 +461,7 @@ export class PackageVersion {
     if (!this.packageType) {
       this.packageType = (
         await this.connection.singleRecordQuery<Package2>(
-          `select ContainerOptions from Package2 where Id = '${await this.getPackageId()}' limit 1`,
+          `select ContainerOptions from Package2 where Id = '${(await this.getPackageId()) ?? ''}' limit 1`,
           { tooling: true }
         )
       ).ContainerOptions;
@@ -476,34 +477,29 @@ export class PackageVersion {
    * @returns Package2Version
    */
   public async getData(force = false): Promise<Package2Version> | never {
-    let is05i = false;
     if (!this.data || force) {
       // validate ID
       if (this.id.startsWith('04t')) {
         validateId(BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, this.id);
-        is05i = false;
       } else if (this.id.startsWith('05i')) {
         validateId(BY_LABEL.PACKAGE_VERSION_ID, this.id);
-        is05i = true;
       } else {
         throw messages.createError('errorInvalidPackageVersionId', [this.options.idOrAlias]);
       }
-      let queryConfig: { id: string; clause: string; label1: string; label2: string };
-      if (is05i) {
-        queryConfig = {
-          id: this.id,
-          clause: `Id = '${this.id}'`,
-          label1: BY_LABEL.PACKAGE_VERSION_ID.label,
-          label2: BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.label,
-        };
-      } else {
-        queryConfig = {
-          id: this.id,
-          clause: `SubscriberPackageVersionId = '${this.id}'`,
-          label1: BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.label,
-          label2: BY_LABEL.PACKAGE_VERSION_ID.label,
-        };
-      }
+      const queryConfig: { id: string; clause: string; label1: string; label2: string } = this.id.startsWith('05i')
+        ? {
+            id: this.id,
+            clause: `Id = '${this.id}'`,
+            label1: BY_LABEL.PACKAGE_VERSION_ID.label,
+            label2: BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.label,
+          }
+        : {
+            id: this.id,
+            clause: `SubscriberPackageVersionId = '${this.id}'`,
+            label1: BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID.label,
+            label2: BY_LABEL.PACKAGE_VERSION_ID.label,
+          };
+
       const allFields = PackageVersion.getPackage2VersionFields(this.connection).toString();
       const query = `SELECT ${allFields} FROM Package2Version WHERE ${queryConfig.clause} LIMIT 1`;
       try {
@@ -633,7 +629,9 @@ export class PackageVersion {
           PatchVersion: string;
           BuildNumber: string;
         }>(
-          `SELECT Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version WHERE SubscriberPackageVersionId='${results.SubscriberPackageVersionId}'`
+          `SELECT Branch, MajorVersion, MinorVersion, PatchVersion, BuildNumber FROM Package2Version WHERE SubscriberPackageVersionId='${
+            results.SubscriberPackageVersionId ?? ''
+          }'`
         )
       ).records[0];
 

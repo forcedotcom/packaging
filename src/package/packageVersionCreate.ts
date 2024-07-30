@@ -80,7 +80,7 @@ export class PackageVersionCreate {
     this.metadataResolver = new MetadataResolver();
   }
 
-  public createPackageVersion(): Promise<Partial<PackageVersionCreateRequestResult>> {
+  public createPackageVersion(): Promise<PackageVersionCreateRequestResult> {
     try {
       return this.packageVersionCreate();
     } catch (err) {
@@ -163,6 +163,7 @@ export class PackageVersionCreate {
     return pkgVerQueryResult.records[0].SubscriberPackageVersionId;
   }
 
+  /** side effect: removes properties from the passed in dependency! */
   private async resolveSubscriberPackageVersionId(dependency: PackageDescriptorJson): Promise<PackageDescriptorJson> {
     await this.validateDependencyValues(dependency);
     if (dependency.subscriberPackageVersionId) {
@@ -581,7 +582,7 @@ export class PackageVersionCreate {
       await settingsGenerator.createDeploy();
       await settingsGenerator.createDeployPackageContents(this.apiVersionFromPackageXml);
       await zipDir(
-        `${settingsGenerator.getDestinationPath()}${path.sep}${settingsGenerator.getShapeDirName()}`,
+        `${settingsGenerator.getDestinationPath() ?? ''}${path.sep}${settingsGenerator.getShapeDirName()}`,
         settingsZipFile
       );
     }
@@ -589,6 +590,7 @@ export class PackageVersionCreate {
     await zipDir(packageVersBlobDirectory, packageVersBlobZipFile);
   }
 
+  /** side effect: modifies the passed in parameter! */
   private resolveBuildUserPermissions(packageDescriptorJson: PackageDescriptorJson): void {
     // Process permissionSet and permissionSetLicenses that should be enabled when running Apex tests
     // This only applies if code coverage is enabled
@@ -633,7 +635,7 @@ export class PackageVersionCreate {
   }
 
   // eslint-disable-next-line complexity
-  private async packageVersionCreate(): Promise<Partial<PackageVersionCreateRequestResult>> {
+  private async packageVersionCreate(): Promise<PackageVersionCreateRequestResult> {
     // For the first rollout of validating sfdx-project.json data against schema, make it optional and defaulted
     // to false. Validation only occurs if the optional validateschema option has been specified.
     if (this.options.validateschema) {
@@ -868,7 +870,9 @@ export class PackageVersionCreate {
 
       const query =
         'SELECT Id, IsReleased FROM Package2Version ' +
-        `WHERE Package2Id = '${packageId}' AND MajorVersion = ${versionNumberSplit[0]} AND MinorVersion = ${versionNumberSplit[1]} AND PatchVersion = ${versionNumberSplit[2]}`;
+        `WHERE Package2Id = '${packageId ?? ''}' AND MajorVersion = ${versionNumberSplit[0]} AND MinorVersion = ${
+          versionNumberSplit[1]
+        } AND PatchVersion = ${versionNumberSplit[2]}`;
 
       let queriedAncestorId: string;
       const ancestorVersionResult = await this.connection.tooling.query<PackagingSObjects.Package2Version>(query);

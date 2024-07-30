@@ -205,7 +205,7 @@ export async function createPackageVersionCreateRequest(
   if (hasSeedMetadata) {
     // Zip the seedMetadataFolder folder and put the zip in {packageVersBlobDirectory}/{seedMetadataZipFile}
     Logger.childFromRoot('packageConvert:pollForStatusWithInterval').debug(
-      `Including metadata found in '${context.seedmetadata}'.`
+      `Including metadata found in '${context.seedmetadata ?? '<undefined seedmetadata>'}'.`
     );
     await pkgUtils.zipDir(seedMetadataFolder, seedMetadataZipFile);
   }
@@ -213,11 +213,13 @@ export async function createPackageVersionCreateRequest(
   await settingsGenerator.createDeploy();
   await settingsGenerator.createDeployPackageContents(apiVersion);
   await pkgUtils.zipDir(
-    `${settingsGenerator.getDestinationPath()}${path.sep}${settingsGenerator.getShapeDirName()}`,
+    `${settingsGenerator.getDestinationPath() ?? ''}${path.sep}${settingsGenerator.getShapeDirName()}`,
     settingsZipFile
   );
 
-  const shapeDirectory = `${settingsGenerator.getDestinationPath()}${path.sep}${settingsGenerator.getShapeDirName()}`;
+  const shapeDirectory = `${settingsGenerator.getDestinationPath() ?? ''}${
+    path.sep
+  }${settingsGenerator.getShapeDirName()}`;
   const currentPackageXml = await fs.promises.readFile(path.join(shapeDirectory, 'package.xml'), 'utf8');
   await fs.promises.writeFile(path.join(packageVersMetadataFolder, 'package.xml'), currentPackageXml, 'utf-8');
   // Zip the packageVersMetadataFolder folder and put the zip in {packageVersBlobDirectory}/package.zip

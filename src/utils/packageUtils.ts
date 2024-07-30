@@ -11,7 +11,7 @@ import { pipeline as cbPipeline } from 'node:stream';
 import util, { promisify } from 'node:util';
 import { randomBytes } from 'node:crypto';
 import { Connection, Logger, Messages, ScratchOrgInfo, SfdcUrl, SfError, SfProject } from '@salesforce/core';
-import { isNumber, isString, Many, Nullable, Optional } from '@salesforce/ts-types';
+import { isNumber, isString, Many, Optional } from '@salesforce/ts-types';
 import type { SaveError } from '@jsforce/jsforce-node';
 import { Duration, ensureArray } from '@salesforce/kit';
 import globby from 'globby';
@@ -202,8 +202,8 @@ export async function getPackageVersionId(versionId: string, connection: Connect
   });
 }
 
-export function escapeInstallationKey(key?: string): Nullable<string> {
-  return key ? key.replace(/\\/g, '\\\\').replace(/'/g, "\\'") : null;
+export function escapeInstallationKey(key: string): string {
+  return key.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
 /**

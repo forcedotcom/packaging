@@ -110,6 +110,7 @@ describe('Package Version', () => {
 
   describe('create', () => {
     it('should include the package version create request ID', async () => {
+      // @ts-expect-error partial mock
       $$.SANDBOX.stub(PackageVersionCreate.prototype, 'createPackageVersion').resolves({
         Id: versionCreateRequestId,
       });
