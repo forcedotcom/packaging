@@ -1,3 +1,12 @@
+## [4.1.6](https://github.com/forcedotcom/packaging/compare/4.1.5...4.1.6) (2024-07-30)
+
+
+### Bug Fixes
+
+* no nullish in template literal ([#627](https://github.com/forcedotcom/packaging/issues/627)) ([1009ec9](https://github.com/forcedotcom/packaging/commit/1009ec9126cf7bddca7a578c4a18d20e1ab3e65b))
+
+
+
 ## [4.1.5](https://github.com/forcedotcom/packaging/compare/4.1.4...4.1.5) (2024-07-27)
 
 
