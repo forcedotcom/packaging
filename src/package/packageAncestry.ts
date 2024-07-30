@@ -320,7 +320,9 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
     // Check to see if the package is an unlocked package
     // if so, throw and error since ancestry only applies to managed packages
     await this.validatePackageType();
-    const normalQuery = `${SELECT_PACKAGE_VERSION} WHERE AncestorId = NULL AND Package2Id = '${this.requestedPackageId}' ${releasedOnlyFilter}`;
+    const normalQuery = `${SELECT_PACKAGE_VERSION} WHERE AncestorId = NULL AND Package2Id = '${
+      this.requestedPackageId ?? ''
+    }' ${releasedOnlyFilter}`;
     const subscriberPackageVersions = (
       await this.options.connection.tooling.query<PackageAncestryNode>(normalQuery)
     ).records?.map((record) => new PackageAncestryNode(record));
