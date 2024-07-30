@@ -42,13 +42,13 @@
   ],
   "dependencies": {
     "@jsforce/jsforce-node": "^3.2.0",
-    "@salesforce/core": "^8.2.3",
+    "@salesforce/core": "^8.2.7",
     "@salesforce/kit": "^3.1.6",
     "@salesforce/schemas": "^1.9.0",
     "@salesforce/source-deploy-retrieve": "^12.1.8",
-    "@salesforce/ts-types": "^2.0.10",
+    "@salesforce/ts-types": "^2.0.11",
     "@salesforce/types": "^1.2.0",
-    "fast-xml-parser": "^4.4.0",
+    "fast-xml-parser": "^4.4.1",
     "globby": "^11",
     "graphology": "^0.25.4",
     "graphology-traversal": "^0.3.1",
@@ -57,14 +57,14 @@
     "object-treeify": "^2"
   },
   "devDependencies": {
-    "@salesforce/cli-plugins-testkit": "^5.3.18",
-    "@salesforce/dev-scripts": "^10.2.4",
+    "@salesforce/cli-plugins-testkit": "^5.3.20",
+    "@salesforce/dev-scripts": "^10.2.8",
     "@types/globby": "^9.1.0",
     "@types/jszip": "^3.4.1",
-    "eslint-plugin-sf-plugin": "^1.18.11",
+    "eslint-plugin-sf-plugin": "^1.20.1",
     "shelljs": "0.8.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.4"
   },
   "publishConfig": {
     "access": "public"
