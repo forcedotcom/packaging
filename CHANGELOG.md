@@ -1,3 +1,12 @@
+## [4.1.7](https://github.com/forcedotcom/packaging/compare/4.1.6...4.1.7) (2024-08-02)
+
+
+### Bug Fixes
+
+* override whatwg-url ([#629](https://github.com/forcedotcom/packaging/issues/629)) ([2303e53](https://github.com/forcedotcom/packaging/commit/2303e535f330d0c8c76bd3ccbb176441d3fba38a))
+
+
+
 ## [4.1.6](https://github.com/forcedotcom/packaging/compare/4.1.5...4.1.6) (2024-07-30)
 
 
