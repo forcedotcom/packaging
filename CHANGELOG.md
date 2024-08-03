@@ -1,3 +1,12 @@
+## [4.1.9](https://github.com/forcedotcom/packaging/compare/4.1.8...4.1.9) (2024-08-03)
+
+
+### Bug Fixes
+
+* **deps:** bump @jsforce/jsforce-node from 3.4.0 to 3.4.1 ([94f34ff](https://github.com/forcedotcom/packaging/commit/94f34ff75bfd955bd2c13dcb1445dc25b2b840e5))
+
+
+
 ## [4.1.8](https://github.com/forcedotcom/packaging/compare/4.1.7...4.1.8) (2024-08-03)
 
 
