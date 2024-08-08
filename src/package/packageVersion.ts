@@ -117,7 +117,7 @@ export type Package2VersionQueryOptions = {
  * `new PackageVersion({connection, project, idOrAlias}).promote();`
  */
 export class PackageVersion {
-  private readonly project: SfProject;
+  private readonly project?: SfProject;
   private readonly connection: Connection;
 
   private data?: Package2Version;
@@ -619,6 +619,9 @@ export class PackageVersion {
   }
 
   private async updateProjectWithPackageVersion(results: PackageVersionCreateRequestResult): Promise<void> {
+    if (!this.project) {
+      throw new Error('AN SFDX PROJECT IS REQUIRED!');
+    }
     if (!env.getBoolean('SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE')) {
       // get the newly created package version from the server
       const versionResult = (
@@ -659,6 +662,8 @@ export class PackageVersion {
   }
 
   private resolveId(): string {
-    return this.project.getPackageIdFromAlias(this.options.idOrAlias) ?? this.options.idOrAlias;
+    return this.project
+      ? this.project.getPackageIdFromAlias(this.options.idOrAlias) ?? this.options.idOrAlias
+      : this.options.idOrAlias;
   }
 }

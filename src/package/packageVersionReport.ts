@@ -74,7 +74,7 @@ function constructQuery(connectionVersion: number, verbose: boolean): string {
 export async function getPackageVersionReport(options: {
   packageVersionId: string;
   connection: Connection;
-  project: SfProject;
+  project?: SfProject;
   verbose: boolean;
 }): Promise<PackageVersionReportResult[]> {
   getLogger().debug(`entering getPackageVersionReport(${util.inspect(options, { depth: null })})`);
