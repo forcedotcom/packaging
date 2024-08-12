@@ -620,7 +620,7 @@ export class PackageVersion {
 
   private async updateProjectWithPackageVersion(results: PackageVersionCreateRequestResult): Promise<void> {
     if (!this.project) {
-      throw new Error('AN SFDX PROJECT IS REQUIRED!');
+      throw new SfError('errors.RequiresProject');
     }
     if (!env.getBoolean('SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE')) {
       // get the newly created package version from the server
