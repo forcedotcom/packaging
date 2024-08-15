@@ -662,8 +662,26 @@ export class PackageVersion {
   }
 
   private resolveId(): string {
-    return this.project
-      ? this.project.getPackageIdFromAlias(this.options.idOrAlias) ?? this.options.idOrAlias
-      : this.options.idOrAlias;
+    let packageId = this.options.idOrAlias;
+
+    if (packageId.startsWith('04t') || packageId.startsWith('05i')) {
+      return packageId;
+    }
+
+    if (!this.options.project) {
+      throw messages.createError('errorInvalidPackageVersionIdNoProject', [this.options.idOrAlias]);
+    }
+
+    packageId = this.options.project.getPackageIdFromAlias(this.options.idOrAlias) ?? this.options.idOrAlias;
+
+    if (packageId === this.options.idOrAlias) {
+      throw messages.createError('packageAliasNotFound', [this.options.idOrAlias]);
+    }
+    // validate the resolved alias value from sfdx-project is a valid ID
+    if (packageId.startsWith('04t') || packageId.startsWith('05i')) {
+      return packageId;
+    } else {
+      throw messages.createError('errorInvalidPackageVersionId', [this.options.idOrAlias]);
+    }
   }
 }
