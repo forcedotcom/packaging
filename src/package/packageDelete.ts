@@ -11,11 +11,11 @@ import { PackageSaveResult } from '../interfaces';
 
 export async function deletePackage(
   idOrAlias: string,
-  project: SfProject,
+  project: SfProject | undefined,
   connection: Connection,
   undelete: boolean
 ): Promise<PackageSaveResult> {
-  const packageId = project.getPackageIdFromAlias(idOrAlias) ?? idOrAlias;
+  const packageId = project ? project.getPackageIdFromAlias(idOrAlias) ?? idOrAlias : idOrAlias;
   validateId(BY_LABEL.PACKAGE_ID, packageId);
 
   const request = { Id: packageId, IsDeprecated: !undelete };

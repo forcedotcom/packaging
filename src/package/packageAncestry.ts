@@ -231,7 +231,9 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
 
   private async getRootsFromRequestedId(): Promise<PackageAncestryNode[]> {
     let roots: PackageAncestryNode[] = [];
-    this.packageId = this.options.project.getPackageIdFromAlias(this.options.packageId) ?? this.options.packageId;
+    this.packageId = this.options.project
+      ? this.options.project.getPackageIdFromAlias(this.options.packageId) ?? this.options.packageId
+      : this.options.packageId;
     switch (this.requestedPackageId?.slice(0, 3)) {
       case '0Ho':
         pkgUtils.validateId(pkgUtils.BY_LABEL.PACKAGE_ID, this.requestedPackageId);

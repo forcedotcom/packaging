@@ -117,7 +117,7 @@ export type Package2VersionQueryOptions = {
  * `new PackageVersion({connection, project, idOrAlias}).promote();`
  */
 export class PackageVersion {
-  private readonly project: SfProject;
+  private readonly project?: SfProject;
   private readonly connection: Connection;
 
   private data?: Package2Version;
@@ -619,6 +619,9 @@ export class PackageVersion {
   }
 
   private async updateProjectWithPackageVersion(results: PackageVersionCreateRequestResult): Promise<void> {
+    if (!this.project) {
+      throw new SfError('errors.RequiresProject');
+    }
     if (!env.getBoolean('SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE')) {
       // get the newly created package version from the server
       const versionResult = (
@@ -659,6 +662,26 @@ export class PackageVersion {
   }
 
   private resolveId(): string {
-    return this.project.getPackageIdFromAlias(this.options.idOrAlias) ?? this.options.idOrAlias;
+    let packageId = this.options.idOrAlias;
+
+    if (packageId.startsWith('04t') || packageId.startsWith('05i')) {
+      return packageId;
+    }
+
+    if (!this.options.project) {
+      throw messages.createError('errorInvalidPackageVersionIdNoProject', [this.options.idOrAlias]);
+    }
+
+    packageId = this.options.project.getPackageIdFromAlias(this.options.idOrAlias) ?? this.options.idOrAlias;
+
+    if (packageId === this.options.idOrAlias) {
+      throw messages.createError('packageAliasNotFound', [this.options.idOrAlias]);
+    }
+    // validate the resolved alias value from sfdx-project is a valid ID
+    if (packageId.startsWith('04t') || packageId.startsWith('05i')) {
+      return packageId;
+    } else {
+      throw messages.createError('errorInvalidPackageVersionId', [this.options.idOrAlias]);
+    }
   }
 }

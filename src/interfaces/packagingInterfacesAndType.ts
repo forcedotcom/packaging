@@ -42,7 +42,7 @@ export type IPackageVersion2GP = {
 
 export type PackageOptions = {
   connection: Connection;
-  project: SfProject;
+  project?: SfProject;
   packageAliasOrId: string;
 };
 
@@ -288,7 +288,7 @@ export type PackageVersionOptions = {
    * 3. Alias for a 04t or 05i, defined in sfdx-project.json
    */
   idOrAlias: string;
-  project: SfProject;
+  project?: SfProject;
 };
 
 export type SubscriberPackageVersionOptions = {
@@ -431,7 +431,7 @@ export type PackageAncestryNodeData = {
 
 export type PackageAncestryOptions = {
   packageId: string;
-  project: SfProject;
+  project?: SfProject;
   connection: Connection;
 };
 

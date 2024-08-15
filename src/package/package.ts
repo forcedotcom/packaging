@@ -83,8 +83,9 @@ export class Package {
   public constructor(private options: PackageOptions) {
     let packageId = this.options.packageAliasOrId;
     if (!packageId.startsWith(packagePrefixes.PackageId)) {
-      packageId =
-        this.options.project.getPackageIdFromAlias(this.options.packageAliasOrId) ?? this.options.packageAliasOrId;
+      packageId = this.options.project
+        ? this.options.project.getPackageIdFromAlias(this.options.packageAliasOrId) ?? this.options.packageAliasOrId
+        : this.options.packageAliasOrId;
       if (packageId === this.options.packageAliasOrId) {
         throw messages.createError('packageAliasNotFound', [this.options.packageAliasOrId]);
       }
@@ -136,12 +137,12 @@ export class Package {
    */
   public static async listVersions(
     connection: Connection,
-    project: SfProject,
+    project?: SfProject,
     options?: PackageVersionListOptions
   ): Promise<PackageVersionListResult[]> {
     // resolve/verify packages
     const packages = options?.packages?.map((pkg) => {
-      const id = project.getPackageIdFromAlias(pkg) ?? pkg;
+      const id = project ? project.getPackageIdFromAlias(pkg) ?? pkg : pkg;
 
       // validate ID
       if (id.startsWith('0Ho')) {
@@ -166,7 +167,7 @@ export class Package {
    */
   public static async getAncestry(
     packageId: string,
-    project: SfProject,
+    project: SfProject | undefined,
     connection: Connection
   ): Promise<PackageAncestry> {
     return PackageAncestry.create({
