@@ -1,3 +1,12 @@
+## [4.2.2](https://github.com/forcedotcom/packaging/compare/4.2.1...4.2.2) (2024-08-24)
+
+
+### Bug Fixes
+
+* **deps:** bump micromatch from 4.0.5 to 4.0.8 ([e3de1e3](https://github.com/forcedotcom/packaging/commit/e3de1e3ac274da018e3f03a1e48ee6be7be1973e))
+
+
+
 ## [4.2.1](https://github.com/forcedotcom/packaging/compare/4.2.0...4.2.1) (2024-08-24)
 
 
