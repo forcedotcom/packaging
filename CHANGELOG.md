@@ -1,3 +1,12 @@
+## [4.2.4](https://github.com/forcedotcom/packaging/compare/4.2.3...4.2.4) (2024-08-31)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/source-deploy-retrieve from 12.5.1 to 12.6.0 ([6150566](https://github.com/forcedotcom/packaging/commit/6150566a3bab8257592cb447ba18ba5bca75e1c3))
+
+
+
 ## [4.2.3](https://github.com/forcedotcom/packaging/compare/4.2.2...4.2.3) (2024-08-31)
 
 
