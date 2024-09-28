@@ -1,3 +1,12 @@
+## [4.2.11](https://github.com/forcedotcom/packaging/compare/4.2.10...4.2.11) (2024-09-28)
+
+
+### Bug Fixes
+
+* **deps:** bump @jsforce/jsforce-node from 3.4.1 to 3.4.2 ([b21d5fa](https://github.com/forcedotcom/packaging/commit/b21d5fa20673838234a6a20ff9bba626dac3bc98))
+
+
+
 ## [4.2.10](https://github.com/forcedotcom/packaging/compare/4.2.9...4.2.10) (2024-09-28)
 
 
