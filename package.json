@@ -57,7 +57,7 @@
     "object-treeify": "^2"
   },
   "devDependencies": {
-    "@salesforce/cli-plugins-testkit": "^5.3.33",
+    "@salesforce/cli-plugins-testkit": "^5.3.34",
     "@salesforce/dev-scripts": "^10.2.10",
     "@types/globby": "^9.1.0",
     "@types/jszip": "^3.4.1",
