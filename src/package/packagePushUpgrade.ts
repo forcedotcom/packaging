@@ -51,7 +51,7 @@ async function query(query: string, connection: Connection): Promise<PackagePush
   }));
 }
 
-export function constructWhere(options?: PackagePushRequestListQueryOptions): string {
+function constructWhere(options?: PackagePushRequestListQueryOptions): string {
   const where: string[] = [];
 
   if (options?.packageId) {
