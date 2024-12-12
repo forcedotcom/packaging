@@ -21,7 +21,7 @@ export class PackagePushUpgrade {
   //   private readonly project?: SfProject;
   //   private readonly connection: Connection;
 
-  public constructor(private options: PackagePushUpgradeListOptions) {
+  public constructor() {
     // this.connection = this.options.connection;
     // this.project = this.options.project;
   }
