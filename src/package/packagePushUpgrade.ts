@@ -18,12 +18,12 @@ export type PackagePushUpgradeListOptions = {
 };
 
 export class PackagePushUpgrade {
-  private readonly project?: SfProject;
-  private readonly connection: Connection;
+  //   private readonly project?: SfProject;
+  //   private readonly connection: Connection;
 
   public constructor(private options: PackagePushUpgradeListOptions) {
-    this.connection = this.options.connection;
-    this.project = this.options.project;
+    // this.connection = this.options.connection;
+    // this.project = this.options.project;
   }
 
   public async list(
