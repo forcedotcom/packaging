@@ -136,13 +136,13 @@ export type PackageVersionListResult = {
   Language?: string;
 };
 
-export type PackagePushUpgradeListQueryOptions = {
+export type PackagePushRequestListQueryOptions = {
   packageId: string;
   scheduledLastDays?: number;
   status?: 'Created' | 'Cancelled' | 'Pending' | 'In Progress' | 'Failed' | 'Succeeded';
 };
 
-export type PackagePushUpgradeListResult = {
+export type PackagePushRequestListResult = {
   PushRequestId: string;
   PackageVersionId: string;
   PushRequestStatus: string;

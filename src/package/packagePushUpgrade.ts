@@ -4,14 +4,13 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-/* eslint-disable class-methods-use-this */
 import util from 'node:util';
 import { Connection, SfProject } from '@salesforce/core';
 import { Schema } from '@jsforce/jsforce-node';
-import { PackagePushUpgradeListQueryOptions, PackagePushUpgradeListResult } from '../interfaces';
+import { PackagePushRequestListQueryOptions, PackagePushRequestListResult } from '../interfaces';
 import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
 
-export type PackagePushUpgradeListOptions = {
+export type PackagePushRequestListOptions = {
   connection: Connection;
   packageId: string;
   project?: SfProject;
@@ -22,8 +21,8 @@ export class PackagePushUpgrade {
 
   public static async list(
     connection: Connection,
-    options?: PackagePushUpgradeListQueryOptions
-  ): Promise<PackagePushUpgradeListResult[]> {
+    options?: PackagePushRequestListQueryOptions
+  ): Promise<PackagePushRequestListResult[]> {
     try {
       const whereClause = constructWhere(options);
       return await query(util.format(getQuery(), whereClause), connection);
@@ -37,8 +36,8 @@ export class PackagePushUpgrade {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-shadow
-async function query(query: string, connection: Connection): Promise<PackagePushUpgradeListResult[]> {
-  type QueryRecord = PackagePushUpgradeListResult & Schema;
+async function query(query: string, connection: Connection): Promise<PackagePushRequestListResult[]> {
+  type QueryRecord = PackagePushRequestListResult & Schema;
   const queryResult = await connection.autoFetchQuery<QueryRecord>(query, { tooling: true });
 
   return (queryResult.records ? queryResult.records : []).map((record) => ({
@@ -52,7 +51,7 @@ async function query(query: string, connection: Connection): Promise<PackagePush
   }));
 }
 
-export function constructWhere(options?: PackagePushUpgradeListQueryOptions): string {
+export function constructWhere(options?: PackagePushRequestListQueryOptions): string {
   const where: string[] = [];
 
   if (options?.packageId) {
