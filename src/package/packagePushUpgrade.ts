@@ -55,7 +55,7 @@ function constructWhere(options?: PackagePushRequestListQueryOptions): string {
   const where: string[] = [];
 
   if (options?.packageId) {
-    where.push(`MetadataPackageVersion.MetadataPackageId = '${options.packageId}'`);
+    where.push(`MetadataPackageVersion.MetadataPackage = '${options.packageId}'`);
   }
   return where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
 }
