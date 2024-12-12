@@ -139,7 +139,7 @@ export type PackageVersionListResult = {
 export type PackagePushUpgradeListQueryOptions = {
   packageId: string;
   scheduledLastDays?: number;
-  status?: 'Created' | 'Cancelled' | 'Pending' | 'In Progress' | 'Failed' | 'Succeded';
+  status?: 'Created' | 'Cancelled' | 'Pending' | 'In Progress' | 'Failed' | 'Succeeded';
 };
 
 export type PackagePushUpgradeListResult = {

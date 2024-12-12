@@ -18,21 +18,15 @@ export type PackagePushUpgradeListOptions = {
 };
 
 export class PackagePushUpgrade {
-  //   private readonly project?: SfProject;
-  //   private readonly connection: Connection;
+  public constructor() {}
 
-  public constructor() {
-    // this.connection = this.options.connection;
-    // this.project = this.options.project;
-  }
-
-  public async list(
+  public static async list(
     connection: Connection,
     options?: PackagePushUpgradeListQueryOptions
   ): Promise<PackagePushUpgradeListResult[]> {
     try {
-      const whereClause = this.constructWhere(options);
-      return await this.query(util.format(this.getQuery(), whereClause), connection);
+      const whereClause = constructWhere(options);
+      return await query(util.format(getQuery(), whereClause), connection);
     } catch (err) {
       if (err instanceof Error) {
         throw applyErrorAction(massageErrorMessage(err));
@@ -40,40 +34,40 @@ export class PackagePushUpgrade {
       throw err;
     }
   }
+}
 
-  // eslint-disable-next-line @typescript-eslint/no-shadow
-  private async query(query: string, connection: Connection): Promise<PackagePushUpgradeListResult[]> {
-    type QueryRecord = PackagePushUpgradeListResult & Schema;
-    const queryResult = await connection.autoFetchQuery<QueryRecord>(query, { tooling: true });
+// eslint-disable-next-line @typescript-eslint/no-shadow
+async function query(query: string, connection: Connection): Promise<PackagePushUpgradeListResult[]> {
+  type QueryRecord = PackagePushUpgradeListResult & Schema;
+  const queryResult = await connection.autoFetchQuery<QueryRecord>(query, { tooling: true });
 
-    return (queryResult.records ? queryResult.records : []).map((record) => ({
-      PushRequestId: record.PushRequestId,
-      PackageVersionId: record.PackageVersionId,
-      PushRequestStatus: record.PushRequestStatus,
-      PushRequestScheduledDateTime: 'test',
-      NumOrgsScheduled: 0,
-      NumOrgsUpgradedFail: 0,
-      NumOrgsUpgradedSuccess: 0,
-    }));
+  return (queryResult.records ? queryResult.records : []).map((record) => ({
+    PushRequestId: record?.PushRequestId,
+    PackageVersionId: record?.PackageVersionId,
+    PushRequestStatus: record?.PushRequestStatus,
+    PushRequestScheduledDateTime: 'test',
+    NumOrgsScheduled: 0,
+    NumOrgsUpgradedFail: 0,
+    NumOrgsUpgradedSuccess: 0,
+  }));
+}
+
+export function constructWhere(options?: PackagePushUpgradeListQueryOptions): string {
+  const where: string[] = [];
+
+  if (options?.packageId) {
+    where.push(`Id = '${options.packageId}'`);
   }
 
-  private constructWhere(options?: PackagePushUpgradeListQueryOptions): string {
-    const where: string[] = [];
-
-    if (options?.packageId) {
-      where.push(`Id = '${options.packageId}'`);
-    }
-
-    // filter on errors
-    if (options?.status) {
-      where.push(`Status = '${options.status.toLowerCase()}'`);
-    }
-
-    return where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
+  // filter on errors
+  if (options?.status) {
+    where.push(`Status = '${options.status.toLowerCase()}'`);
   }
 
-  private getQuery(): string {
-    const QUERY = 'SELECT Id, Package2VersionId, Status, IsMigration' + 'FROM PackagePushRequest ' + '%s'; // WHERE, if applicable
-    return QUERY;
-  }
+  return where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
+}
+
+function getQuery(): string {
+  const QUERY = 'SELECT Id, Package2VersionId, Status, IsMigration' + 'FROM PackagePushRequest ' + '%s'; // WHERE, if applicable
+  return QUERY;
 }
