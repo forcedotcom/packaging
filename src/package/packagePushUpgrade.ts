@@ -55,18 +55,12 @@ export function constructWhere(options?: PackagePushRequestListQueryOptions): st
   const where: string[] = [];
 
   if (options?.packageId) {
-    where.push(`Id = '${options.packageId}'`);
+    where.push(`MetadataPackageVersion.MetadataPackageId = '${options.packageId}'`);
   }
-
-  // filter on errors
-  if (options?.status) {
-    where.push(`Status = '${options.status.toLowerCase()}'`);
-  }
-
   return where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
 }
 
 function getQuery(): string {
-  const QUERY = 'SELECT Id, Package2VersionId, Status, IsMigration' + 'FROM PackagePushRequest ' + '%s'; // WHERE, if applicable
+  const QUERY = 'SELECT Id, PackageVersion, Status' + 'FROM PackagePushRequest ' + '%s'; // WHERE, if applicable
   return QUERY;
 }
