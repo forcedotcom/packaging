@@ -24,8 +24,8 @@ export class PackagePushUpgrade {
     options?: PackagePushRequestListQueryOptions
   ): Promise<PackagePushRequestListResult[]> {
     try {
-      const whereClause = constructWhere(options);
-      return await query(util.format(getQuery(), whereClause), connection);
+      const whereClause = constructWhereList(options);
+      return await queryList(util.format(getListQuery(), whereClause), connection);
     } catch (err) {
       if (err instanceof Error) {
         throw applyErrorAction(massageErrorMessage(err));
@@ -36,7 +36,7 @@ export class PackagePushUpgrade {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-shadow
-async function query(query: string, connection: Connection): Promise<PackagePushRequestListResult[]> {
+async function queryList(query: string, connection: Connection): Promise<PackagePushRequestListResult[]> {
   type QueryRecord = PackagePushRequestListResult & Schema;
   const queryResult = await connection.autoFetchQuery<QueryRecord>(query, { tooling: true });
 
@@ -51,7 +51,7 @@ async function query(query: string, connection: Connection): Promise<PackagePush
   }));
 }
 
-function constructWhere(options?: PackagePushRequestListQueryOptions): string {
+function constructWhereList(options?: PackagePushRequestListQueryOptions): string {
   const where: string[] = [];
 
   if (options?.packageId) {
@@ -60,7 +60,7 @@ function constructWhere(options?: PackagePushRequestListQueryOptions): string {
   return where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
 }
 
-function getQuery(): string {
+function getListQuery(): string {
   const QUERY = 'SELECT Id, PackageVersion, Status' + 'FROM PackagePushRequest ' + '%s'; // WHERE, if applicable
   return QUERY;
 }
