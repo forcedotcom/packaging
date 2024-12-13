@@ -303,8 +303,8 @@ export class Package {
    *
    * @param force force a refresh of the package data
    */
-  public async getPackageData(force = false): Promise<PackagingSObjects.Package2 | undefined> {
-    if (force ?? !this.packageData) {
+  public async getPackageData(): Promise<PackagingSObjects.Package2 | undefined> {
+    if (!this.packageData) {
       this.packageData = (await this.options.connection.tooling
         .sobject('Package2')
         .retrieve(this.packageId)) as PackagingSObjects.Package2;
