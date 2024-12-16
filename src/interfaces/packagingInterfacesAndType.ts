@@ -143,9 +143,9 @@ export type PackagePushRequestListQueryOptions = {
 };
 
 export type PackagePushRequestListResult = {
-  PushRequestId: string;
-  PackageVersionId: string;
-  PushRequestStatus: string;
+  PushRequestId: string | undefined;
+  PackageVersionId: string | undefined;
+  PushRequestStatus: string | undefined;
   PushRequestScheduledDateTime: string;
   NumOrgsScheduled: number;
   NumOrgsUpgradedSuccess: number;
