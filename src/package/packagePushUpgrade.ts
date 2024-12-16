@@ -61,6 +61,5 @@ function constructWhereList(options?: PackagePushRequestListQueryOptions): strin
 }
 
 function getListQuery(): string {
-  const QUERY = 'SELECT Id, PackageVersion, Status' + 'FROM PackagePushRequest ' + '%s'; // WHERE, if applicable
-  return QUERY;
+  return 'SELECT Id, PackageVersion, Status' + 'FROM PackagePushRequest ' + '%s'; // WHERE, if applicable
 }
