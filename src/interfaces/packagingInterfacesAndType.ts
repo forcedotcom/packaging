@@ -136,6 +136,22 @@ export type PackageVersionListResult = {
   Language?: string;
 };
 
+export type PackagePushRequestListQueryOptions = {
+  packageId: string;
+  scheduledLastDays?: number;
+  status?: 'Created' | 'Cancelled' | 'Pending' | 'In Progress' | 'Failed' | 'Succeeded';
+};
+
+export type PackagePushRequestListResult = {
+  PushRequestId: string | undefined;
+  PackageVersionId: string | undefined;
+  PushRequestStatus: string | undefined;
+  PushRequestScheduledDateTime: string;
+  NumOrgsScheduled: number;
+  NumOrgsUpgradedSuccess: number;
+  NumOrgsUpgradedFail: number;
+};
+
 export type PackageInstallCreateRequest = Partial<
   Pick<
     PackageInstallRequest,
