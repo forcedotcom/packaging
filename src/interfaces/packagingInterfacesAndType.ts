@@ -402,6 +402,10 @@ export type Package1VersionCreateRequest = Pick<
     >
   >;
 
+export type PackagePushRequestReportQueryOptions = {
+  packagePushRequestId: string;
+};
+
 export type InstalledPackages = {
   Id: string;
   SubscriberPackageId: string;
@@ -501,3 +505,34 @@ export const Package1VersionEvents = {
 };
 
 export type PackageXml = Pick<Package, 'types' | 'version'>;
+
+export type PackagePushRequestReportResult = {
+  PackageVersion: {
+    MetadataPackage: {
+      Name: string;
+      NamespacePrefix: string;
+    };
+    MetadataPackageId: string;
+    Name: string;
+  };
+  Id: string;
+  PackageVersionId: string;
+  Status: string;
+  ScheduledStartTime: string | null;
+  StartTime: string | null;
+  EndTime: string | null;
+  DurationSeconds: number | null;
+};
+
+export type PackagePushRequestJobCountByStatusResult = {
+  expr0: number;
+};
+
+export type PackagePushRequestReportJobFailuresResult = {
+  ErrorMessage: string;
+  ErrorDetails: string;
+  ErrorTitle: string;
+  ErrorSeverity: string;
+  ErrorType: string;
+  PackagePushJobId: string;
+};
