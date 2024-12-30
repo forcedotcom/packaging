@@ -152,6 +152,18 @@ export type PackagePushRequestListResult = {
   NumOrgsUpgradedFail: number;
 };
 
+export type PackagePushScheduleQueryOptions = {
+  packageVersionId: string;
+  scheduledStartTime?: string;
+  orgList: string;
+};
+
+export type PackagePushScheduleResult = {
+  PushRequestId: string;
+  ScheduledStartTime: string;
+  Status: string;
+};
+
 export type PackageInstallCreateRequest = Partial<
   Pick<
     PackageInstallRequest,
