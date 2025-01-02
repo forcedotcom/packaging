@@ -169,6 +169,17 @@ function constructWhereList(options?: PackagePushRequestListQueryOptions): strin
   if (options?.packageId) {
     where.push(`MetadataPackageVersion.MetadataPackage = '${options.packageId}'`);
   }
+
+  if (options?.status) {
+    where.push(`Status = '${options.status}'`);
+  }
+
+  if (options?.scheduledLastDays) {
+    const daysAgo = new Date();
+    daysAgo.setDate(daysAgo.getDate() - options.scheduledLastDays);
+    where.push(`ScheduledStartTime >= ${daysAgo.toISOString()}`);
+  }
+
   return where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
 }
 
