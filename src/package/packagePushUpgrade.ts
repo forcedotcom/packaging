@@ -63,7 +63,7 @@ export class PackagePushUpgrade {
     try {
       const whereClause = constructWhereJobCountByStatus(options, 'Failed');
       return (await queryJobCountByStatus(util.format(getJobCountByStatusQuery(), whereClause), connection)).records[0]
-        .expr0;
+        ?.expr0;
     } catch (err) {
       if (err instanceof Error) {
         throw applyErrorAction(massageErrorMessage(err));
@@ -79,7 +79,7 @@ export class PackagePushUpgrade {
     try {
       const whereClause = constructWhereJobCountByStatus(options, 'Succeeded');
       return (await queryJobCountByStatus(util.format(getJobCountByStatusQuery(), whereClause), connection)).records[0]
-        .expr0;
+        ?.expr0;
     } catch (err) {
       if (err instanceof Error) {
         throw applyErrorAction(massageErrorMessage(err));
@@ -95,7 +95,7 @@ export class PackagePushUpgrade {
     try {
       const whereClause = constructWhereJobCountByStatus(options);
       return (await queryJobCountByStatus(util.format(getJobCountByStatusQuery(), whereClause), connection)).records[0]
-        .expr0;
+        ?.expr0;
     } catch (err) {
       if (err instanceof Error) {
         throw applyErrorAction(massageErrorMessage(err));
@@ -151,16 +151,7 @@ export class PackagePushUpgrade {
 
 async function queryList(query: string, connection: Connection): Promise<PackagePushRequestListResult[]> {
   const queryResult = await connection.autoFetchQuery<PackagePushRequestListResult & Schema>(query, { tooling: true });
-
-  return (queryResult.records ? queryResult.records : []).map((record) => ({
-    PushRequestId: record?.PushRequestId,
-    PackageVersionId: record?.PackageVersionId,
-    PushRequestStatus: record?.PushRequestStatus,
-    PushRequestScheduledDateTime: 'test',
-    NumOrgsScheduled: 0,
-    NumOrgsUpgradedFail: 0,
-    NumOrgsUpgradedSuccess: 0,
-  }));
+  return queryResult.records;
 }
 
 function constructWhereList(options?: PackagePushRequestListQueryOptions): string {
@@ -174,7 +165,7 @@ function constructWhereList(options?: PackagePushRequestListQueryOptions): strin
 
 function getListQuery(): string {
   // WHERE, if applicable
-  return 'SELECT Id, PackageVersion, Status' + 'FROM PackagePushRequest ' + '%s';
+  return 'SELECT Id, PackageVersion, Status, ScheduledStartTime' + 'FROM PackagePushRequest ' + '%s';
 }
 
 async function queryReport(
