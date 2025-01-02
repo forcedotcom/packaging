@@ -152,6 +152,22 @@ export type PackagePushRequestListResult = {
   NumOrgsUpgradedFail: number;
 };
 
+export type PackagePushScheduleQueryOptions = {
+  packageVersionId: string;
+  scheduledStartTime?: string;
+  orgList: string;
+};
+
+export type PackagePushScheduleResult = {
+  PushRequestId: string;
+  ScheduledStartTime: string;
+  Status: string;
+};
+
+export type PackagePushRequestReportQueryOptions = {
+  packagePushRequestId: string;
+};
+
 export type PackageInstallCreateRequest = Partial<
   Pick<
     PackageInstallRequest,
@@ -501,3 +517,25 @@ export const Package1VersionEvents = {
 };
 
 export type PackageXml = Pick<Package, 'types' | 'version'>;
+
+export type PackagePushRequestReportResult = {
+  PackageVersion: {
+    MetadataPackage: {
+      Name: string;
+      NamespacePrefix: string;
+    };
+    MetadataPackageId: string;
+    Name: string;
+  };
+  Id: string;
+  PackageVersionId: string;
+  Status: string;
+  ScheduledStartTime: string | null;
+  StartTime: string | null;
+  EndTime: string | null;
+  DurationSeconds: number | null;
+};
+
+export type PackagePushRequestJobCountByStatusResult = {
+  expr0: number;
+};
