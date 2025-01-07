@@ -147,6 +147,8 @@ export type PackagePushRequestListResult = {
   PackageVersionId: string | undefined;
   PushRequestStatus: string | undefined;
   PushRequestScheduledDateTime: string;
+  PushRequestStartTime: string;
+  PushRequestEndTime: string;
   NumOrgsScheduled: number;
   NumOrgsUpgradedSuccess: number;
   NumOrgsUpgradedFail: number;
