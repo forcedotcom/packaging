@@ -181,7 +181,7 @@ export class PackagePushUpgrade {
 }
 
 async function queryList(query: string, connection: Connection): Promise<PackagePushRequestListResult[]> {
-  const queryResult = await connection.autoFetchQuery<PackagePushRequestListResult & Schema>(query, { tooling: true });
+  const queryResult = await connection.autoFetchQuery<PackagePushRequestListResult & Schema>(query, {});
   return queryResult.records;
 }
 
@@ -189,7 +189,7 @@ function constructWhereList(options?: PackagePushRequestListQueryOptions): strin
   const where: string[] = [];
 
   if (options?.packageId) {
-    where.push(`MetadataPackageVersion.MetadataPackage = '${options.packageId}'`);
+    where.push(`PackageVersion.MetadataPackageId = '${options.packageId}'`);
   }
 
   if (options?.status) {
@@ -207,9 +207,7 @@ function constructWhereList(options?: PackagePushRequestListQueryOptions): strin
 
 function getListQuery(): string {
   // WHERE, if applicable
-  return (
-    'SELECT Id, PackageVersion, Status, ScheduledStartTime, StartTime, EndTime' + 'FROM PackagePushRequest ' + '%s'
-  );
+  return 'SELECT Id, PackageVersionId, Status, ScheduledStartTime, StartTime, EndTime FROM PackagePushRequest ' + '%s';
 }
 
 async function queryReport(

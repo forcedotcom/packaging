@@ -143,12 +143,12 @@ export type PackagePushRequestListQueryOptions = {
 };
 
 export type PackagePushRequestListResult = {
-  PushRequestId: string | undefined;
-  PackageVersionId: string | undefined;
-  PushRequestStatus: string | undefined;
-  PushRequestScheduledDateTime: string;
-  PushRequestStartTime: string;
-  PushRequestEndTime: string;
+  Id: string;
+  PackageVersionId: string;
+  Status: string;
+  ScheduledDateTime: string;
+  StartTime: string;
+  EndTime: string;
   NumOrgsScheduled: number;
   NumOrgsUpgradedSuccess: number;
   NumOrgsUpgradedFail: number;
