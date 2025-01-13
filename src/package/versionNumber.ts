@@ -52,7 +52,8 @@ export class VersionNumber {
     if (!versionString) {
       throw messages.createError('errorMissingVersionNumber');
     }
-    const version = versionString.split('.');
+    // replace "dashes" from packageAlias style version numbers with standard dot notation.
+    const version = versionString.replace('-', '.').split('.');
     if (version?.length === 4) {
       const [major, minor, patch, build] = version;
       const asNumbers = [major, minor, patch, build].map((v) => parseInt(v, 10));
