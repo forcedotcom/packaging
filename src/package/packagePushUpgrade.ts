@@ -4,9 +4,12 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import util from 'node:util';
 import { Connection, SfProject } from '@salesforce/core';
 import { Schema, QueryResult } from '@jsforce/jsforce-node';
+import { IngestJobV2FailedResults } from '@jsforce/jsforce-node/lib/api/bulk2';
 import {
   PackagePushRequestListQueryOptions,
   PackagePushRequestListResult,
@@ -120,19 +123,23 @@ export class PackagePushUpgrade {
         throw new Error('Failed to create PackagePushRequest');
       }
 
-      // Create PackagePushJob for each org
-      const pushJobs = await Promise.all(
-        orgList.map((orgId) =>
-          connection.tooling.create('PackagePushJob', {
-            PackagePushRequestId: pushRequest.id,
-            SubscriberOrganizationKey: orgId,
-          })
-        )
-      );
+      // Create PackagePushJob for each org using Bulk API v2
+      const job = connection.bulk2.createJob({ object: 'PackagePushJob', operation: 'insert' });
 
-      // Check if all jobs were created successfully
-      if (pushJobs.some((job) => !job.success)) {
-        throw new Error('Failed to create PackagePushJobs for all orgs');
+      const pushJobs = orgList.map((orgId) => ({
+        PackagePushRequestId: pushRequest.id,
+        SubscriberOrganizationKey: orgId,
+      }));
+
+      await job.check();
+      await job.uploadData(pushJobs);
+      await job.close();
+
+      // If there are any errors for a job, write all specific job errors to an output file
+      const jobErrors = await job.getFailedResults();
+
+      if (jobErrors.length > 0) {
+        await this.writeJobErrorsToFile(pushRequest.id, jobErrors);
       }
 
       return {
@@ -147,10 +154,34 @@ export class PackagePushUpgrade {
       throw err;
     }
   }
+
+  private static async writeJobErrorsToFile(
+    pushRequestId: string,
+    jobErrors: IngestJobV2FailedResults<Schema>
+  ): Promise<void> {
+    const outputDir = path.join(process.cwd(), 'job_errors');
+    const outputFile = path.join(outputDir, `push_request_${pushRequestId}_errors.log`);
+
+    try {
+      await fs.mkdir(outputDir, { recursive: true });
+
+      const errorContent = jobErrors
+        .map(
+          (job, index) =>
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            `Job ${index + 1} Error:${JSON.stringify(job?.sf__Error, null, 2)}`
+        )
+        .join('');
+
+      await fs.writeFile(outputFile, errorContent, 'utf-8');
+    } catch (error) {
+      throw new Error('Error when saving job errors to file' + (error as Error).message);
+    }
+  }
 }
 
 async function queryList(query: string, connection: Connection): Promise<PackagePushRequestListResult[]> {
-  const queryResult = await connection.autoFetchQuery<PackagePushRequestListResult & Schema>(query, { tooling: true });
+  const queryResult = await connection.autoFetchQuery<PackagePushRequestListResult & Schema>(query, {});
   return queryResult.records;
 }
 
@@ -158,7 +189,7 @@ function constructWhereList(options?: PackagePushRequestListQueryOptions): strin
   const where: string[] = [];
 
   if (options?.packageId) {
-    where.push(`MetadataPackageVersion.MetadataPackage = '${options.packageId}'`);
+    where.push(`PackageVersion.MetadataPackageId = '${options.packageId}'`);
   }
 
   if (options?.status) {
@@ -176,7 +207,7 @@ function constructWhereList(options?: PackagePushRequestListQueryOptions): strin
 
 function getListQuery(): string {
   // WHERE, if applicable
-  return 'SELECT Id, PackageVersion, Status, ScheduledStartTime' + 'FROM PackagePushRequest ' + '%s';
+  return 'SELECT Id, PackageVersionId, Status, ScheduledStartTime, StartTime, EndTime FROM PackagePushRequest ' + '%s';
 }
 
 async function queryReport(
