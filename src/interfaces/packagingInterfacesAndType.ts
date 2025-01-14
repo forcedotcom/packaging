@@ -143,13 +143,31 @@ export type PackagePushRequestListQueryOptions = {
 };
 
 export type PackagePushRequestListResult = {
-  PushRequestId: string | undefined;
-  PackageVersionId: string | undefined;
-  PushRequestStatus: string | undefined;
-  PushRequestScheduledDateTime: string;
+  Id: string;
+  PackageVersionId: string;
+  Status: string;
+  ScheduledDateTime: string;
+  StartTime: string;
+  EndTime: string;
   NumOrgsScheduled: number;
   NumOrgsUpgradedSuccess: number;
   NumOrgsUpgradedFail: number;
+};
+
+export type PackagePushScheduleQueryOptions = {
+  packageVersionId: string;
+  scheduledStartTime?: string;
+  orgList: string;
+};
+
+export type PackagePushScheduleResult = {
+  PushRequestId: string;
+  ScheduledStartTime: string;
+  Status: string;
+};
+
+export type PackagePushRequestReportQueryOptions = {
+  packagePushRequestId: string;
 };
 
 export type PackageInstallCreateRequest = Partial<
