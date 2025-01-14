@@ -541,3 +541,12 @@ export type PackagePushRequestReportResult = {
 export type PackagePushRequestJobCountByStatusResult = {
   expr0: number;
 };
+
+export type PackagePushRequestReportJobFailuresResult = {
+  ErrorMessage: string;
+  ErrorDetails: string;
+  ErrorTitle: string;
+  ErrorSeverity: string;
+  ErrorType: string;
+  PackagePushJobId: string;
+};

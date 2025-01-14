@@ -17,6 +17,7 @@ import {
   PackagePushRequestReportQueryOptions,
   PackagePushRequestReportResult,
   PackagePushRequestJobCountByStatusResult,
+  PackagePushRequestReportJobFailuresResult,
 } from '../interfaces';
 import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
 
@@ -99,6 +100,21 @@ export class PackagePushUpgrade {
       const whereClause = constructWhereJobCountByStatus(options);
       return (await queryJobCountByStatus(util.format(getJobCountByStatusQuery(), whereClause), connection)).records[0]
         ?.expr0;
+    } catch (err) {
+      if (err instanceof Error) {
+        throw applyErrorAction(massageErrorMessage(err));
+      }
+      throw err;
+    }
+  }
+
+  public static async getJobFailureReasons(
+    connection: Connection,
+    options: PackagePushRequestReportQueryOptions
+  ): Promise<PackagePushRequestReportJobFailuresResult[]> {
+    try {
+      const whereClause = constructWhereJobFailureReasons(options);
+      return (await queryJobFailureReasons(util.format(getJobFailureReasonsQuery(), whereClause), connection)).records;
     } catch (err) {
       if (err instanceof Error) {
         throw applyErrorAction(massageErrorMessage(err));
@@ -231,10 +247,10 @@ function constructWhereReport(options: PackagePushRequestReportQueryOptions): st
 }
 
 function getReportQuery(): string {
-  return (
-    'SELECT PackageVersionId, Id, Status, ScheduledStartTime, StartTime, EndTime, DurationSeconds FROM PackagePushRequest ' +
-    '%s'
-  );
+  const QUERY =
+    'SELECT PackageVersion.MetadataPackage.Name, PackageVersion.MetadataPackage.NamespacePrefix, PackageVersion.MetadataPackageId, PackageVersionId, PackageVersion.Name, Id, Status, ScheduledStartTime, StartTime, EndTime, DurationSeconds FROM PackagePushRequest ' +
+    '%s'; // WHERE, if applicable
+  return QUERY;
 }
 
 function constructWhereJobCountByStatus(options: PackagePushRequestReportQueryOptions, status?: string): string {
@@ -249,4 +265,23 @@ function constructWhereJobCountByStatus(options: PackagePushRequestReportQueryOp
 function getJobCountByStatusQuery(): string {
   const QUERY = 'SELECT Count(Id) FROM PackagePushJob ' + '%s '; // WHERE, if applicable
   return QUERY;
+}
+
+function constructWhereJobFailureReasons(options: PackagePushRequestReportQueryOptions): string {
+  const where: string[] = [];
+  where.push(`PackagePushJob.PackagePushRequestId = '${options.packagePushRequestId}'`);
+  return `WHERE ${where.join(' AND ')}`;
+}
+
+function getJobFailureReasonsQuery(): string {
+  const QUERY =
+    'SELECT ErrorMessage, ErrorDetails, ErrorTitle, ErrorSeverity, ErrorType from PackagePushError ' + '%s '; // WHERE, if applicable
+  return QUERY;
+}
+
+async function queryJobFailureReasons(
+  query: string,
+  connection: Connection
+): Promise<QueryResult<PackagePushRequestReportJobFailuresResult>> {
+  return connection.autoFetchQuery<PackagePushRequestReportJobFailuresResult & Schema>(query, {});
 }
