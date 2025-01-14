@@ -17,6 +17,7 @@ import {
   PackagePushRequestReportQueryOptions,
   PackagePushRequestReportResult,
   PackagePushRequestJobCountByStatusResult,
+  PackagePushRequestReportJobFailuresResult,
 } from '../interfaces';
 import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
 
@@ -106,7 +107,6 @@ export class PackagePushUpgrade {
       throw err;
     }
   }
-
 
   public static async getJobFailureReasons(
     connection: Connection,
@@ -224,47 +224,6 @@ function constructWhereList(options?: PackagePushRequestListQueryOptions): strin
 function getListQuery(): string {
   // WHERE, if applicable
   return 'SELECT Id, PackageVersionId, Status, ScheduledStartTime, StartTime, EndTime FROM PackagePushRequest ' + '%s';
-}
-
-async function queryReport(
-  query: string,
-  connection: Connection
-): Promise<QueryResult<PackagePushRequestReportResult>> {
-  return connection.autoFetchQuery<PackagePushRequestReportResult & Schema>(query, {});
-}
-
-async function queryJobCountByStatus(
-  query: string,
-  connection: Connection
-): Promise<QueryResult<PackagePushRequestJobCountByStatusResult>> {
-  return connection.autoFetchQuery<PackagePushRequestJobCountByStatusResult & Schema>(query, {});
-}
-
-function constructWhereReport(options: PackagePushRequestReportQueryOptions): string {
-  const where: string[] = [];
-  where.push(`Id = '${options.packagePushRequestId}'`);
-  return `WHERE ${where.join(' AND ')}`;
-}
-
-function getReportQuery(): string {
-  return (
-    'SELECT PackageVersionId, Id, Status, ScheduledStartTime, StartTime, EndTime, DurationSeconds FROM PackagePushRequest ' +
-    '%s'
-  );
-}
-
-function constructWhereJobCountByStatus(options: PackagePushRequestReportQueryOptions, status?: string): string {
-  const where: string[] = [];
-  where.push(`PackagePushRequestId = '${options.packagePushRequestId}'`);
-  if (status) {
-    where.push(`Status = '${status}'`);
-  }
-  return `WHERE ${where.join(' AND ')}`;
-}
-
-function getJobCountByStatusQuery(): string {
-  const QUERY = 'SELECT Count(Id) FROM PackagePushJob ' + '%s '; // WHERE, if applicable
-  return QUERY;
 }
 
 async function queryReport(

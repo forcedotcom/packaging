@@ -420,10 +420,6 @@ export type Package1VersionCreateRequest = Pick<
     >
   >;
 
-export type PackagePushRequestReportQueryOptions = {
-  packagePushRequestId: string;
-};
-
 export type InstalledPackages = {
   Id: string;
   SubscriberPackageId: string;
