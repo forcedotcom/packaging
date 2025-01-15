@@ -223,7 +223,10 @@ function constructWhereList(options?: PackagePushRequestListQueryOptions): strin
 
 function getListQuery(): string {
   // WHERE, if applicable
-  return 'SELECT Id, PackageVersionId, Status, ScheduledStartTime, StartTime, EndTime FROM PackagePushRequest ' + '%s';
+  return (
+    'SELECT Id, PackageVersionId, PackageVersion.Name, PackageVersion.MajorVersion, PackageVersion.MinorVersion, Status, ScheduledStartTime, StartTime, EndTime FROM PackagePushRequest ' +
+    '%s'
+  );
 }
 
 async function queryReport(
