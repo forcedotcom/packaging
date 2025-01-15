@@ -27,6 +27,12 @@ export type PackagePushRequestListOptions = {
   project?: SfProject;
 };
 
+type PackagePushRequestResult = {
+  id: string;
+  success: boolean;
+  errors: object[];
+};
+
 export class PackagePushUpgrade {
   public constructor() {}
 
@@ -130,36 +136,40 @@ export class PackagePushUpgrade {
     orgList: string[]
   ): Promise<PackagePushScheduleResult> {
     try {
-      const pushRequest = await connection.tooling.create('PackagePushRequest', {
+      const packagePushRequestBody = {
         PackageVersionId: packageVersionId,
         ScheduledStartTime: scheduleTime,
-      });
+      };
 
-      if (!pushRequest.success) {
-        throw new Error('Failed to create PackagePushRequest');
-      }
+      const pushRequestResult: PackagePushRequestResult = await connection.request({
+        method: 'POST',
+        url: '/services/data/v55.0/sobjects/packagepushrequest/',
+        body: JSON.stringify(packagePushRequestBody),
+      });
 
       // Create PackagePushJob for each org using Bulk API v2
       const job = connection.bulk2.createJob({ object: 'PackagePushJob', operation: 'insert' });
 
+      await job.open();
+
       const pushJobs = orgList.map((orgId) => ({
-        PackagePushRequestId: pushRequest.id,
+        PackagePushRequestId: pushRequestResult.id,
         SubscriberOrganizationKey: orgId,
       }));
 
-      await job.check();
       await job.uploadData(pushJobs);
       await job.close();
+      await job.poll();
 
       // If there are any errors for a job, write all specific job errors to an output file
       const jobErrors = await job.getFailedResults();
 
       if (jobErrors.length > 0) {
-        await this.writeJobErrorsToFile(pushRequest.id, jobErrors);
+        await this.writeJobErrorsToFile(pushRequestResult.id, jobErrors);
       }
 
       return {
-        PushRequestId: pushRequest.id,
+        PushRequestId: pushRequestResult.id,
         ScheduledStartTime: scheduleTime,
         Status: 'Pending',
       };
