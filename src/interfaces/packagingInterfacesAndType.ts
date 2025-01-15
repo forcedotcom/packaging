@@ -145,13 +145,18 @@ export type PackagePushRequestListQueryOptions = {
 export type PackagePushRequestListResult = {
   Id: string;
   PackageVersionId: string;
+  PackageVersion: {
+    Name: string;
+    MajorVersion: string;
+    MinorVersion: string;
+  };
   Status: string;
-  ScheduledDateTime: string;
+  ScheduledStartTime: string;
   StartTime: string;
   EndTime: string;
-  NumOrgsScheduled: number;
-  NumOrgsUpgradedSuccess: number;
-  NumOrgsUpgradedFail: number;
+  OrgsScheduled: number;
+  OrgsUpgradeSucceeded: number;
+  OrgsUpgradeFailed: number;
 };
 
 export type PackagePushScheduleQueryOptions = {
