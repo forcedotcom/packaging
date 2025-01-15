@@ -248,7 +248,7 @@ function constructWhereReport(options: PackagePushRequestReportQueryOptions): st
 
 function getReportQuery(): string {
   const QUERY =
-    'SELECT PackageVersion.MetadataPackage.Name, PackageVersion.MetadataPackage.NamespacePrefix, PackageVersion.MetadataPackageId, PackageVersionId, PackageVersion.Name, Id, Status, ScheduledStartTime, StartTime, EndTime, DurationSeconds FROM PackagePushRequest ' +
+    'SELECT PackageVersion.MetadataPackage.Name, PackageVersion.MajorVersion, PackageVersion.MinorVersion, PackageVersion.MetadataPackage.NamespacePrefix, PackageVersion.MetadataPackageId, PackageVersionId, PackageVersion.Name, Id, Status, ScheduledStartTime, StartTime, EndTime, DurationSeconds FROM PackagePushRequest ' +
     '%s'; // WHERE, if applicable
   return QUERY;
 }

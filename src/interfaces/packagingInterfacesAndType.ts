@@ -528,6 +528,8 @@ export type PackagePushRequestReportResult = {
     };
     MetadataPackageId: string;
     Name: string;
+    MajorVersion: string;
+    MinorVersion: string;
   };
   Id: string;
   PackageVersionId: string;
