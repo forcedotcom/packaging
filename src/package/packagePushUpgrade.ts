@@ -147,15 +147,15 @@ export class PackagePushUpgrade {
         body: JSON.stringify(packagePushRequestBody),
       });
 
-      // Create PackagePushJob for each org using Bulk API v2
-      const job = connection.bulk2.createJob({ object: 'PackagePushJob', operation: 'insert' });
-
-      await job.open();
-
       const pushJobs = orgList.map((orgId) => ({
         PackagePushRequestId: pushRequestResult.id,
         SubscriberOrganizationKey: orgId,
       }));
+
+      // Create PackagePushJob for each org using Bulk API v2
+      const job = connection.bulk2.createJob({ operation: 'insert', object: 'PackagePushJob' });
+
+      await job.open();
 
       await job.uploadData(pushJobs);
       await job.close();
