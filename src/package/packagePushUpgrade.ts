@@ -168,6 +168,12 @@ export class PackagePushUpgrade {
         await this.writeJobErrorsToFile(pushRequestResult.id, jobErrors);
       }
 
+      await connection.request({
+        method: 'PATCH',
+        url: '/services/data/v55.0/sobjects/packagepushrequest/' + pushRequestResult?.id,
+        body: JSON.stringify({ Status: 'Pending' }),
+      });
+
       return {
         PushRequestId: pushRequestResult.id,
         ScheduledStartTime: scheduleTime,
