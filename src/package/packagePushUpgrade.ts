@@ -201,7 +201,7 @@ export class PackagePushUpgrade {
         .map(
           (job, index) =>
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            `Job ${index + 1} Error:${JSON.stringify(job?.sf__Error, null, 2)}`
+            `Job ${index + 1}: Error:${JSON.stringify(job?.sf__Error, null, 2)}`
         )
         .join('');
 
