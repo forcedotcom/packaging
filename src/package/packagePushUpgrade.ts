@@ -206,6 +206,7 @@ export class PackagePushUpgrade {
         .join('');
 
       await fs.writeFile(outputFile, errorContent, 'utf-8');
+      throw new Error(`Push upgrade failed. Job errors have been written to file: ${outputFile}`);
     } catch (error) {
       throw new Error('Error when saving job errors to file' + (error as Error).message);
     }
