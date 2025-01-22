@@ -143,7 +143,7 @@ export class PackagePushUpgrade {
 
       const pushRequestResult: PackagePushRequestResult = await connection.request({
         method: 'POST',
-        url: '/services/data/v62.0/sobjects/packagepushrequest/',
+        url: `/services/data/v${connection.getApiVersion()}/sobjects/packagepushrequest/`,
         body: JSON.stringify(packagePushRequestBody),
       });
 
@@ -170,7 +170,7 @@ export class PackagePushUpgrade {
 
       await connection.request({
         method: 'PATCH',
-        url: '/services/data/v62.0/sobjects/packagepushrequest/' + pushRequestResult?.id,
+        url: `/services/data/v${connection.getApiVersion()}/sobjects/packagepushrequest/` + pushRequestResult?.id,
         body: JSON.stringify({ Status: 'Pending' }),
       });
 
@@ -206,9 +206,9 @@ export class PackagePushUpgrade {
         .join('');
 
       await fs.writeFile(outputFile, errorContent, 'utf-8');
-      throw new Error(`Push upgrade failed. Job errors have been written to file: ${outputFile}`);
+      throw new Error(`Push upgrade failed, job errors have been written to file: ${outputFile}`);
     } catch (error) {
-      throw new Error('Error when saving job errors to file' + (error as Error).message);
+      throw new Error('Error when saving job errors to file. ' + (error as Error).message);
     }
   }
 }
