@@ -143,7 +143,7 @@ export class PackagePushUpgrade {
 
       const pushRequestResult: PackagePushRequestResult = await connection.request({
         method: 'POST',
-        url: '/services/data/v55.0/sobjects/packagepushrequest/',
+        url: '/services/data/v62.0/sobjects/packagepushrequest/',
         body: JSON.stringify(packagePushRequestBody),
       });
 
@@ -170,7 +170,7 @@ export class PackagePushUpgrade {
 
       await connection.request({
         method: 'PATCH',
-        url: '/services/data/v55.0/sobjects/packagepushrequest/' + pushRequestResult?.id,
+        url: '/services/data/v62.0/sobjects/packagepushrequest/' + pushRequestResult?.id,
         body: JSON.stringify({ Status: 'Pending' }),
       });
 
