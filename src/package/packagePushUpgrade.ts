@@ -135,7 +135,7 @@ export class PackagePushUpgrade {
     packageVersionId: string,
     scheduleTime: string,
     orgList: string[]
-  ): Promise<PackagePushScheduleResult | (void | SfError<AnyJson>)> {
+  ): Promise<PackagePushScheduleResult | SfError<AnyJson>> {
     try {
       const packagePushRequestBody = {
         PackageVersionId: packageVersionId,
@@ -166,7 +166,7 @@ export class PackagePushUpgrade {
       const jobErrors = await job.getFailedResults();
 
       if (jobErrors.length > 0) {
-        const error: void | SfError<AnyJson> = await this.writeJobErrorsToFile(pushRequestResult.id, jobErrors);
+        const error: SfError<AnyJson> = await this.writeJobErrorsToFile(pushRequestResult.id, jobErrors);
         return error;
       }
 
@@ -192,7 +192,7 @@ export class PackagePushUpgrade {
   private static async writeJobErrorsToFile(
     pushRequestId: string,
     jobErrors: IngestJobV2FailedResults<Schema>
-  ): Promise<void | SfError<AnyJson>> {
+  ): Promise<SfError<AnyJson>> {
     const outputDir = path.join(process.cwd(), 'job_errors');
     const outputFile = path.join(outputDir, `push_request_${pushRequestId}_errors.log`);
 
