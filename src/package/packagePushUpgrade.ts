@@ -7,9 +7,10 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import util from 'node:util';
-import { Connection, SfProject } from '@salesforce/core';
+import { Connection, SfError, SfProject } from '@salesforce/core';
 import { Schema, QueryResult } from '@jsforce/jsforce-node';
 import { IngestJobV2FailedResults } from '@jsforce/jsforce-node/lib/api/bulk2';
+import { AnyJson } from '@salesforce/ts-types';
 import {
   PackagePushRequestListQueryOptions,
   PackagePushRequestListResult,
@@ -134,7 +135,7 @@ export class PackagePushUpgrade {
     packageVersionId: string,
     scheduleTime: string,
     orgList: string[]
-  ): Promise<PackagePushScheduleResult> {
+  ): Promise<PackagePushScheduleResult | (void | SfError<AnyJson>)> {
     try {
       const packagePushRequestBody = {
         PackageVersionId: packageVersionId,
@@ -165,7 +166,8 @@ export class PackagePushUpgrade {
       const jobErrors = await job.getFailedResults();
 
       if (jobErrors.length > 0) {
-        await this.writeJobErrorsToFile(pushRequestResult.id, jobErrors);
+        const error: void | SfError<AnyJson> = await this.writeJobErrorsToFile(pushRequestResult.id, jobErrors);
+        return error;
       }
 
       await connection.request({
@@ -190,7 +192,7 @@ export class PackagePushUpgrade {
   private static async writeJobErrorsToFile(
     pushRequestId: string,
     jobErrors: IngestJobV2FailedResults<Schema>
-  ): Promise<void> {
+  ): Promise<void | SfError<AnyJson>> {
     const outputDir = path.join(process.cwd(), 'job_errors');
     const outputFile = path.join(outputDir, `push_request_${pushRequestId}_errors.log`);
 
@@ -198,17 +200,13 @@ export class PackagePushUpgrade {
       await fs.mkdir(outputDir, { recursive: true });
 
       const errorContent = jobErrors
-        .map(
-          (job, index) =>
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            `Job ${index + 1}: Error:${JSON.stringify(job?.sf__Error, null, 2)}`
-        )
+        .map((job, index) => `Job ${index + 1}: Error:${JSON.stringify(job?.sf__Error, null, 2)}`)
         .join('');
 
       await fs.writeFile(outputFile, errorContent, 'utf-8');
-      throw new Error(`Push upgrade failed, job errors have been written to file: ${outputFile}`);
+      return new SfError(`Push upgrade failed, job errors have been written to file: ${outputFile}`);
     } catch (error) {
-      throw new Error('Error when saving job errors to file. ' + (error as Error).message);
+      throw new SfError('Error when saving job errors to file. ' + (error as Error).message);
     }
   }
 }
