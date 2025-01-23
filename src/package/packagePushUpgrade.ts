@@ -10,7 +10,6 @@ import util from 'node:util';
 import { Connection, SfError, SfProject } from '@salesforce/core';
 import { Schema, QueryResult } from '@jsforce/jsforce-node';
 import { IngestJobV2FailedResults } from '@jsforce/jsforce-node/lib/api/bulk2';
-import { AnyJson } from '@salesforce/ts-types';
 import {
   PackagePushRequestListQueryOptions,
   PackagePushRequestListResult,
@@ -135,7 +134,7 @@ export class PackagePushUpgrade {
     packageVersionId: string,
     scheduleTime: string,
     orgList: string[]
-  ): Promise<PackagePushScheduleResult | SfError<AnyJson>> {
+  ): Promise<PackagePushScheduleResult | SfError> {
     try {
       const packagePushRequestBody = {
         PackageVersionId: packageVersionId,
@@ -166,7 +165,8 @@ export class PackagePushUpgrade {
       const jobErrors = await job.getFailedResults();
 
       if (jobErrors.length > 0) {
-        const error: SfError<AnyJson> = await this.writeJobErrorsToFile(pushRequestResult.id, jobErrors);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const error: SfError = await this.writeJobErrorsToFile(pushRequestResult?.id, jobErrors);
         return error;
       }
 
@@ -192,7 +192,7 @@ export class PackagePushUpgrade {
   private static async writeJobErrorsToFile(
     pushRequestId: string,
     jobErrors: IngestJobV2FailedResults<Schema>
-  ): Promise<SfError<AnyJson>> {
+  ): Promise<SfError> {
     const outputDir = path.join(process.cwd(), 'job_errors');
     const outputFile = path.join(outputDir, `push_request_${pushRequestId}_errors.log`);
 
