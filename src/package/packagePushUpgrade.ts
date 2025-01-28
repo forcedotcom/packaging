@@ -7,9 +7,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import util from 'node:util';
-import { Connection, SfProject } from '@salesforce/core';
+import { Connection, SfError, SfProject } from '@salesforce/core';
 import { Schema, QueryResult } from '@jsforce/jsforce-node';
-import { IngestJobV2FailedResults } from '@jsforce/jsforce-node/lib/api/bulk2';
 import {
   PackagePushRequestListQueryOptions,
   PackagePushRequestListResult,
@@ -25,6 +24,12 @@ export type PackagePushRequestListOptions = {
   connection: Connection;
   packageId: string;
   project?: SfProject;
+};
+
+type PackagePushRequestResult = {
+  id: string;
+  success: boolean;
+  errors: object[];
 };
 
 export class PackagePushUpgrade {
@@ -130,36 +135,47 @@ export class PackagePushUpgrade {
     orgList: string[]
   ): Promise<PackagePushScheduleResult> {
     try {
-      const pushRequest = await connection.tooling.create('PackagePushRequest', {
+      const packagePushRequestBody = {
         PackageVersionId: packageVersionId,
         ScheduledStartTime: scheduleTime,
+      };
+
+      const pushRequestResult: PackagePushRequestResult = await connection.request({
+        method: 'POST',
+        url: `/services/data/v${connection.getApiVersion()}/sobjects/packagepushrequest/`,
+        body: JSON.stringify(packagePushRequestBody),
       });
 
-      if (!pushRequest.success) {
-        throw new Error('Failed to create PackagePushRequest');
-      }
-
-      // Create PackagePushJob for each org using Bulk API v2
-      const job = connection.bulk2.createJob({ object: 'PackagePushJob', operation: 'insert' });
-
       const pushJobs = orgList.map((orgId) => ({
-        PackagePushRequestId: pushRequest.id,
+        PackagePushRequestId: pushRequestResult.id,
         SubscriberOrganizationKey: orgId,
       }));
 
-      await job.check();
+      // Create PackagePushJob for each org using Bulk API v2
+      const job = connection.bulk2.createJob({ operation: 'insert', object: 'PackagePushJob' });
+
+      await job.open();
+
       await job.uploadData(pushJobs);
       await job.close();
+      await job.poll();
 
       // If there are any errors for a job, write all specific job errors to an output file
-      const jobErrors = await job.getFailedResults();
+      const jobErrors = await job.getFailedResults(true);
 
       if (jobErrors.length > 0) {
-        await this.writeJobErrorsToFile(pushRequest.id, jobErrors);
+        const filePath = await this.writeJobErrorsToFile(pushRequestResult?.id, jobErrors);
+        throw new SfError(`Push upgrade failed, job errors have been written to file: ${filePath}`);
       }
 
+      await connection.request({
+        method: 'PATCH',
+        url: `/services/data/v${connection.getApiVersion()}/sobjects/packagepushrequest/` + pushRequestResult?.id,
+        body: JSON.stringify({ Status: 'Pending' }),
+      });
+
       return {
-        PushRequestId: pushRequest.id,
+        PushRequestId: pushRequestResult.id,
         ScheduledStartTime: scheduleTime,
         Status: 'Pending',
       };
@@ -171,27 +187,17 @@ export class PackagePushUpgrade {
     }
   }
 
-  private static async writeJobErrorsToFile(
-    pushRequestId: string,
-    jobErrors: IngestJobV2FailedResults<Schema>
-  ): Promise<void> {
+  private static async writeJobErrorsToFile(pushRequestId: string, jobErrors: string): Promise<string> {
     const outputDir = path.join(process.cwd(), 'job_errors');
     const outputFile = path.join(outputDir, `push_request_${pushRequestId}_errors.log`);
 
     try {
       await fs.mkdir(outputDir, { recursive: true });
 
-      const errorContent = jobErrors
-        .map(
-          (job, index) =>
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            `Job ${index + 1} Error:${JSON.stringify(job?.sf__Error, null, 2)}`
-        )
-        .join('');
-
-      await fs.writeFile(outputFile, errorContent, 'utf-8');
+      await fs.writeFile(outputFile, jobErrors, 'utf-8');
+      return outputFile;
     } catch (error) {
-      throw new Error('Error when saving job errors to file' + (error as Error).message);
+      throw new SfError('Error when saving job errors to file. ' + (error as Error).message);
     }
   }
 }
