@@ -175,6 +175,10 @@ export type PackagePushRequestReportQueryOptions = {
   packagePushRequestId: string;
 };
 
+export type PackagePushRequestAbortQueryOptions = {
+  packagePushRequestId: string;
+};
+
 export type PackageInstallCreateRequest = Partial<
   Pick<
     PackageInstallRequest,
@@ -556,4 +560,9 @@ export type PackagePushRequestReportJobFailuresResult = {
   ErrorSeverity: string;
   ErrorType: string;
   PackagePushJobId: string;
+};
+
+export type PackagePushUpgradeAbortResult = {
+  PushRequestId: string;
+  Status: string;
 };
