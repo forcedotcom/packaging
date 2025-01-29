@@ -18,7 +18,6 @@ import {
   PackagePushRequestJobCountByStatusResult,
   PackagePushRequestReportJobFailuresResult,
   PackagePushRequestAbortQueryOptions,
-  PackagePushUpgradeAbortResult,
 } from '../interfaces';
 import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
 
@@ -189,10 +188,7 @@ export class PackagePushUpgrade {
     }
   }
 
-  public static async abort(
-    connection: Connection,
-    options: PackagePushRequestAbortQueryOptions
-  ): Promise<PackagePushUpgradeAbortResult> {
+  public static async abort(connection: Connection, options: PackagePushRequestAbortQueryOptions): Promise<boolean> {
     try {
       // Fetch the current status of the PackagePushRequest
       const abortQuery = util.format(getPushRequestStatusQuery(), getPushRequestStatusWhereClause(options));
@@ -219,15 +215,12 @@ export class PackagePushUpgrade {
       });
 
       // Return the updated PackagePushRequest details
-      return {
-        PushRequestId: pushRequest.Id,
-        Status: 'Canceled',
-      };
+      return true;
     } catch (err) {
       if (err instanceof Error) {
         throw applyErrorAction(massageErrorMessage(err));
       }
-      throw err;
+      return false;
     }
   }
 
@@ -346,6 +339,6 @@ function getPushRequestStatusWhereClause(options: PackagePushRequestAbortQueryOp
 }
 
 function getPushRequestStatusQuery(): string {
-  const QUERY = 'SELECT PackageVersionId, Id, Status FROM PackagePushRequest ' + '%s';
+  const QUERY = 'SELECT Id, Status FROM PackagePushRequest ' + '%s';
   return QUERY;
 }

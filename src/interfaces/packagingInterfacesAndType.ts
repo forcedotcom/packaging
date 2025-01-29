@@ -561,8 +561,3 @@ export type PackagePushRequestReportJobFailuresResult = {
   ErrorType: string;
   PackagePushJobId: string;
 };
-
-export type PackagePushUpgradeAbortResult = {
-  PushRequestId: string;
-  Status: string;
-};
