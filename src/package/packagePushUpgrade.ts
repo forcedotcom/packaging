@@ -201,7 +201,9 @@ export class PackagePushUpgrade {
       const errorContent = jobErrors
         .map((job, index) => `Job ${index + 1} Error:${JSON.stringify(job?.sf__Error, null, 2)}`)
         .join('');
+
       await fs.writeFile(outputFile, errorContent, 'utf-8');
+
       return outputFile;
     } catch (error) {
       throw new SfError('Error when saving job errors to file. ' + (error as Error).message);
