@@ -9,6 +9,7 @@ import path from 'node:path';
 import util from 'node:util';
 import { Connection, SfError, SfProject } from '@salesforce/core';
 import { Schema, QueryResult } from '@jsforce/jsforce-node';
+import { IngestJobV2FailedResults } from '@jsforce/jsforce-node/lib/api/bulk2';
 import {
   PackagePushRequestListQueryOptions,
   PackagePushRequestListResult,
@@ -162,7 +163,7 @@ export class PackagePushUpgrade {
       await job.poll();
 
       // If there are any errors for a job, write all specific job errors to an output file
-      const jobErrors = await job.getFailedResults(true);
+      const jobErrors = await job.getFailedResults();
 
       if (jobErrors.length > 0) {
         const filePath = await this.writeJobErrorsToFile(pushRequestResult?.id, jobErrors);
@@ -224,14 +225,22 @@ export class PackagePushUpgrade {
     }
   }
 
-  private static async writeJobErrorsToFile(pushRequestId: string, jobErrors: string): Promise<string> {
+  private static async writeJobErrorsToFile(
+    pushRequestId: string,
+    jobErrors: IngestJobV2FailedResults<Schema>
+  ): Promise<string> {
     const outputDir = path.join(process.cwd(), 'job_errors');
     const outputFile = path.join(outputDir, `push_request_${pushRequestId}_errors.log`);
 
     try {
       await fs.mkdir(outputDir, { recursive: true });
 
-      await fs.writeFile(outputFile, jobErrors, 'utf-8');
+      const errorContent = jobErrors
+        .map((job, index) => `Job ${index + 1} Error:${JSON.stringify(job?.sf__Error, null, 2)}`)
+        .join('');
+
+      await fs.writeFile(outputFile, errorContent, 'utf-8');
+
       return outputFile;
     } catch (error) {
       throw new SfError('Error when saving job errors to file. ' + (error as Error).message);
