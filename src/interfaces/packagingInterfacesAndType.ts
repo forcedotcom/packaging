@@ -175,6 +175,10 @@ export type PackagePushRequestReportQueryOptions = {
   packagePushRequestId: string;
 };
 
+export type PackagePushRequestAbortQueryOptions = {
+  packagePushRequestId: string;
+};
+
 export type PackageInstallCreateRequest = Partial<
   Pick<
     PackageInstallRequest,

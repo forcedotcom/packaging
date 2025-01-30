@@ -18,6 +18,7 @@ import {
   PackagePushRequestReportResult,
   PackagePushRequestJobCountByStatusResult,
   PackagePushRequestReportJobFailuresResult,
+  PackagePushRequestAbortQueryOptions,
 } from '../interfaces';
 import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
 
@@ -188,6 +189,42 @@ export class PackagePushUpgrade {
     }
   }
 
+  public static async abort(connection: Connection, options: PackagePushRequestAbortQueryOptions): Promise<boolean> {
+    try {
+      // Fetch the current status of the PackagePushRequest
+      const abortQuery = util.format(getPushRequestStatusQuery(), getPushRequestStatusWhereClause(options));
+      const queryResult = await queryReport(abortQuery, connection);
+
+      if (!queryResult.records || queryResult.records.length === 0) {
+        throw new Error(`No PackagePushRequest found with Id: ${options.packagePushRequestId}`);
+      }
+
+      const pushRequest = queryResult.records[0];
+      // Validate the current status
+      if (!['Created', 'Pending'].includes(pushRequest.Status)) {
+        throw new Error(
+          `Cannot abort PackagePushRequest with status '${pushRequest.Status}'. Abortion is only allowed for 'Created' or 'Pending' statuses.`
+        );
+      }
+
+      // Abort the push request by setting its status to "Canceled"
+      await connection.request({
+        method: 'PATCH',
+        url:
+          `/services/data/v${connection.getApiVersion()}/sobjects/packagepushrequest/` + options.packagePushRequestId,
+        body: JSON.stringify({ Status: 'Canceled' }),
+      });
+
+      // Return the updated PackagePushRequest details
+      return true;
+    } catch (err) {
+      if (err instanceof Error) {
+        throw applyErrorAction(massageErrorMessage(err));
+      }
+      return false;
+    }
+  }
+
   private static async writeJobErrorsToFile(
     pushRequestId: string,
     jobErrors: IngestJobV2FailedResults<Schema>
@@ -302,4 +339,15 @@ async function queryJobFailureReasons(
   connection: Connection
 ): Promise<QueryResult<PackagePushRequestReportJobFailuresResult>> {
   return connection.autoFetchQuery<PackagePushRequestReportJobFailuresResult & Schema>(query, {});
+}
+
+function getPushRequestStatusWhereClause(options: PackagePushRequestAbortQueryOptions): string {
+  const where: string[] = [];
+  where.push(`Id = '${options.packagePushRequestId}'`);
+  return `WHERE ${where.join(' AND ')}`;
+}
+
+function getPushRequestStatusQuery(): string {
+  const QUERY = 'SELECT Id, Status FROM PackagePushRequest ' + '%s';
+  return QUERY;
 }
