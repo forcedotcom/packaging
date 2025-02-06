@@ -196,14 +196,16 @@ export class PackagePushUpgrade {
       const queryResult = await queryReport(abortQuery, connection);
 
       if (!queryResult.records || queryResult.records.length === 0) {
-        throw new Error(`No PackagePushRequest found with Id: ${options.packagePushRequestId}`);
+        throw new Error(
+          'Can’t abort package push upgrade request. The specified push upgrade ID isn’t valid. Check the ID (starts with 0DV) and retry the command.'
+        );
       }
 
       const pushRequest = queryResult.records[0];
       // Validate the current status
       if (!['Created', 'Pending'].includes(pushRequest.Status)) {
         throw new Error(
-          `Cannot abort PackagePushRequest with status '${pushRequest.Status}'. Abortion is only allowed for 'Created' or 'Pending' statuses.`
+          `Can’t abort package push upgrade request with status '${pushRequest.Status}'. Only push upgrade requests with a status of 'Created' or 'Pending' can be cancelled.`
         );
       }
 
