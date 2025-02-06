@@ -237,7 +237,7 @@ export class PackagePushUpgrade {
 
       const errorContent = jobErrors
         .map((job, index) => `Job ${index + 1} Error:${JSON.stringify(job?.sf__Error, null, 2)}`)
-        .join('');
+        .join('\n');
 
       await fs.writeFile(outputFile, errorContent, 'utf-8');
 
