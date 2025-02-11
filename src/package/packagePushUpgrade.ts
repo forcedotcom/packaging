@@ -162,7 +162,7 @@ export class PackagePushUpgrade {
 
       await job.uploadData(pushJobs);
       await job.close();
-      await job.poll(1000, 60_000);
+      await job.poll(1000, 600_000);
 
       // If there are any errors for a job, write all specific job errors to an output file
       const jobErrors = await job.getFailedResults();
@@ -184,7 +184,7 @@ export class PackagePushUpgrade {
         Status: 'Pending',
       };
     } catch (err) {
-      if (job && (err as Error).name === 'JobPollingTimeoutError') {
+      if (job && (err as Error).name !== 'JobPollingTimeoutError') {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         job.delete().catch((ignored) => ignored);
       }
