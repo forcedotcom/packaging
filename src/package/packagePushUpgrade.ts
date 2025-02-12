@@ -9,7 +9,7 @@ import path from 'node:path';
 import util from 'node:util';
 import { Connection, SfError, SfProject } from '@salesforce/core';
 import { Schema, QueryResult } from '@jsforce/jsforce-node';
-import { IngestJobV2FailedResults } from '@jsforce/jsforce-node/lib/api/bulk2';
+import { IngestJobV2, IngestJobV2FailedResults } from '@jsforce/jsforce-node/lib/api/bulk2';
 import {
   PackagePushRequestListQueryOptions,
   PackagePushRequestListResult,
@@ -136,6 +136,8 @@ export class PackagePushUpgrade {
     scheduleTime: string,
     orgList: string[]
   ): Promise<PackagePushScheduleResult> {
+    let job: IngestJobV2<Schema> | undefined;
+
     try {
       const packagePushRequestBody = {
         PackageVersionId: packageVersionId,
@@ -154,13 +156,13 @@ export class PackagePushUpgrade {
       }));
 
       // Create PackagePushJob for each org using Bulk API v2
-      const job = connection.bulk2.createJob({ operation: 'insert', object: 'PackagePushJob' });
+      job = connection.bulk2.createJob({ operation: 'insert', object: 'PackagePushJob' });
 
       await job.open();
 
       await job.uploadData(pushJobs);
       await job.close();
-      await job.poll();
+      await job.poll(1000, 600_000);
 
       // If there are any errors for a job, write all specific job errors to an output file
       const jobErrors = await job.getFailedResults();
@@ -182,10 +184,11 @@ export class PackagePushUpgrade {
         Status: 'Pending',
       };
     } catch (err) {
-      if (err instanceof Error) {
-        throw applyErrorAction(massageErrorMessage(err));
+      if (job && (err as Error).name !== 'JobPollingTimeoutError') {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        job.delete().catch((ignored) => ignored);
       }
-      throw err;
+      throw applyErrorAction(massageErrorMessage(err as Error));
     }
   }
 
