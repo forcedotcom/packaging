@@ -247,6 +247,7 @@ describe('packageConvert', () => {
       Status: 'Success',
       SubscriberPackageVersionId: null,
       Tag: 'tag',
+      TotalNumberOfMetadataFiles: null,
     };
 
     Lifecycle.getInstance().on(PackageEvents.convert.progress, async (data) => {
