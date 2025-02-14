@@ -24,7 +24,8 @@ export function getQuery(connection: Connection): string {
     'SELECT Id, Status, Package2Id, Package2.Name, Package2VersionId, Package2Version.SubscriberPackageVersionId, Package2Version.HasPassedCodeCoverageCheck,Package2Version.CodeCoverage, Tag, Branch, ' +
     'Package2Version.MajorVersion, Package2Version.MinorVersion, Package2Version.PatchVersion, Package2Version.BuildNumber, ' +
     'CreatedDate, Package2Version.HasMetadataRemoved, CreatedById, IsConversionRequest, Package2Version.ConvertedFromVersionId ' +
-    (Number(connection.version) > 60.0 ? ', AsyncValidation, Package2Version.TotalNumberOfMetadataFiles ' : '') +
+    (Number(connection.version) > 60.0 ? ', AsyncValidation ' : '') +
+    (Number(connection.version) > 63.0 ? ', Package2Version.TotalNumberOfMetadataFiles ' : '') +
     'FROM Package2VersionCreateRequest ' +
     '%s' + // WHERE, if applicable
     'ORDER BY CreatedDate desc';
