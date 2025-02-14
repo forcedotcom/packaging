@@ -272,6 +272,7 @@ describe('packageConvert', () => {
           Status: 'inProgress',
           SubscriberPackageVersionId: null,
           Tag: undefined,
+          TotalNumberOfMetadataFiles: null,
         },
         timeRemaining: {
           quantity: 2,
