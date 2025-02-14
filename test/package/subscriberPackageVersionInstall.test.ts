@@ -14,15 +14,11 @@ import {
   isErrorPackageNotAvailable,
   waitForPublish,
 } from '../../src/package/packageInstall';
-import {
-  PackageEvents,
-  PackageInstallCreateRequest,
-  PackageInstallOptions,
-  PackagingSObjects,
-} from '../../src/interfaces';
+import { PackageEvents, PackageInstallCreateRequest, PackageInstallOptions } from '../../src/interfaces';
 import { SubscriberPackageVersion } from '../../src/package';
-import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
+import * as PackagingSObjects from '../../src/interfaces/packagingSObjects';
 
+type PackageInstallRequest = PackagingSObjects.PackagingSObjects.PackageInstallRequest;
 const myPackageVersion04t = '04t6A0000000X0UQAU';
 
 describe('Package Install', () => {
