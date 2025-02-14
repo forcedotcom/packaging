@@ -40,8 +40,8 @@ const defaultFields = [
 
 let verboseFields = ['SubscriberPackageVersion.Dependencies', 'CodeCoveragePercentages'];
 
-// Ensure we only include the async validation property for api version of v60.0 or higher.
-const default61Fields = ['ValidatedAsync'];
+// Add Fields here that are only available for api versions higher than v60.0
+const default61Fields = ['ValidatedAsync', 'TotalNumberOfMetadataFiles'];
 
 const verbose61Fields = ['EndToEndBuildDurationInSeconds'];
 

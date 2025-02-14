@@ -24,7 +24,7 @@ export function getQuery(connection: Connection): string {
     'SELECT Id, Status, Package2Id, Package2.Name, Package2VersionId, Package2Version.SubscriberPackageVersionId, Package2Version.HasPassedCodeCoverageCheck,Package2Version.CodeCoverage, Tag, Branch, ' +
     'Package2Version.MajorVersion, Package2Version.MinorVersion, Package2Version.PatchVersion, Package2Version.BuildNumber, ' +
     'CreatedDate, Package2Version.HasMetadataRemoved, CreatedById, IsConversionRequest, Package2Version.ConvertedFromVersionId ' +
-    (Number(connection.version) > 60.0 ? ', AsyncValidation ' : '') +
+    (Number(connection.version) > 60.0 ? ', AsyncValidation, Package2Version.TotalNumberOfMetadataFiles ' : '') +
     'FROM Package2VersionCreateRequest ' +
     '%s' + // WHERE, if applicable
     'ORDER BY CreatedDate desc';
@@ -84,6 +84,7 @@ async function query(query: string, connection: Connection): Promise<PackageVers
         | 'MinorVersion'
         | 'PatchVersion'
         | 'BuildNumber'
+        | 'TotalNumberOfMetadataFiles'
       >;
     } & {
       Package2: Pick<PackagingSObjects.Package2, 'Name'>;
@@ -114,6 +115,8 @@ async function query(query: string, connection: Connection): Promise<PackageVers
       record.Package2Version != null ? record.Package2Version.HasPassedCodeCoverageCheck : null,
     CreatedBy: record.CreatedById,
     ConvertedFromVersionId: convertedFromVersionMessage(record.Status, record.Package2Version?.ConvertedFromVersionId),
+    TotalNumberOfMetadataFiles:
+      record.Package2Version != null ? record.Package2Version.TotalNumberOfMetadataFiles : null,
   }));
 }
 
