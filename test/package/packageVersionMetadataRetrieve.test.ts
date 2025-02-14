@@ -6,7 +6,7 @@
  */
 import path from 'node:path';
 import fs from 'node:fs';
-import sinon = require('sinon');
+import * as sinon from 'sinon';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/testSetup';
 import { assert, expect } from 'chai';
 import { Connection, SfProject, SfError } from '@salesforce/core';
