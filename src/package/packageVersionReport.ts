@@ -44,7 +44,7 @@ let verboseFields = ['SubscriberPackageVersion.Dependencies', 'CodeCoveragePerce
 const default61Fields = ['ValidatedAsync'];
 
 // Add fields here that are available only api version of v64.0 or higher.
-const deafult64Fields = ['TotalNumberOfMetadataFiles'];
+const default64Fields = ['TotalNumberOfMetadataFiles'];
 
 const verbose61Fields = ['EndToEndBuildDurationInSeconds'];
 
@@ -63,7 +63,7 @@ function constructQuery(connectionVersion: number, verbose: boolean): string {
   // TotalNumberOfMetadataFiles is included as query field for api version of v64.0 or higher.
   let queryFields =
     connectionVersion > 63
-      ? [...defaultFields, ...default61Fields, ...deafult64Fields]
+      ? [...defaultFields, ...default61Fields, ...default64Fields]
       : connectionVersion > 60
       ? [...defaultFields, ...default61Fields]
       : defaultFields;
