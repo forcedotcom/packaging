@@ -62,6 +62,7 @@ export namespace PackagingSObjects {
     HasMetadataRemoved: boolean;
     Language: string;
     EndToEndBuildDurationInSeconds?: number;
+    TotalNumberOfMetadataFiles: number;
   };
 
   export enum Package2VersionStatus {
