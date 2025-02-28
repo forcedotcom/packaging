@@ -304,7 +304,6 @@ export class Package {
    * @param force force a refresh of the package data
    */
   public async getPackageData(force = false): Promise<PackagingSObjects.Package2 | undefined> {
-    // @ts-expect-error unblock local testing
     if (!this.packageData ?? force) {
       this.packageData = (await this.options.connection.tooling
         .sobject('Package2')

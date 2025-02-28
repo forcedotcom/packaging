@@ -48,7 +48,7 @@ There was an error while reading or parsing the provided scratch definition file
 
 # invalidPatchVersionSpecified
 
-Requested patch version number %s to covnert is invalid
+Requested patch version number %s to convert is invalid
 
 # seedMDDirectoryDoesNotExist
 
