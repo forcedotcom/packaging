@@ -43,6 +43,7 @@ describe('Package Version Create', () => {
     'Tag',
     'VersionNumber',
     'TotalNumberOfMetadataFiles',
+    'TotalSizeOfMetadataFiles',
   ];
 
   const $$ = instantiateContext();

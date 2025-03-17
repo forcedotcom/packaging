@@ -25,7 +25,9 @@ export function getQuery(connection: Connection): string {
     'Package2Version.MajorVersion, Package2Version.MinorVersion, Package2Version.PatchVersion, Package2Version.BuildNumber, ' +
     'CreatedDate, Package2Version.HasMetadataRemoved, CreatedById, IsConversionRequest, Package2Version.ConvertedFromVersionId ' +
     (Number(connection.version) > 60.0 ? ', AsyncValidation ' : '') +
-    (Number(connection.version) > 63.0 ? ', Package2Version.TotalNumberOfMetadataFiles ' : '') +
+    (Number(connection.version) > 63.0
+      ? ', Package2Version.TotalNumberOfMetadataFiles, Package2Version.TotalSizeOfMetadataFiles '
+      : '') +
     'FROM Package2VersionCreateRequest ' +
     '%s' + // WHERE, if applicable
     'ORDER BY CreatedDate desc';
@@ -86,6 +88,7 @@ async function query(query: string, connection: Connection): Promise<PackageVers
         | 'PatchVersion'
         | 'BuildNumber'
         | 'TotalNumberOfMetadataFiles'
+        | 'TotalSizeOfMetadataFiles'
       >;
     } & {
       Package2: Pick<PackagingSObjects.Package2, 'Name'>;
@@ -118,6 +121,7 @@ async function query(query: string, connection: Connection): Promise<PackageVers
     ConvertedFromVersionId: convertedFromVersionMessage(record.Status, record.Package2Version?.ConvertedFromVersionId),
     TotalNumberOfMetadataFiles:
       record.Package2Version != null ? record.Package2Version.TotalNumberOfMetadataFiles : null,
+    TotalSizeOfMetadataFiles: record.Package2Version != null ? record.Package2Version.TotalSizeOfMetadataFiles : null,
   }));
 }
 

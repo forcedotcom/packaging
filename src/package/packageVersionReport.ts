@@ -44,7 +44,7 @@ let verboseFields = ['SubscriberPackageVersion.Dependencies', 'CodeCoveragePerce
 const default61Fields = ['ValidatedAsync'];
 
 // Add fields here that are available only api version of v64.0 or higher.
-const default64Fields = ['TotalNumberOfMetadataFiles'];
+const default64Fields = ['TotalNumberOfMetadataFiles', 'TotalSizeOfMetadataFiles'];
 
 const verbose61Fields = ['EndToEndBuildDurationInSeconds'];
 
