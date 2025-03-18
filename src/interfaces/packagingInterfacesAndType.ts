@@ -81,6 +81,7 @@ export type PackageVersionCreateRequestResult = {
   CreatedBy: string;
   ConvertedFromVersionId: string | null;
   TotalNumberOfMetadataFiles: number | null;
+  TotalSizeOfMetadataFiles: number | null;
 };
 
 export const PackageVersionCreateRequestResultInProgressStatuses = Object.values(Package2VersionStatus).filter(
