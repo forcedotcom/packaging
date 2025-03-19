@@ -111,6 +111,7 @@ export async function convertPackage(
       definitionfile: options.definitionfile,
       buildinstance: options.buildInstance,
       seedmetadata: options.seedMetadata,
+      patchversion: options.patchversion,
     },
     packageId,
     // TODO: createPackageVersionCreateRequest requires apiVersion exist.
@@ -153,7 +154,13 @@ export async function convertPackage(
  * @private
  */
 export async function createPackageVersionCreateRequest(
-  context: { installationkey?: string; definitionfile?: string; buildinstance?: string; seedmetadata?: string },
+  context: {
+    installationkey?: string;
+    definitionfile?: string;
+    buildinstance?: string;
+    seedmetadata?: string;
+    patchversion?: string;
+  },
   packageId: string,
   apiVersion: string
 ): Promise<PackagingSObjects.Package2VersionCreateRequest> {
@@ -169,6 +176,7 @@ export async function createPackageVersionCreateRequest(
 
   let packageDescriptorJson: PackageDescriptorJson = {
     id: packageId,
+    versionNumber: context.patchversion,
   };
 
   const settingsGenerator = new ScratchOrgSettingsGenerator({ asDirectory: true });

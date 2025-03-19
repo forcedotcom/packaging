@@ -308,6 +308,7 @@ export type ConvertPackageOptions = {
   buildInstance?: string;
   frequency?: Duration;
   seedMetadata?: string;
+  patchversion?: string;
 };
 
 export type PackageVersionCreateOptions = {
