@@ -45,6 +45,7 @@ const VERSION_CREATE_RESPONSE_KEYS = [
   'CreatedBy',
   'ConvertedFromVersionId',
   'TotalNumberOfMetadataFiles',
+  'TotalSizeOfMetadataFiles',
 ];
 
 // version

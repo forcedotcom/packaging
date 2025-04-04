@@ -1,3 +1,17 @@
+# [4.4.0](https://github.com/forcedotcom/packaging/compare/4.3.0...4.4.0) (2025-03-18)
+
+
+### Bug Fixes
+
+* incorrect nullish coalescing check in getPackageData method ([0f4ed64](https://github.com/forcedotcom/packaging/commit/0f4ed64541543c832d17fafe92c6df928eca2d55))
+
+
+### Features
+
+* add totalSizeOfMetadataFiles ([367aaf6](https://github.com/forcedotcom/packaging/commit/367aaf6871ca888cfa9a88e7ca4c571ac33c8b59))
+
+
+
 # [4.3.0](https://github.com/forcedotcom/packaging/compare/4.2.15...4.3.0) (2025-02-20)
 
 

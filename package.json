@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/packaging",
-  "version": "4.3.0",
+  "version": "4.4.0",
   "description": "Packaging library for the Salesforce packaging platform",
   "main": "lib/exported",
   "types": "lib/exported.d.ts",
@@ -41,11 +41,11 @@
     "!lib/**/*.map"
   ],
   "dependencies": {
-    "@jsforce/jsforce-node": "^3.5.1",
-    "@salesforce/core": "^8.8.2",
-    "@salesforce/kit": "^3.2.2",
+    "@jsforce/jsforce-node": "^3.6.5",
+    "@salesforce/core": "^8.8.5",
+    "@salesforce/kit": "^3.2.3",
     "@salesforce/schemas": "^1.9.0",
-    "@salesforce/source-deploy-retrieve": "^12.8.0",
+    "@salesforce/source-deploy-retrieve": "^12.16.9",
     "@salesforce/ts-types": "^2.0.11",
     "@salesforce/types": "^1.2.0",
     "fast-xml-parser": "^4.5.0",
@@ -145,7 +145,7 @@
       "output": []
     },
     "link-check": {
-      "command": "node -e \"process.exit(process.env.CI ? 0 : 1)\" || linkinator \"**/*.md\" --skip \"CHANGELOG.md|node_modules|test/|confluence.internal.salesforce.com|my.salesforce.com|%s\" --markdown --retry --directory-listing --verbosity error",
+      "command": "node -e \"process.exit(process.env.CI ? 0 : 1)\" || linkinator \"**/*.md\" --skip \"CHANGELOG.md|node_modules|test/|confluence.internal.salesforce.com|my.salesforce.com|localhost|%s\" --markdown --retry --directory-listing --verbosity error",
       "files": [
         "./*.md",
         "./!(CHANGELOG).md",
