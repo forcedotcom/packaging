@@ -1,3 +1,18 @@
+# [4.5.0](https://github.com/forcedotcom/packaging/compare/4.4.0...4.5.0) (2025-04-09)
+
+
+### Bug Fixes
+
+* typos ([45bcea8](https://github.com/forcedotcom/packaging/commit/45bcea8e9c2ac7d04986bc727a22fd44b5319fe2))
+
+
+### Features
+
+* adding new patch version option to package convert command ([63596ed](https://github.com/forcedotcom/packaging/commit/63596edc499b34f760206fc84fb2b3b92e5a7f80))
+* fix local issue ([a3a7329](https://github.com/forcedotcom/packaging/commit/a3a7329602179398e4e56cef2baa99024de4e30a))
+
+
+
 # [4.4.0](https://github.com/forcedotcom/packaging/compare/4.3.0...4.4.0) (2025-03-18)
 
 
