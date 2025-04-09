@@ -46,6 +46,10 @@ You cannot use 'settings' and 'orgPreferences' in your scratch definition file, 
 
 There was an error while reading or parsing the provided scratch definition file: %s
 
+# invalidPatchVersionSpecified
+
+Requested patch version number %s to convert is invalid
+
 # seedMDDirectoryDoesNotExist
 
 Seed metadata directory %s was specified but does not exist.
