@@ -4,7 +4,7 @@
   "description": "Packaging library for the Salesforce packaging platform",
   "main": "lib/exported",
   "types": "lib/exported.d.ts",
-  "license": "BSD-3-Clause",
+  "license": "Apache-2.0",
   "repository": "forcedotcom/packaging",
   "scripts": {
     "build": "wireit",
@@ -12,6 +12,7 @@
     "clean-all": "sf-clean all",
     "compile": "wireit",
     "docs": "sf-docs",
+    "fix-license": "eslint src test --fix --rule \"header/header: [2]\"",
     "format": "wireit",
     "link-check": "wireit",
     "lint": "wireit",
@@ -58,7 +59,7 @@
   },
   "devDependencies": {
     "@salesforce/cli-plugins-testkit": "^5.3.33",
-    "@salesforce/dev-scripts": "^10.2.10",
+    "@salesforce/dev-scripts": "^11.0.1",
     "@types/globby": "^9.1.0",
     "@types/jszip": "^3.4.1",
     "eslint-plugin-sf-plugin": "^1.20.8",
