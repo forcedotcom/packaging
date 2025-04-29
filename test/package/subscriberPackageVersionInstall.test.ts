@@ -21,7 +21,6 @@ import {
   PackagingSObjects,
 } from '../../src/interfaces';
 import { SubscriberPackageVersion } from '../../src/package';
-import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
 
 const myPackageVersion04t = '04t6A0000000X0UQAU';
 
@@ -57,7 +56,7 @@ describe('Package Install', () => {
     errors: [],
   };
 
-  const pkgInstallResult: PackageInstallRequest = {
+  const pkgInstallResult: PackagingSObjects.PackageInstallRequest = {
     attributes: {
       type: 'PackageInstallRequest',
       url: `/services/data/v55.0/tooling/sobjects/PackageInstallRequest/${pkgInstallRequestId}`,
