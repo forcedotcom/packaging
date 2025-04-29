@@ -6,7 +6,7 @@
  */
 import path from 'node:path';
 import fs from 'node:fs';
-import sinon = require('sinon');
+import * as sinon from 'sinon';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/testSetup';
 import { assert, expect } from 'chai';
 import { Connection, SfProject, SfError } from '@salesforce/core';
@@ -290,7 +290,7 @@ describe('Package Version Retrieve', () => {
     } catch (e) {
       const error = e as SfError;
       expect(error.message).to.equal(
-        'Can’t retrieve package version metadata. The specified directory isn’t empty. Empty the directory, or create a new one and try again.'
+        "Can't retrieve package version metadata. The specified directory isn't empty. Empty the directory, or create a new one and try again."
       );
     }
   });
@@ -308,7 +308,7 @@ describe('Package Version Retrieve', () => {
     } catch (e) {
       const error = e as SfError;
       expect(error.message).to.equal(
-        'Can’t retrieve package version metadata. The specified directory isn’t empty. Empty the directory, or create a new one and try again.'
+        "Can't retrieve package version metadata. The specified directory isn't empty. Empty the directory, or create a new one and try again."
       );
     }
   });
@@ -325,7 +325,7 @@ describe('Package Version Retrieve', () => {
     } catch (e) {
       const error = e as SfError;
       expect(error.message).to.equal(
-        'Can’t retrieve package version metadata. The specified directory must be relative to your Salesforce DX project directory, and not an absolute path.'
+        "Can't retrieve package version metadata. The specified directory must be relative to your Salesforce DX project directory, and not an absolute path."
       );
     }
   });
@@ -340,7 +340,7 @@ describe('Package Version Retrieve', () => {
     } catch (e) {
       const error = e as SfError;
       expect(error.message).to.equal(
-        'The sf package version retrieve command has been removed. This feature isn’t quite ready for prime time, so we’re removing it for now while we make improvements. We’ll let you know after it’s back up.'
+        "The sf package version retrieve command has been removed. This feature isn't quite ready for prime time, so we're removing it for now while we make improvements. We'll let you know after it's back up."
       );
     }
   });
