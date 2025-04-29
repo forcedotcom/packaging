@@ -134,15 +134,20 @@ export class PackagePushUpgrade {
     connection: Connection,
     packageVersionId: string,
     scheduleTime: string,
-    orgList: string[]
+    orgList: string[],
+    isMigration: boolean = false
   ): Promise<PackagePushScheduleResult> {
     let job: IngestJobV2<Schema> | undefined;
 
     try {
-      const packagePushRequestBody = {
+      const packagePushRequestBody: { [key: string]: unknown } = {
         PackageVersionId: packageVersionId,
         ScheduledStartTime: scheduleTime,
       };
+
+      if (isMigration) {
+        packagePushRequestBody.IsMigration = true;
+      }
 
       const pushRequestResult: PackagePushRequestResult = await connection.request({
         method: 'POST',
