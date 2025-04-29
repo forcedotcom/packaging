@@ -1,3 +1,54 @@
+# [4.5.0](https://github.com/forcedotcom/packaging/compare/4.4.0...4.5.0) (2025-04-09)
+
+
+### Bug Fixes
+
+* typos ([45bcea8](https://github.com/forcedotcom/packaging/commit/45bcea8e9c2ac7d04986bc727a22fd44b5319fe2))
+
+
+### Features
+
+* adding new patch version option to package convert command ([63596ed](https://github.com/forcedotcom/packaging/commit/63596edc499b34f760206fc84fb2b3b92e5a7f80))
+* fix local issue ([a3a7329](https://github.com/forcedotcom/packaging/commit/a3a7329602179398e4e56cef2baa99024de4e30a))
+
+
+
+# [4.4.0](https://github.com/forcedotcom/packaging/compare/4.3.0...4.4.0) (2025-03-18)
+
+
+### Bug Fixes
+
+* incorrect nullish coalescing check in getPackageData method ([0f4ed64](https://github.com/forcedotcom/packaging/commit/0f4ed64541543c832d17fafe92c6df928eca2d55))
+
+
+### Features
+
+* add totalSizeOfMetadataFiles ([367aaf6](https://github.com/forcedotcom/packaging/commit/367aaf6871ca888cfa9a88e7ca4c571ac33c8b59))
+
+
+
+# [4.3.0](https://github.com/forcedotcom/packaging/compare/4.2.15...4.3.0) (2025-02-20)
+
+
+### Bug Fixes
+
+* api version filter for new field ([914bc19](https://github.com/forcedotcom/packaging/commit/914bc193fa533d7621df165cef6a4931e2121f3b))
+* fix a typo ([9ddbce9](https://github.com/forcedotcom/packaging/commit/9ddbce9bd718d59249ec9f26250d4eae2cf66af3))
+* fix import ([0692e63](https://github.com/forcedotcom/packaging/commit/0692e63b8ee7bdc5ee60517edee0822cbdeb44aa))
+* fix imports in test ([22c0830](https://github.com/forcedotcom/packaging/commit/22c0830244ca7730bc86008aa3ac22c71929c2e1))
+* fix packagetest ([9318dff](https://github.com/forcedotcom/packaging/commit/9318dff615cb5057e2d15734b116399682b99556))
+* fix test ([fd6a770](https://github.com/forcedotcom/packaging/commit/fd6a770e9239001fea92d2c5d8096b205769dce3))
+* fix test ([d70a23f](https://github.com/forcedotcom/packaging/commit/d70a23fd0cfebd3ee3bd0e3def34d983db38527d))
+* update @salesforce/core version ([bde9b45](https://github.com/forcedotcom/packaging/commit/bde9b45253154a9e1c212b8de6ae522817011388))
+* update yarn lock ([c24809a](https://github.com/forcedotcom/packaging/commit/c24809a8e9700af1671c5ccd5ee3b3b7396f4328))
+
+
+### Features
+
+* add totalNumberOfMetadataFiles ([ed5fcd8](https://github.com/forcedotcom/packaging/commit/ed5fcd8951f9ba6e83e16512c18e7a2fc4e389b1))
+
+
+
 ## [4.2.15](https://github.com/forcedotcom/packaging/compare/4.2.14...4.2.15) (2024-10-12)
 
 

@@ -80,6 +80,8 @@ export type PackageVersionCreateRequestResult = {
   VersionNumber: string | null;
   CreatedBy: string;
   ConvertedFromVersionId: string | null;
+  TotalNumberOfMetadataFiles: number | null;
+  TotalSizeOfMetadataFiles: number | null;
 };
 
 export const PackageVersionCreateRequestResultInProgressStatuses = Object.values(Package2VersionStatus).filter(
@@ -349,6 +351,7 @@ export type ConvertPackageOptions = {
   buildInstance?: string;
   frequency?: Duration;
   seedMetadata?: string;
+  patchversion?: string;
 };
 
 export type PackageVersionCreateOptions = {

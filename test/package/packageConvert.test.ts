@@ -247,6 +247,8 @@ describe('packageConvert', () => {
       Status: 'Success',
       SubscriberPackageVersionId: null,
       Tag: 'tag',
+      TotalNumberOfMetadataFiles: null,
+      TotalSizeOfMetadataFiles: null,
     };
 
     Lifecycle.getInstance().on(PackageEvents.convert.progress, async (data) => {
@@ -272,6 +274,8 @@ describe('packageConvert', () => {
           Status: 'inProgress',
           SubscriberPackageVersionId: null,
           Tag: undefined,
+          TotalNumberOfMetadataFiles: null,
+          TotalSizeOfMetadataFiles: null,
         },
         timeRemaining: {
           quantity: 2,
