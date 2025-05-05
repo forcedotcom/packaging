@@ -134,15 +134,20 @@ export class PackagePushUpgrade {
     connection: Connection,
     packageVersionId: string,
     scheduleTime: string,
-    orgList: string[]
+    orgList: string[],
+    isMigration: boolean = false
   ): Promise<PackagePushScheduleResult> {
     let job: IngestJobV2<Schema> | undefined;
 
     try {
-      const packagePushRequestBody = {
+      const packagePushRequestBody: { [key: string]: unknown } = {
         PackageVersionId: packageVersionId,
         ScheduledStartTime: scheduleTime,
       };
+
+      if (isMigration) {
+        packagePushRequestBody.IsMigration = true;
+      }
 
       const pushRequestResult: PackagePushRequestResult = await connection.request({
         method: 'POST',
@@ -275,13 +280,17 @@ function constructWhereList(options?: PackagePushRequestListQueryOptions): strin
     where.push(`ScheduledStartTime >= ${daysAgo.toISOString()}`);
   }
 
+  if (options?.isMigration) {
+    where.push(`IsMigration = ${options.isMigration}`);
+  }
+
   return where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
 }
 
 function getListQuery(): string {
   // WHERE, if applicable
   return (
-    'SELECT Id, PackageVersionId, PackageVersion.Name, PackageVersion.MajorVersion, PackageVersion.MinorVersion, Status, ScheduledStartTime, StartTime, EndTime FROM PackagePushRequest ' +
+    'SELECT Id, PackageVersionId, PackageVersion.Name, PackageVersion.MajorVersion, PackageVersion.MinorVersion, Status, ScheduledStartTime, StartTime, EndTime, IsMigration FROM PackagePushRequest ' +
     '%s'
   );
 }

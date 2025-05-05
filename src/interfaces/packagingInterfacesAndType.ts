@@ -142,6 +142,7 @@ export type PackagePushRequestListQueryOptions = {
   packageId: string;
   scheduledLastDays?: number;
   status?: 'Created' | 'Cancelled' | 'Pending' | 'In Progress' | 'Failed' | 'Succeeded';
+  isMigration?: boolean;
 };
 
 export type PackagePushRequestListResult = {
