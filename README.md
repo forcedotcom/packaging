@@ -1,6 +1,6 @@
 # Salesforce Packaging
 
-[![NPM](https://img.shields.io/npm/v/@salesforce/packaging.svg?label=@salesforce/packaging)](https://www.npmjs.com/package/@salesforce/packaging) [![Downloads/week](https://img.shields.io/npm/dw/@salesforce/packaging.svg)](https://npmjs.org/package/@salesforce/packaging) [![License](https://img.shields.io/badge/License-BSD%203--Clause-brightgreen.svg)](https://raw.githubusercontent.com/forcedotcom/packaging/main/LICENSE.txt)
+[![NPM](https://img.shields.io/npm/v/@salesforce/packaging.svg?label=@salesforce/packaging)](https://www.npmjs.com/package/@salesforce/packaging) [![Downloads/week](https://img.shields.io/npm/dw/@salesforce/packaging.svg)](https://npmjs.org/package/@salesforce/packaging) [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](https://opensource.org/license/apache-2-0)
 
 ## Description
 
