@@ -170,7 +170,7 @@ export type PackagePushScheduleQueryOptions = {
 
 export type PackagePushScheduleResult = {
   PushRequestId: string;
-  ScheduledStartTime: string;
+  ScheduledStartTime: string | undefined;
   Status: string;
 };
 

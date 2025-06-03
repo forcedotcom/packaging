@@ -133,7 +133,7 @@ export class PackagePushUpgrade {
   public static async schedule(
     connection: Connection,
     packageVersionId: string,
-    scheduleTime: string,
+    scheduleTime: string | undefined,
     orgList: string[],
     isMigration: boolean = false
   ): Promise<PackagePushScheduleResult> {
@@ -142,8 +142,11 @@ export class PackagePushUpgrade {
     try {
       const packagePushRequestBody: { [key: string]: unknown } = {
         PackageVersionId: packageVersionId,
-        ScheduledStartTime: scheduleTime,
       };
+
+      if (scheduleTime) {
+        packagePushRequestBody.ScheduledStartTime = scheduleTime;
+      }
 
       if (isMigration) {
         packagePushRequestBody.IsMigration = true;
