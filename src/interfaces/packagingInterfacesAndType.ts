@@ -249,6 +249,7 @@ export type PackageVersionCreateRequest = {
   CalculateCodeCoverage: boolean;
   SkipValidation: boolean;
   AsyncValidation?: boolean;
+  CalculateTransitiveDependencies?: boolean;
 };
 
 export type PackageVersionListOptions = {
@@ -362,6 +363,7 @@ export type PackageVersionCreateOptions = {
   branch: string;
   buildinstance: string;
   codecoverage: boolean;
+  calculatetransitivedependencies: boolean;
   definitionfile: string;
   installationkey: string;
   installationkeybypass: boolean;
