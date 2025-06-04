@@ -1,3 +1,68 @@
+# [4.6.0](https://github.com/forcedotcom/packaging/compare/4.5.0...4.6.0) (2025-06-04)
+
+
+### Bug Fixes
+
+* add package version number to display ([a69641d](https://github.com/forcedotcom/packaging/commit/a69641d28859dc349d3960f1c3791bd40a1ccd14))
+* bump salesforce core version ([7d56b80](https://github.com/forcedotcom/packaging/commit/7d56b80e1723e632eff666f2f6e2b80cd0a093d8))
+* change if order ([d06ac54](https://github.com/forcedotcom/packaging/commit/d06ac54ae73139e7e4e0231209de4ceed52b7e02))
+* change if order ([f87bee8](https://github.com/forcedotcom/packaging/commit/f87bee8b51a0d3c34ff77ba7e0f5429d9cfa4537))
+* change metadatapackage to correct field ([e1a9709](https://github.com/forcedotcom/packaging/commit/e1a9709b0cbdbe98006ec48d13c4d3e73def8b1c))
+* change method names ([ea898f2](https://github.com/forcedotcom/packaging/commit/ea898f2c0c33046088344d906db8253648e390ee))
+* change name ([409f619](https://github.com/forcedotcom/packaging/commit/409f619b356951abed3ec734240481368be12d45))
+* error messages based on writer's input ([4f56253](https://github.com/forcedotcom/packaging/commit/4f56253724e1368675ca71ee2040dd22752a7e54))
+* es-lint disable ([bb4e9e8](https://github.com/forcedotcom/packaging/commit/bb4e9e8ffdba856e47bd60f60432cbab54b1efb9))
+* fix bulk job ([21c761a](https://github.com/forcedotcom/packaging/commit/21c761aade02f5bb251230900483eb91949e2c57))
+* fix CI/CD issue ([3ba1dd8](https://github.com/forcedotcom/packaging/commit/3ba1dd87b819fb34e2bdde46b0473144cd63fae0))
+* fix CI/CD issue ([d2d1350](https://github.com/forcedotcom/packaging/commit/d2d13500bfb4494b57585831b3ff99287587a14e))
+* fix error message ([1a44514](https://github.com/forcedotcom/packaging/commit/1a445142529b3341c3be5581ff19b00560818433))
+* fix error message ([45d9d7f](https://github.com/forcedotcom/packaging/commit/45d9d7f66b98f322b23c43e2f8a0b20c587147dd))
+* fix no record found after query ([4731534](https://github.com/forcedotcom/packaging/commit/4731534ca266100d963a83b2e4cbb698b4cacff4))
+* fix query to use packagepushrequest ([44bd733](https://github.com/forcedotcom/packaging/commit/44bd7333748a43d88a62667ba2ca8627f9d76618))
+* fix schedule functions based on comments ([3e1d523](https://github.com/forcedotcom/packaging/commit/3e1d523a72fc86c2f43350255e9f7c755f06bec8))
+* fix SfError type ([0923d1e](https://github.com/forcedotcom/packaging/commit/0923d1e79834270d3b4692cec5ed2e40f2757641))
+* get each job error on new line ([86b6e01](https://github.com/forcedotcom/packaging/commit/86b6e017108f60d763777a5d695a3ead686497db))
+* gitignore missing sfdx ([c47940e](https://github.com/forcedotcom/packaging/commit/c47940e71581fc89030450e8e147795951277b33))
+* increase bulk time and delete bulk job that errors ([a28bad6](https://github.com/forcedotcom/packaging/commit/a28bad6e48540e47b24b1ed394f90ddd70ef4885))
+* increase bulk time to 10 mins ([9047d72](https://github.com/forcedotcom/packaging/commit/9047d72a11a66c36876b458517725f96eb9eafb8))
+* lint ([3051f05](https://github.com/forcedotcom/packaging/commit/3051f05b3a376d64d78b32f106c48d0d5a31d9b6))
+* make api version dynamic ([4c532ee](https://github.com/forcedotcom/packaging/commit/4c532ee6a87c0fcc3a8da8da744c7789cf6f4836))
+* modify list result ([283a778](https://github.com/forcedotcom/packaging/commit/283a778502507bf7eeb966c00024bf49d00074f7))
+* pr comments ([1a540c4](https://github.com/forcedotcom/packaging/commit/1a540c4822381369d4f0b375b5341d40953616c9))
+* remove redundant export ([bfeee23](https://github.com/forcedotcom/packaging/commit/bfeee232fc13dc11f8199113e930e29c0c62a3da))
+* resolve conflict with report feature ([48cc1cd](https://github.com/forcedotcom/packaging/commit/48cc1cd945d4f28039f76592c0475abc78b4eecf))
+* revert method ([3add841](https://github.com/forcedotcom/packaging/commit/3add8414eb7752c105d8555c67fb79add5a5fc7c))
+* showing correct error messages ([39f7004](https://github.com/forcedotcom/packaging/commit/39f70045666f4ad47cea9c51eef8df94dd339e07))
+* start time is required error ([7bdd52a](https://github.com/forcedotcom/packaging/commit/7bdd52af78084bb3b073768de8b27eb901c84b0a))
+* temp constructor remove ([83b1fcc](https://github.com/forcedotcom/packaging/commit/83b1fcc78602f091e27c278d1f50ae8f2a253d01))
+* temp constructor remove ([b528556](https://github.com/forcedotcom/packaging/commit/b528556fd81be950513c0867b002beeecbe3239e))
+* throw error when push upgrade fail ([08d5fbb](https://github.com/forcedotcom/packaging/commit/08d5fbba61f898517c28ff58f15b7d0794911175))
+* update api version ([2a9cfb5](https://github.com/forcedotcom/packaging/commit/2a9cfb52f23850c89bfa0578d50a87ed7902e8f7))
+* update job error message ([c15b76e](https://github.com/forcedotcom/packaging/commit/c15b76e6a3e216214fdd1c277139a70250e27346))
+* update list query var ([fd80099](https://github.com/forcedotcom/packaging/commit/fd8009903fe97922140cf2920f2c5a222786928e))
+* update yarn lock ([86a562f](https://github.com/forcedotcom/packaging/commit/86a562f83b8eaad5607a2f50a762aca32d4f6218))
+* update yarn lock ([401534d](https://github.com/forcedotcom/packaging/commit/401534d46f80eb85763e8e9b1e96f8de391dc720))
+* use rest api for initiating push upgrade request ([8c7eb5c](https://github.com/forcedotcom/packaging/commit/8c7eb5c9c0882851d80ae47fbd81866de92d6368))
+
+
+### Features
+
+* add list query method for push upgrade ([f85cace](https://github.com/forcedotcom/packaging/commit/f85cace4bfa5680f95834b971ba705d9c3944b72))
+* add migration filter for list command ([a46176e](https://github.com/forcedotcom/packaging/commit/a46176ea880291195e4a6821675e0a5c6f1423fe))
+* add migration option ([a11308b](https://github.com/forcedotcom/packaging/commit/a11308bbb9eab67a544ad2fefa52a133614949d1))
+* add pu fail test ([89fafea](https://github.com/forcedotcom/packaging/commit/89fafea667be1cca564fd116fd3aa3dd2cb88359))
+* add push upgrade abort cli command ([081bc6f](https://github.com/forcedotcom/packaging/commit/081bc6f6b0151edc0cb3b34bd666dd070441bf33))
+* add query logic for push upgrade list command ([4b3d2ae](https://github.com/forcedotcom/packaging/commit/4b3d2ae3700bd4fe50fe0175a88cd53d2064d3b6))
+* add schedule last days and status check ([10655e8](https://github.com/forcedotcom/packaging/commit/10655e8c220046201b55b5af375f647ee6ff8bcd))
+* adds support for package version ([8f30350](https://github.com/forcedotcom/packaging/commit/8f303503613e16bc54344983826e8970742bee8d))
+* adds support for pushupgrade report command ([680d9c0](https://github.com/forcedotcom/packaging/commit/680d9c0fff10c53c396fa4a9181be9c89070be78))
+* implement push upgrade schedule methods ([2e954a8](https://github.com/forcedotcom/packaging/commit/2e954a8fbce08b3024af302292642387e9708b8b))
+* kick start push request by changing status to pending ([644f8b7](https://github.com/forcedotcom/packaging/commit/644f8b79edd42b5e086ea7573ef40c8f80d3d774))
+* resolves some conflicts for report command ([40d9902](https://github.com/forcedotcom/packaging/commit/40d9902ae0a14abcc9e9138cba2c345dcd603285))
+* use bulk api ([06ce48d](https://github.com/forcedotcom/packaging/commit/06ce48d4776d15988219cec097be06ebdeac18f1))
+
+
+
 # [4.5.0](https://github.com/forcedotcom/packaging/compare/4.4.0...4.5.0) (2025-04-09)
 
 
