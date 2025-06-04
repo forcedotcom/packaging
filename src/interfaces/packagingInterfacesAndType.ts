@@ -138,6 +138,50 @@ export type PackageVersionListResult = {
   Language?: string;
 };
 
+export type PackagePushRequestListQueryOptions = {
+  packageId: string;
+  scheduledLastDays?: number;
+  status?: 'Created' | 'Cancelled' | 'Pending' | 'In Progress' | 'Failed' | 'Succeeded';
+  isMigration?: boolean;
+};
+
+export type PackagePushRequestListResult = {
+  Id: string;
+  PackageVersionId: string;
+  PackageVersion: {
+    Name: string;
+    MajorVersion: string;
+    MinorVersion: string;
+  };
+  Status: string;
+  ScheduledStartTime: string;
+  StartTime: string;
+  EndTime: string;
+  OrgsScheduled: number;
+  OrgsUpgradeSucceeded: number;
+  OrgsUpgradeFailed: number;
+};
+
+export type PackagePushScheduleQueryOptions = {
+  packageVersionId: string;
+  scheduledStartTime?: string;
+  orgList: string;
+};
+
+export type PackagePushScheduleResult = {
+  PushRequestId: string;
+  ScheduledStartTime: string | undefined;
+  Status: string;
+};
+
+export type PackagePushRequestReportQueryOptions = {
+  packagePushRequestId: string;
+};
+
+export type PackagePushRequestAbortQueryOptions = {
+  packagePushRequestId: string;
+};
+
 export type PackageInstallCreateRequest = Partial<
   Pick<
     PackageInstallRequest,
@@ -488,3 +532,36 @@ export const Package1VersionEvents = {
 };
 
 export type PackageXml = Pick<Package, 'types' | 'version'>;
+
+export type PackagePushRequestReportResult = {
+  PackageVersion: {
+    MetadataPackage: {
+      Name: string;
+      NamespacePrefix: string;
+    };
+    MetadataPackageId: string;
+    Name: string;
+    MajorVersion: string;
+    MinorVersion: string;
+  };
+  Id: string;
+  PackageVersionId: string;
+  Status: string;
+  ScheduledStartTime: string | null;
+  StartTime: string | null;
+  EndTime: string | null;
+  DurationSeconds: number | null;
+};
+
+export type PackagePushRequestJobCountByStatusResult = {
+  expr0: number;
+};
+
+export type PackagePushRequestReportJobFailuresResult = {
+  ErrorMessage: string;
+  ErrorDetails: string;
+  ErrorTitle: string;
+  ErrorSeverity: string;
+  ErrorType: string;
+  PackagePushJobId: string;
+};
