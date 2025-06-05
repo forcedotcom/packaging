@@ -281,7 +281,7 @@ export class PackageVersionCreate {
       AsyncValidation: this.options.asyncvalidation ?? false,
       // note: the createRequest's Language corresponds to the AllPackageVersion's language
       Language: this.options.language,
-      CalculateTransitiveDependencies: this.options.calculatetransitivedependencies ?? false,
+      CalcTransitiveDependencies: this.packageObject.calculateTransitiveDependencies ?? false,
     };
 
     // Ensure we only include the Language property for a connection api version
@@ -310,14 +310,13 @@ export class PackageVersionCreate {
     // Ensure we only include the CalculateTransitiveDependencies property for a connection api version
     // of v64.0 or higher.
     if (this.connection.getApiVersion() <= '65.0') {
-      if (requestObject.CalculateTransitiveDependencies) {
+      if (requestObject.CalcTransitiveDependencies) {
         this.logger.warn(
-          `The CalculateTransitiveDependencies option is only valid for API version 66.0 and higher. Ignoring ${requestObject.CalculateTransitiveDependencies}`
+          `The CalculateTransitiveDependencies option is only valid for API version 65.0 and higher. Ignoring ${requestObject.CalcTransitiveDependencies}`
         );
       }
-      delete requestObject.CalculateTransitiveDependencies;
+      delete requestObject.CalcTransitiveDependencies;
     }
-    this.logger.info(`requestObject: ${JSON.stringify(requestObject)}`);
 
     if (preserveFiles) {
       const message = messages.getMessage('tempFileLocation', [packageVersTmpRoot]);
