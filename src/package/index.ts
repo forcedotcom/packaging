@@ -9,3 +9,4 @@ export * from './packageVersion';
 export * from './subscriberPackageVersion';
 export * from './packagePushUpgrade';
 export { VersionNumber } from './versionNumber';
+export * from './packageBundle';
