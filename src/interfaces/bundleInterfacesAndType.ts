@@ -4,11 +4,10 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-export {
-  INSTALL_URL_BASE,
-  getContainerOptions,
-  getPackageVersionStrings,
-  getPackageVersionNumber,
-} from './packageUtils';
 
-export { massageErrorMessage } from './bundleUtils';
+// import { BundleSObjects } from './bundleSObjects';
+
+export type BundleCreateOptions = {
+  BundleName: string;
+  Description: string;
+};
