@@ -11,14 +11,6 @@ import { massageErrorMessage } from '../utils/bundleUtils';
 
 type Bundle2Request = Pick<BundleSObjects.Bundle, 'BundleName' | 'Description'>;
 
-// This is cargo cult programing, this function does nothing, but is here incase I need to add context to the request with the project
-export function createBundleRequestFromContext(project: SfProject, options: BundleCreateOptions): Bundle2Request {
-  return {
-    BundleName: options.BundleName,
-    Description: options.Description,
-  };
-}
-
 export function createPackageDirEntry(project: SfProject, options: BundleCreateOptions): BundleEntry {
   return {
     versionName: 'ver 0.1',
@@ -33,7 +25,7 @@ export async function createBundle(
   project: SfProject,
   options: BundleCreateOptions
 ): Promise<{ Id: string }> {
-  const request = createBundleRequestFromContext(project, options);
+  const request: Bundle2Request = { BundleName: options.BundleName, Description: options.Description };
   let createResult;
   try {
     createResult = await connection.tooling.sobject('PackageBundle').create(request);
