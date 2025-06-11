@@ -146,7 +146,7 @@ export async function convertPackage(
           err.setData({ VersionCreateRequestId: createResult.id });
           err.message += ` Run 'sf package version create report -i ${createResult.id}' to check the status.`;
         }
-        throw pkgUtils.applyErrorAction(pkgUtils.massageErrorMessage(e));
+        throw pkgUtils.applyErrorAction(pkgUtils.massageErrorMessage(err));
       }
       throw e;
     }
