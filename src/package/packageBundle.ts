@@ -11,7 +11,7 @@ import { createBundle } from './packageBundleCreate';
 
 export class PackageBundle {
   /**
-   * Create a new package.
+   * Create a new package bundle.
    *
    * @param connection - instance of Connection
    * @param project - instance of SfProject
