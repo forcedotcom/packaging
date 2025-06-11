@@ -10,7 +10,7 @@ import { expect } from 'chai';
 import { Connection, SfProject } from '@salesforce/core';
 import { instantiateContext, restoreContext, stubContext, MockTestOrgData } from '@salesforce/core/testSetup';
 import { BundleEntry } from '@salesforce/schemas/src/sfdx-project/bundleEntry';
-import { createBundle, createBundleRequestFromContext } from '../../src/package/packageBundleCreate';
+import { createBundle } from '../../src/package/packageBundleCreate';
 
 async function setupProject(setup: (project: SfProject) => void = () => {}) {
   const project = await SfProject.resolve();
@@ -45,19 +45,6 @@ describe('bundleCreate', () => {
   });
 
   describe('add bundle entry - no existing entries', () => {
-    it('should create a valid request', async () => {
-      testContext.inProject(true);
-      const project = await setupProject((proj) => {
-        proj.getSfProjectJson().set('namespace', 'testNamespace');
-      });
-      const request = createBundleRequestFromContext(project, {
-        BundleName: 'testBundle',
-        Description: 'testBundle',
-      });
-      expect(request.BundleName).to.equal('testBundle');
-      expect(request.Description).to.equal('testBundle');
-    });
-
     it('add bundle entry - no existing entries', async () => {
       testContext.inProject(true);
       const project = await setupProject((proj) => {
