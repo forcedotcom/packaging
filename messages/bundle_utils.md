@@ -1,3 +1,3 @@
-# TBD
+# STRING_TOO_LONG
 
-To be added later
+Either name or description has exceeded the 255 charector limit.
