@@ -56,15 +56,23 @@ describe('packageConvert', () => {
       const scratchDefPath = path.join(packageVersTmpRoot, 'scratch.json');
       await fs.promises.writeFile(scratchDefPath, JSON.stringify(definitionFile, undefined, 2));
       const request = await createPackageVersionCreateRequest(
-        { installationkey: '123', definitionfile: scratchDefPath, buildinstance: 'myInstance' },
+        { installationkey: '123', definitionfile: scratchDefPath, buildinstance: 'myInstance', codecoverage: true },
         '0Ho3i000000Gmj6CAC',
         '54.0'
       );
-      expect(request).to.have.all.keys('InstallKey', 'Instance', 'IsConversionRequest', 'Package2Id', 'VersionInfo');
+      expect(request).to.have.all.keys(
+        'CalculateCodeCoverage',
+        'InstallKey',
+        'Instance',
+        'IsConversionRequest',
+        'Package2Id',
+        'VersionInfo'
+      );
       expect(request.InstallKey).to.equal('123');
       expect(request.Instance).to.equal('myInstance');
       expect(request.IsConversionRequest).to.equal(true);
       expect(request.Package2Id).to.equal('0Ho3i000000Gmj6CAC');
+      expect(request.CalculateCodeCoverage).to.equal(true);
       // the most we can assert about VersionInfo because it is a zip file string representation, which changes with time
       expect(typeof request.VersionInfo).to.equal('string');
     });
@@ -72,11 +80,19 @@ describe('packageConvert', () => {
     it('should return a valid request', async () => {
       $$.inProject(true);
       const request = await createPackageVersionCreateRequest({}, '0Ho3i000000Gmj6CAC', '54.0');
-      expect(request).to.have.all.keys('InstallKey', 'Instance', 'IsConversionRequest', 'Package2Id', 'VersionInfo');
+      expect(request).to.have.all.keys(
+        'CalculateCodeCoverage',
+        'InstallKey',
+        'Instance',
+        'IsConversionRequest',
+        'Package2Id',
+        'VersionInfo'
+      );
       expect(request.InstallKey).to.equal(undefined);
       expect(request.Instance).to.equal(undefined);
       expect(request.IsConversionRequest).to.equal(true);
       expect(request.Package2Id).to.equal('0Ho3i000000Gmj6CAC');
+      expect(request.CalculateCodeCoverage).to.equal(false);
       // the most we can assert about VersionInfo because it is a zip file string representation, which changes with time
       expect(typeof request.VersionInfo).to.equal('string');
     });
@@ -89,15 +105,23 @@ describe('packageConvert', () => {
       $$.SANDBOX.stub(fs, 'existsSync').returns(true);
 
       const request = await createPackageVersionCreateRequest(
-        { installationkey: '123', buildinstance: 'myInstance', seedmetadata: 'seed' },
+        { installationkey: '123', buildinstance: 'myInstance', seedmetadata: 'seed', codecoverage: false },
         '0Ho3i000000Gmj6CAC',
         '54.0'
       );
-      expect(request).to.have.all.keys('InstallKey', 'Instance', 'IsConversionRequest', 'Package2Id', 'VersionInfo');
+      expect(request).to.have.all.keys(
+        'CalculateCodeCoverage',
+        'InstallKey',
+        'Instance',
+        'IsConversionRequest',
+        'Package2Id',
+        'VersionInfo'
+      );
       expect(request.InstallKey).to.equal('123');
       expect(request.Instance).to.equal('myInstance');
       expect(request.IsConversionRequest).to.equal(true);
       expect(request.Package2Id).to.equal('0Ho3i000000Gmj6CAC');
+      expect(request.CalculateCodeCoverage).to.equal(false);
       // the most we can assert about VersionInfo because it is a zip file string representation, which changes with time
       expect(typeof request.VersionInfo).to.equal('string');
 
