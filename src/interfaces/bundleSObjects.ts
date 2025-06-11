@@ -13,6 +13,13 @@ export namespace BundleSObjects {
   export type Bundle = {
     BundleName: string;
     Description?: string;
+    Id: string;
+    IsDeleted: boolean;
+    CreatedDate: string;
+    CreatedById: string;
+    LastModifiedDate: string;
+    LastModifiedById: string;
+    SystemModstamp: string;
   };
 
   export type BundleVersion = {

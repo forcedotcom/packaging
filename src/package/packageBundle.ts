@@ -6,8 +6,21 @@
  */
 
 import { Connection, SfProject } from '@salesforce/core';
-import { BundleCreateOptions } from '../interfaces';
+import { Schema } from '@jsforce/jsforce-node';
+import { BundleCreateOptions, BundleSObjects } from '../interfaces';
 import { createBundle } from './packageBundleCreate';
+
+const BundleFields = [
+  'BundleName',
+  'Description',
+  'Id',
+  'IsDeleted',
+  'CreatedDate',
+  'CreatedById',
+  'LastModifiedDate',
+  'LastModifiedById',
+  'SystemModstamp',
+];
 
 export class PackageBundle {
   /**
@@ -15,8 +28,8 @@ export class PackageBundle {
    *
    * @param connection - instance of Connection
    * @param project - instance of SfProject
-   * @param options - options for creating a package - see PackageCreateOptions
-   * @returns Package
+   * @param options - options for creating a bundle - see BundleCreateOptions
+   * @returns PackageBundle
    */
   public static async create(
     connection: Connection,
@@ -24,5 +37,16 @@ export class PackageBundle {
     options: BundleCreateOptions
   ): Promise<{ Id: string }> {
     return createBundle(connection, project, options);
+  }
+
+  /**
+   * Returns all the package bundles that are available in the org, up to 10,000. If more records are
+   * needed use the `SF_ORG_MAX_QUERY_LIMIT` env var.
+   *
+   * @param connection
+   */
+  public static async list(connection: Connection): Promise<BundleSObjects.Bundle[]> {
+    const query = `select ${BundleFields.join(', ')} from PackageBundle ORDER BY BundleName`;
+    return (await connection.autoFetchQuery<BundleSObjects.Bundle & Schema>(query, { tooling: true }))?.records;
   }
 }
