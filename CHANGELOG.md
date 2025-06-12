@@ -1,3 +1,13 @@
+## [4.6.1](https://github.com/forcedotcom/packaging/compare/4.6.0...4.6.1) (2025-06-12)
+
+
+### Bug Fixes
+
+* pass typed err to massageErrorMessage ([9b4edc6](https://github.com/forcedotcom/packaging/commit/9b4edc69ef1da65d160cec9ca5ce0f0642f92a8a))
+* when the conversion CLI command times out, provide a meaningful response ([c096efb](https://github.com/forcedotcom/packaging/commit/c096efba3c4e0f9d362cc0e26cda2877b6821072))
+
+
+
 # [4.6.0](https://github.com/forcedotcom/packaging/compare/4.5.0...4.6.0) (2025-06-04)
 
 
