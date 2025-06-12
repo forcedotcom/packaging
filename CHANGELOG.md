@@ -1,3 +1,13 @@
+# [4.7.0](https://github.com/forcedotcom/packaging/compare/4.6.1...4.7.0) (2025-06-12)
+
+
+### Features
+
+* adding code coverage option to the convert command ([68a0ac2](https://github.com/forcedotcom/packaging/commit/68a0ac2487c9e6cbee4ec6cedbbe4d5b3e5edac0))
+* adding code coverage option to the convert command with tests ([c1dcdb6](https://github.com/forcedotcom/packaging/commit/c1dcdb65a3af1b789d1ecd02a734b5870fb10d0d))
+
+
+
 ## [4.6.1](https://github.com/forcedotcom/packaging/compare/4.6.0...4.6.1) (2025-06-12)
 
 
