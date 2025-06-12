@@ -129,15 +129,27 @@ export async function convertPackage(
 
   let results: Many<PackageVersionCreateRequestResult>;
   if (options.wait) {
-    results = await pollForStatusWithInterval(
-      createResult.id,
-      maxRetries,
-      packageId,
-      branch,
-      project,
-      connection,
-      options.frequency ?? Duration.seconds(POLL_INTERVAL_SECONDS)
-    );
+    try {
+      results = await pollForStatusWithInterval(
+        createResult.id,
+        maxRetries,
+        packageId,
+        branch,
+        project,
+        connection,
+        options.frequency ?? Duration.seconds(POLL_INTERVAL_SECONDS)
+      );
+    } catch (e) {
+      if (e instanceof SfError) {
+        const err = e as SfError;
+        if (err.name === 'PollingClientTimeout') {
+          err.setData({ VersionCreateRequestId: createResult.id });
+          err.message += ` Run 'sf package version create report -i ${createResult.id}' to check the status.`;
+        }
+        throw pkgUtils.applyErrorAction(pkgUtils.massageErrorMessage(err));
+      }
+      throw e;
+    }
   } else {
     results = await byId(packageId, connection);
   }
