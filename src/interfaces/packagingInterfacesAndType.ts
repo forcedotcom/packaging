@@ -353,6 +353,7 @@ export type ConvertPackageOptions = {
   frequency?: Duration;
   seedMetadata?: string;
   patchversion?: string;
+  codecoverage?: boolean;
 };
 
 export type PackageVersionCreateOptions = {

@@ -112,6 +112,7 @@ export async function convertPackage(
       buildinstance: options.buildInstance,
       seedmetadata: options.seedMetadata,
       patchversion: options.patchversion,
+      codecoverage: options.codecoverage,
     },
     packageId,
     // TODO: createPackageVersionCreateRequest requires apiVersion exist.
@@ -172,6 +173,7 @@ export async function createPackageVersionCreateRequest(
     buildinstance?: string;
     seedmetadata?: string;
     patchversion?: string;
+    codecoverage?: boolean;
   },
   packageId: string,
   apiVersion: string
@@ -255,7 +257,7 @@ export async function createPackageVersionCreateRequest(
 
 async function createRequestObject(
   packageId: string,
-  options: { installationkey?: string; buildinstance?: string },
+  options: { installationkey?: string; buildinstance?: string; codecoverage?: boolean },
   packageVersTmpRoot: string,
   packageVersBlobZipFile: string
 ): Promise<PackagingSObjects.Package2VersionCreateRequest> {
@@ -266,6 +268,7 @@ async function createRequestObject(
     InstallKey: options.installationkey,
     Instance: options.buildinstance,
     IsConversionRequest: true,
+    CalculateCodeCoverage: options.codecoverage ?? false,
   } as PackagingSObjects.Package2VersionCreateRequest;
   await fs.promises.rm(packageVersTmpRoot, { recursive: true });
   return requestObject;
