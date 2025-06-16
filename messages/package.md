@@ -28,18 +28,20 @@ Enabling App Analytics is only possible with API version 59.0 or higher.
 
 # sourcesDownloadDirectoryNotEmpty
 
-Can’t retrieve package version metadata. The specified directory isn’t empty. Empty the directory, or create a new one and try again.
+Can't retrieve package version metadata. The specified directory isn't empty. Empty the directory, or create a new one and try again.
 
 # sourcesDownloadDirectoryMustBeRelative
 
-Can’t retrieve package version metadata. The specified directory must be relative to your Salesforce DX project directory, and not an absolute path.
+Can't retrieve package version metadata. The specified directory must be relative to your Salesforce DX project directory, and not an absolute path.
 
-# unableToAccessMetadataZip
+# developerUsePkgZipFieldUnavailable
 
-The sf package version retrieve command has been removed. This feature isn’t quite ready for prime time, so we’re removing it for now while we make improvements. We’ll let you know after it’s back up.
+The DeveloperUsePkgZip is not available. To use this feature, please assign the user the Download Developer Package Zip feature.
 
-# errorDownloadingMetadataZip
+# downloadDeveloperPackageZipHasNoData
 
-Can’t retrieve package version metadata.
+The package version you are retrieving was not generated with developer metadata. Generate a new package version with DeveloperUsePkgZipRequested enabled.
 
-An error occurred downloading the metadata: %s
+# packagingNotEnabledOnOrg
+
+The org you are retrieving metadata from does not have second-generation packaging enabled. Please enable second-generation packaging your Dev Hub and try again.
