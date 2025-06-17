@@ -36,12 +36,12 @@ Can't retrieve package version metadata. The specified directory must be relativ
 
 # developerUsePkgZipFieldUnavailable
 
-The DeveloperUsePkgZip is not available. To use this feature, please assign the user the Download Developer Package Zip feature.
+Can't retrieve package metadata. To use this feature, you must first assign yourself the DownloadPackageVersionZips user permission. Then retry retrieving your package metadata.
 
 # downloadDeveloperPackageZipHasNoData
 
-The package version you are retrieving was not generated with developer metadata. Generate a new package version with DeveloperUsePkgZipRequested enabled.
+Can't retrieve package metadata. We're unable to retrieve metadata for the package version you specified. Try creating a new package version requesting developer metadata, and retry retrieving the package metadata for the new package version.
 
 # packagingNotEnabledOnOrg
 
-The org you are retrieving metadata from does not have second-generation packaging enabled. Please enable second-generation packaging your Dev Hub and try again.
+Can't retrieve package metadata. The org you specified doesn't have the required second-generation packaging permission enabled. Enable this permission on your Dev Hub org, and try again.

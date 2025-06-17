@@ -78,7 +78,16 @@ export async function retrievePackageVersionMetadata(
   });
   const buffer = Buffer.from(responseBase64, 'base64');
 
-  let tree = await ZipTreeContainer.create(buffer);
+  let tree;
+  try {
+    tree = await ZipTreeContainer.create(buffer);
+  } catch (e) {
+    if (e instanceof Error && e.message.includes('data length = 0')) {
+      throw messages.createError('downloadDeveloperPackageZipHasNoData');
+    }
+    throw e;
+  }
+
   let dependencies: string[] = [];
 
   // 2GP packages declare their dependencies in dependency-ids.json within the outer zip.
@@ -205,12 +214,9 @@ async function attemptToUpdateProjectJson(
       );
     }
   } catch (e) {
-    if (e instanceof Error && e.message.includes('data length = 0')) {
-      throw messages.createError('downloadDeveloperPackageZipHasNoData');
-    }
-    const errorMsg = e instanceof Error ? e.message : String(e);
+    const msg = e instanceof Error ? e.message : e;
     logger.error(
-      `Encountered error trying to update sfdx-project.json after retrieving package version metadata: ${errorMsg}`
+      `Encountered error trying to update sfdx-project.json after retrieving package version metadata: ${msg as string}`
     );
   }
 }
