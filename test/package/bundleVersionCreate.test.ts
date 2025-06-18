@@ -1,0 +1,460 @@
+/*
+ * Copyright (c) 2025, salesforce.com, inc.
+ * All rights reserved.
+ * Licensed under the BSD 3-Clause license.
+ * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
+ */
+import path from 'node:path';
+import fs from 'node:fs';
+import { expect } from 'chai';
+import { Connection, SfProject } from '@salesforce/core';
+import { instantiateContext, restoreContext, stubContext, MockTestOrgData } from '@salesforce/core/testSetup';
+import { Duration } from '@salesforce/kit';
+import { PackageBundleVersion } from '../../src/package/packageBundleVersion';
+import { PackageBundleVersionCreate } from '../../src/package/packageBundleVersionCreate';
+import { BundleVersionCreateOptions, BundleSObjects } from '../../src/interfaces';
+
+async function setupProject(setup: (project: SfProject) => void = () => {}) {
+  const project = await SfProject.resolve();
+
+  setup(project);
+  const projectDir = project.getPath();
+  project
+    .getSfProjectJson()
+    .getContents()
+    .packageDirectories?.forEach((dir) => {
+      if (dir.path) {
+        const packagePath = path.join(projectDir, dir.path);
+        fs.mkdirSync(packagePath, { recursive: true });
+      }
+    });
+
+  return project;
+}
+
+describe('PackageBundleVersion.create', () => {
+  const testContext = instantiateContext();
+  const testOrg = new MockTestOrgData();
+  let connection: Connection;
+  let project: SfProject;
+
+  beforeEach(async () => {
+    stubContext(testContext);
+    testContext.inProject(true);
+    project = await setupProject((proj) => {
+      proj.getSfProjectJson().set('namespace', 'testNamespace');
+    });
+
+    // Create the project directory structure
+    await fs.promises.mkdir(project.getPath(), { recursive: true });
+
+    connection = await testOrg.getConnection();
+
+    // Stub the parsePackageBundleId method to avoid package bundle validation
+    testContext.SANDBOX.stub(
+      PackageBundleVersionCreate,
+      'parsePackageBundleId' as keyof typeof PackageBundleVersionCreate
+    ).returns('0Ho000000000000');
+
+    // Stub the getPackageVersion method to return expected version info
+    testContext.SANDBOX.stub(
+      PackageBundleVersionCreate,
+      'getPackageVersion' as keyof typeof PackageBundleVersionCreate
+    ).resolves({
+      MajorVersion: '1',
+      MinorVersion: '0',
+    });
+  });
+
+  afterEach(async () => {
+    restoreContext(testContext);
+    // Clean up the project directory
+    try {
+      await fs.promises.rm(project.getPath(), { recursive: true, force: true });
+    } catch (error) {
+      // Ignore cleanup errors
+    }
+  });
+
+  describe('create bundle version', () => {
+    it('should create bundle version without wait flag (immediate success)', async () => {
+      const componentsPath = path.join(project.getPath(), 'bundle-components.json');
+      const components = ['Component1', 'Component2'];
+      fs.writeFileSync(componentsPath, JSON.stringify(components));
+
+      // Mock the connection for immediate success without polling
+      Object.assign(connection.tooling, {
+        sobject: () => ({
+          create: () =>
+            Promise.resolve({
+              success: true,
+              id: '0Ho000000000000',
+            }),
+        }),
+        query: () =>
+          Promise.resolve({
+            records: [
+              {
+                BundleName: 'testBundle',
+              },
+            ],
+          }),
+      });
+
+      const options: BundleVersionCreateOptions = {
+        connection,
+        project,
+        PackageBundle: 'testBundle',
+        MajorVersion: '1',
+        MinorVersion: '0',
+        Ancestor: null,
+        BundleVersionComponentsPath: componentsPath,
+      };
+
+      const result = await PackageBundleVersion.create(options);
+
+      expect(result).to.have.property('Id', '0Ho000000000000');
+      expect(result).to.have.property('RequestStatus', BundleSObjects.PkgBundleVersionCreateReqStatus.success);
+      expect(result).to.have.property('PackageBundleId');
+      expect(result).to.have.property('VersionName', 'testBundle@1.0');
+      expect(result).to.have.property('MajorVersion', '1');
+      expect(result).to.have.property('MinorVersion', '0');
+
+      // Clean up
+      fs.unlinkSync(componentsPath);
+    });
+
+    it('should create bundle version with wait flag and polling success', async () => {
+      const componentsPath = path.join(project.getPath(), 'bundle-components.json');
+      const components = ['Component1', 'Component2'];
+      fs.writeFileSync(componentsPath, JSON.stringify(components));
+
+      // Mock the connection for polling scenario with wait flag
+      let callCount = 0;
+      Object.assign(connection.tooling, {
+        sobject: () => ({
+          create: () =>
+            Promise.resolve({
+              success: true,
+              id: '0Ho000000000000',
+            }),
+          retrieve: () => {
+            callCount++;
+            if (callCount === 1) {
+              return Promise.resolve({
+                Id: '0Ho000000000000',
+                RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.queued,
+                PackageBundleId: '0Ho000000000000',
+                PackageBundleVersionId: '',
+                VersionName: 'testBundle@1.0',
+                MajorVersion: '1',
+                MinorVersion: '0',
+                BundleVersionComponents: JSON.stringify(components),
+                CreatedDate: new Date().toISOString(),
+                CreatedById: 'testUser',
+              });
+            } else {
+              return Promise.resolve({
+                Id: '0Ho000000000000',
+                RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
+                PackageBundleId: '0Ho000000000000',
+                PackageBundleVersionId: '0Ho000000000001',
+                VersionName: 'testBundle@1.0',
+                MajorVersion: '1',
+                MinorVersion: '0',
+                BundleVersionComponents: JSON.stringify(components),
+                CreatedDate: new Date().toISOString(),
+                CreatedById: 'testUser',
+              });
+            }
+          },
+        }),
+        query: () =>
+          Promise.resolve({
+            records: [
+              {
+                BundleName: 'testBundle',
+              },
+            ],
+          }),
+      });
+
+      const options: BundleVersionCreateOptions = {
+        connection,
+        project,
+        PackageBundle: 'testBundle',
+        MajorVersion: '1',
+        MinorVersion: '0',
+        Ancestor: null,
+        BundleVersionComponentsPath: componentsPath,
+      };
+
+      const polling = {
+        frequency: Duration.seconds(1),
+        timeout: Duration.seconds(5),
+      };
+
+      const result = await PackageBundleVersion.create(options, polling);
+
+      expect(result).to.have.property('Id', '0Ho000000000000');
+      expect(result).to.have.property('RequestStatus', BundleSObjects.PkgBundleVersionCreateReqStatus.success);
+      expect(result).to.have.property('PackageBundleVersionId', '0Ho000000000001');
+      expect(callCount).to.be.greaterThan(1); // Should have polled multiple times
+
+      // Clean up
+      fs.unlinkSync(componentsPath);
+    });
+
+    it('should create bundle version with wait flag and immediate success (no polling needed)', async () => {
+      const componentsPath = path.join(project.getPath(), 'bundle-components.json');
+      const components = ['Component1', 'Component2'];
+      fs.writeFileSync(componentsPath, JSON.stringify(components));
+
+      // Mock the connection for immediate success even with polling enabled
+      Object.assign(connection.tooling, {
+        sobject: () => ({
+          create: () =>
+            Promise.resolve({
+              success: true,
+              id: '0Ho000000000000',
+            }),
+          retrieve: () =>
+            Promise.resolve({
+              Id: '0Ho000000000000',
+              RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
+              PackageBundleId: '0Ho000000000000',
+              PackageBundleVersionId: '0Ho000000000001',
+              VersionName: 'testBundle@1.0',
+              MajorVersion: '1',
+              MinorVersion: '0',
+              BundleVersionComponents: JSON.stringify(components),
+              CreatedDate: new Date().toISOString(),
+              CreatedById: 'testUser',
+            }),
+        }),
+        query: () =>
+          Promise.resolve({
+            records: [
+              {
+                BundleName: 'testBundle',
+              },
+            ],
+          }),
+      });
+
+      const options: BundleVersionCreateOptions = {
+        connection,
+        project,
+        PackageBundle: 'testBundle',
+        MajorVersion: '1',
+        MinorVersion: '0',
+        Ancestor: null,
+        BundleVersionComponentsPath: componentsPath,
+      };
+
+      const polling = {
+        frequency: Duration.seconds(1),
+        timeout: Duration.seconds(5),
+      };
+
+      const result = await PackageBundleVersion.create(options, polling);
+
+      expect(result).to.have.property('Id', '0Ho000000000000');
+      expect(result).to.have.property('RequestStatus', BundleSObjects.PkgBundleVersionCreateReqStatus.success);
+      expect(result).to.have.property('PackageBundleVersionId', '0Ho000000000001');
+
+      // Clean up
+      fs.unlinkSync(componentsPath);
+    });
+
+    it('should handle polling timeout with wait flag', async () => {
+      const componentsPath = path.join(project.getPath(), 'bundle-components.json');
+      const components = ['Component1', 'Component2'];
+      fs.writeFileSync(componentsPath, JSON.stringify(components));
+
+      // Mock the connection to always return queued status (causing timeout)
+      Object.assign(connection.tooling, {
+        sobject: () => ({
+          create: () =>
+            Promise.resolve({
+              success: true,
+              id: '0Ho000000000000',
+            }),
+          retrieve: () =>
+            Promise.resolve({
+              Id: '0Ho000000000000',
+              RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.queued,
+              PackageBundleId: '0Ho000000000000',
+              PackageBundleVersionId: '',
+              VersionName: 'testBundle@1.0',
+              MajorVersion: '1',
+              MinorVersion: '0',
+              BundleVersionComponents: JSON.stringify(components),
+              CreatedDate: new Date().toISOString(),
+              CreatedById: 'testUser',
+            }),
+        }),
+        query: () =>
+          Promise.resolve({
+            records: [
+              {
+                BundleName: 'testBundle',
+              },
+            ],
+          }),
+      });
+
+      const options: BundleVersionCreateOptions = {
+        connection,
+        project,
+        PackageBundle: 'testBundle',
+        MajorVersion: '1',
+        MinorVersion: '0',
+        Ancestor: null,
+        BundleVersionComponentsPath: componentsPath,
+      };
+
+      const polling = {
+        frequency: Duration.seconds(1),
+        timeout: Duration.seconds(2), // Short timeout to trigger timeout error
+      };
+
+      try {
+        await PackageBundleVersion.create(options, polling);
+        expect.fail('Expected timeout error was not thrown');
+      } catch (err) {
+        const error = err as Error;
+        expect(error.message).to.include(
+          "Run 'sf package bundle version create report -i 0Ho000000000000' to check the status"
+        );
+      }
+
+      // Clean up
+      fs.unlinkSync(componentsPath);
+    });
+
+    it('should handle polling error status with wait flag', async () => {
+      const componentsPath = path.join(project.getPath(), 'bundle-components.json');
+      const components = ['Component1', 'Component2'];
+      fs.writeFileSync(componentsPath, JSON.stringify(components));
+
+      // Mock the connection to return error status during polling
+      Object.assign(connection.tooling, {
+        sobject: () => ({
+          create: () =>
+            Promise.resolve({
+              success: true,
+              id: '0Ho000000000000',
+            }),
+          retrieve: () =>
+            Promise.resolve({
+              Id: '0Ho000000000000',
+              RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.error,
+              PackageBundleId: '0Ho000000000000',
+              PackageBundleVersionId: '',
+              VersionName: 'testBundle@1.0',
+              MajorVersion: '1',
+              MinorVersion: '0',
+              BundleVersionComponents: JSON.stringify(components),
+              CreatedDate: new Date().toISOString(),
+              CreatedById: 'testUser',
+              Error: ['Test error message'],
+            }),
+        }),
+        query: () =>
+          Promise.resolve({
+            records: [
+              {
+                BundleName: 'testBundle',
+              },
+            ],
+          }),
+      });
+
+      const options: BundleVersionCreateOptions = {
+        connection,
+        project,
+        PackageBundle: 'testBundle',
+        MajorVersion: '1',
+        MinorVersion: '0',
+        Ancestor: null,
+        BundleVersionComponentsPath: componentsPath,
+      };
+
+      const polling = {
+        frequency: Duration.seconds(1),
+        timeout: Duration.seconds(5),
+      };
+
+      const result = await PackageBundleVersion.create(options, polling);
+
+      expect(result).to.have.property('Id', '0Ho000000000000');
+      expect(result).to.have.property('RequestStatus', BundleSObjects.PkgBundleVersionCreateReqStatus.error);
+      expect(result).to.have.property('Error').that.includes('Test error message');
+
+      // Clean up
+      fs.unlinkSync(componentsPath);
+    });
+
+    it('should create bundle version with zero timeout (no polling)', async () => {
+      const componentsPath = path.join(project.getPath(), 'bundle-components.json');
+      const components = ['Component1', 'Component2'];
+      fs.writeFileSync(componentsPath, JSON.stringify(components));
+
+      // Mock the connection for immediate success
+      Object.assign(connection.tooling, {
+        sobject: () => ({
+          create: () =>
+            Promise.resolve({
+              success: true,
+              id: '0Ho000000000000',
+            }),
+          retrieve: () =>
+            Promise.resolve({
+              Id: '0Ho000000000000',
+              RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
+              PackageBundleId: '0Ho000000000000',
+              PackageBundleVersionId: '0Ho000000000001',
+              VersionName: 'testBundle@1.0',
+              MajorVersion: '1',
+              MinorVersion: '0',
+              BundleVersionComponents: JSON.stringify(components),
+              CreatedDate: new Date().toISOString(),
+              CreatedById: 'testUser',
+            }),
+        }),
+        query: () =>
+          Promise.resolve({
+            records: [
+              {
+                BundleName: 'testBundle',
+              },
+            ],
+          }),
+      });
+
+      const options: BundleVersionCreateOptions = {
+        connection,
+        project,
+        PackageBundle: 'testBundle',
+        MajorVersion: '1',
+        MinorVersion: '0',
+        Ancestor: null,
+        BundleVersionComponentsPath: componentsPath,
+      };
+
+      const polling = {
+        frequency: Duration.seconds(1),
+        timeout: Duration.seconds(0), // Zero timeout means no polling
+      };
+
+      const result = await PackageBundleVersion.create(options, polling);
+
+      expect(result).to.have.property('Id', '0Ho000000000000');
+      expect(result).to.have.property('RequestStatus', BundleSObjects.PkgBundleVersionCreateReqStatus.success);
+
+      // Clean up
+      fs.unlinkSync(componentsPath);
+    });
+  });
+});
