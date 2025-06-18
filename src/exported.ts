@@ -8,3 +8,5 @@ export * from './interfaces';
 export * from './package';
 export * from './package1';
 export * from './utils';
+export * from './package/packageBundle';
+export * from './package/packageBundleVersionCreate';
