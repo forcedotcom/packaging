@@ -24,6 +24,7 @@ export namespace BundleSObjects {
   };
 
   export type BundleVersion = {
+    Id: string;
     PackageBundle: string;
     VersionName: string;
     MajorVersion: string;
@@ -58,17 +59,12 @@ export namespace BundleSObjects {
   export type QueryRecord = {
     Id: string;
     RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus;
-    PackageBundle: {
-      Id: string;
-      BundleName: string;
-    };
-    PackageBundleVersion: {
-      Id: string;
-    };
+    PackageBundle: Bundle;
+    PackageBundleVersion: BundleVersion;
     VersionName: string;
     MajorVersion: string;
     MinorVersion: string;
-    'Ancestor.Id': string;
+    Ancestor: BundleVersion;
     BundleVersionComponents: string;
     CreatedDate: string;
     CreatedById: string;

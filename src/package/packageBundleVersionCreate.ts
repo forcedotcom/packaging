@@ -52,7 +52,7 @@ export class PackageBundleVersionCreate {
       VersionName: record.VersionName ?? '',
       MajorVersion: record.MajorVersion ?? '',
       MinorVersion: record.MinorVersion ?? '',
-      Ancestor: record['Ancestor.Id'] ?? '',
+      Ancestor: record.Ancestor?.Id ?? '',
       BundleVersionComponents: record.BundleVersionComponents ?? '',
       CreatedDate: record.CreatedDate ?? '',
       CreatedById: record.CreatedById ?? '',
