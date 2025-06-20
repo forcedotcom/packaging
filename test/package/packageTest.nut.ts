@@ -10,7 +10,7 @@ import { expect, assert } from 'chai';
 import { execCmd, TestSession } from '@salesforce/cli-plugins-testkit';
 import { Duration, sleep } from '@salesforce/kit';
 import { ProjectJson, isPackagingDirectory } from '@salesforce/core/project';
-import { Lifecycle, Org, SfProject } from '@salesforce/core';
+import { Lifecycle, Org, SfProject, User } from '@salesforce/core';
 import { uniqid } from '@salesforce/core/testSetup';
 import {
   Package,
@@ -71,6 +71,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
   let devHubOrg: Org;
   let scratchOrg: Org;
   let project: SfProject;
+
   before('pkgSetup', async () => {
     process.env.TESTKIT_EXECUTABLE_PATH = 'sfdx';
     execCmd('config:set restDeploy=false', { cli: 'sfdx' });
@@ -94,6 +95,14 @@ describe('Integration tests for @salesforce/packaging library', () => {
     devHubOrg = await Org.create({ aliasOrUsername: session.hubOrg.username });
     scratchOrg = await Org.create({ aliasOrUsername: SUB_ORG_ALIAS });
     project = await SfProject.resolve();
+
+    // assign the DownloadPackageVersionZips perm to the dev hub org admin user
+    const queryResult = await devHubOrg
+      .getConnection()
+      .singleRecordQuery<{ Id: string }>(`SELECT Id FROM User WHERE Username='${session.hubOrg.username}'`);
+
+    const user = await User.create({ org: devHubOrg });
+    await user.assignPermissionSets(queryResult.Id, ['DownloadPackageVersionZips']);
   });
 
   after(async () => {
