@@ -212,7 +212,7 @@ describe('Package Version Retrieve', () => {
     } catch (e) {
       const error = e as SfError;
       expect(error.message).to.equal(
-        'The DeveloperUsePkgZip is not available. To use this feature, please assign the user the Download Developer Package Zip feature.'
+        "Can't retrieve package metadata. To use this feature, you must first assign yourself the DownloadPackageVersionZips user permission. Then retry retrieving your package metadata."
       );
     }
   });
@@ -329,7 +329,7 @@ describe('Package Version Retrieve', () => {
     } catch (e) {
       const error = e as SfError;
       expect(error.message).to.equal(
-        'The DeveloperUsePkgZip is not available. To use this feature, please assign the user the Download Developer Package Zip feature.'
+        "Can't retrieve package metadata. To use this feature, you must first assign yourself the DownloadPackageVersionZips user permission. Then retry retrieving your package metadata."
       );
     }
   });

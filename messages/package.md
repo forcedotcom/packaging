@@ -40,7 +40,7 @@ Can't retrieve package metadata. To use this feature, you must first assign your
 
 # downloadDeveloperPackageZipHasNoData
 
-Can't retrieve package metadata. We're unable to retrieve metadata for the package version you specified. Try creating a new package version requesting developer metadata, and retry retrieving the package metadata for the new package version.
+Can't retrieve package metadata. We're unable to retrieve metadata for the package version you specified. Retrieving package metadata is available to converted 2GP package versions only. If the package you specified is a converted 2GP package, try creating a new package version, and then retry retrieving the package metadata for the new package version. If your package is a 1GP, start by converting the package to 2GP, and then retry retrieving metadata from the converted 2GP package version.
 
 # packagingNotEnabledOnOrg
 
