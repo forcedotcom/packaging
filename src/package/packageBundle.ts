@@ -7,8 +7,10 @@
 
 import { Connection, SfProject } from '@salesforce/core';
 import { Schema } from '@jsforce/jsforce-node';
-import { BundleCreateOptions, BundleSObjects } from '../interfaces';
+import { Duration } from '@salesforce/kit';
+import { BundleCreateOptions, BundleSObjects, BundleVersionCreateOptions } from '../interfaces';
 import { createBundle } from './packageBundleCreate';
+import { PackageBundleVersion } from './packageBundleVersion';
 
 const BundleFields = [
   'BundleName',
@@ -37,6 +39,24 @@ export class PackageBundle {
     options: BundleCreateOptions
   ): Promise<{ Id: string }> {
     return createBundle(connection, project, options);
+  }
+
+  /**
+   * Create a new package bundle version.
+   *
+   * @param connection - instance of Connection
+   * @param project - instance of SfProject
+   * @param options - options for creating a bundle version - see BundleVersionCreateOptions
+   * @returns PackageBundle
+   */
+  public static async createVersion(
+    options: BundleVersionCreateOptions,
+    polling: { frequency: Duration; timeout: Duration } = {
+      frequency: Duration.seconds(0),
+      timeout: Duration.seconds(0),
+    }
+  ): Promise<BundleSObjects.PackageBundleVersionCreateRequestResult> {
+    return PackageBundleVersion.create(options, polling);
   }
 
   /**
