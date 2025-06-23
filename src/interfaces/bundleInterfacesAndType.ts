@@ -22,6 +22,7 @@ export type BundleVersionCreateOptions = {
   MinorVersion: string;
   Ancestor: Nullable<string>;
   BundleVersionComponentsPath: string;
+  Description?: string; // Optional description for the bundle version
   polling?: {
     timeout: Duration;
     frequency: Duration;

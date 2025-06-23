@@ -8,12 +8,61 @@
 import { Connection, Lifecycle, Messages, PollingClient, SfError, StatusResult } from '@salesforce/core';
 import { SfProject } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
+import { Schema } from '@jsforce/jsforce-node';
 import { BundleVersionCreateOptions, BundleSObjects, PackageVersionEvents } from '../interfaces';
 import { massageErrorMessage } from '../utils/bundleUtils';
 import { applyErrorAction } from '../utils/packageUtils';
 import { PackageBundleVersionCreate } from './packageBundleVersionCreate';
 
 Messages.importMessagesDirectory(__dirname);
+
+interface QueryRecord extends Schema {
+  Id: string;
+  PackageBundle?: {
+    Id: string;
+    BundleName: string;
+    CreatedDate: string;
+    CreatedById: string;
+    LastModifiedDate: string;
+    LastModifiedById: string;
+    SystemModstamp: string;
+  };
+  VersionName: string;
+  MajorVersion: string;
+  MinorVersion: string;
+  IsReleased: boolean;
+  Ancestor?: {
+    Id: string;
+    PackageBundle?: {
+      Id: string;
+      BundleName: string;
+      CreatedDate: string;
+      CreatedById: string;
+      LastModifiedDate: string;
+      LastModifiedById: string;
+      SystemModstamp: string;
+    };
+    VersionName: string;
+    MajorVersion: string;
+    MinorVersion: string;
+  };
+}
+
+interface AncestorRecord {
+  Id: string;
+  PackageBundle?: {
+    Id: string;
+    BundleName: string;
+    CreatedDate: string;
+    CreatedById: string;
+    LastModifiedDate: string;
+    LastModifiedById: string;
+    SystemModstamp: string;
+  };
+  VersionName: string;
+  MajorVersion: string;
+  MinorVersion: string;
+}
 
 export class PackageBundleVersion {
   public static async create(
@@ -87,5 +136,76 @@ export class PackageBundleVersion {
       }
       throw err;
     }
+  }
+
+  public static async list(connection: Connection): Promise<BundleSObjects.BundleVersion[]> {
+    const query =
+      'SELECT Id, PackageBundle.Id, PackageBundle.BundleName, VersionName, MajorVersion, MinorVersion, IsReleased, ' +
+      'PackageBundle.Description, PackageBundle.IsDeleted, PackageBundle.CreatedDate, PackageBundle.CreatedById, PackageBundle.LastModifiedDate, PackageBundle.LastModifiedById, PackageBundle.SystemModstamp, ' +
+      'Ancestor.Id, Ancestor.PackageBundle.Id, Ancestor.PackageBundle.BundleName, Ancestor.VersionName, Ancestor.MajorVersion, Ancestor.MinorVersion, Ancestor.IsReleased, ' +
+      'Ancestor.PackageBundle.Description, Ancestor.PackageBundle.IsDeleted, Ancestor.PackageBundle.CreatedDate, Ancestor.PackageBundle.CreatedById, Ancestor.PackageBundle.LastModifiedDate, Ancestor.PackageBundle.LastModifiedById, Ancestor.PackageBundle.SystemModstamp ' +
+      'FROM PackageBundleVersion';
+    const queryResult = await connection.autoFetchQuery<QueryRecord>(query, { tooling: true });
+    return queryResult.records.map((record) => PackageBundleVersion.mapRecordToBundleVersion(record));
+  }
+
+  private static mapRecordToBundleVersion(record: QueryRecord): BundleSObjects.BundleVersion {
+    return {
+      Id: record.Id,
+      PackageBundle: PackageBundleVersion.mapPackageBundle(record.PackageBundle),
+      VersionName: record.VersionName ?? '',
+      MajorVersion: record.MajorVersion ?? '',
+      MinorVersion: record.MinorVersion ?? '',
+      CreatedDate: record.PackageBundle?.CreatedDate ?? '',
+      CreatedById: record.PackageBundle?.CreatedById ?? '',
+      LastModifiedDate: record.PackageBundle?.LastModifiedDate ?? '',
+      LastModifiedById: record.PackageBundle?.LastModifiedById ?? '',
+      Ancestor: record.Ancestor?.Id ? PackageBundleVersion.mapAncestor(record.Ancestor) : null,
+      IsReleased: record.IsReleased ?? false,
+    };
+  }
+
+  private static mapPackageBundle(packageBundle: QueryRecord['PackageBundle']): BundleSObjects.Bundle {
+    return {
+      Id: packageBundle?.Id ?? '',
+      BundleName: packageBundle?.BundleName ?? '',
+      Description: undefined,
+      IsDeleted: false,
+      CreatedDate: packageBundle?.CreatedDate ?? '',
+      CreatedById: packageBundle?.CreatedById ?? '',
+      LastModifiedDate: packageBundle?.LastModifiedDate ?? '',
+      LastModifiedById: packageBundle?.LastModifiedById ?? '',
+      SystemModstamp: packageBundle?.SystemModstamp ?? '',
+    };
+  }
+
+  private static mapAncestor(ancestor: AncestorRecord): BundleSObjects.BundleVersion {
+    return {
+      Id: ancestor.Id,
+      PackageBundle: PackageBundleVersion.mapAncestorPackageBundle(ancestor.PackageBundle),
+      VersionName: ancestor?.VersionName ?? '',
+      MajorVersion: ancestor?.MajorVersion ?? '',
+      MinorVersion: ancestor?.MinorVersion ?? '',
+      CreatedDate: ancestor.PackageBundle?.CreatedDate ?? '',
+      CreatedById: ancestor.PackageBundle?.CreatedById ?? '',
+      LastModifiedDate: ancestor.PackageBundle?.LastModifiedDate ?? '',
+      LastModifiedById: ancestor.PackageBundle?.LastModifiedById ?? '',
+      Ancestor: null,
+      IsReleased: false,
+    };
+  }
+
+  private static mapAncestorPackageBundle(packageBundle: AncestorRecord['PackageBundle']): BundleSObjects.Bundle {
+    return {
+      Id: packageBundle?.Id ?? '',
+      BundleName: packageBundle?.BundleName ?? '',
+      Description: undefined,
+      IsDeleted: false,
+      CreatedDate: packageBundle?.CreatedDate ?? '',
+      CreatedById: packageBundle?.CreatedById ?? '',
+      LastModifiedDate: packageBundle?.LastModifiedDate ?? '',
+      LastModifiedById: packageBundle?.LastModifiedById ?? '',
+      SystemModstamp: packageBundle?.SystemModstamp ?? '',
+    };
   }
 }
