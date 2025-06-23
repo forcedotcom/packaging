@@ -25,12 +25,16 @@ export namespace BundleSObjects {
 
   export type BundleVersion = {
     Id: string;
-    PackageBundle: string;
+    PackageBundle: Bundle;
     VersionName: string;
     MajorVersion: string;
     MinorVersion: string;
-    Ancestor: Nullable<string>;
+    Ancestor: Nullable<BundleVersion>;
     IsReleased: boolean;
+    CreatedDate: string;
+    CreatedById: string;
+    LastModifiedDate: string;
+    LastModifiedById: string;
   };
 
   export type PkgBundleVersionCreateReq = {
