@@ -21,6 +21,8 @@ interface QueryRecord extends Schema {
   PackageBundle?: {
     Id: string;
     BundleName: string;
+    Description?: string;
+    IsDeleted: boolean;
     CreatedDate: string;
     CreatedById: string;
     LastModifiedDate: string;
@@ -36,6 +38,8 @@ interface QueryRecord extends Schema {
     PackageBundle?: {
       Id: string;
       BundleName: string;
+      Description?: string;
+      IsDeleted: boolean;
       CreatedDate: string;
       CreatedById: string;
       LastModifiedDate: string;
@@ -53,6 +57,8 @@ interface AncestorRecord {
   PackageBundle?: {
     Id: string;
     BundleName: string;
+    Description?: string;
+    IsDeleted: boolean;
     CreatedDate: string;
     CreatedById: string;
     LastModifiedDate: string;
@@ -169,8 +175,8 @@ export class PackageBundleVersion {
     return {
       Id: packageBundle?.Id ?? '',
       BundleName: packageBundle?.BundleName ?? '',
-      Description: undefined,
-      IsDeleted: false,
+      Description: packageBundle?.Description,
+      IsDeleted: packageBundle?.IsDeleted ?? false,
       CreatedDate: packageBundle?.CreatedDate ?? '',
       CreatedById: packageBundle?.CreatedById ?? '',
       LastModifiedDate: packageBundle?.LastModifiedDate ?? '',
@@ -199,8 +205,8 @@ export class PackageBundleVersion {
     return {
       Id: packageBundle?.Id ?? '',
       BundleName: packageBundle?.BundleName ?? '',
-      Description: undefined,
-      IsDeleted: false,
+      Description: packageBundle?.Description,
+      IsDeleted: packageBundle?.IsDeleted ?? false,
       CreatedDate: packageBundle?.CreatedDate ?? '',
       CreatedById: packageBundle?.CreatedById ?? '',
       LastModifiedDate: packageBundle?.LastModifiedDate ?? '',
