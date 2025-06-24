@@ -65,7 +65,8 @@ export class PackageBundleVersionCreate {
     options: BundleVersionCreateOptions
   ): Promise<BundleSObjects.PackageBundleVersionCreateRequestResult> {
     const bundleVersionComponents = PackageBundleVersionCreate.readBundleVersionComponents(
-      options.BundleVersionComponentsPath
+      options.BundleVersionComponentsPath,
+      project
     );
     const packageBundleId = PackageBundleVersionCreate.parsePackageBundleId(options.PackageBundle, project);
     const version = await PackageBundleVersionCreate.getPackageVersion(options, project, connection);
@@ -119,14 +120,38 @@ export class PackageBundleVersionCreate {
     };
   }
 
-  private static readBundleVersionComponents(filePath: string): string[] {
+  private static readBundleVersionComponents(filePath: string, project: SfProject): string[] {
     try {
       const fileContent = fs.readFileSync(filePath, 'utf8');
-      const bundleVersionComponents = JSON.parse(fileContent) as string[];
+      const bundleVersionComponents = JSON.parse(fileContent) as Array<{ packageVersion: string }>;
       if (!Array.isArray(bundleVersionComponents)) {
-        throw new Error('Bundle version components must be an array of strings');
+        throw new Error('Bundle version components must be an array of objects with packageVersion property');
       }
-      return bundleVersionComponents;
+
+      // Validate that each item has the required packageVersion property
+      for (const component of bundleVersionComponents) {
+        if (!component || typeof component !== 'object' || !component.packageVersion) {
+          throw new Error('Each bundle version component must be an object with a packageVersion property');
+        }
+      }
+
+      // Process each component to get the package version ID
+      return bundleVersionComponents.map((component) => {
+        const packageVersion = component.packageVersion;
+
+        // Check if it's already an ID (04t followed by 15 characters)
+        if (/^04t[a-zA-Z0-9]{15}$/.test(packageVersion)) {
+          return packageVersion;
+        }
+
+        // Otherwise, treat it as an alias and resolve it from sfdx-project.json
+        const packageVersionId = project.getPackageIdFromAlias(packageVersion);
+        if (!packageVersionId) {
+          throw new Error(`No package version found with alias: ${packageVersion}`);
+        }
+
+        return packageVersionId;
+      });
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to read or parse bundle version components file');
       throw SfError.wrap(massageErrorMessage(error));

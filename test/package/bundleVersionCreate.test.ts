@@ -43,6 +43,11 @@ describe('PackageBundleVersion.create', () => {
     testContext.inProject(true);
     project = await setupProject((proj) => {
       proj.getSfProjectJson().set('namespace', 'testNamespace');
+      // Add package aliases for testing
+      proj.getSfProjectJson().set('packageAliases', {
+        'pkgA@1.1': '04t000000000001',
+        'pkgB@2.0': '04t000000000002',
+      });
     });
 
     // Create the project directory structure
@@ -79,7 +84,10 @@ describe('PackageBundleVersion.create', () => {
   describe('create bundle version', () => {
     it('should create bundle version without wait flag (immediate success)', async () => {
       const componentsPath = path.join(project.getPath(), 'bundle-components.json');
-      const components = ['Component1', 'Component2'];
+      const components = [
+        { packageVersion: 'pkgA@1.1' }, // Alias format
+        { packageVersion: '04t000000000000003' }, // Direct ID format (18 chars)
+      ];
       fs.writeFileSync(componentsPath, JSON.stringify(components));
 
       // Mock the connection for immediate success without polling
@@ -126,7 +134,10 @@ describe('PackageBundleVersion.create', () => {
 
     it('should create bundle version with wait flag and polling success', async () => {
       const componentsPath = path.join(project.getPath(), 'bundle-components.json');
-      const components = ['Component1', 'Component2'];
+      const components = [
+        { packageVersion: 'pkgB@2.0' }, // Alias format
+        { packageVersion: '04t000000000000004' }, // Direct ID format (18 chars)
+      ];
       fs.writeFileSync(componentsPath, JSON.stringify(components));
 
       // Mock the connection for polling scenario with wait flag
@@ -149,7 +160,7 @@ describe('PackageBundleVersion.create', () => {
                 VersionName: 'testBundle@1.0',
                 MajorVersion: '1',
                 MinorVersion: '0',
-                BundleVersionComponents: JSON.stringify(components),
+                BundleVersionComponents: JSON.stringify(['04t000000000002', '04t000000000000004']), // Resolved IDs
                 CreatedDate: new Date().toISOString(),
                 CreatedById: 'testUser',
               });
@@ -162,7 +173,7 @@ describe('PackageBundleVersion.create', () => {
                 VersionName: 'testBundle@1.0',
                 MajorVersion: '1',
                 MinorVersion: '0',
-                BundleVersionComponents: JSON.stringify(components),
+                BundleVersionComponents: JSON.stringify(['04t000000000002', '04t000000000000004']), // Resolved IDs
                 CreatedDate: new Date().toISOString(),
                 CreatedById: 'testUser',
               });
@@ -207,7 +218,10 @@ describe('PackageBundleVersion.create', () => {
 
     it('should create bundle version with wait flag and immediate success (no polling needed)', async () => {
       const componentsPath = path.join(project.getPath(), 'bundle-components.json');
-      const components = ['Component1', 'Component2'];
+      const components = [
+        { packageVersion: 'pkgA@1.1' }, // Alias format
+        { packageVersion: '04t000000000000005' }, // Direct ID format (18 chars)
+      ];
       fs.writeFileSync(componentsPath, JSON.stringify(components));
 
       // Mock the connection for immediate success even with polling enabled
@@ -227,7 +241,7 @@ describe('PackageBundleVersion.create', () => {
               VersionName: 'testBundle@1.0',
               MajorVersion: '1',
               MinorVersion: '0',
-              BundleVersionComponents: JSON.stringify(components),
+              BundleVersionComponents: JSON.stringify(['04t000000000001', '04t000000000000005']), // Resolved IDs
               CreatedDate: new Date().toISOString(),
               CreatedById: 'testUser',
             }),
@@ -269,7 +283,10 @@ describe('PackageBundleVersion.create', () => {
 
     it('should handle polling timeout with wait flag', async () => {
       const componentsPath = path.join(project.getPath(), 'bundle-components.json');
-      const components = ['Component1', 'Component2'];
+      const components = [
+        { packageVersion: 'pkgB@2.0' }, // Alias format
+        { packageVersion: '04t000000000000006' }, // Direct ID format (18 chars)
+      ];
       fs.writeFileSync(componentsPath, JSON.stringify(components));
 
       // Mock the connection to always return queued status (causing timeout)
@@ -289,7 +306,7 @@ describe('PackageBundleVersion.create', () => {
               VersionName: 'testBundle@1.0',
               MajorVersion: '1',
               MinorVersion: '0',
-              BundleVersionComponents: JSON.stringify(components),
+              BundleVersionComponents: JSON.stringify(['04t000000000002', '04t000000000000006']), // Resolved IDs
               CreatedDate: new Date().toISOString(),
               CreatedById: 'testUser',
             }),
@@ -335,7 +352,10 @@ describe('PackageBundleVersion.create', () => {
 
     it('should handle polling error status with wait flag', async () => {
       const componentsPath = path.join(project.getPath(), 'bundle-components.json');
-      const components = ['Component1', 'Component2'];
+      const components = [
+        { packageVersion: 'pkgA@1.1' }, // Alias format
+        { packageVersion: '04t000000000000007' }, // Direct ID format (18 chars)
+      ];
       fs.writeFileSync(componentsPath, JSON.stringify(components));
 
       // Mock the connection to return error status during polling
@@ -355,7 +375,7 @@ describe('PackageBundleVersion.create', () => {
               VersionName: 'testBundle@1.0',
               MajorVersion: '1',
               MinorVersion: '0',
-              BundleVersionComponents: JSON.stringify(components),
+              BundleVersionComponents: JSON.stringify(['04t000000000001', '04t000000000000007']), // Resolved IDs
               CreatedDate: new Date().toISOString(),
               CreatedById: 'testUser',
               Error: ['Test error message'],
@@ -398,7 +418,10 @@ describe('PackageBundleVersion.create', () => {
 
     it('should create bundle version with zero timeout (no polling)', async () => {
       const componentsPath = path.join(project.getPath(), 'bundle-components.json');
-      const components = ['Component1', 'Component2'];
+      const components = [
+        { packageVersion: 'pkgB@2.0' }, // Alias format
+        { packageVersion: '04t000000000000008' }, // Direct ID format (18 chars)
+      ];
       fs.writeFileSync(componentsPath, JSON.stringify(components));
 
       // Mock the connection for immediate success
@@ -418,7 +441,7 @@ describe('PackageBundleVersion.create', () => {
               VersionName: 'testBundle@1.0',
               MajorVersion: '1',
               MinorVersion: '0',
-              BundleVersionComponents: JSON.stringify(components),
+              BundleVersionComponents: JSON.stringify(['04t000000000002', '04t000000000000008']), // Resolved IDs
               CreatedDate: new Date().toISOString(),
               CreatedById: 'testUser',
             }),
@@ -452,6 +475,69 @@ describe('PackageBundleVersion.create', () => {
 
       expect(result).to.have.property('Id', '0Ho000000000000');
       expect(result).to.have.property('RequestStatus', BundleSObjects.PkgBundleVersionCreateReqStatus.success);
+
+      // Clean up
+      fs.unlinkSync(componentsPath);
+    });
+
+    it('should handle invalid bundle components format', async () => {
+      const componentsPath = path.join(project.getPath(), 'bundle-components.json');
+
+      // Test with invalid format (array of strings instead of objects)
+      const invalidComponents = ['Component1', 'Component2'];
+      fs.writeFileSync(componentsPath, JSON.stringify(invalidComponents));
+
+      const options: BundleVersionCreateOptions = {
+        connection,
+        project,
+        PackageBundle: 'testBundle',
+        MajorVersion: '1',
+        MinorVersion: '0',
+        Ancestor: null,
+        BundleVersionComponentsPath: componentsPath,
+      };
+
+      try {
+        await PackageBundleVersion.create(options);
+        expect.fail('Expected error for invalid format was not thrown');
+      } catch (err) {
+        const error = err as Error;
+        expect(error.message).to.include(
+          'Each bundle version component must be an object with a packageVersion property'
+        );
+      }
+
+      // Test with missing packageVersion property
+      const invalidComponents2 = [
+        { packageVersion: 'pkgA@1.1' },
+        { invalidProperty: 'value' }, // Missing packageVersion
+      ];
+      fs.writeFileSync(componentsPath, JSON.stringify(invalidComponents2));
+
+      try {
+        await PackageBundleVersion.create(options);
+        expect.fail('Expected error for missing packageVersion was not thrown');
+      } catch (err) {
+        const error = err as Error;
+        expect(error.message).to.include(
+          'Each bundle version component must be an object with a packageVersion property'
+        );
+      }
+
+      // Test with non-existent alias
+      const invalidComponents3 = [
+        { packageVersion: 'pkgA@1.1' },
+        { packageVersion: 'nonExistentAlias' }, // Alias not in packageAliases
+      ];
+      fs.writeFileSync(componentsPath, JSON.stringify(invalidComponents3));
+
+      try {
+        await PackageBundleVersion.create(options);
+        expect.fail('Expected error for non-existent alias was not thrown');
+      } catch (err) {
+        const error = err as Error;
+        expect(error.message).to.include('No package version found with alias: nonExistentAlias');
+      }
 
       // Clean up
       fs.unlinkSync(componentsPath);
