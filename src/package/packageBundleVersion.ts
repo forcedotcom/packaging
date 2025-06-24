@@ -9,14 +9,20 @@ import { Connection, Lifecycle, Messages, PollingClient, SfError, StatusResult }
 import { SfProject } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import { Schema } from '@jsforce/jsforce-node';
-import { BundleVersionCreateOptions, BundleSObjects, PackageVersionEvents } from '../interfaces';
+import {
+  BundleVersionCreateOptions,
+  BundleSObjects,
+  PackageVersionEvents,
+  PackagingSObjects,
+  PackageType,
+} from '../interfaces';
 import { massageErrorMessage } from '../utils/bundleUtils';
 import { applyErrorAction } from '../utils/packageUtils';
 import { PackageBundleVersionCreate } from './packageBundleVersionCreate';
 
 Messages.importMessagesDirectory(__dirname);
 
-interface QueryRecord extends Schema {
+type QueryRecord = Schema & {
   Id: string;
   PackageBundle?: {
     Id: string;
@@ -50,9 +56,9 @@ interface QueryRecord extends Schema {
     MajorVersion: string;
     MinorVersion: string;
   };
-}
+};
 
-interface AncestorRecord {
+type AncestorRecord = {
   Id: string;
   PackageBundle?: {
     Id: string;
@@ -68,7 +74,7 @@ interface AncestorRecord {
   VersionName: string;
   MajorVersion: string;
   MinorVersion: string;
-}
+};
 
 export class PackageBundleVersion {
   public static async create(
@@ -144,6 +150,21 @@ export class PackageBundleVersion {
     }
   }
 
+  public static async report(connection: Connection, id: string): Promise<BundleSObjects.BundleVersion | null> {
+    const query =
+      'SELECT Id, PackageBundle.Id, PackageBundle.BundleName, VersionName, MajorVersion, MinorVersion, IsReleased, ' +
+      'PackageBundle.Description, PackageBundle.IsDeleted, PackageBundle.CreatedDate, PackageBundle.CreatedById, PackageBundle.LastModifiedDate, PackageBundle.LastModifiedById, PackageBundle.SystemModstamp, ' +
+      'Ancestor.Id, Ancestor.PackageBundle.Id, Ancestor.PackageBundle.BundleName, Ancestor.VersionName, Ancestor.MajorVersion, Ancestor.MinorVersion, Ancestor.IsReleased, ' +
+      'Ancestor.PackageBundle.Description, Ancestor.PackageBundle.IsDeleted, Ancestor.PackageBundle.CreatedDate, Ancestor.PackageBundle.CreatedById, Ancestor.PackageBundle.LastModifiedDate, Ancestor.PackageBundle.LastModifiedById, Ancestor.PackageBundle.SystemModstamp ' +
+      "FROM PackageBundleVersion WHERE Id = '" +
+      id +
+      "'";
+    const queryResult = await connection.autoFetchQuery<QueryRecord>(query, { tooling: true });
+    return queryResult.records.length > 0
+      ? PackageBundleVersion.mapRecordToBundleVersion(queryResult.records[0])
+      : null;
+  }
+
   public static async list(connection: Connection): Promise<BundleSObjects.BundleVersion[]> {
     const query =
       'SELECT Id, PackageBundle.Id, PackageBundle.BundleName, VersionName, MajorVersion, MinorVersion, IsReleased, ' +
@@ -153,6 +174,87 @@ export class PackageBundleVersion {
       'FROM PackageBundleVersion';
     const queryResult = await connection.autoFetchQuery<QueryRecord>(query, { tooling: true });
     return queryResult.records.map((record) => PackageBundleVersion.mapRecordToBundleVersion(record));
+  }
+
+  public static async componentPackages(
+    connection: Connection,
+    id: string
+  ): Promise<PackagingSObjects.SubscriberPackageVersion[]> {
+    const query =
+      'SELECT Component.Id, Component.Name, Component.Description, Component.PublisherName, Component.MajorVersion, Component.MinorVersion, Component.PatchVersion, Component.BuildNumber, Component.ReleaseState, Component.IsManaged, Component.IsDeprecated, Component.IsPasswordProtected, Component.IsBeta, Component.Package2ContainerOptions, Component.IsSecurityReviewed, Component.IsOrgDependent, Component.AppExchangePackageName, Component.AppExchangeDescription, Component.AppExchangePublisherName, Component.AppExchangeLogoUrl, Component.ReleaseNotesUrl, Component.PostInstallUrl, Component.RemoteSiteSettings, Component.CspTrustedSites, Component.Profiles, Component.Dependencies, Component.InstallValidationStatus, Component.SubscriberPackageId ' +
+      "FROM PkgBundleVersionComponent WHERE PackageBundleVersion.Id = '" +
+      id +
+      "' ORDER BY Component.Name";
+    const queryResult = await connection.autoFetchQuery<
+      Schema & {
+        Component?: {
+          Id: string;
+          Name: string;
+          Description: string;
+          PublisherName: string;
+          MajorVersion: number;
+          MinorVersion: number;
+          PatchVersion: number;
+          BuildNumber: number;
+          ReleaseState: string;
+          IsManaged: boolean;
+          IsDeprecated: boolean;
+          IsPasswordProtected: boolean;
+          IsBeta: boolean;
+          Package2ContainerOptions: string;
+          IsSecurityReviewed: boolean;
+          IsOrgDependent: boolean;
+          AppExchangePackageName: string;
+          AppExchangeDescription: string;
+          AppExchangePublisherName: string;
+          AppExchangeLogoUrl: string;
+          ReleaseNotesUrl: string;
+          PostInstallUrl: string;
+          RemoteSiteSettings: unknown;
+          CspTrustedSites: unknown;
+          Profiles: unknown;
+          Dependencies: unknown;
+          InstallValidationStatus: string;
+          SubscriberPackageId: string;
+        };
+      }
+    >(query, { tooling: true });
+    return queryResult.records.map((record) => {
+      const component = record.Component;
+      if (!component) {
+        throw new Error('Component record is missing');
+      }
+      return {
+        Id: component.Id,
+        SubscriberPackageId: component.SubscriberPackageId,
+        Name: component.Name,
+        Description: component.Description,
+        PublisherName: component.PublisherName,
+        MajorVersion: component.MajorVersion,
+        MinorVersion: component.MinorVersion,
+        PatchVersion: component.PatchVersion,
+        BuildNumber: component.BuildNumber,
+        ReleaseState: component.ReleaseState,
+        IsManaged: component.IsManaged,
+        IsDeprecated: component.IsDeprecated,
+        IsPasswordProtected: component.IsPasswordProtected,
+        IsBeta: component.IsBeta,
+        Package2ContainerOptions: component.Package2ContainerOptions as PackageType,
+        IsSecurityReviewed: component.IsSecurityReviewed,
+        IsOrgDependent: component.IsOrgDependent,
+        AppExchangePackageName: component.AppExchangePackageName,
+        AppExchangeDescription: component.AppExchangeDescription,
+        AppExchangePublisherName: component.AppExchangePublisherName,
+        AppExchangeLogoUrl: component.AppExchangeLogoUrl,
+        ReleaseNotesUrl: component.ReleaseNotesUrl,
+        PostInstallUrl: component.PostInstallUrl,
+        RemoteSiteSettings: component.RemoteSiteSettings as PackagingSObjects.SubscriberPackageRemoteSiteSettings,
+        CspTrustedSites: component.CspTrustedSites as PackagingSObjects.SubscriberPackageCspTrustedSites,
+        Profiles: component.Profiles as PackagingSObjects.SubscriberPackageProfiles,
+        Dependencies: component.Dependencies as PackagingSObjects.SubscriberPackageDependencies,
+        InstallValidationStatus: component.InstallValidationStatus as PackagingSObjects.InstallValidationStatus,
+      };
+    });
   }
 
   private static mapRecordToBundleVersion(record: QueryRecord): BundleSObjects.BundleVersion {
