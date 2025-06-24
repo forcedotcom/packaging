@@ -5,7 +5,7 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import path from 'node:path';
-import fs from 'node:fs/promises';
+import fs from 'node:fs';
 import { expect, assert } from 'chai';
 import { execCmd, TestSession } from '@salesforce/cli-plugins-testkit';
 import { Duration, sleep } from '@salesforce/kit';
@@ -96,6 +96,24 @@ describe('Integration tests for @salesforce/packaging library', () => {
     scratchOrg = await Org.create({ aliasOrUsername: SUB_ORG_ALIAS });
     project = await SfProject.resolve();
 
+    const permissionSetMetadata = `<?xml version="1.0" encoding="UTF-8"?>
+    <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+        <description>Permission set for downloading package version zips</description>
+        <hasActivationRequired>false</hasActivationRequired>
+        <label>Download Package Version Zips</label>
+        <userPermissions>
+            <enabled>true</enabled>
+            <name>DownloadPackageVersionZips</name>
+        </userPermissions>
+    </PermissionSet>`;
+
+    // Create the metadata directory structure
+    const metadataDir = path.join(process.cwd(), 'force-app', 'main', 'default', 'permissionsets');
+    fs.mkdirSync(metadataDir, { recursive: true });
+
+    const permissionSetFile = path.join(metadataDir, 'DownloadPackageVersionZips.permissionset-meta.xml');
+    fs.writeFileSync(permissionSetFile, permissionSetMetadata);
+
     // assign the DownloadPackageVersionZips perm to the dev hub org admin user
     const queryResult = await devHubOrg
       .getConnection()
@@ -130,7 +148,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
 
       // verify update to project.json packageDiretory using fs
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      const dxPjsonData = await fs.readFile(path.join(session.project.dir, 'sfdx-project.json'), 'utf8');
+      const dxPjsonData = fs.readFileSync(path.join(session.project.dir, 'sfdx-project.json'), 'utf8');
       const projectFile = JSON.parse(dxPjsonData) as ProjectJson;
       expect(projectFile).to.have.property('packageDirectories').with.length(1);
       expect(projectFile.packageDirectories[0]).to.include.keys(['package', 'versionName', 'versionNumber']);
@@ -320,7 +338,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
 
       // TODO: PVC command writes new version to sfdx-project.json
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      const dxPjsonData = await fs.readFile(path.join(session.project.dir, 'sfdx-project.json'), 'utf8');
+      const dxPjsonData = fs.readFileSync(path.join(session.project.dir, 'sfdx-project.json'), 'utf8');
       const projectFile = JSON.parse(dxPjsonData) as ProjectJson;
       assert(isPackagingDirectory(projectFile.packageDirectories[0]));
 
