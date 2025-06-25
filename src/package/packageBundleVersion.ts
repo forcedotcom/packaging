@@ -55,6 +55,7 @@ type QueryRecord = Schema & {
     VersionName: string;
     MajorVersion: string;
     MinorVersion: string;
+    IsReleased: boolean;
   };
 };
 
@@ -74,6 +75,7 @@ type AncestorRecord = {
   VersionName: string;
   MajorVersion: string;
   MinorVersion: string;
+  IsReleased: boolean;
 };
 
 export class PackageBundleVersion {
@@ -299,7 +301,7 @@ export class PackageBundleVersion {
       LastModifiedDate: ancestor.PackageBundle?.LastModifiedDate ?? '',
       LastModifiedById: ancestor.PackageBundle?.LastModifiedById ?? '',
       Ancestor: null,
-      IsReleased: false,
+      IsReleased: ancestor.IsReleased ?? false,
     };
   }
 
