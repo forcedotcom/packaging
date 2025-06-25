@@ -109,7 +109,9 @@ describe('Integration tests for @salesforce/packaging library', () => {
 
       // Check if it's a duplicate permission set assignment error
       const errorMessage = error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes('DUPLICATE_VALUE') && errorMessage.includes('Duplicate PermissionSetAssignment')) {
+      const errorCode = (error as { errorCode?: string })?.errorCode;
+
+      if (errorCode === 'DUPLICATE_VALUE' && errorMessage.includes('Duplicate PermissionSetAssignment')) {
         // Permission set already assigned - ignore
       } else {
         throw error; // Re-throw if it's a different error
