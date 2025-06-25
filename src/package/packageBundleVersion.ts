@@ -178,7 +178,7 @@ export class PackageBundleVersion {
     return queryResult.records.map((record) => PackageBundleVersion.mapRecordToBundleVersion(record));
   }
 
-  public static async componentPackages(
+  public static async getComponentPackages(
     connection: Connection,
     id: string
   ): Promise<PackagingSObjects.SubscriberPackageVersion[]> {

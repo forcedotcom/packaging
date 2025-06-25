@@ -360,7 +360,7 @@ describe('PackageBundleVersion', () => {
         }
       };
 
-      const result = await PackageBundleVersion.componentPackages(connection, bundleVersionId);
+      const result = await PackageBundleVersion.getComponentPackages(connection, bundleVersionId);
       expect(result).to.deep.equal(expectedComponentPackages);
     });
 
@@ -389,7 +389,7 @@ describe('PackageBundleVersion', () => {
         }
       };
 
-      const result = await PackageBundleVersion.componentPackages(connection, bundleVersionId);
+      const result = await PackageBundleVersion.getComponentPackages(connection, bundleVersionId);
       expect(result).to.deep.equal([]);
     });
 
@@ -424,7 +424,7 @@ describe('PackageBundleVersion', () => {
       };
 
       try {
-        await PackageBundleVersion.componentPackages(connection, bundleVersionId);
+        await PackageBundleVersion.getComponentPackages(connection, bundleVersionId);
         expect.fail('Expected error to be thrown');
       } catch (error) {
         expect(error).to.be.instanceOf(Error);
