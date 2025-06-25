@@ -102,7 +102,20 @@ describe('Integration tests for @salesforce/packaging library', () => {
       .singleRecordQuery<{ Id: string }>(`SELECT Id FROM User WHERE Username='${session.hubOrg.username}'`);
 
     const user = await User.create({ org: devHubOrg });
-    await user.assignPermissionSets(queryResult.Id, ['DownloadPackageVersionZips']);
+    try {
+      await user.assignPermissionSets(queryResult.Id, ['DownloadPackageVersionZips']);
+    } catch (error: unknown) {
+      // Permission set might already be assigned, which is fine
+      if (
+        error instanceof Error &&
+        error.message?.includes('DUPLICATE_VALUE') &&
+        error.message?.includes('Duplicate PermissionSetAssignment')
+      ) {
+        // ignore, this can happen if the user was already assigned the permission set
+      } else {
+        throw error; // Re-throw if it's a different error
+      }
+    }
   });
 
   after(async () => {
