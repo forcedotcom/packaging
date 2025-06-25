@@ -73,7 +73,6 @@ describe('Integration tests for @salesforce/packaging library', () => {
   let project: SfProject;
 
   before('pkgSetup', async () => {
-    process.env.TESTKIT_EXECUTABLE_PATH = 'sfdx';
     execCmd('config:set restDeploy=false', { cli: 'sfdx' });
 
     // will auth the hub
@@ -91,6 +90,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
         },
       ],
     });
+
     pkgName = uniqid({ template: 'pnh-dancingbears-', length: 16 });
     devHubOrg = await Org.create({ aliasOrUsername: session.hubOrg.username });
     scratchOrg = await Org.create({ aliasOrUsername: SUB_ORG_ALIAS });
@@ -106,12 +106,11 @@ describe('Integration tests for @salesforce/packaging library', () => {
       await user.assignPermissionSets(queryResult.Id, ['DownloadPackageVersionZips']);
     } catch (error: unknown) {
       // Permission set might already be assigned, which is fine
-      if (
-        error instanceof Error &&
-        error.message?.includes('DUPLICATE_VALUE') &&
-        error.message?.includes('Duplicate PermissionSetAssignment')
-      ) {
-        // ignore, this can happen if the user was already assigned the permission set
+
+      // Check if it's a duplicate permission set assignment error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('DUPLICATE_VALUE') && errorMessage.includes('Duplicate PermissionSetAssignment')) {
+        // Permission set already assigned - ignore
       } else {
         throw error; // Re-throw if it's a different error
       }
