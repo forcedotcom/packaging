@@ -186,7 +186,7 @@ export class PackageBundleVersion {
       'SELECT Component.Id, Component.Name, Component.Description, Component.PublisherName, Component.MajorVersion, Component.MinorVersion, Component.PatchVersion, Component.BuildNumber, Component.ReleaseState, Component.IsManaged, Component.IsDeprecated, Component.IsPasswordProtected, Component.IsBeta, Component.Package2ContainerOptions, Component.IsSecurityReviewed, Component.IsOrgDependent, Component.AppExchangePackageName, Component.AppExchangeDescription, Component.AppExchangePublisherName, Component.AppExchangeLogoUrl, Component.ReleaseNotesUrl, Component.PostInstallUrl, Component.RemoteSiteSettings, Component.CspTrustedSites, Component.Profiles, Component.Dependencies, Component.InstallValidationStatus, Component.SubscriberPackageId ' +
       "FROM PkgBundleVersionComponent WHERE PackageBundleVersion.Id = '" +
       id +
-      "' ORDER BY Component.Name";
+      "' ORDER BY Component.Id";
     const queryResult = await connection.autoFetchQuery<
       Schema & {
         Component?: {
