@@ -1,3 +1,19 @@
+# [4.8.0](https://github.com/forcedotcom/packaging/compare/4.7.0...4.8.0) (2025-06-27)
+
+
+### Features
+
+* add DownloadPackageVersionZips user perm for dev hub user ([6d3fea2](https://github.com/forcedotcom/packaging/commit/6d3fea29564969f56559f0ce0601284b3b6e05f0))
+* dummy commit ([f77c1f1](https://github.com/forcedotcom/packaging/commit/f77c1f1ae2d4aaf2b2358b0242131d6cf9e26f3f))
+* ignore duplicate value exception for perm set assignment ([d963563](https://github.com/forcedotcom/packaging/commit/d963563b8e1e4d0c80584d923825cca925c76df7))
+* reflect feat change to use Package2Version instead of MetadataPackageVerison API for retrieve ([d4ab5b0](https://github.com/forcedotcom/packaging/commit/d4ab5b06a949eb5a4cda9d31d122329563a7aab9))
+* reflect feat change to use Package2Version instead of MetadataPackageVerison API for retrieve ([bc0c0ac](https://github.com/forcedotcom/packaging/commit/bc0c0ac6a047b0713217fe5d9a842874db8bde30))
+* reflect feat change to use Package2Version instead of MetadataPackageVerison API for retrieve ([abe676b](https://github.com/forcedotcom/packaging/commit/abe676b4276e020ed78277ea5514166388c37f87))
+* update error messages ([e35e990](https://github.com/forcedotcom/packaging/commit/e35e9901a0a24d42bc1224ff1209aae332e811ec))
+* update error messages ([f1d3289](https://github.com/forcedotcom/packaging/commit/f1d3289ec95652b59661e2f9ad59c499b2f88e55))
+
+
+
 # [4.7.0](https://github.com/forcedotcom/packaging/compare/4.6.1...4.7.0) (2025-06-12)
 
 
