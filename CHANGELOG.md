@@ -1,3 +1,12 @@
+# [4.9.0](https://github.com/forcedotcom/packaging/compare/4.8.0...4.9.0) (2025-06-27)
+
+
+### Features
+
+* ignore DeveloperUsePkgZip for id retrieve ([bd53846](https://github.com/forcedotcom/packaging/commit/bd538468f6f82c577dbd7df2c77162eebd6a0c0b))
+
+
+
 # [4.8.0](https://github.com/forcedotcom/packaging/compare/4.7.0...4.8.0) (2025-06-27)
 
 
