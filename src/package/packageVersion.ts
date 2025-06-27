@@ -501,7 +501,10 @@ export class PackageVersion {
             label2: BY_LABEL.PACKAGE_VERSION_ID.label,
           };
 
-      const allFields = PackageVersion.getPackage2VersionFields(this.connection).toString();
+      let allFieldsArr = PackageVersion.getPackage2VersionFields(this.connection);
+      // Remove DeveloperUsePkgZip because the user may not have the DownloadPackageVersionZips user permission
+      allFieldsArr = allFieldsArr.filter((field) => field !== 'DeveloperUsePkgZip');
+      const allFields = allFieldsArr.toString();
       const query = `SELECT ${allFields} FROM Package2Version WHERE ${queryConfig.clause} LIMIT 1`;
       try {
         this.data = await this.connection.singleRecordQuery<Package2Version>(query, { tooling: true });
