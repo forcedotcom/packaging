@@ -28,18 +28,20 @@ Enabling App Analytics is only possible with API version 59.0 or higher.
 
 # sourcesDownloadDirectoryNotEmpty
 
-Can’t retrieve package version metadata. The specified directory isn’t empty. Empty the directory, or create a new one and try again.
+Can't retrieve package version metadata. The specified directory isn't empty. Empty the directory, or create a new one and try again.
 
 # sourcesDownloadDirectoryMustBeRelative
 
-Can’t retrieve package version metadata. The specified directory must be relative to your Salesforce DX project directory, and not an absolute path.
+Can't retrieve package version metadata. The specified directory must be relative to your Salesforce DX project directory, and not an absolute path.
 
-# unableToAccessMetadataZip
+# developerUsePkgZipFieldUnavailable
 
-The sf package version retrieve command has been removed. This feature isn’t quite ready for prime time, so we’re removing it for now while we make improvements. We’ll let you know after it’s back up.
+Can't retrieve package metadata. To use this feature, you must first assign yourself the DownloadPackageVersionZips user permission. Then retry retrieving your package metadata.
 
-# errorDownloadingMetadataZip
+# downloadDeveloperPackageZipHasNoData
 
-Can’t retrieve package version metadata.
+Can't retrieve package metadata. We're unable to retrieve metadata for the package version you specified. Retrieving package metadata is available to converted 2GP package versions only. If the package you specified is a converted 2GP package, try creating a new package version, and then retry retrieving the package metadata for the new package version. If your package is a 1GP, start by converting the package to 2GP, and then retry retrieving metadata from the converted 2GP package version.
 
-An error occurred downloading the metadata: %s
+# packagingNotEnabledOnOrg
+
+Can't retrieve package metadata. The org you specified doesn't have the required second-generation packaging permission enabled. Enable this permission on your Dev Hub org, and try again.
