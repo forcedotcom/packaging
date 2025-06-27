@@ -59,6 +59,10 @@ export class PackageBundle {
     return PackageBundleVersion.create(options, polling);
   }
 
+  public static async delete(connection: Connection, id: string): Promise<void> {
+    await connection.tooling.delete('PackageBundle', id);
+  }
+
   /**
    * Returns all the package bundles that are available in the org, up to 10,000. If more records are
    * needed use the `SF_ORG_MAX_QUERY_LIMIT` env var.
