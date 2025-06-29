@@ -249,6 +249,7 @@ export type PackageVersionCreateRequest = {
   CalculateCodeCoverage: boolean;
   SkipValidation: boolean;
   AsyncValidation?: boolean;
+  CalcTransitiveDependencies?: boolean;
 };
 
 export type PackageVersionListOptions = {

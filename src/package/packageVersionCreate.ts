@@ -279,31 +279,11 @@ export class PackageVersionCreate {
       CalculateCodeCoverage: this.options.codecoverage ?? false,
       SkipValidation: this.options.skipvalidation ?? false,
       AsyncValidation: this.options.asyncvalidation ?? false,
-      // note: the createRequest's Language corresponds to the AllPackageVersion's language
-      Language: this.options.language,
+      Language: this.options.language, // note: the createRequest's Language corresponds to the AllPackageVersion's language
+      CalcTransitiveDependencies: this.packageObject.calculateTransitiveDependencies ?? false,
     };
 
-    // Ensure we only include the Language property for a connection api version
-    // of v57.0 or higher.
-    if (this.connection.getApiVersion() < '57.0') {
-      if (requestObject.Language) {
-        this.logger.warn(
-          `The language option is only valid for API version 57.0 and higher. Ignoring ${requestObject.Language}`
-        );
-      }
-      delete requestObject.Language;
-    }
-
-    // Ensure we only include the async validation property for a connection api version
-    // of v60.0 or higher.
-    if (this.connection.getApiVersion() <= '60.0') {
-      if (requestObject.AsyncValidation) {
-        this.logger.warn(
-          `The async validation option is only valid for API version 60.0 and higher. Ignoring ${requestObject.AsyncValidation}`
-        );
-      }
-      delete requestObject.AsyncValidation;
-    }
+    this.stripUnsupportedPropertiesBasedOnApiVersion(requestObject);
 
     if (preserveFiles) {
       const message = messages.getMessage('tempFileLocation', [packageVersTmpRoot]);
@@ -315,6 +295,36 @@ export class PackageVersionCreate {
       return requestObject;
     } else {
       return fs.promises.rm(packageVersTmpRoot, { recursive: true, force: true }).then(() => requestObject);
+    }
+  }
+
+  // TODO: W-18696754 - None of the logger.warn() calls work, nothing is printed to the console when they're hit.
+  private stripUnsupportedPropertiesBasedOnApiVersion(requestObject: PackageVersionCreateRequest): void {
+    if (this.connection.getApiVersion() < '57.0') {
+      if (requestObject.Language) {
+        this.logger.warn(
+          `The language option is only valid for API version 57.0 and higher. Ignoring ${requestObject.Language}`
+        );
+      }
+      delete requestObject.Language;
+    }
+
+    if (this.connection.getApiVersion() < '60.0') {
+      if (requestObject.AsyncValidation) {
+        this.logger.warn(
+          `The async validation option is only valid for API version 60.0 and higher. Ignoring ${requestObject.AsyncValidation}`
+        );
+      }
+      delete requestObject.AsyncValidation;
+    }
+
+    if (this.connection.getApiVersion() < '65.0') {
+      if (requestObject.CalcTransitiveDependencies) {
+        this.logger.warn(
+          `The CalculateTransitiveDependencies option is only valid for API version 65.0 and higher. Ignoring ${requestObject.CalcTransitiveDependencies}`
+        );
+      }
+      delete requestObject.CalcTransitiveDependencies;
     }
   }
 
