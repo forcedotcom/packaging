@@ -10,11 +10,7 @@ import { Connection, Logger, Messages, SfProject } from '@salesforce/core';
 import { ComponentSet, MetadataConverter, ZipTreeContainer } from '@salesforce/source-deploy-retrieve';
 import { env } from '@salesforce/kit';
 import { PackageDir } from '@salesforce/schemas';
-import {
-  PackagingSObjects,
-  PackageVersionMetadataDownloadOptions,
-  PackageVersionMetadataDownloadResult,
-} from '../interfaces';
+import { PackageVersionMetadataDownloadOptions, PackageVersionMetadataDownloadResult } from '../interfaces';
 import { generatePackageAliasEntry, isPackageDirectoryEffectivelyEmpty } from '../utils/packageUtils';
 import { createPackageDirEntry } from './packageCreate';
 import { Package } from './package';
@@ -51,23 +47,47 @@ export async function retrievePackageVersionMetadata(
     throw messages.createError('sourcesDownloadDirectoryNotEmpty');
   }
 
-  // Get the MetadataZip URL from the MetadataPackageVersion record
+  // Get the DeveloperUsePkgZip URL from the Package2Version record
   const subscriberPackageVersionId =
     project.getPackageIdFromAlias(options.subscriberPackageVersionId) ?? options.subscriberPackageVersionId;
-  const versionInfo: PackagingSObjects.MetadataPackageVersion = (await connection.tooling
-    .sobject('MetadataPackageVersion')
-    .retrieve(subscriberPackageVersionId)) as PackagingSObjects.MetadataPackageVersion;
 
-  if (!versionInfo.MetadataZip) {
-    throw messages.createError('unableToAccessMetadataZip');
+  // Query Package2Version to get the record by SubscriberPackageVersionId
+  const queryOptions = {
+    whereClause: `WHERE SubscriberPackageVersionId = '${subscriberPackageVersionId}'`,
+  };
+  let versionInfo;
+  try {
+    [versionInfo] = await PackageVersion.queryPackage2Version(connection, queryOptions);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("No such column 'DeveloperUsePkgZip' on entity 'Package2Version'")) {
+      throw messages.createError('developerUsePkgZipFieldUnavailable');
+    }
+    if (msg.includes("sObject type 'Package2Version' is not supported.")) {
+      throw messages.createError('packagingNotEnabledOnOrg');
+    }
+    throw e;
   }
 
-  const responseBase64 = await connection.tooling.request<string>(versionInfo.MetadataZip, {
+  if (!versionInfo?.DeveloperUsePkgZip) {
+    throw messages.createError('developerUsePkgZipFieldUnavailable');
+  }
+
+  const responseBase64 = await connection.tooling.request<string>(versionInfo.DeveloperUsePkgZip, {
     encoding: 'base64',
   });
   const buffer = Buffer.from(responseBase64, 'base64');
 
-  let tree = await ZipTreeContainer.create(buffer);
+  let tree;
+  try {
+    tree = await ZipTreeContainer.create(buffer);
+  } catch (e) {
+    if (e instanceof Error && e.message.includes('data length = 0')) {
+      throw messages.createError('downloadDeveloperPackageZipHasNoData');
+    }
+    throw e;
+  }
+
   let dependencies: string[] = [];
 
   // 2GP packages declare their dependencies in dependency-ids.json within the outer zip.
@@ -102,7 +122,7 @@ export async function retrievePackageVersionMetadata(
   await attemptToUpdateProjectJson(
     project,
     connection,
-    versionInfo.MetadataPackageId,
+    versionInfo.Package2Id,
     subscriberPackageVersionId,
     dependencies,
     destinationFolder
@@ -132,17 +152,6 @@ async function attemptToUpdateProjectJson(
     return;
   }
   try {
-    const packageInfo: PackagingSObjects.MetadataPackage = (await connection.tooling
-      .sobject('MetadataPackage')
-      .retrieve(packageId)) as PackagingSObjects.MetadataPackage;
-
-    if (packageInfo.PackageCategory !== 'Package2') {
-      logger.info(
-        `Skipping sfdx-project.json updates because ${packageId} is not a 2GP package. It has a PackageCategory of '${packageInfo.PackageCategory}'`
-      );
-      return;
-    }
-
     const queryOptions = {
       whereClause: `WHERE SubscriberPackageVersionId = '${subscriberPackageVersionId}'`,
     };

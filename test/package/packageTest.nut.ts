@@ -10,7 +10,7 @@ import { expect, assert } from 'chai';
 import { execCmd, TestSession } from '@salesforce/cli-plugins-testkit';
 import { Duration, sleep } from '@salesforce/kit';
 import { ProjectJson, isPackagingDirectory } from '@salesforce/core/project';
-import { Lifecycle, Org, SfProject } from '@salesforce/core';
+import { Lifecycle, Org, SfProject, User } from '@salesforce/core';
 import { uniqid } from '@salesforce/core/testSetup';
 import {
   Package,
@@ -71,8 +71,8 @@ describe('Integration tests for @salesforce/packaging library', () => {
   let devHubOrg: Org;
   let scratchOrg: Org;
   let project: SfProject;
+
   before('pkgSetup', async () => {
-    process.env.TESTKIT_EXECUTABLE_PATH = 'sfdx';
     execCmd('config:set restDeploy=false', { cli: 'sfdx' });
 
     // will auth the hub
@@ -90,10 +90,33 @@ describe('Integration tests for @salesforce/packaging library', () => {
         },
       ],
     });
+
     pkgName = uniqid({ template: 'pnh-dancingbears-', length: 16 });
     devHubOrg = await Org.create({ aliasOrUsername: session.hubOrg.username });
     scratchOrg = await Org.create({ aliasOrUsername: SUB_ORG_ALIAS });
     project = await SfProject.resolve();
+
+    // assign the DownloadPackageVersionZips perm to the dev hub org admin user
+    const queryResult = await devHubOrg
+      .getConnection()
+      .singleRecordQuery<{ Id: string }>(`SELECT Id FROM User WHERE Username='${session.hubOrg.username}'`);
+
+    const user = await User.create({ org: devHubOrg });
+    try {
+      await user.assignPermissionSets(queryResult.Id, ['DownloadPackageVersionZips']);
+    } catch (error: unknown) {
+      // Permission set might already be assigned, which is fine
+
+      // Check if it's a duplicate permission set assignment error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorCode = (error as { errorCode?: string })?.errorCode;
+
+      if (errorCode === 'DUPLICATE_VALUE' && errorMessage.includes('Duplicate PermissionSetAssignment')) {
+        // Permission set already assigned - ignore
+      } else {
+        throw error; // Re-throw if it's a different error
+      }
+    }
   });
 
   after(async () => {
