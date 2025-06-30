@@ -1,3 +1,24 @@
+# [4.10.0](https://github.com/forcedotcom/packaging/compare/4.9.1...4.10.0) (2025-06-30)
+
+
+### Bug Fixes
+
+* code cleanup ([9aca333](https://github.com/forcedotcom/packaging/commit/9aca333ab43fff6fa1a8f2bca68addaf71b27bd5))
+* empty commit to re-try build ([3b2c8d9](https://github.com/forcedotcom/packaging/commit/3b2c8d94b094c1233b8c6d9c6bcb337be363ee62))
+* empty commit to re-try build ([a8a49e1](https://github.com/forcedotcom/packaging/commit/a8a49e19d1e4297e50c81f3539112f5b48bad8b5))
+* empty commit to re-try build ([d992c97](https://github.com/forcedotcom/packaging/commit/d992c97177de4a1beda4773ec60c4a18d31e701f))
+* empty commit to re-try build ([cd99c8b](https://github.com/forcedotcom/packaging/commit/cd99c8b690ddb9d3e75e877e55ccc57944367f2b))
+* nut TF ([e5f2630](https://github.com/forcedotcom/packaging/commit/e5f263091911e7278e043790fe40396eca092672))
+* nut TF ([7c1d92d](https://github.com/forcedotcom/packaging/commit/7c1d92d6065c02a14798833176535f8ca9910da4))
+* the field is from PackageDir, not options [which is actually the flags] ([0014fd7](https://github.com/forcedotcom/packaging/commit/0014fd7334cc225c4486f07c1c799c44050ead06))
+
+
+### Features
+
+* added new field to request object ([02b75f3](https://github.com/forcedotcom/packaging/commit/02b75f3c163c3ca86e68a3631d3ba1416eb2317e))
+
+
+
 ## [4.9.1](https://github.com/forcedotcom/packaging/compare/4.9.0...4.9.1) (2025-06-30)
 
 
