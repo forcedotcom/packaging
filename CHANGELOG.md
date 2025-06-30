@@ -1,3 +1,13 @@
+## [4.9.1](https://github.com/forcedotcom/packaging/compare/4.9.0...4.9.1) (2025-06-30)
+
+
+### Bug Fixes
+
+* bump core ([3a16f8c](https://github.com/forcedotcom/packaging/commit/3a16f8c1c3d88d2fd22b28ea511587e234049cea))
+* bump schemas ([8dc67bd](https://github.com/forcedotcom/packaging/commit/8dc67bd147d31484a2b9da5a051a555b0494e98f))
+
+
+
 # [4.9.0](https://github.com/forcedotcom/packaging/compare/4.8.0...4.9.0) (2025-06-27)
 
 
