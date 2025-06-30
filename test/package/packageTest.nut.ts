@@ -43,9 +43,9 @@ const VERSION_CREATE_RESPONSE_KEYS = [
   'CodeCoverage',
   'VersionNumber',
   'CreatedBy',
-  'ConvertedFromVersionId'
-  // 'TotalNumberOfMetadataFiles',
-  // 'TotalSizeOfMetadataFiles',
+  'ConvertedFromVersionId',
+  'TotalNumberOfMetadataFiles',
+  'TotalSizeOfMetadataFiles',
 ];
 
 // version
