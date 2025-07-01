@@ -26,7 +26,7 @@ describe('Integration tests for package bundle deletion', () => {
 
     session = await TestSession.create({
       project: {
-        sourceDir: path.join('test', 'package', 'resources', 'bundleProject'),
+        sourceDir: path.join('test', 'package', 'resources', 'packageProject'),
       },
       devhubAuthStrategy: 'AUTO',
     });
