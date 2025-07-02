@@ -4,10 +4,13 @@
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import { Connection, SfError, SfProject } from '@salesforce/core';
+import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
 import { BundleEntry } from '@salesforce/schemas/src/sfdx-project/bundleEntry';
 import { BundleSObjects, BundleCreateOptions } from '../interfaces';
 import { massageErrorMessage } from '../utils/bundleUtils';
+
+Messages.importMessagesDirectory(__dirname);
+const messages = Messages.loadMessages('@salesforce/packaging', 'bundle_create');
 
 type Bundle2Request = Pick<BundleSObjects.Bundle, 'BundleName' | 'Description'>;
 
@@ -31,12 +34,14 @@ export async function createBundle(
     createResult = await connection.tooling.sobject('PackageBundle').create(request);
   } catch (err) {
     const error =
-      err instanceof Error ? err : new Error(typeof err === 'string' ? err : 'Failed to create package bundle');
+      err instanceof Error
+        ? err
+        : new Error(typeof err === 'string' ? err : messages.getMessage('failedToCreatePackageBundle'));
     throw SfError.wrap(massageErrorMessage(error));
   }
 
   if (!createResult?.success) {
-    throw SfError.wrap(massageErrorMessage(new Error('Failed to create package bundle')));
+    throw SfError.wrap(massageErrorMessage(new Error(messages.getMessage('failedToCreatePackageBundle'))));
   }
 
   const bundleEntry = createPackageDirEntry(project, options);

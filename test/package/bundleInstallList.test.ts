@@ -1,0 +1,258 @@
+/*
+ * Copyright (c) 2025, salesforce.com, inc.
+ * All rights reserved.
+ * Licensed under the BSD 3-Clause license.
+ * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
+ */
+import path from 'node:path';
+import fs from 'node:fs';
+import { expect } from 'chai';
+import { Connection, SfProject, SfError } from '@salesforce/core';
+import { instantiateContext, restoreContext, stubContext, MockTestOrgData } from '@salesforce/core/testSetup';
+import { AnyJson, ensureJsonMap } from '@salesforce/ts-types';
+import { ensureString } from '@salesforce/ts-types';
+import { PackageBundleInstall } from '../../src/package/packageBundleInstall';
+import { BundleSObjects } from '../../src/interfaces';
+
+async function setupProject(setup: (project: SfProject) => void = () => {}) {
+  const project = await SfProject.resolve();
+
+  setup(project);
+  const projectDir = project.getPath();
+  project
+    .getSfProjectJson()
+    .getContents()
+    .packageDirectories?.forEach((dir) => {
+      if (dir.path) {
+        const packagePath = path.join(projectDir, dir.path);
+        fs.mkdirSync(packagePath, { recursive: true });
+      }
+    });
+
+  return project;
+}
+
+describe('bundleInstallList', () => {
+  const testContext = instantiateContext();
+  const testOrg = new MockTestOrgData();
+  let connection: Connection;
+
+  beforeEach(async () => {
+    stubContext(testContext);
+    connection = await testOrg.getConnection();
+  });
+
+  afterEach(() => {
+    restoreContext(testContext);
+  });
+
+  describe('getInstallStatuses', () => {
+    it('should get install statuses without filters', async () => {
+      testContext.inProject(true);
+      await setupProject();
+
+      const mockInstallStatuses = [
+        {
+          Id: '08c000000000001',
+          InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.success,
+          PackageBundleVersionID: '05i000000000001',
+          DevelopmentOrganization: '00D000000000001',
+          ValidationError: '',
+          CreatedDate: '2024-01-01T00:00:00.000+0000',
+          CreatedById: '005000000000000',
+        },
+        {
+          Id: '08c000000000002',
+          InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.queued,
+          PackageBundleVersionID: '05i000000000002',
+          DevelopmentOrganization: '00D000000000002',
+          ValidationError: '',
+          CreatedDate: '2024-01-02T00:00:00.000+0000',
+          CreatedById: '005000000000001',
+        },
+      ];
+
+      testContext.fakeConnectionRequest = (request: AnyJson): Promise<AnyJson> => {
+        const requestMap = ensureJsonMap(request);
+        if (request && ensureString(requestMap.url).includes('PkgBundleVersionInstallReq')) {
+          return Promise.resolve({
+            done: true,
+            totalSize: 2,
+            records: mockInstallStatuses,
+          });
+        } else {
+          return Promise.reject(new SfError(`Unexpected request: ${String(requestMap.url)}`));
+        }
+      };
+
+      const statuses = await PackageBundleInstall.getInstallStatuses(connection);
+
+      expect(statuses).to.have.length(2);
+      expect(statuses[0]).to.deep.equal({
+        Id: '08c000000000001',
+        InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.success,
+        PackageBundleVersionID: '05i000000000001',
+        DevelopmentOrganization: '00D000000000001',
+        ValidationError: '',
+        CreatedDate: '2024-01-01T00:00:00.000+0000',
+        CreatedById: '005000000000000',
+      });
+      expect(statuses[1]).to.deep.equal({
+        Id: '08c000000000002',
+        InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.queued,
+        PackageBundleVersionID: '05i000000000002',
+        DevelopmentOrganization: '00D000000000002',
+        ValidationError: '',
+        CreatedDate: '2024-01-02T00:00:00.000+0000',
+        CreatedById: '005000000000001',
+      });
+    });
+
+    it('should get install statuses with status filter', async () => {
+      testContext.inProject(true);
+      await setupProject();
+
+      const mockInstallStatuses = [
+        {
+          Id: '08c000000000001',
+          InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.success,
+          PackageBundleVersionID: '05i000000000001',
+          DevelopmentOrganization: '00D000000000001',
+          ValidationError: '',
+          CreatedDate: '2024-01-01T00:00:00.000+0000',
+          CreatedById: '005000000000000',
+        },
+      ];
+
+      testContext.fakeConnectionRequest = (request: AnyJson): Promise<AnyJson> => {
+        const requestMap = ensureJsonMap(request);
+        if (
+          request &&
+          ensureString(requestMap.url).includes('PkgBundleVersionInstallReq') &&
+          ensureString(requestMap.url).includes('InstallStatus')
+        ) {
+          return Promise.resolve({
+            done: true,
+            totalSize: 1,
+            records: mockInstallStatuses,
+          });
+        } else {
+          return Promise.reject(new SfError(`Unexpected request: ${String(requestMap.url)}`));
+        }
+      };
+
+      const statuses = await PackageBundleInstall.getInstallStatuses(
+        connection,
+        BundleSObjects.PkgBundleVersionInstallReqStatus.success
+      );
+
+      expect(statuses).to.have.length(1);
+      expect(statuses[0].InstallStatus).to.equal(BundleSObjects.PkgBundleVersionInstallReqStatus.success);
+    });
+
+    it('should get install statuses with createdLastDays filter', async () => {
+      testContext.inProject(true);
+      await setupProject();
+
+      const mockInstallStatuses = [
+        {
+          Id: '08c000000000001',
+          InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.success,
+          PackageBundleVersionID: '05i000000000001',
+          DevelopmentOrganization: '00D000000000001',
+          ValidationError: '',
+          CreatedDate: '2024-01-01T00:00:00.000+0000',
+          CreatedById: '005000000000000',
+        },
+      ];
+
+      testContext.fakeConnectionRequest = (request: AnyJson): Promise<AnyJson> => {
+        const requestMap = ensureJsonMap(request);
+        if (
+          request &&
+          ensureString(requestMap.url).includes('PkgBundleVersionInstallReq') &&
+          ensureString(requestMap.url).includes('LAST_N_DAYS')
+        ) {
+          return Promise.resolve({
+            done: true,
+            totalSize: 1,
+            records: mockInstallStatuses,
+          });
+        } else {
+          return Promise.reject(new SfError(`Unexpected request: ${String(requestMap.url)}`));
+        }
+      };
+
+      const statuses = await PackageBundleInstall.getInstallStatuses(connection, undefined, 7);
+
+      expect(statuses).to.have.length(1);
+    });
+
+    it('should get install statuses with both status and createdLastDays filters', async () => {
+      testContext.inProject(true);
+      await setupProject();
+
+      const mockInstallStatuses = [
+        {
+          Id: '08c000000000001',
+          InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.error,
+          PackageBundleVersionID: '05i000000000001',
+          DevelopmentOrganization: '00D000000000001',
+          ValidationError: 'Test validation error',
+          CreatedDate: '2024-01-01T00:00:00.000+0000',
+          CreatedById: '005000000000000',
+        },
+      ];
+
+      testContext.fakeConnectionRequest = (request: AnyJson): Promise<AnyJson> => {
+        const requestMap = ensureJsonMap(request);
+        if (
+          request &&
+          ensureString(requestMap.url).includes('PkgBundleVersionInstallReq') &&
+          ensureString(requestMap.url).includes('InstallStatus') &&
+          ensureString(requestMap.url).includes('LAST_N_DAYS')
+        ) {
+          return Promise.resolve({
+            done: true,
+            totalSize: 1,
+            records: mockInstallStatuses,
+          });
+        } else {
+          return Promise.reject(new SfError(`Unexpected request: ${String(requestMap.url)}`));
+        }
+      };
+
+      const statuses = await PackageBundleInstall.getInstallStatuses(
+        connection,
+        BundleSObjects.PkgBundleVersionInstallReqStatus.error,
+        3
+      );
+
+      expect(statuses).to.have.length(1);
+      expect(statuses[0].InstallStatus).to.equal(BundleSObjects.PkgBundleVersionInstallReqStatus.error);
+    });
+
+    it('should handle empty results', async () => {
+      testContext.inProject(true);
+      await setupProject();
+
+      testContext.fakeConnectionRequest = (request: AnyJson): Promise<AnyJson> => {
+        const requestMap = ensureJsonMap(request);
+        if (request && ensureString(requestMap.url).includes('PkgBundleVersionInstallReq')) {
+          return Promise.resolve({
+            done: true,
+            totalSize: 0,
+            records: [],
+          });
+        } else {
+          return Promise.reject(new SfError(`Unexpected request: ${String(requestMap.url)}`));
+        }
+      };
+
+      const statuses = await PackageBundleInstall.getInstallStatuses(connection);
+
+      expect(statuses).to.be.an('array');
+      expect(statuses).to.have.length(0);
+    });
+  });
+});

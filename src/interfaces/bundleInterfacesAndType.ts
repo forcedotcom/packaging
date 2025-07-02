@@ -28,3 +28,14 @@ export type BundleVersionCreateOptions = {
     frequency: Duration;
   };
 };
+
+export type BundleInstallOptions = {
+  connection: Connection;
+  project: SfProject;
+  PackageBundleVersion: string;
+  DevelopmentOrganization: string;
+  polling?: {
+    timeout: Duration;
+    frequency: Duration;
+  };
+};
