@@ -8,6 +8,7 @@
 import { Nullable } from '@salesforce/ts-types';
 import { Connection, SfProject } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
+import { SaveResult } from '@jsforce/jsforce-node';
 
 export type BundleCreateOptions = {
   BundleName: string;
@@ -28,3 +29,5 @@ export type BundleVersionCreateOptions = {
     frequency: Duration;
   };
 };
+
+export type BundleSaveResult = SaveResult;
