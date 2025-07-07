@@ -30,4 +30,16 @@ export type BundleVersionCreateOptions = {
   };
 };
 
+
+export type BundleInstallOptions = {
+  connection: Connection;
+  project: SfProject;
+  PackageBundleVersion: string;
+  DevelopmentOrganization: string;
+  polling?: {
+    timeout: Duration;
+    frequency: Duration;
+  };
+};
+
 export type BundleSaveResult = SaveResult;

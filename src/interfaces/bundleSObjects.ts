@@ -60,7 +60,14 @@ export namespace BundleSObjects {
     success = 'Success',
     error = 'Error',
   }
-  export type QueryRecord = {
+
+  export enum PkgBundleVersionInstallReqStatus {
+    queued = 'Queued',
+    success = 'Success',
+    error = 'Error',
+  }
+
+  export type PkgBundleVersionQueryRecord = {
     Id: string;
     RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus;
     PackageBundle: Bundle;
@@ -70,6 +77,30 @@ export namespace BundleSObjects {
     MinorVersion: string;
     Ancestor: BundleVersion;
     BundleVersionComponents: string;
+    CreatedDate: string;
+    CreatedById: string;
+    Error?: string[];
+  } & Schema;
+
+  export type PkgBundleVersionInstallReq = {
+    PackageBundleVersionID: string;
+    DevelopmentOrganization: string;
+  };
+
+  export type PkgBundleVersionInstallReqResult = PkgBundleVersionInstallReq & {
+    Id: string;
+    InstallStatus: PkgBundleVersionInstallReqStatus;
+    ValidationError: string;
+    CreatedDate: string;
+    CreatedById: string;
+    Error?: string[];
+  };
+  export type PkgBundleVersionInstallQueryRecord = {
+    Id: string;
+    InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus;
+    PackageBundleVersionID: string;
+    DevelopmentOrganization: string;
+    ValidationError: string;
     CreatedDate: string;
     CreatedById: string;
     Error?: string[];

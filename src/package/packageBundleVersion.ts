@@ -21,6 +21,7 @@ import { applyErrorAction } from '../utils/packageUtils';
 import { PackageBundleVersionCreate } from './packageBundleVersionCreate';
 
 Messages.importMessagesDirectory(__dirname);
+const bundleVersionMessages = Messages.loadMessages('@salesforce/packaging', 'bundle_version');
 
 type QueryRecord = Schema & {
   Id: string;
@@ -224,7 +225,7 @@ export class PackageBundleVersion {
     return queryResult.records.map((record) => {
       const component = record.Component;
       if (!component) {
-        throw new Error('Component record is missing');
+        throw new Error(bundleVersionMessages.getMessage('componentRecordMissing'));
       }
       return {
         Id: component.Id,

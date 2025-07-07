@@ -5,10 +5,13 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import * as fs from 'node:fs';
-import { Connection, SfError, SfProject } from '@salesforce/core';
+import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
 import { BundleSObjects, BundleVersionCreateOptions } from '../interfaces';
 import { massageErrorMessage } from '../utils/bundleUtils';
 import { PackageBundleVersion } from './packageBundleVersion';
+
+Messages.importMessagesDirectory(__dirname);
+const messages = Messages.loadMessages('@salesforce/packaging', 'bundle_version_create');
 
 export class PackageBundleVersionCreate {
   public static async getCreateStatus(
@@ -21,7 +24,8 @@ export class PackageBundleVersionCreate {
         .retrieve(createPackageVersionRequestId);
       return result as unknown as BundleSObjects.PackageBundleVersionCreateRequestResult;
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to get package bundle version create status');
+      const error =
+        err instanceof Error ? err : new Error(messages.getMessage('failedToGetPackageBundleVersionCreateStatus'));
       throw SfError.wrap(massageErrorMessage(error));
     }
   }
@@ -43,7 +47,9 @@ export class PackageBundleVersionCreate {
     } else if (createdLastDays) {
       query += ` WHERE CreatedDate = LAST_N_DAYS: ${createdLastDays}`;
     }
-    const queryResult = await connection.autoFetchQuery<BundleSObjects.QueryRecord>(query, { tooling: true });
+    const queryResult = await connection.autoFetchQuery<BundleSObjects.PkgBundleVersionQueryRecord>(query, {
+      tooling: true,
+    });
     return queryResult.records.map((record) => ({
       Id: record.Id,
       RequestStatus: record.RequestStatus,
@@ -90,12 +96,12 @@ export class PackageBundleVersionCreate {
       const error =
         err instanceof Error
           ? err
-          : new Error(typeof err === 'string' ? err : 'Failed to create package bundle version');
+          : new Error(typeof err === 'string' ? err : messages.getMessage('failedToCreatePackageBundleVersion'));
       throw SfError.wrap(massageErrorMessage(error));
     }
 
     if (!createResult?.success) {
-      throw SfError.wrap(massageErrorMessage(new Error('Failed to create package bundle version')));
+      throw SfError.wrap(massageErrorMessage(new Error(messages.getMessage('failedToCreatePackageBundleVersion'))));
     }
 
     if (options.polling) {
@@ -125,13 +131,13 @@ export class PackageBundleVersionCreate {
       const fileContent = fs.readFileSync(filePath, 'utf8');
       const bundleVersionComponents = JSON.parse(fileContent) as Array<{ packageVersion: string }>;
       if (!Array.isArray(bundleVersionComponents)) {
-        throw new Error('Bundle version components must be an array of objects with packageVersion property');
+        throw new Error(messages.getMessage('bundleVersionComponentsMustBeArray'));
       }
 
       // Validate that each item has the required packageVersion property
       for (const component of bundleVersionComponents) {
         if (!component || typeof component !== 'object' || !component.packageVersion) {
-          throw new Error('Each bundle version component must be an object with a packageVersion property');
+          throw new Error(messages.getMessage('bundleVersionComponentMustBeObject'));
         }
       }
 
@@ -147,13 +153,14 @@ export class PackageBundleVersionCreate {
         // Otherwise, treat it as an alias and resolve it from sfdx-project.json
         const packageVersionId = project.getPackageIdFromAlias(packageVersion);
         if (!packageVersionId) {
-          throw new Error(`No package version found with alias: ${packageVersion}`);
+          throw new Error(messages.getMessage('noPackageVersionFoundWithAlias', [packageVersion]));
         }
 
         return packageVersionId;
       });
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to read or parse bundle version components file');
+      const error =
+        err instanceof Error ? err : new Error(messages.getMessage('failedToReadBundleVersionComponentsFile'));
       throw SfError.wrap(massageErrorMessage(error));
     }
   }
@@ -168,7 +175,7 @@ export class PackageBundleVersionCreate {
     }
     const bundleId = project.getPackageBundleIdFromAlias(packageBundle);
     if (!bundleId) {
-      throw new Error(`No package bundle found with alias: ${packageBundle}`);
+      throw new Error(messages.getMessage('noPackageBundleFoundWithAlias', [packageBundle]));
     }
     return bundleId;
   }
@@ -184,18 +191,18 @@ export class PackageBundleVersionCreate {
     const result = await connection.tooling.query<{ BundleName: string }>(query);
 
     if (!result.records || result.records.length === 0) {
-      throw new Error(`No bundle found with id: ${packageBundleId}`);
+      throw new Error(messages.getMessage('noBundleFoundWithId', [packageBundleId]));
     }
 
     const bundleName = result.records[0].BundleName;
     const bundles = project.getSfProjectJson().getPackageBundles();
     const bundle = bundles.find((b) => b.name === bundleName);
     if (!bundle) {
-      throw new Error(`No bundle found with name: ${bundleName}`);
+      throw new Error(messages.getMessage('noBundleFoundWithName', [bundleName]));
     }
     const [major, minor] = bundle.versionNumber.split('.');
     if (!major || !minor) {
-      throw new Error(`Invalid version number format: ${bundle.versionNumber}`);
+      throw new Error(messages.getMessage('invalidVersionNumberFormat', [bundle.versionNumber]));
     }
     return { MajorVersion: major, MinorVersion: minor };
   }
