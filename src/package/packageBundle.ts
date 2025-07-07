@@ -6,7 +6,7 @@
  */
 
 import { Connection, SfProject } from '@salesforce/core';
-import { Schema } from '@jsforce/jsforce-node';
+import { SaveResult, Schema } from '@jsforce/jsforce-node';
 import { Duration } from '@salesforce/kit';
 import { BundleCreateOptions, BundleSObjects, BundleVersionCreateOptions } from '../interfaces';
 import { createBundle } from './packageBundleCreate';
@@ -57,6 +57,26 @@ export class PackageBundle {
     }
   ): Promise<BundleSObjects.PackageBundleVersionCreateRequestResult> {
     return PackageBundleVersion.create(options, polling);
+  }
+
+  public static async delete(connection: Connection, project: SfProject, idOrAlias: string): Promise<SaveResult> {
+    // Check if it's already an ID (1Fl followed by 15 characters)
+    if (/^1Fl.{15}$/.test(idOrAlias)) {
+      return connection.tooling.sobject('PackageBundle').delete(idOrAlias);
+    }
+
+    // Validate that project is provided when using aliases
+    if (!project) {
+      throw new Error('Project instance is required when deleting package bundle by alias');
+    }
+
+    // Otherwise, treat it as an alias and resolve it from sfdx-project.json
+    const bundleId = project.getPackageBundleIdFromAlias(idOrAlias);
+    if (!bundleId) {
+      throw new Error(`No package bundle found with alias: ${idOrAlias}`);
+    }
+
+    return connection.tooling.sobject('PackageBundle').delete(bundleId);
   }
 
   /**
