@@ -204,6 +204,53 @@ export class PackageBundleVersionCreate {
     if (!major || !minor) {
       throw new Error(messages.getMessage('invalidVersionNumberFormat', [bundle.versionNumber]));
     }
+
+    // Check if major is an integer
+    const majorInt = parseInt(major, 10);
+    if (isNaN(majorInt) || majorInt.toString() !== major) {
+      throw new Error(messages.getMessage('invalidVersionNumberFormat', [bundle.versionNumber]));
+    }
+
+    // Check if minor is either an integer or "next"
+    if (minor === 'NEXT') {
+      // Query existing bundle versions to find the highest minor version for this major version
+      const bundleVersionQuery =
+        'SELECT Id, PackageBundle.Id, PackageBundle.BundleName, VersionName, MajorVersion, MinorVersion, IsReleased ' +
+        'FROM PackageBundleVersion ' +
+        `WHERE PackageBundle.BundleName = '${bundleName}' AND MajorVersion = ${major} ` +
+        'ORDER BY MinorVersion DESC LIMIT 1';
+
+      const queryResult = await connection.tooling.query<{
+        Id: string;
+        PackageBundle: { Id: string; BundleName: string };
+        VersionName: string;
+        MajorVersion: string;
+        MinorVersion: string;
+        IsReleased: boolean;
+      }>(bundleVersionQuery);
+
+      if (queryResult.records && queryResult.records.length > 0) {
+        const highestRecord = queryResult.records[0];
+
+        // Get the highest minor version and add 1
+        const highestMinorVersion = parseInt(highestRecord.MinorVersion, 10);
+        if (isNaN(highestMinorVersion)) {
+          throw new Error(messages.getMessage('invalidMinorVersionInExisting', [highestRecord.MinorVersion]));
+        }
+
+        const nextMinorVersion = (highestMinorVersion + 1).toString();
+        return { MajorVersion: major, MinorVersion: nextMinorVersion };
+      } else {
+        // No existing versions found for this major version, start with .0
+        return { MajorVersion: major, MinorVersion: '0' };
+      }
+    } else {
+      const minorInt = parseInt(minor, 10);
+      if (isNaN(minorInt) || minorInt.toString() !== minor) {
+        throw new Error(messages.getMessage('invalidVersionNumberFormat', [bundle.versionNumber]));
+      }
+    }
+
     return { MajorVersion: major, MinorVersion: minor };
   }
 }

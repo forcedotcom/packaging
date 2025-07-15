@@ -37,3 +37,11 @@ No bundle found with name: %s
 # invalidVersionNumberFormat
 
 Invalid version number format: %s
+
+# majorVersionMismatch
+
+Major version mismatch: expected %s, found %s
+
+# invalidMinorVersionInExisting
+
+Invalid minor version in existing record: %s
