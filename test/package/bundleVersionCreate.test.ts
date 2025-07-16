@@ -14,6 +14,15 @@ import { PackageBundleVersion } from '../../src/package/packageBundleVersion';
 import { PackageBundleVersionCreate } from '../../src/package/packageBundleVersionCreate';
 import { BundleVersionCreateOptions, BundleSObjects } from '../../src/interfaces';
 
+// Type for accessing private methods in tests
+interface PackageBundleVersionCreateWithPrivates {
+  getPackageVersion(
+    options: BundleVersionCreateOptions,
+    project: SfProject,
+    connection: Connection
+  ): Promise<{ MajorVersion: string; MinorVersion: string }>;
+}
+
 async function setupProject(setup: (project: SfProject) => void = () => {}) {
   const project = await SfProject.resolve();
 
@@ -541,6 +550,212 @@ describe('PackageBundleVersion.create', () => {
 
       // Clean up
       fs.unlinkSync(componentsPath);
+    });
+  });
+
+  describe('getPackageVersion NEXT functionality', () => {
+    it('should resolve 0.NEXT to 0.2 when existing version 0.1 exists', async () => {
+      const testBundleName = 'testBundle';
+      const testBundleId = '0Ho000000000000';
+
+      // Restore the getPackageVersion stub so we can test the real method
+      testContext.SANDBOX.restore();
+
+      // Re-stub parsePackageBundleId since we still need it
+      testContext.SANDBOX.stub(
+        PackageBundleVersionCreate,
+        'parsePackageBundleId' as keyof typeof PackageBundleVersionCreate
+      ).returns(testBundleId);
+
+      // Mock project's getSfProjectJson().getPackageBundles() to return a bundle with version "0.NEXT"
+      testContext.SANDBOX.stub(project.getSfProjectJson(), 'getPackageBundles').returns([
+        {
+          name: testBundleName,
+          versionName: 'ver 0.NEXT',
+          versionNumber: '0.NEXT',
+        },
+      ]);
+
+      // Mock connection tooling queries
+      const queryStub = testContext.SANDBOX.stub(connection.tooling, 'query');
+
+      // First query: Get bundle name from bundle ID
+      queryStub.onFirstCall().resolves({
+        totalSize: 1,
+        done: true,
+        records: [{ BundleName: testBundleName }],
+      });
+
+      // Second query: Get existing bundle versions (returns version 0.1)
+      queryStub.onSecondCall().resolves({
+        totalSize: 1,
+        done: true,
+        records: [
+          {
+            Id: '0Ho000000000001',
+            PackageBundle: { Id: testBundleId, BundleName: testBundleName },
+            VersionName: 'testBundle@0.1',
+            MajorVersion: '0',
+            MinorVersion: '1',
+            IsReleased: true,
+          },
+        ],
+      });
+
+      const options: BundleVersionCreateOptions = {
+        connection,
+        project,
+        PackageBundle: testBundleName,
+        MajorVersion: '0',
+        MinorVersion: 'NEXT',
+        Ancestor: null,
+        BundleVersionComponentsPath: '',
+      };
+
+      // Call the private method through reflection for testing
+      const result = await (
+        PackageBundleVersionCreate as unknown as PackageBundleVersionCreateWithPrivates
+      ).getPackageVersion(options, project, connection);
+
+      expect(result).to.deep.equal({
+        MajorVersion: '0',
+        MinorVersion: '2',
+      });
+
+      // Verify the queries were called correctly
+      expect(queryStub.firstCall.args[0]).to.include(
+        `SELECT BundleName FROM PackageBundle WHERE Id = '${testBundleId}'`
+      );
+      expect(queryStub.secondCall.args[0]).to.include(
+        `SELECT Id, PackageBundle.Id, PackageBundle.BundleName, VersionName, MajorVersion, MinorVersion, IsReleased FROM PackageBundleVersion WHERE PackageBundle.BundleName = '${testBundleName}' AND MajorVersion = 0 ORDER BY MinorVersion DESC LIMIT 1`
+      );
+    });
+
+    it('should resolve 0.NEXT to 0.0 when no existing versions exist', async () => {
+      const testBundleName = 'newBundle';
+      const testBundleId = '0Ho000000000000';
+
+      // Restore the getPackageVersion stub so we can test the real method
+      testContext.SANDBOX.restore();
+
+      // Re-stub parsePackageBundleId since we still need it
+      testContext.SANDBOX.stub(
+        PackageBundleVersionCreate,
+        'parsePackageBundleId' as keyof typeof PackageBundleVersionCreate
+      ).returns(testBundleId);
+
+      // Mock project's getSfProjectJson().getPackageBundles() to return a bundle with version "0.NEXT"
+      testContext.SANDBOX.stub(project.getSfProjectJson(), 'getPackageBundles').returns([
+        {
+          name: testBundleName,
+          versionName: 'ver 0.NEXT',
+          versionNumber: '0.NEXT',
+        },
+      ]);
+
+      // Mock connection tooling queries
+      const queryStub = testContext.SANDBOX.stub(connection.tooling, 'query');
+
+      // First query: Get bundle name from bundle ID
+      queryStub.onFirstCall().resolves({
+        totalSize: 1,
+        done: true,
+        records: [{ BundleName: testBundleName }],
+      });
+
+      // Second query: Get existing bundle versions (returns empty - no existing versions)
+      queryStub.onSecondCall().resolves({
+        totalSize: 0,
+        done: true,
+        records: [],
+      });
+
+      const options: BundleVersionCreateOptions = {
+        connection,
+        project,
+        PackageBundle: testBundleName,
+        MajorVersion: '0',
+        MinorVersion: 'NEXT',
+        Ancestor: null,
+        BundleVersionComponentsPath: '',
+      };
+
+      // Call the private method through reflection for testing
+      const result = await (
+        PackageBundleVersionCreate as unknown as PackageBundleVersionCreateWithPrivates
+      ).getPackageVersion(options, project, connection);
+
+      expect(result).to.deep.equal({
+        MajorVersion: '0',
+        MinorVersion: '0',
+      });
+
+      // Verify the queries were called correctly
+      expect(queryStub.firstCall.args[0]).to.include(
+        `SELECT BundleName FROM PackageBundle WHERE Id = '${testBundleId}'`
+      );
+      expect(queryStub.secondCall.args[0]).to.include(
+        `SELECT Id, PackageBundle.Id, PackageBundle.BundleName, VersionName, MajorVersion, MinorVersion, IsReleased FROM PackageBundleVersion WHERE PackageBundle.BundleName = '${testBundleName}' AND MajorVersion = 0 ORDER BY MinorVersion DESC LIMIT 1`
+      );
+    });
+
+    it('should handle numeric minor versions without NEXT', async () => {
+      const testBundleName = 'simpleBundle';
+      const testBundleId = '0Ho000000000000';
+
+      // Restore the getPackageVersion stub so we can test the real method
+      testContext.SANDBOX.restore();
+
+      // Re-stub parsePackageBundleId since we still need it
+      testContext.SANDBOX.stub(
+        PackageBundleVersionCreate,
+        'parsePackageBundleId' as keyof typeof PackageBundleVersionCreate
+      ).returns(testBundleId);
+
+      // Mock project's getSfProjectJson().getPackageBundles() to return a bundle with version "1.5"
+      testContext.SANDBOX.stub(project.getSfProjectJson(), 'getPackageBundles').returns([
+        {
+          name: testBundleName,
+          versionName: 'ver 1.5',
+          versionNumber: '1.5',
+        },
+      ]);
+
+      // Mock connection tooling queries
+      const queryStub = testContext.SANDBOX.stub(connection.tooling, 'query');
+
+      // First query: Get bundle name from bundle ID
+      queryStub.onFirstCall().resolves({
+        totalSize: 1,
+        done: true,
+        records: [{ BundleName: testBundleName }],
+      });
+
+      const options: BundleVersionCreateOptions = {
+        connection,
+        project,
+        PackageBundle: testBundleName,
+        MajorVersion: '1',
+        MinorVersion: '5',
+        Ancestor: null,
+        BundleVersionComponentsPath: '',
+      };
+
+      // Call the private method through reflection for testing
+      const result = await (
+        PackageBundleVersionCreate as unknown as PackageBundleVersionCreateWithPrivates
+      ).getPackageVersion(options, project, connection);
+
+      expect(result).to.deep.equal({
+        MajorVersion: '1',
+        MinorVersion: '5',
+      });
+
+      // Verify only the first query was called (no need to query existing versions for numeric minor)
+      expect(queryStub.calledOnce).to.be.true;
+      expect(queryStub.firstCall.args[0]).to.include(
+        `SELECT BundleName FROM PackageBundle WHERE Id = '${testBundleId}'`
+      );
     });
   });
 });
