@@ -27,6 +27,7 @@ import { retrievePackageVersionMetadata } from './packageVersionRetrieve';
 import { listPackageVersions } from './packageVersionList';
 import { deletePackage } from './packageDelete';
 import { PackageAncestry } from './packageAncestry';
+import { PackageVersionDependency } from './packageVersionDependency';
 
 const packagePrefixes = {
   PackageId: '0Ho',
@@ -174,6 +175,29 @@ export class Package {
       packageId,
       project,
       connection,
+    });
+  }
+
+  /**
+   * create a PackageVersionDependency instance
+   *
+   * @param packageId to get version information for
+   * @param project SfProject instance
+   * @param connection Hub Org Connection
+   * @param options flags for the command line
+   */
+  public static async getDependencyGraph(
+    packageId: string,
+    project: SfProject | undefined,
+    connection: Connection,
+    options?: { verbose?: boolean; edgeDirection?: 'root-first' | 'root-last' }
+  ): Promise<PackageVersionDependency> {
+    return PackageVersionDependency.create({
+      packageId,
+      project,
+      connection,
+      verbose: options?.verbose ?? false,
+      edgeDirection: options?.edgeDirection ?? 'root-first',
     });
   }
 

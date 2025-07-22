@@ -15,6 +15,7 @@ import { ConvertResult } from '@salesforce/source-deploy-retrieve';
 import type { Package } from '@salesforce/types/metadata';
 import { PackageProfileApi } from '../package/packageProfileApi';
 import { PackageAncestryNode } from '../package/packageAncestry';
+import { VersionNumber } from '../package/versionNumber';
 import { PackagingSObjects } from './packagingSObjects';
 import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 import PackageInstallRequest = PackagingSObjects.PackageInstallRequest;
@@ -498,6 +499,31 @@ export type AncestryRepresentationProducer = {
   addNode(node: AncestryRepresentationProducer): void;
 
   produce(): PackageAncestryNodeData | string | void;
+};
+
+export type PackageVersionDependencyOptions = {
+  packageId: string;
+  project?: SfProject;
+  connection: Connection;
+  verbose?: boolean;
+  edgeDirection?: 'root-first' | 'root-last';
+};
+
+export type DependencyGraphData = {
+  creator: string;
+  nodes: DependencyGraphNode[];
+  edges: DependencyGraphEdge[];
+};
+
+export type DependencyGraphNode = {
+  subscriberPackageVersionId: string;
+  packageName: string;
+  version: VersionNumber;
+};
+
+export type DependencyGraphEdge = {
+  source: string;
+  target: string;
 };
 
 export const PackageEvents = {
