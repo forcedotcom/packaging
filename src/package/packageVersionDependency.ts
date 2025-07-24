@@ -26,23 +26,23 @@ const SELECT_PACKAGE_VERSION_DEPENDENCY =
 export class PackageVersionDependency extends AsyncCreatable<PackageVersionDependencyOptions> {
   private connection: Connection;
   private project?: SfProject;
-  private packageId: string;
+  private userPackageVersionId: string;
   private verbose: boolean;
   private edgeDirection: 'root-first' | 'root-last';
-  private resolvedPackageId: string;
+  private resolvedPackageVersionId: string;
 
   public constructor(public options: PackageVersionDependencyOptions) {
     super(options);
     this.connection = options.connection;
     this.project = options.project;
-    this.packageId = options.packageId;
+    this.userPackageVersionId = options.packageVersionId;
     this.verbose = options.verbose ?? false;
     this.edgeDirection = options.edgeDirection ?? 'root-first';
-    this.resolvedPackageId = '';
+    this.resolvedPackageVersionId = '';
   }
 
   public async init(): Promise<void> {
-    await this.resolvePackageId();
+    await this.resolvePackageCreateRequestId();
   }
 
   /**
@@ -51,21 +51,27 @@ export class PackageVersionDependency extends AsyncCreatable<PackageVersionDepen
   public async getDependencyDotProducer(): Promise<DependencyDotProducer> {
     const isValid = await this.validatePackageVersion();
     if (!isValid) {
-      throw messages.createError('invalidPackageVersionIdError', [this.resolvedPackageId]);
+      throw messages.createError('invalidPackageVersionIdError', [this.userPackageVersionId]);
     }
 
-    const query = `${SELECT_PACKAGE_VERSION_DEPENDENCY} WHERE Id = '${this.resolvedPackageId}'`;
+    const query = `${SELECT_PACKAGE_VERSION_DEPENDENCY} WHERE Id = '${this.resolvedPackageVersionId}'`;
     const result = await this.connection.tooling.query<{
       CalcTransitiveDependencies: boolean;
-      DependencyGraphJson: string;
+      DependencyGraphJson: string | null;
     }>(query);
+
+    const dependencyGraphJson = result.records[0].DependencyGraphJson;
+    // validatePackageVersion() should have already ensured this is not null
+    if (!dependencyGraphJson) {
+      throw messages.createError('invalidDependencyGraphError');
+    }
 
     const producer = new DependencyDotProducer(
       this.connection,
-      result.records[0].DependencyGraphJson,
+      dependencyGraphJson,
       this.verbose,
       this.edgeDirection,
-      this.resolvedPackageId
+      this.resolvedPackageVersionId
     );
     await producer.init();
     return producer;
@@ -75,69 +81,82 @@ export class PackageVersionDependency extends AsyncCreatable<PackageVersionDepen
    * Resolves id input to a 08c. User can input a 08c or 04t.
    * Currently a 04t is not supported in filtering the Package2VersionCreateRequest. So a user's input of 04t will be resolved to a 05i and then a 08c.
    */
-  private async resolvePackageId(): Promise<void> {
-    const userPackageId = this.project?.getPackageIdFromAlias(this.packageId) ?? this.packageId;
-
+  private async resolvePackageCreateRequestId(): Promise<void> {
+    const versionId = this.project?.getPackageIdFromAlias(this.userPackageVersionId) ?? this.userPackageVersionId;
     // User provided a Package2VersionCreateRequest ID (08c) and doesn't need to be resolved
-    if (userPackageId.startsWith('08c')) {
-      this.resolvedPackageId = userPackageId;
+    if (versionId.startsWith('08c')) {
+      this.resolvedPackageVersionId = versionId;
     }
     // User provided a SubscriberPackageVersionId (04t) and needs to be resolved to a Package2VersionCreateRequest ID (08c)
-    else if (userPackageId.startsWith('04t')) {
-      // First find the Package2Version ID (05i)
-      const query05i = `SELECT Id FROM Package2Version WHERE SubscriberPackageVersionId = '${userPackageId}'`;
-      const result05i = await this.connection.tooling.query<{ Id: string }>(query05i);
-      if (result05i.records?.length !== 1) {
-        throw messages.createError('invalidPackageVersionIdError', [userPackageId]);
-      }
-      const package2VersionId = result05i.records[0].Id;
-
-      // Finally resolve to the Package2VersionCreateRequest ID (08c)
-      const query08c = `SELECT Id FROM Package2VersionCreateRequest WHERE Package2VersionId = '${package2VersionId}'`;
-      const result08c = await this.connection.tooling.query<{ Id: string }>(query08c);
-      if (result08c.records?.length !== 1) {
-        throw messages.createError('invalidPackageVersionIdError', [userPackageId]);
-      }
-      this.resolvedPackageId = result08c.records[0].Id;
+    else if (versionId.startsWith('04t')) {
+      const package2VersionId = await this.query05iFrom04t(versionId);
+      this.resolvedPackageVersionId = await this.query08cFrom05i(package2VersionId);
     } else {
-      throw messages.createError('invalidPackageVersionIdError', [userPackageId]);
+      throw messages.createError('invalidPackageVersionIdError', [this.userPackageVersionId]);
     }
   }
 
+  private async query05iFrom04t(package04t: string): Promise<string> {
+    const query05i = `SELECT Id FROM Package2Version WHERE SubscriberPackageVersionId = '${package04t}'`;
+    const result05i = await this.connection.tooling.query<{ Id: string }>(query05i);
+    if (result05i.records?.length !== 1) {
+      throw messages.createError('invalidPackageVersionIdError', [this.userPackageVersionId]);
+    }
+    return result05i.records[0].Id;
+  }
+
+  private async query08cFrom05i(package05i: string): Promise<string> {
+    const query08c = `SELECT Id FROM Package2VersionCreateRequest WHERE Package2VersionId = '${package05i}'`;
+    const result08c = await this.connection.tooling.query<{ Id: string }>(query08c);
+    if (result08c.records?.length !== 1) {
+      throw messages.createError('invalidPackageVersionIdError', [this.userPackageVersionId]);
+    }
+    return result08c.records[0].Id;
+  }
+
   /**
-   * Checks that the given Package2VersionCreateRequest ID (08c)
-   * 1) exists for the given devhub org
-   * 2) contains the calculateTransitiveDependencies boolean set to true
-   * 3) has a corresponding DependencyGraphJson
-   *
-   * @returns true if DOT code can be generated, false otherwise.
+   * Checks that the given Package2VersionCreateRequest ID (08c) contains a valid DependencyGraphJson to generate DOT code
    */
   private async validatePackageVersion(): Promise<boolean> {
-    if (!this.resolvedPackageId) {
-      throw messages.createError('invalidPackageVersionIdError', [this.packageId]);
+    if (!this.resolvedPackageVersionId) {
+      throw messages.createError('invalidPackageVersionIdError', [this.userPackageVersionId]);
     }
+    if (await this.verifyTransitiveDependenciesCalculated()) {
+      return true;
+    }
+    return false;
+  }
 
-    const query = `${SELECT_PACKAGE_VERSION_DEPENDENCY} WHERE Id = '${this.resolvedPackageId}'`;
+  private async verifyCreateRequesIdExistsOnDevHub(): Promise<boolean> {
+    const query = `${SELECT_PACKAGE_VERSION_DEPENDENCY} WHERE Id = '${this.resolvedPackageVersionId}'`;
     const result = await this.connection.tooling.query<{
       CalcTransitiveDependencies: boolean;
-      DependencyGraphJson: string;
+      DependencyGraphJson: string | null;
     }>(query);
-
     if (result.records?.length === 0) {
-      const userPackageId = this.project?.getPackageIdFromAlias(this.packageId) ?? this.packageId;
-      throw messages.createError('invalidPackageVersionIdError', [userPackageId]);
+      throw messages.createError('invalidPackageVersionIdError', [this.userPackageVersionId]);
     }
+    return true;
+  }
 
-    if (result.records?.length === 1) {
-      const record = result.records[0];
-      if (record.CalcTransitiveDependencies === true) {
-        if (record.DependencyGraphJson != null) {
-          return true;
+  private async verifyTransitiveDependenciesCalculated(): Promise<boolean> {
+    if (await this.verifyCreateRequesIdExistsOnDevHub()) {
+      const query = `${SELECT_PACKAGE_VERSION_DEPENDENCY} WHERE Id = '${this.resolvedPackageVersionId}'`;
+      const result = await this.connection.tooling.query<{
+        CalcTransitiveDependencies: boolean;
+        DependencyGraphJson: string | null;
+      }>(query);
+      if (result.records?.length === 1) {
+        const record = result.records[0];
+        if (record.CalcTransitiveDependencies === true) {
+          if (record.DependencyGraphJson != null) {
+            return true;
+          } else {
+            throw messages.createError('invalidDependencyGraphError');
+          }
         } else {
-          throw messages.createError('invalidDependencyGraphError');
+          throw messages.createError('transitiveDependenciesRequiredError');
         }
-      } else {
-        throw messages.createError('transitiveDependenciesRequiredError');
       }
     }
     return false;
@@ -148,7 +167,7 @@ export class DependencyDotProducer {
   private dependencyGraphString: string;
   private verbose: boolean;
   private edgeDirection: 'root-first' | 'root-last';
-  private resolvedPackageId: string;
+  private resolvedPackageVersionId: string;
   private subscriberPackageVersionId: string;
   private connection: Connection;
   private dependencyGraphData!: DependencyGraphData;
@@ -158,14 +177,20 @@ export class DependencyDotProducer {
     dependencyGraphString: string,
     verbose: boolean,
     edgeDirection: 'root-first' | 'root-last',
-    resolvedPackageId: string
+    resolvedPackageVersionId: string
   ) {
     this.verbose = verbose;
     this.edgeDirection = edgeDirection;
-    this.resolvedPackageId = resolvedPackageId;
+    this.resolvedPackageVersionId = resolvedPackageVersionId;
     this.connection = connection;
     this.dependencyGraphString = dependencyGraphString;
     this.subscriberPackageVersionId = VERSION_BEING_BUILT;
+  }
+
+  private static throwErrorOnInvalidRecord(record: Record<string, unknown>): void {
+    if (!Object.values(record).every((value) => value !== null)) {
+      throw messages.createError('invalidDependencyGraphError');
+    }
   }
 
   public async init(): Promise<void> {
@@ -209,86 +234,82 @@ export class DependencyDotProducer {
     if (!isVersionBeingCreatedNode && !isSubscriberPackageVersionId) {
       throw messages.createError('invalidDependencyGraphError');
     }
+    if (isVersionBeingCreatedNode) {
+      return this.createVersionBeingBuiltNode(nodeId);
+    }
+    return this.createNormalDependencyNode(nodeId);
+  }
 
+  private async createVersionBeingBuiltNode(nodeId: string): Promise<DependencyGraphNode> {
     let subscriberPackageVersionId = nodeId;
-    let packageName: string;
     let MajorVersion = 0;
     let MinorVersion = 0;
     let PatchVersion = 0;
     let BuildNumber = 0;
-
-    if (isVersionBeingCreatedNode) {
-      const nodeQuery = `SELECT Package2Version.SubscriberPackageVersionId, Package2.Name, 
+    const nodeQuery = `SELECT Package2Version.SubscriberPackageVersionId, Package2.Name, 
       Package2Version.MajorVersion, Package2Version.MinorVersion, 
       Package2Version.PatchVersion, Package2Version.BuildNumber 
-      FROM Package2VersionCreateRequest WHERE Id = '${this.resolvedPackageId}'`;
-      const nodeResult = await this.connection.tooling.query<{
-        Package2: {
-          Name: string;
-        };
-        Package2Version: {
-          SubscriberPackageVersionId: string;
-          MajorVersion: number;
-          MinorVersion: number;
-          PatchVersion: number;
-          BuildNumber: number;
-        };
-      }>(nodeQuery);
-      if (nodeResult.records?.length !== 1) {
-        throw messages.createError('invalidDependencyGraphError');
-      }
-      const record = nodeResult.records[0];
-      if (!record.Package2?.Name) {
-        throw messages.createError('invalidDependencyGraphError');
-      }
-      packageName = record.Package2.Name;
-      // sets the id to 04t if it exists
-      if (record.Package2Version?.SubscriberPackageVersionId) {
-        subscriberPackageVersionId = record.Package2Version.SubscriberPackageVersionId;
-        this.subscriberPackageVersionId = subscriberPackageVersionId;
-        MajorVersion = record.Package2Version.MajorVersion;
-        MinorVersion = record.Package2Version.MinorVersion;
-        PatchVersion = record.Package2Version.PatchVersion;
-        BuildNumber = record.Package2Version.BuildNumber;
-      }
-    } else {
-      const nodeQuery = `SELECT SubscriberPackageVersionId, Package2.Name, 
-      MajorVersion, MinorVersion, PatchVersion, BuildNumber 
-      FROM Package2Version WHERE SubscriberPackageVersionId = '${nodeId}'`;
-      const nodeResult = await this.connection.tooling.query<{
+      FROM Package2VersionCreateRequest WHERE Id = '${this.resolvedPackageVersionId}'`;
+    const nodeResult = await this.connection.tooling.query<{
+      Package2: {
+        Name: string;
+      };
+      Package2Version: {
         SubscriberPackageVersionId: string;
-        Package2: {
-          Name: string;
-        };
         MajorVersion: number;
         MinorVersion: number;
         PatchVersion: number;
         BuildNumber: number;
-      }>(nodeQuery);
-      if (nodeResult.records?.length !== 1) {
-        throw messages.createError('invalidDependencyGraphError');
-      }
-      const record = nodeResult.records[0];
-      if (
-        !record.Package2?.Name ||
-        record.MajorVersion === null ||
-        record.MinorVersion === null ||
-        record.PatchVersion === null ||
-        record.BuildNumber === null
-      ) {
-        throw messages.createError('invalidDependencyGraphError');
-      }
-      packageName = record.Package2.Name;
-      MajorVersion = record.MajorVersion;
-      MinorVersion = record.MinorVersion;
-      PatchVersion = record.PatchVersion;
-      BuildNumber = record.BuildNumber;
+      };
+    }>(nodeQuery);
+    if (nodeResult.records?.length !== 1) {
+      throw messages.createError('invalidDependencyGraphError');
     }
-
+    const record = nodeResult.records[0];
+    if (!record.Package2?.Name) {
+      throw messages.createError('invalidDependencyGraphError');
+    }
+    const packageName = record.Package2.Name;
+    // sets the version number correctly and version id to 04t if it exists
+    if (record.Package2Version?.SubscriberPackageVersionId) {
+      DependencyDotProducer.throwErrorOnInvalidRecord(record.Package2Version);
+      subscriberPackageVersionId = record.Package2Version.SubscriberPackageVersionId;
+      this.subscriberPackageVersionId = subscriberPackageVersionId;
+      MajorVersion = record.Package2Version.MajorVersion;
+      MinorVersion = record.Package2Version.MinorVersion;
+      PatchVersion = record.Package2Version.PatchVersion;
+      BuildNumber = record.Package2Version.BuildNumber;
+    }
     return {
       subscriberPackageVersionId,
       packageName,
       version: new VersionNumber(MajorVersion, MinorVersion, PatchVersion, BuildNumber),
+    };
+  }
+
+  private async createNormalDependencyNode(nodeId: string): Promise<DependencyGraphNode> {
+    const subscriberPackageVersionId = nodeId;
+    const nodeQuery = `SELECT SubscriberPackageVersionId, Package2.Name, MajorVersion, MinorVersion, PatchVersion, BuildNumber 
+      FROM Package2Version WHERE SubscriberPackageVersionId = '${nodeId}'`;
+    const nodeResult = await this.connection.tooling.query<{
+      SubscriberPackageVersionId: string;
+      Package2: {
+        Name: string;
+      };
+      MajorVersion: number;
+      MinorVersion: number;
+      PatchVersion: number;
+      BuildNumber: number;
+    }>(nodeQuery);
+    if (nodeResult.records?.length !== 1) {
+      throw messages.createError('invalidDependencyGraphError');
+    }
+    const record = nodeResult.records[0];
+    DependencyDotProducer.throwErrorOnInvalidRecord(record);
+    return {
+      subscriberPackageVersionId,
+      packageName: record.Package2.Name,
+      version: new VersionNumber(record.MajorVersion, record.MinorVersion, record.PatchVersion, record.BuildNumber),
     };
   }
 

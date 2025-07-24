@@ -502,7 +502,7 @@ export type AncestryRepresentationProducer = {
 };
 
 export type PackageVersionDependencyOptions = {
-  packageId: string;
+  packageVersionId: string;
   project?: SfProject;
   connection: Connection;
   verbose?: boolean;
