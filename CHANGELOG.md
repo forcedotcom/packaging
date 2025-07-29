@@ -1,3 +1,12 @@
+# [4.11.0](https://github.com/forcedotcom/packaging/compare/4.10.0...4.11.0) (2025-07-29)
+
+
+### Features
+
+* added displaydependencies command new branch ([fe10bd2](https://github.com/forcedotcom/packaging/commit/fe10bd23cc446ccc25c90db7c5b9f52a55eadd95))
+
+
+
 # [4.10.0](https://github.com/forcedotcom/packaging/compare/4.9.1...4.10.0) (2025-06-30)
 
 
