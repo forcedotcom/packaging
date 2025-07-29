@@ -147,6 +147,7 @@ describe('Package Version Dependencies', () => {
     resolveVersionBeingBuiltNodeCall(connectionStub, 3, '04tXXXXXXXXXXXXXX3', 'TestPackage1', 1, 0, 0, 0);
     resolveDependencyNodeCall(connectionStub, 4, '04tXXXXXXXXXXXXXX1', 'DependencyPackage1', 2, 1, 0, 0);
     resolveDependencyNodeCall(connectionStub, 5, '04tXXXXXXXXXXXXXX2', 'DependencyPackage2', 1, 2, 3, 0);
+    resolveSelectedNodeIdsCall(connectionStub, 6, ['04tXXXXXXXXXXXXXX1', '04tXXXXXXXXXXXXXX2']);
 
     const pvd = await PackageVersionDependency.create({
       connection: mockConnection,
@@ -183,6 +184,7 @@ describe('Package Version Dependencies', () => {
     resolveDependencyGraphJsonCall(connectionStub, [0, 1, 2], true, dependencyGraphJson);
     resolveVersionBeingBuiltNodeCall(connectionStub, 3, '04tXXXXXXXXXXXXXX2', 'TestPackage', 1, 0, 0, 0);
     resolveDependencyNodeCall(connectionStub, 4, '04tXXXXXXXXXXXXXX1', 'DependencyPackage', 2, 0, 0, 1);
+    resolveSelectedNodeIdsCall(connectionStub, 5, ['04tXXXXXXXXXXXXXX1']);
 
     const pvd = await PackageVersionDependency.create({
       connection: mockConnection,
@@ -210,6 +212,7 @@ describe('Package Version Dependencies', () => {
     resolveDependencyGraphJsonCall(connectionStub, [0, 1, 2], true, dependencyGraphJson);
     resolveVersionBeingBuiltNodeCall(connectionStub, 3, '04tXXXXXXXXXXXXXX2', 'PackageBeingBuilt', 1, 5, 0, 0);
     resolveDependencyNodeCall(connectionStub, 4, '04tXXXXXXXXXXXXXX1', 'ParentPackage', 2, 1, 0, 0);
+    resolveSelectedNodeIdsCall(connectionStub, 5, ['04tXXXXXXXXXXXXXX1']);
 
     const pvd = await PackageVersionDependency.create({
       connection: mockConnection,
@@ -221,8 +224,8 @@ describe('Package Version Dependencies', () => {
 
     expect(dotOutput).to.be.a('string');
     expect(dotOutput).to.contain('strict digraph G {');
-    expect(dotOutput).to.contain('node_04tXXXXXXXXXXXXXX1 [label="ParentPackage@2.1.0.0"]');
-    expect(dotOutput).to.contain('node_04tXXXXXXXXXXXXXX2 [label="PackageBeingBuilt@1.5.0.0"]');
+    expect(dotOutput).to.contain('node_04tXXXXXXXXXXXXXX1 [label="ParentPackage@2.1.0.0" color="green"]');
+    expect(dotOutput).to.contain('node_04tXXXXXXXXXXXXXX2 [label="PackageBeingBuilt@1.5.0.0" color="green"]');
     expect(dotOutput).to.contain('node_04tXXXXXXXXXXXXXX2 -> node_04tXXXXXXXXXXXXXX1');
     expect(dotOutput).to.contain('}');
   });
@@ -244,6 +247,24 @@ export function resolveDependencyGraphJsonCall(
         },
       ],
     });
+  });
+}
+
+// return selected node 04t ids
+export function resolveSelectedNodeIdsCall(
+  connectionStub: sinon.SinonStub,
+  callIndex: number,
+  dependencyIds: string[]
+) {
+  const dependencyIdsArray = dependencyIds.map((id) => ({ subscriberPackageVersionId: id }));
+  connectionStub.onCall(callIndex).resolves({
+    records: [
+      {
+        Dependencies: {
+          ids: dependencyIdsArray,
+        },
+      },
+    ],
   });
 }
 
