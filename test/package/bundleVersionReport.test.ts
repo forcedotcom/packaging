@@ -355,6 +355,26 @@ describe('PackageBundleVersion', () => {
             totalSize: 2,
             records: mockComponentPackages,
           });
+        } else if (
+          request &&
+          ensureString(requestMap.url).includes('SubscriberPackage') &&
+          ensureString(requestMap.url).includes('0330000000000001')
+        ) {
+          return Promise.resolve({
+            done: true,
+            totalSize: 1,
+            records: [{ Id: '0330000000000001', Name: 'Test Package 1' }],
+          });
+        } else if (
+          request &&
+          ensureString(requestMap.url).includes('SubscriberPackage') &&
+          ensureString(requestMap.url).includes('0330000000000002')
+        ) {
+          return Promise.resolve({
+            done: true,
+            totalSize: 1,
+            records: [{ Id: '0330000000000002', Name: 'Test Package 2' }],
+          });
         } else {
           return Promise.reject(new SfError(`Unexpected request: ${String(requestMap.url)}`));
         }
