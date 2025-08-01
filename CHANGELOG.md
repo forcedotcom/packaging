@@ -1,3 +1,12 @@
+# [4.12.0](https://github.com/forcedotcom/packaging/compare/4.11.0...4.12.0) (2025-08-01)
+
+
+### Features
+
+* included color for selected nodes and updated corresponding test cases ([5c183a5](https://github.com/forcedotcom/packaging/commit/5c183a530e878a1fdab8cbbde3793fdcdb8f300a))
+
+
+
 # [4.11.0](https://github.com/forcedotcom/packaging/compare/4.10.0...4.11.0) (2025-07-29)
 
 
