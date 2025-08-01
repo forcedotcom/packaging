@@ -171,6 +171,7 @@ export class DependencyDotProducer {
   private subscriberPackageVersionId: string;
   private connection: Connection;
   private dependencyGraphData!: DependencyGraphData;
+  private selectedNodeIds: string[] = [];
 
   public constructor(
     connection: Connection,
@@ -205,6 +206,8 @@ export class DependencyDotProducer {
       nodes: await this.createDependencyGraphNodes(dependencyGraphJson.nodes),
       edges: this.createDependencyGraphEdges(dependencyGraphJson.edges),
     };
+
+    this.selectedNodeIds = await this.addSelectedNodeIds();
   }
 
   public produce(): string {
@@ -216,6 +219,37 @@ export class DependencyDotProducer {
       dotLines.push(this.buildDotEdge(edge));
     }
     return `strict digraph G {${EOL}${dotLines.join(EOL)}${EOL}}`;
+  }
+
+  private async addSelectedNodeIds(): Promise<string[]> {
+    const selectedNodes: string[] = [];
+    if (this.subscriberPackageVersionId === VERSION_BEING_BUILT) {
+      selectedNodes.push(this.subscriberPackageVersionId);
+    } else if (this.subscriberPackageVersionId.startsWith('04t')) {
+      selectedNodes.push(this.subscriberPackageVersionId);
+      const query = `SELECT Dependencies FROM SubscriberPackageVersion WHERE Id = '${this.subscriberPackageVersionId}'`;
+      try {
+        const result = await this.connection.tooling.query<{
+          Dependencies: { ids: Array<{ subscriberPackageVersionId: string }> } | null;
+        }>(query);
+        if (result.records?.length !== 1) {
+          return selectedNodes;
+        }
+        const dependencies = result.records[0].Dependencies;
+        if (!dependencies) {
+          return selectedNodes;
+        }
+        if (dependencies.ids && Array.isArray(dependencies.ids)) {
+          const dependencyIds = dependencies.ids
+            .map((dep) => dep.subscriberPackageVersionId)
+            .filter((id) => id && typeof id === 'string' && id.startsWith('04t'));
+          selectedNodes.push(...dependencyIds);
+        }
+      } catch (error) {
+        throw messages.createError('invalidPackageVersionIdError', [this.subscriberPackageVersionId]);
+      }
+    }
+    return selectedNodes;
   }
 
   private async createDependencyGraphNodes(jsonNodes: Array<{ id: string }>): Promise<DependencyGraphNode[]> {
@@ -349,7 +383,16 @@ export class DependencyDotProducer {
     if (this.verbose) {
       label += ` (${node.subscriberPackageVersionId})`;
     }
-    return `\t node_${nodeId} [label="${label}"]`;
+
+    const color = this.addColorToSelectedNode(node);
+    return `\t node_${nodeId} [label="${label}"${color}]`;
+  }
+
+  private addColorToSelectedNode(node: DependencyGraphNode): string {
+    if (this.selectedNodeIds.includes(node.subscriberPackageVersionId)) {
+      return ' color="green"';
+    }
+    return '';
   }
 
   /**
