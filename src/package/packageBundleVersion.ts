@@ -184,7 +184,7 @@ export class PackageBundleVersion {
     id: string
   ): Promise<PackagingSObjects.SubscriberPackageVersion[]> {
     const query =
-      'SELECT Component.Id, Component.Name, Component.Description, Component.PublisherName, Component.MajorVersion, Component.MinorVersion, Component.PatchVersion, Component.BuildNumber, Component.ReleaseState, Component.IsManaged, Component.IsDeprecated, Component.IsPasswordProtected, Component.IsBeta, Component.Package2ContainerOptions, Component.IsSecurityReviewed, Component.IsOrgDependent, Component.AppExchangePackageName, Component.AppExchangeDescription, Component.AppExchangePublisherName, Component.AppExchangeLogoUrl, Component.ReleaseNotesUrl, Component.PostInstallUrl, Component.RemoteSiteSettings, Component.CspTrustedSites, Component.Profiles, Component.Dependencies, Component.InstallValidationStatus, Component.SubscriberPackageId ' +
+      'SELECT Component.Id, Component.Description, Component.PublisherName, Component.MajorVersion, Component.MinorVersion, Component.PatchVersion, Component.BuildNumber, Component.ReleaseState, Component.IsManaged, Component.IsDeprecated, Component.IsPasswordProtected, Component.IsBeta, Component.Package2ContainerOptions, Component.IsSecurityReviewed, Component.IsOrgDependent, Component.AppExchangePackageName, Component.AppExchangeDescription, Component.AppExchangePublisherName, Component.AppExchangeLogoUrl, Component.ReleaseNotesUrl, Component.PostInstallUrl, Component.RemoteSiteSettings, Component.CspTrustedSites, Component.Profiles, Component.Dependencies, Component.InstallValidationStatus, Component.SubscriberPackageId ' +
       "FROM PkgBundleVersionComponent WHERE PackageBundleVersion.Id = '" +
       id +
       "' ORDER BY CreatedDate";
@@ -192,7 +192,6 @@ export class PackageBundleVersion {
       Schema & {
         Component?: {
           Id: string;
-          Name: string;
           Description: string;
           PublisherName: string;
           MajorVersion: number;
@@ -222,15 +221,58 @@ export class PackageBundleVersion {
         };
       }
     >(query, { tooling: true });
+
+    // Get unique SubscriberPackageIds to query for Names
+    const subscriberPackageIds = [
+      ...new Set(
+        queryResult.records
+          .map((record) => record.Component?.SubscriberPackageId)
+          .filter((packageId): packageId is string => !!packageId)
+      ),
+    ];
+
+    // Query SubscriberPackage to get Names (one by one due to implementation restriction)
+    const subscriberPackageNames = new Map<string, string>();
+    const packageQueries = subscriberPackageIds.map(async (packageId) => {
+      try {
+        const packageQuery = `SELECT Id, Name FROM SubscriberPackage WHERE Id='${packageId}'`;
+        const packageQueryResult = await connection.autoFetchQuery<
+          Schema & {
+            Id: string;
+            Name: string;
+          }
+        >(packageQuery, { tooling: true });
+
+        return {
+          packageId,
+          name: packageQueryResult.records.length > 0 ? packageQueryResult.records[0].Name : '',
+        };
+      } catch (error) {
+        // If individual query fails, return empty name for this package
+        return {
+          packageId,
+          name: '',
+        };
+      }
+    });
+
+    const packageResults = await Promise.allSettled(packageQueries);
+    packageResults.forEach((result) => {
+      if (result.status === 'fulfilled') {
+        subscriberPackageNames.set(result.value.packageId, result.value.name);
+      }
+    });
+
     return queryResult.records.map((record) => {
       const component = record.Component;
       if (!component) {
         throw new Error(bundleVersionMessages.getMessage('componentRecordMissing'));
       }
+      const packageName = subscriberPackageNames.get(component.SubscriberPackageId) ?? '';
       return {
         Id: component.Id,
         SubscriberPackageId: component.SubscriberPackageId,
-        Name: component.Name,
+        Name: packageName,
         Description: component.Description,
         PublisherName: component.PublisherName,
         MajorVersion: component.MajorVersion,

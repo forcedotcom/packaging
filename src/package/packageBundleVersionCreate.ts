@@ -75,7 +75,12 @@ export class PackageBundleVersionCreate {
       project
     );
     const packageBundleId = PackageBundleVersionCreate.parsePackageBundleId(options.PackageBundle, project);
-    const version = await PackageBundleVersionCreate.getPackageVersion(options, project, connection);
+
+    // Use provided MajorVersion and MinorVersion if they are not empty strings, otherwise get from bundle configuration
+    const version =
+      options.MajorVersion && options.MinorVersion
+        ? { MajorVersion: options.MajorVersion, MinorVersion: options.MinorVersion }
+        : await PackageBundleVersionCreate.getPackageVersion(options, project, connection);
 
     const request: BundleSObjects.PkgBundleVersionCreateReq = {
       PackageBundleId: packageBundleId,
