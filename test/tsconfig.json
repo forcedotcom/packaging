@@ -2,6 +2,7 @@
   "extends": "@salesforce/dev-config/tsconfig-test-strict",
   "compilerOptions": {
     "baseUrl": "..",
+    "resolveJsonModule": true,
     "paths": {
       "@salesforce/kit": ["node_modules/@salesforce/kit"]
     },
