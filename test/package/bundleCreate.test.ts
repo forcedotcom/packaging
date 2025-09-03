@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import { expect } from 'chai';
 import { Connection, SfProject } from '@salesforce/core';
 import { instantiateContext, restoreContext, stubContext, MockTestOrgData } from '@salesforce/core/testSetup';
-import { BundleEntry } from '@salesforce/schemas/src/sfdx-project/bundleEntry';
+import { BundleEntry } from '@salesforce/schemas';
 import { createBundle } from '../../src/package/packageBundleCreate';
 
 async function setupProject(setup: (project: SfProject) => void = () => {}) {

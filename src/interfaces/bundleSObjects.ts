@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2025, salesforce.com, inc.
+ * Copyright (c) 2022, salesforce.com, inc.
  * All rights reserved.
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import { Nullable } from '@salesforce/ts-types';
-import { BundleEntry } from '@salesforce/schemas/src/sfdx-project/bundleEntry';
+import { BundleEntry } from '@salesforce/schemas';
 import type { Schema } from '@jsforce/jsforce-node';
 
 export { BundleEntry };

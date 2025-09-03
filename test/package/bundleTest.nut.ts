@@ -9,7 +9,7 @@ import { expect } from 'chai';
 import { execCmd, TestSession } from '@salesforce/cli-plugins-testkit';
 import { Org, SfProject } from '@salesforce/core';
 import { uniqid } from '@salesforce/core/testSetup';
-import { BundleEntry } from '@salesforce/schemas/src/sfdx-project/bundleEntry';
+import { BundleEntry } from '@salesforce/schemas';
 import { createBundle } from '../../src/package/packageBundleCreate';
 import { PackageBundle } from '../../src/package/packageBundle';
 

@@ -5,7 +5,7 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
-import { BundleEntry } from '@salesforce/schemas/src/sfdx-project/bundleEntry';
+import { BundleEntry } from '@salesforce/schemas';
 import { BundleSObjects, BundleCreateOptions } from '../interfaces';
 import { massageErrorMessage } from '../utils/bundleUtils';
 
