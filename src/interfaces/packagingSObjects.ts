@@ -64,6 +64,7 @@ export namespace PackagingSObjects {
     EndToEndBuildDurationInSeconds?: number;
     TotalNumberOfMetadataFiles: number;
     TotalSizeOfMetadataFiles: number;
+    DeveloperUsePkgZip?: string;
   };
 
   export enum Package2VersionStatus {
@@ -351,7 +352,6 @@ export namespace PackagingSObjects {
     PatchVersion: number;
     BuildNumber: number;
     IsDeprecated: boolean;
-    MetadataZip?: string;
   };
 
   export type MetadataPackage = {

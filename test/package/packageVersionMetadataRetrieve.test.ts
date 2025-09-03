@@ -23,8 +23,6 @@ describe('Package Version Retrieve', () => {
   const packageVersionId2GP = '04txx00000000002gp';
   const packageVersionId1GP = '04txx00000000001gp';
   const destinationFolder = 'force-app';
-  const packageId1GP = '033xx00000001gp';
-  const packageId2GP = '033xx00000002gp';
   const package2Id = '0Ho000000000001';
   const package2VersionId = '05i00000000001';
   const dependencyPackageVersion1 = '04txx000000dep1';
@@ -66,6 +64,7 @@ describe('Package Version Retrieve', () => {
     BuildDurationInSeconds: 0,
     HasMetadataRemoved: false,
     Language: '',
+    DeveloperUsePkgZip: metadataZipURL2GP,
   };
 
   const mockPackage2 = {
@@ -99,7 +98,6 @@ describe('Package Version Retrieve', () => {
 
   let project: SfProject;
   let connection: Connection;
-  let toolingRetrieveStub: sinon.SinonStub;
   let queryPackage2VersionStub: sinon.SinonStub;
   let requestMetadataZipStub: sinon.SinonStub;
   let getPackageDataStub: sinon.SinonStub;
@@ -117,31 +115,6 @@ describe('Package Version Retrieve', () => {
     stubContext($$);
     await $$.stubAuths(testOrg);
     connection = await testOrg.getConnection();
-
-    toolingRetrieveStub = $$.SANDBOX.stub(connection.tooling, 'retrieve');
-    toolingRetrieveStub.withArgs('MetadataPackageVersion', packageVersionId2GP).resolves({
-      Id: packageVersionId2GP,
-      MetadataPackageId: packageId2GP,
-      MetadataZip: metadataZipURL2GP,
-    });
-
-    toolingRetrieveStub.withArgs('MetadataPackageVersion', packageVersionId1GP).resolves({
-      Id: packageVersionId1GP,
-      MetadataPackageId: packageId1GP,
-      MetadataZip: metadataZipURL1GP,
-    });
-
-    toolingRetrieveStub.withArgs('MetadataPackage', packageId2GP).resolves({
-      Name: packageName,
-      NamespacePrefix: namespacePrefix,
-      PackageCategory: 'Package2',
-    });
-
-    toolingRetrieveStub.withArgs('MetadataPackage', packageId1GP).resolves({
-      Name: packageName,
-      NamespacePrefix: namespacePrefix,
-      PackageCategory: 'Package',
-    });
 
     getPackageDataStub = $$.SANDBOX.stub(Package.prototype, 'getPackageData');
     getPackageDataStub.resolves(mockPackage2);
@@ -228,11 +201,20 @@ describe('Package Version Retrieve', () => {
   });
 
   it('should not add a packageDirectory entry to sfdx-project.json after retrieving a managed 1GP version', async () => {
-    queryPackage2VersionStub.withArgs(connection, sinon.match.any).resolves([]);
-    expect(project.getSfProjectJson().getContents().packageDirectories.length).to.equal(1);
-    const result = await Package.downloadPackageVersionMetadata(project, downloadOptions1GP, connection);
-    expect(result.converted).to.not.be.undefined;
-    expect(project.getSfProjectJson().getContents().packageDirectories.length).to.equal(1);
+    // For 1GP packages, queryPackage2Version returns empty array, which means no Package2Version found
+    queryPackage2VersionStub
+      .withArgs(connection, { whereClause: `WHERE SubscriberPackageVersionId = '${packageVersionId1GP}'` })
+      .resolves([]);
+
+    try {
+      await Package.downloadPackageVersionMetadata(project, downloadOptions1GP, connection);
+      assert.fail('Expected test execution to raise an error');
+    } catch (e) {
+      const error = e as SfError;
+      expect(error.message).to.equal(
+        "Can't retrieve package metadata. To use this feature, you must first assign yourself the DownloadPackageVersionZips user permission. Then retry retrieving your package metadata."
+      );
+    }
   });
 
   it('should not add a packageDirectory to sfdx-project.json when SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_RETRIEVE env var is set', async () => {
@@ -290,7 +272,7 @@ describe('Package Version Retrieve', () => {
     } catch (e) {
       const error = e as SfError;
       expect(error.message).to.equal(
-        'Can’t retrieve package version metadata. The specified directory isn’t empty. Empty the directory, or create a new one and try again.'
+        "Can't retrieve package version metadata. The specified directory isn't empty. Empty the directory, or create a new one and try again."
       );
     }
   });
@@ -308,7 +290,7 @@ describe('Package Version Retrieve', () => {
     } catch (e) {
       const error = e as SfError;
       expect(error.message).to.equal(
-        'Can’t retrieve package version metadata. The specified directory isn’t empty. Empty the directory, or create a new one and try again.'
+        "Can't retrieve package version metadata. The specified directory isn't empty. Empty the directory, or create a new one and try again."
       );
     }
   });
@@ -325,22 +307,29 @@ describe('Package Version Retrieve', () => {
     } catch (e) {
       const error = e as SfError;
       expect(error.message).to.equal(
-        'Can’t retrieve package version metadata. The specified directory must be relative to your Salesforce DX project directory, and not an absolute path.'
+        "Can't retrieve package version metadata. The specified directory must be relative to your Salesforce DX project directory, and not an absolute path."
       );
     }
   });
 
-  it('should fail if the MetadataZip field is inaccessible to the user', async () => {
-    toolingRetrieveStub.withArgs('MetadataPackageVersion', packageVersionId2GP).resolves({
-      Id: packageVersionId2GP,
-    });
+  it('should fail if the DeveloperUsePkgZip field is inaccessible to the user', async () => {
+    // Mock Package2Version without DeveloperUsePkgZip field to simulate field access issue
+    queryPackage2VersionStub
+      .withArgs(connection, { whereClause: `WHERE SubscriberPackageVersionId = '${packageVersionId2GP}'` })
+      .resolves([
+        {
+          ...mockPackage2Version,
+          DeveloperUsePkgZip: undefined, // This will cause the error
+        },
+      ]);
+
     try {
       await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
       assert.fail('Expected test execution to raise an error');
     } catch (e) {
       const error = e as SfError;
       expect(error.message).to.equal(
-        'The sf package version retrieve command has been removed. This feature isn’t quite ready for prime time, so we’re removing it for now while we make improvements. We’ll let you know after it’s back up.'
+        "Can't retrieve package metadata. To use this feature, you must first assign yourself the DownloadPackageVersionZips user permission. Then retry retrieving your package metadata."
       );
     }
   });

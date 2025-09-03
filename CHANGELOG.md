@@ -1,3 +1,97 @@
+# [4.12.0](https://github.com/forcedotcom/packaging/compare/4.11.0...4.12.0) (2025-08-01)
+
+
+### Features
+
+* included color for selected nodes and updated corresponding test cases ([5c183a5](https://github.com/forcedotcom/packaging/commit/5c183a530e878a1fdab8cbbde3793fdcdb8f300a))
+
+
+
+# [4.11.0](https://github.com/forcedotcom/packaging/compare/4.10.0...4.11.0) (2025-07-29)
+
+
+### Features
+
+* added displaydependencies command new branch ([fe10bd2](https://github.com/forcedotcom/packaging/commit/fe10bd23cc446ccc25c90db7c5b9f52a55eadd95))
+
+
+
+# [4.10.0](https://github.com/forcedotcom/packaging/compare/4.9.1...4.10.0) (2025-06-30)
+
+
+### Bug Fixes
+
+* code cleanup ([9aca333](https://github.com/forcedotcom/packaging/commit/9aca333ab43fff6fa1a8f2bca68addaf71b27bd5))
+* empty commit to re-try build ([3b2c8d9](https://github.com/forcedotcom/packaging/commit/3b2c8d94b094c1233b8c6d9c6bcb337be363ee62))
+* empty commit to re-try build ([a8a49e1](https://github.com/forcedotcom/packaging/commit/a8a49e19d1e4297e50c81f3539112f5b48bad8b5))
+* empty commit to re-try build ([d992c97](https://github.com/forcedotcom/packaging/commit/d992c97177de4a1beda4773ec60c4a18d31e701f))
+* empty commit to re-try build ([cd99c8b](https://github.com/forcedotcom/packaging/commit/cd99c8b690ddb9d3e75e877e55ccc57944367f2b))
+* nut TF ([e5f2630](https://github.com/forcedotcom/packaging/commit/e5f263091911e7278e043790fe40396eca092672))
+* nut TF ([7c1d92d](https://github.com/forcedotcom/packaging/commit/7c1d92d6065c02a14798833176535f8ca9910da4))
+* the field is from PackageDir, not options [which is actually the flags] ([0014fd7](https://github.com/forcedotcom/packaging/commit/0014fd7334cc225c4486f07c1c799c44050ead06))
+
+
+### Features
+
+* added new field to request object ([02b75f3](https://github.com/forcedotcom/packaging/commit/02b75f3c163c3ca86e68a3631d3ba1416eb2317e))
+
+
+
+## [4.9.1](https://github.com/forcedotcom/packaging/compare/4.9.0...4.9.1) (2025-06-30)
+
+
+### Bug Fixes
+
+* bump core ([3a16f8c](https://github.com/forcedotcom/packaging/commit/3a16f8c1c3d88d2fd22b28ea511587e234049cea))
+* bump schemas ([8dc67bd](https://github.com/forcedotcom/packaging/commit/8dc67bd147d31484a2b9da5a051a555b0494e98f))
+
+
+
+# [4.9.0](https://github.com/forcedotcom/packaging/compare/4.8.0...4.9.0) (2025-06-27)
+
+
+### Features
+
+* ignore DeveloperUsePkgZip for id retrieve ([bd53846](https://github.com/forcedotcom/packaging/commit/bd538468f6f82c577dbd7df2c77162eebd6a0c0b))
+
+
+
+# [4.8.0](https://github.com/forcedotcom/packaging/compare/4.7.0...4.8.0) (2025-06-27)
+
+
+### Features
+
+* add DownloadPackageVersionZips user perm for dev hub user ([6d3fea2](https://github.com/forcedotcom/packaging/commit/6d3fea29564969f56559f0ce0601284b3b6e05f0))
+* dummy commit ([f77c1f1](https://github.com/forcedotcom/packaging/commit/f77c1f1ae2d4aaf2b2358b0242131d6cf9e26f3f))
+* ignore duplicate value exception for perm set assignment ([d963563](https://github.com/forcedotcom/packaging/commit/d963563b8e1e4d0c80584d923825cca925c76df7))
+* reflect feat change to use Package2Version instead of MetadataPackageVerison API for retrieve ([d4ab5b0](https://github.com/forcedotcom/packaging/commit/d4ab5b06a949eb5a4cda9d31d122329563a7aab9))
+* reflect feat change to use Package2Version instead of MetadataPackageVerison API for retrieve ([bc0c0ac](https://github.com/forcedotcom/packaging/commit/bc0c0ac6a047b0713217fe5d9a842874db8bde30))
+* reflect feat change to use Package2Version instead of MetadataPackageVerison API for retrieve ([abe676b](https://github.com/forcedotcom/packaging/commit/abe676b4276e020ed78277ea5514166388c37f87))
+* update error messages ([e35e990](https://github.com/forcedotcom/packaging/commit/e35e9901a0a24d42bc1224ff1209aae332e811ec))
+* update error messages ([f1d3289](https://github.com/forcedotcom/packaging/commit/f1d3289ec95652b59661e2f9ad59c499b2f88e55))
+
+
+
+# [4.7.0](https://github.com/forcedotcom/packaging/compare/4.6.1...4.7.0) (2025-06-12)
+
+
+### Features
+
+* adding code coverage option to the convert command ([68a0ac2](https://github.com/forcedotcom/packaging/commit/68a0ac2487c9e6cbee4ec6cedbbe4d5b3e5edac0))
+* adding code coverage option to the convert command with tests ([c1dcdb6](https://github.com/forcedotcom/packaging/commit/c1dcdb65a3af1b789d1ecd02a734b5870fb10d0d))
+
+
+
+## [4.6.1](https://github.com/forcedotcom/packaging/compare/4.6.0...4.6.1) (2025-06-12)
+
+
+### Bug Fixes
+
+* pass typed err to massageErrorMessage ([9b4edc6](https://github.com/forcedotcom/packaging/commit/9b4edc69ef1da65d160cec9ca5ce0f0642f92a8a))
+* when the conversion CLI command times out, provide a meaningful response ([c096efb](https://github.com/forcedotcom/packaging/commit/c096efba3c4e0f9d362cc0e26cda2877b6821072))
+
+
+
 # [4.6.0](https://github.com/forcedotcom/packaging/compare/4.5.0...4.6.0) (2025-06-04)
 
 
