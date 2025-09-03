@@ -29,6 +29,13 @@ describe('Integration tests for package bundle deletion', () => {
         sourceDir: path.join('test', 'package', 'resources', 'packageProject'),
       },
       devhubAuthStrategy: 'AUTO',
+      scratchOrgs: [
+        {
+          config: path.join('config', 'project-scratch-def.json'),
+          edition: 'developer',
+          features: ['PackageBundles'],
+        },
+      ],
     });
 
     bundleName = uniqid({ template: 'bundle-test-', length: 16 });
