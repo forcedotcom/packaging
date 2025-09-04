@@ -85,7 +85,7 @@ describe('bundleCreate', () => {
       };
       project.getSfProjectJson().addPackageBundle(bundleEntry1);
       project.getSfProjectJson().addPackageBundle(bundleEntry2);
-      const bundles = (project.getSfProjectJson().getContents().packageBundles as BundleEntry[]) ?? [];
+      const bundles = project.getSfProjectJson().getPackageBundles();
       expect(bundles.length).to.equal(1);
       expect(bundleEntry1).to.deep.equal(bundles[0]);
     });
@@ -109,7 +109,7 @@ describe('bundleCreate', () => {
       };
       project.getSfProjectJson().addPackageBundle(bundleEntry1);
       project.getSfProjectJson().addPackageBundle(bundleEntry2);
-      const bundles = (project.getSfProjectJson().getContents().packageBundles as BundleEntry[]) ?? [];
+      const bundles = project.getSfProjectJson().getPackageBundles();
       expect(bundles.length).to.equal(2);
       expect(bundleEntry1).to.deep.equal(bundles[0]);
       expect(bundleEntry2).to.deep.equal(bundles[1]);
@@ -144,7 +144,7 @@ describe('bundleCreate', () => {
         Description: 'testBundle',
       });
 
-      const bundles = (project.getSfProjectJson().getContents().packageBundles as BundleEntry[]) ?? [];
+      const bundles = project.getSfProjectJson().getPackageBundles();
       expect(bundles.length).to.equal(1);
       expect(bundleEntry1).to.deep.equal(bundles[0]);
     });

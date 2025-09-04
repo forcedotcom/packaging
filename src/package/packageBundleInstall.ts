@@ -108,9 +108,9 @@ export class PackageBundleInstall {
     }
 
     // Otherwise, treat it as an alias and resolve it from sfdx-project.json
-    const packageBundleVersionId = project.getPackageIdFromAlias(packageBundleVersion);
+    const packageBundleVersionId = project.getPackageBundleIdFromAlias(packageBundleVersion);
     if (!packageBundleVersionId) {
-      throw new Error(messages.getMessage('noPackageBundleVersionFoundWithAlias', [packageBundleVersion]));
+      throw new SfError(messages.getMessage('noPackageBundleVersionFoundWithAlias', [packageBundleVersion]));
     }
     return packageBundleVersionId;
   }

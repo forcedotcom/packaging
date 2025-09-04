@@ -14,6 +14,7 @@ import { PackageBundleVersion } from '../../src/package/packageBundleVersion';
 import { PackageBundleVersionCreate } from '../../src/package/packageBundleVersionCreate';
 import { BundleVersionCreateOptions, BundleSObjects } from '../../src/interfaces';
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
 const getPackageVersion = (
   ...args: [options: BundleVersionCreateOptions, project: SfProject, connection: Connection]
 ): Promise<{ MajorVersion: string; MinorVersion: string }> => (PackageBundleVersionCreate as any).getPackageVersion(...args);

@@ -136,13 +136,13 @@ export class PackageBundleVersionCreate {
       const fileContent = fs.readFileSync(filePath, 'utf8');
       const bundleVersionComponents = JSON.parse(fileContent) as Array<{ packageVersion: string }>;
       if (!Array.isArray(bundleVersionComponents)) {
-        throw new Error(messages.getMessage('bundleVersionComponentsMustBeArray'));
+        throw new SfError(messages.getMessage('bundleVersionComponentsMustBeArray'));
       }
 
       // Validate that each item has the required packageVersion property
       for (const component of bundleVersionComponents) {
         if (!component || typeof component !== 'object' || !component.packageVersion) {
-          throw new Error(messages.getMessage('bundleVersionComponentMustBeObject'));
+          throw new SfError(messages.getMessage('bundleVersionComponentMustBeObject'));
         }
       }
 
@@ -158,7 +158,7 @@ export class PackageBundleVersionCreate {
         // Otherwise, treat it as an alias and resolve it from sfdx-project.json
         const packageVersionId = project.getPackageIdFromAlias(packageVersion);
         if (!packageVersionId) {
-          throw new Error(messages.getMessage('noPackageVersionFoundWithAlias', [packageVersion]));
+          throw new SfError(messages.getMessage('noPackageVersionFoundWithAlias', [packageVersion]));
         }
 
         return packageVersionId;
@@ -180,7 +180,7 @@ export class PackageBundleVersionCreate {
     }
     const bundleId = project.getPackageBundleIdFromAlias(packageBundle);
     if (!bundleId) {
-      throw new Error(messages.getMessage('noPackageBundleFoundWithAlias', [packageBundle]));
+      throw new SfError(messages.getMessage('noPackageBundleFoundWithAlias', [packageBundle]));
     }
     return bundleId;
   }
@@ -196,24 +196,24 @@ export class PackageBundleVersionCreate {
     const result = await connection.tooling.query<{ BundleName: string }>(query);
 
     if (!result.records || result.records.length === 0) {
-      throw new Error(messages.getMessage('noBundleFoundWithId', [packageBundleId]));
+      throw new SfError(messages.getMessage('noBundleFoundWithId', [packageBundleId]));
     }
 
     const bundleName = result.records[0].BundleName;
     const bundles = project.getSfProjectJson().getPackageBundles();
     const bundle = bundles.find((b) => b.name === bundleName);
     if (!bundle) {
-      throw new Error(messages.getMessage('noBundleFoundWithName', [bundleName]));
+      throw new SfError(messages.getMessage('noBundleFoundWithName', [bundleName]));
     }
     const [major, minor] = bundle.versionNumber.split('.');
     if (!major || !minor) {
-      throw new Error(messages.getMessage('invalidVersionNumberFormat', [bundle.versionNumber]));
+      throw new SfError(messages.getMessage('invalidVersionNumberFormat', [bundle.versionNumber]));
     }
 
     // Check if major is an integer
     const majorInt = parseInt(major, 10);
     if (isNaN(majorInt) || majorInt.toString() !== major) {
-      throw new Error(messages.getMessage('invalidVersionNumberFormat', [bundle.versionNumber]));
+      throw new SfError(messages.getMessage('invalidVersionNumberFormat', [bundle.versionNumber]));
     }
 
     // Check if minor is either an integer or "next"
@@ -240,7 +240,7 @@ export class PackageBundleVersionCreate {
         // Get the highest minor version and add 1
         const highestMinorVersion = parseInt(highestRecord.MinorVersion, 10);
         if (isNaN(highestMinorVersion)) {
-          throw new Error(messages.getMessage('invalidMinorVersionInExisting', [highestRecord.MinorVersion]));
+          throw new SfError(messages.getMessage('invalidMinorVersionInExisting', [highestRecord.MinorVersion]));
         }
 
         const nextMinorVersion = (highestMinorVersion + 1).toString();
@@ -252,7 +252,7 @@ export class PackageBundleVersionCreate {
     } else {
       const minorInt = parseInt(minor, 10);
       if (isNaN(minorInt) || minorInt.toString() !== minor) {
-        throw new Error(messages.getMessage('invalidVersionNumberFormat', [bundle.versionNumber]));
+        throw new SfError(messages.getMessage('invalidVersionNumberFormat', [bundle.versionNumber]));
       }
     }
 
