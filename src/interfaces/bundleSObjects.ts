@@ -10,6 +10,62 @@ import type { Schema } from '@jsforce/jsforce-node';
 
 export { BundleEntry };
 
+export type QueryRecord = Schema & {
+  Id: string;
+  PackageBundle?: {
+    Id: string;
+    BundleName: string;
+    Description?: string;
+    IsDeleted: boolean;
+    CreatedDate: string;
+    CreatedById: string;
+    LastModifiedDate: string;
+    LastModifiedById: string;
+    SystemModstamp: string;
+  };
+  VersionName: string;
+  MajorVersion: string;
+  MinorVersion: string;
+  IsReleased: boolean;
+  Ancestor?: {
+    Id: string;
+    PackageBundle?: {
+      Id: string;
+      BundleName: string;
+      Description?: string;
+      IsDeleted: boolean;
+      CreatedDate: string;
+      CreatedById: string;
+      LastModifiedDate: string;
+      LastModifiedById: string;
+      SystemModstamp: string;
+    };
+    VersionName: string;
+    MajorVersion: string;
+    MinorVersion: string;
+    IsReleased: boolean;
+  };
+};
+
+export type AncestorRecord = {
+  Id: string;
+  PackageBundle?: {
+    Id: string;
+    BundleName: string;
+    Description?: string;
+    IsDeleted: boolean;
+    CreatedDate: string;
+    CreatedById: string;
+    LastModifiedDate: string;
+    LastModifiedById: string;
+    SystemModstamp: string;
+  };
+  VersionName: string;
+  MajorVersion: string;
+  MinorVersion: string;
+  IsReleased: boolean;
+};
+
 export namespace BundleSObjects {
   export type Bundle = {
     BundleName: string;

@@ -11,6 +11,7 @@ import { Duration } from '@salesforce/kit';
 import { BundleCreateOptions, BundleSObjects, BundleVersionCreateOptions } from '../interfaces';
 import { createBundle } from './packageBundleCreate';
 import { PackageBundleVersion } from './packageBundleVersion';
+import { SfError } from '@salesforce/core';
 
 const BundleFields = [
   'BundleName',
@@ -67,16 +68,12 @@ export class PackageBundle {
 
     // Validate that project is provided when using aliases
     if (!project) {
-      throw new Error('Project instance is required when deleting package bundle by alias');
+      throw new SfError('Project instance is required when deleting package bundle by alias');
     }
+    // eslint-disable-next-line no-param-reassign
+    idOrAlias = project.getPackageBundleIdFromAlias(idOrAlias) ?? idOrAlias;
 
-    // Otherwise, treat it as an alias and resolve it from sfdx-project.json
-    const bundleId = project.getPackageBundleIdFromAlias(idOrAlias);
-    if (!bundleId) {
-      throw new Error(`No package bundle found with alias: ${idOrAlias}`);
-    }
-
-    return connection.tooling.sobject('PackageBundle').delete(bundleId);
+    return connection.tooling.sobject('PackageBundle').delete(idOrAlias);
   }
 
   /**

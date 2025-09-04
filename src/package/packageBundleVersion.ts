@@ -15,6 +15,8 @@ import {
   PackageVersionEvents,
   PackagingSObjects,
   PackageType,
+  QueryRecord,
+  AncestorRecord,
 } from '../interfaces';
 import { massageErrorMessage } from '../utils/bundleUtils';
 import { applyErrorAction } from '../utils/packageUtils';
@@ -22,62 +24,6 @@ import { PackageBundleVersionCreate } from './packageBundleVersionCreate';
 
 Messages.importMessagesDirectory(__dirname);
 const bundleVersionMessages = Messages.loadMessages('@salesforce/packaging', 'bundle_version');
-
-type QueryRecord = Schema & {
-  Id: string;
-  PackageBundle?: {
-    Id: string;
-    BundleName: string;
-    Description?: string;
-    IsDeleted: boolean;
-    CreatedDate: string;
-    CreatedById: string;
-    LastModifiedDate: string;
-    LastModifiedById: string;
-    SystemModstamp: string;
-  };
-  VersionName: string;
-  MajorVersion: string;
-  MinorVersion: string;
-  IsReleased: boolean;
-  Ancestor?: {
-    Id: string;
-    PackageBundle?: {
-      Id: string;
-      BundleName: string;
-      Description?: string;
-      IsDeleted: boolean;
-      CreatedDate: string;
-      CreatedById: string;
-      LastModifiedDate: string;
-      LastModifiedById: string;
-      SystemModstamp: string;
-    };
-    VersionName: string;
-    MajorVersion: string;
-    MinorVersion: string;
-    IsReleased: boolean;
-  };
-};
-
-type AncestorRecord = {
-  Id: string;
-  PackageBundle?: {
-    Id: string;
-    BundleName: string;
-    Description?: string;
-    IsDeleted: boolean;
-    CreatedDate: string;
-    CreatedById: string;
-    LastModifiedDate: string;
-    LastModifiedById: string;
-    SystemModstamp: string;
-  };
-  VersionName: string;
-  MajorVersion: string;
-  MinorVersion: string;
-  IsReleased: boolean;
-};
 
 export class PackageBundleVersion {
   public static async create(
@@ -154,14 +100,7 @@ export class PackageBundleVersion {
   }
 
   public static async report(connection: Connection, id: string): Promise<BundleSObjects.BundleVersion | null> {
-    const query =
-      'SELECT Id, PackageBundle.Id, PackageBundle.BundleName, VersionName, MajorVersion, MinorVersion, IsReleased, ' +
-      'PackageBundle.Description, PackageBundle.IsDeleted, PackageBundle.CreatedDate, PackageBundle.CreatedById, PackageBundle.LastModifiedDate, PackageBundle.LastModifiedById, PackageBundle.SystemModstamp, ' +
-      'Ancestor.Id, Ancestor.PackageBundle.Id, Ancestor.PackageBundle.BundleName, Ancestor.VersionName, Ancestor.MajorVersion, Ancestor.MinorVersion, Ancestor.IsReleased, ' +
-      'Ancestor.PackageBundle.Description, Ancestor.PackageBundle.IsDeleted, Ancestor.PackageBundle.CreatedDate, Ancestor.PackageBundle.CreatedById, Ancestor.PackageBundle.LastModifiedDate, Ancestor.PackageBundle.LastModifiedById, Ancestor.PackageBundle.SystemModstamp ' +
-      "FROM PackageBundleVersion WHERE Id = '" +
-      id +
-      "'";
+    const query = `SELECT Id, PackageBundle.Id, PackageBundle.BundleName, VersionName, MajorVersion, MinorVersion, IsReleased, PackageBundle.Description, PackageBundle.IsDeleted, PackageBundle.CreatedDate, PackageBundle.CreatedById, PackageBundle.LastModifiedDate, PackageBundle.LastModifiedById, PackageBundle.SystemModstamp, Ancestor.Id, Ancestor.PackageBundle.Id, Ancestor.PackageBundle.BundleName, Ancestor.VersionName, Ancestor.MajorVersion, Ancestor.MinorVersion, Ancestor.IsReleased, Ancestor.PackageBundle.Description, Ancestor.PackageBundle.IsDeleted, Ancestor.PackageBundle.CreatedDate, Ancestor.PackageBundle.CreatedById, Ancestor.PackageBundle.LastModifiedDate, Ancestor.PackageBundle.LastModifiedById, Ancestor.PackageBundle.SystemModstamp FROM PackageBundleVersion WHERE Id = '${id}'`;
     const queryResult = await connection.autoFetchQuery<QueryRecord>(query, { tooling: true });
     return queryResult.records.length > 0
       ? PackageBundleVersion.mapRecordToBundleVersion(queryResult.records[0])
@@ -170,11 +109,7 @@ export class PackageBundleVersion {
 
   public static async list(connection: Connection): Promise<BundleSObjects.BundleVersion[]> {
     const query =
-      'SELECT Id, PackageBundle.Id, PackageBundle.BundleName, VersionName, MajorVersion, MinorVersion, IsReleased, ' +
-      'PackageBundle.Description, PackageBundle.IsDeleted, PackageBundle.CreatedDate, PackageBundle.CreatedById, PackageBundle.LastModifiedDate, PackageBundle.LastModifiedById, PackageBundle.SystemModstamp, ' +
-      'Ancestor.Id, Ancestor.PackageBundle.Id, Ancestor.PackageBundle.BundleName, Ancestor.VersionName, Ancestor.MajorVersion, Ancestor.MinorVersion, Ancestor.IsReleased, ' +
-      'Ancestor.PackageBundle.Description, Ancestor.PackageBundle.IsDeleted, Ancestor.PackageBundle.CreatedDate, Ancestor.PackageBundle.CreatedById, Ancestor.PackageBundle.LastModifiedDate, Ancestor.PackageBundle.LastModifiedById, Ancestor.PackageBundle.SystemModstamp ' +
-      'FROM PackageBundleVersion';
+      'SELECT Id, PackageBundle.Id, PackageBundle.BundleName, VersionName, MajorVersion, MinorVersion, IsReleased, PackageBundle.Description, PackageBundle.IsDeleted, PackageBundle.CreatedDate, PackageBundle.CreatedById, PackageBundle.LastModifiedDate, PackageBundle.LastModifiedById, PackageBundle.SystemModstamp, Ancestor.Id, Ancestor.PackageBundle.Id, Ancestor.PackageBundle.BundleName, Ancestor.VersionName, Ancestor.MajorVersion, Ancestor.MinorVersion, Ancestor.IsReleased, Ancestor.PackageBundle.Description, Ancestor.PackageBundle.IsDeleted, Ancestor.PackageBundle.CreatedDate, Ancestor.PackageBundle.CreatedById, Ancestor.PackageBundle.LastModifiedDate, Ancestor.PackageBundle.LastModifiedById, Ancestor.PackageBundle.SystemModstamp FROM PackageBundleVersion';
     const queryResult = await connection.autoFetchQuery<QueryRecord>(query, { tooling: true });
     return queryResult.records.map((record) => PackageBundleVersion.mapRecordToBundleVersion(record));
   }
@@ -183,11 +118,7 @@ export class PackageBundleVersion {
     connection: Connection,
     id: string
   ): Promise<PackagingSObjects.SubscriberPackageVersion[]> {
-    const query =
-      'SELECT Component.Id, Component.Description, Component.PublisherName, Component.MajorVersion, Component.MinorVersion, Component.PatchVersion, Component.BuildNumber, Component.ReleaseState, Component.IsManaged, Component.IsDeprecated, Component.IsPasswordProtected, Component.IsBeta, Component.Package2ContainerOptions, Component.IsSecurityReviewed, Component.IsOrgDependent, Component.AppExchangePackageName, Component.AppExchangeDescription, Component.AppExchangePublisherName, Component.AppExchangeLogoUrl, Component.ReleaseNotesUrl, Component.PostInstallUrl, Component.RemoteSiteSettings, Component.CspTrustedSites, Component.Profiles, Component.Dependencies, Component.InstallValidationStatus, Component.SubscriberPackageId ' +
-      "FROM PkgBundleVersionComponent WHERE PackageBundleVersion.Id = '" +
-      id +
-      "' ORDER BY CreatedDate";
+    const query = `SELECT Component.Id, Component.Description, Component.PublisherName, Component.MajorVersion, Component.MinorVersion, Component.PatchVersion, Component.BuildNumber, Component.ReleaseState, Component.IsManaged, Component.IsDeprecated, Component.IsPasswordProtected, Component.IsBeta, Component.Package2ContainerOptions, Component.IsSecurityReviewed, Component.IsOrgDependent, Component.AppExchangePackageName, Component.AppExchangeDescription, Component.AppExchangePublisherName, Component.AppExchangeLogoUrl, Component.ReleaseNotesUrl, Component.PostInstallUrl, Component.RemoteSiteSettings, Component.CspTrustedSites, Component.Profiles, Component.Dependencies, Component.InstallValidationStatus, Component.SubscriberPackageId FROM PkgBundleVersionComponent WHERE PackageBundleVersion.Id = '${id}' ORDER BY CreatedDate`;
     const queryResult = await connection.autoFetchQuery<
       Schema & {
         Component?: {
@@ -313,7 +244,7 @@ export class PackageBundleVersion {
       CreatedById: record.PackageBundle?.CreatedById ?? '',
       LastModifiedDate: record.PackageBundle?.LastModifiedDate ?? '',
       LastModifiedById: record.PackageBundle?.LastModifiedById ?? '',
-      Ancestor: record.Ancestor?.Id ? PackageBundleVersion.mapAncestor(record.Ancestor) : null,
+      Ancestor: record.Ancestor?.Id ? PackageBundleVersion.mapAncestor(record.Ancestor as AncestorRecord) : null,
       IsReleased: record.IsReleased ?? false,
     };
   }

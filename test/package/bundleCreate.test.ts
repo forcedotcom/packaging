@@ -10,7 +10,7 @@ import { expect } from 'chai';
 import { Connection, SfProject } from '@salesforce/core';
 import { instantiateContext, restoreContext, stubContext, MockTestOrgData } from '@salesforce/core/testSetup';
 import { BundleEntry } from '@salesforce/schemas';
-import { createBundle } from '../../src/package/packageBundleCreate';
+import { createBundle, createPackageDirEntry } from '../../src/package/packageBundleCreate';
 
 async function setupProject(setup: (project: SfProject) => void = () => {}) {
   const project = await SfProject.resolve();
@@ -44,20 +44,25 @@ describe('bundleCreate', () => {
     restoreContext(testContext);
   });
 
-  describe('add bundle entry - no existing entries', () => {
-    it('add bundle entry - no existing entries', async () => {
+  describe('createPackageDirEntry', () => {
+    it('should add a new bundle entry to sfdx-project.json', async () => {
       testContext.inProject(true);
       const project = await setupProject((proj) => {
-        proj.getSfProjectJson().set('namespace', 'testNamespace');
+        proj.getSfProjectJson().set('packageDirectories', [
+          {
+            path: 'force-app',
+            default: true,
+          },
+        ]);
       });
-      const bundleEntry: BundleEntry = {
-        name: 'testBundle',
-        versionName: 'testBundle',
-        versionNumber: '1.0.0',
-        versionDescription: 'testBundle',
-      };
+
+      const bundleEntry = createPackageDirEntry(project, {
+        BundleName: 'testBundle',
+        Description: 'testBundle',
+      });
       project.getSfProjectJson().addPackageBundle(bundleEntry);
-      const bundles = (project.getSfProjectJson().getContents().packageBundles as BundleEntry[]) ?? [];
+      const bundles = project.getSfProjectJson().getPackageBundles();
+      expect(bundles.length).to.equal(1);
       expect(bundleEntry).to.deep.equal(bundles[0]);
     });
 
