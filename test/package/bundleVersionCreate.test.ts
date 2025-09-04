@@ -15,13 +15,13 @@ import { PackageBundleVersionCreate } from '../../src/package/packageBundleVersi
 import { BundleVersionCreateOptions, BundleSObjects } from '../../src/interfaces';
 
 // Type for accessing private methods in tests
-interface PackageBundleVersionCreateWithPrivates {
+type PackageBundleVersionCreateWithPrivates = {
   getPackageVersion(
     options: BundleVersionCreateOptions,
     project: SfProject,
     connection: Connection
   ): Promise<{ MajorVersion: string; MinorVersion: string }>;
-}
+};
 
 async function setupProject(setup: (project: SfProject) => void = () => {}) {
   const project = await SfProject.resolve();
