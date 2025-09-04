@@ -1,3 +1,36 @@
+# [4.13.0](https://github.com/forcedotcom/packaging/compare/4.12.0...4.13.0) (2025-09-04)
+
+
+### Bug Fixes
+
+* added proper parsing of definition file ([c0bc63d](https://github.com/forcedotcom/packaging/commit/c0bc63d139763f48f403a2e9346a0c553e25fabd))
+* added the proper name to packages in bundle version report ([2a09386](https://github.com/forcedotcom/packaging/commit/2a09386233cb6a074a651956c577e4ebfd63af71))
+* address comments ([12b6186](https://github.com/forcedotcom/packaging/commit/12b6186e5202e4f0c2d259b10d0358954c03db46))
+* changed order by to be on ID and not Name to not error out ([b0649f1](https://github.com/forcedotcom/packaging/commit/b0649f16df2cffd8051d9d93cc20090089e70aeb))
+* created test for delete ([12979fb](https://github.com/forcedotcom/packaging/commit/12979fb20c5fe3c77114eee2d0f777165590fb8b))
+* fix bundle create nut test ([c3d921f](https://github.com/forcedotcom/packaging/commit/c3d921f3f773738c1c9822bfaf286b3e1c0a9c91))
+* order by date is now CreatedDate ([9c84840](https://github.com/forcedotcom/packaging/commit/9c84840fd0eda2777663fda1ec4a519ce4b99ca0))
+* removed bundleProject, used packageProject for now ([337a5bc](https://github.com/forcedotcom/packaging/commit/337a5bc5512cc622110beb1096c8b6df19042320))
+* to the tests not working because of prior change ([00a6662](https://github.com/forcedotcom/packaging/commit/00a6662db9e1130c2f4293b3f349ce6ccc5ef06e))
+* update bundle import ([4ecc84c](https://github.com/forcedotcom/packaging/commit/4ecc84cbe6aa6ff60a553633285bd9918c642e8e))
+
+
+### Features
+
+* added bundle create ([dda0651](https://github.com/forcedotcom/packaging/commit/dda06516e80f941c5da03f560cb861e921a83b7b))
+* added handling of next versioning ([e0c82d7](https://github.com/forcedotcom/packaging/commit/e0c82d79222a643775b7d1d9d6942887e784d241))
+* added package bundle version list ([ce34f91](https://github.com/forcedotcom/packaging/commit/ce34f917b8ba1528afc34b4ec3bdcae9566ad662))
+* added report, and listing package versions for bundle cli ([c2dbc4c](https://github.com/forcedotcom/packaging/commit/c2dbc4c81e3056399d5c716842c9bf76511b8e60))
+* bare bones package bundle delete ([a93af1b](https://github.com/forcedotcom/packaging/commit/a93af1bff1b3c2550807556d9b8eca37da922bb3))
+* created bundle list ([defc3c4](https://github.com/forcedotcom/packaging/commit/defc3c4f0f67d5cca1135e6d1076fa5ef6a71642))
+* created bundle version create ([f111e67](https://github.com/forcedotcom/packaging/commit/f111e6703117a76ccf269dc250bfa7accd98c4c6))
+* created delete method on bundles for package bundle delete ([8a2eae2](https://github.com/forcedotcom/packaging/commit/8a2eae29eaa14fc5c8f70569b00263e3c72d6a00))
+* created package bundle install command ([8edfad6](https://github.com/forcedotcom/packaging/commit/8edfad607a5703c740ba3d024670d7374b2e2ab3))
+* implemented the basics for package bundle version report ([98dccf3](https://github.com/forcedotcom/packaging/commit/98dccf3be305b608236ecf09ee4c7174a20114a4))
+* version ovveride ([f450e25](https://github.com/forcedotcom/packaging/commit/f450e250710694c4a4843aec0687b27cdf0bba14))
+
+
+
 # [4.12.0](https://github.com/forcedotcom/packaging/compare/4.11.0...4.12.0) (2025-08-01)
 
 
