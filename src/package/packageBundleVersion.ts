@@ -108,7 +108,8 @@ export class PackageBundleVersion {
   }
 
   public static async list(connection: Connection): Promise<BundleSObjects.BundleVersion[]> {
-    const query = `SELECT Id, PackageBundle.Id, PackageBundle.BundleName, VersionName, MajorVersion, MinorVersion, IsReleased, PackageBundle.Description, PackageBundle.IsDeleted, PackageBundle.CreatedDate, PackageBundle.CreatedById, PackageBundle.LastModifiedDate, PackageBundle.LastModifiedById, PackageBundle.SystemModstamp, Ancestor.Id, Ancestor.PackageBundle.Id, Ancestor.PackageBundle.BundleName, Ancestor.VersionName, Ancestor.MajorVersion, Ancestor.MinorVersion, Ancestor.IsReleased, Ancestor.PackageBundle.Description, Ancestor.PackageBundle.IsDeleted, Ancestor.PackageBundle.CreatedDate, Ancestor.PackageBundle.CreatedById, Ancestor.PackageBundle.LastModifiedDate, Ancestor.PackageBundle.LastModifiedById, Ancestor.PackageBundle.SystemModstamp FROM PackageBundleVersion`;
+    const query =
+      'SELECT Id, PackageBundle.Id, PackageBundle.BundleName, VersionName, MajorVersion, MinorVersion, IsReleased, PackageBundle.Description, PackageBundle.IsDeleted, PackageBundle.CreatedDate, PackageBundle.CreatedById, PackageBundle.LastModifiedDate, PackageBundle.LastModifiedById, PackageBundle.SystemModstamp, Ancestor.Id, Ancestor.PackageBundle.Id, Ancestor.PackageBundle.BundleName, Ancestor.VersionName, Ancestor.MajorVersion, Ancestor.MinorVersion, Ancestor.IsReleased, Ancestor.PackageBundle.Description, Ancestor.PackageBundle.IsDeleted, Ancestor.PackageBundle.CreatedDate, Ancestor.PackageBundle.CreatedById, Ancestor.PackageBundle.LastModifiedDate, Ancestor.PackageBundle.LastModifiedById, Ancestor.PackageBundle.SystemModstamp FROM PackageBundleVersion';
     const queryResult = await connection.autoFetchQuery<QueryRecord>(query, { tooling: true });
     return queryResult.records.map((record) => PackageBundleVersion.mapRecordToBundleVersion(record));
   }
