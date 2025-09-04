@@ -5,13 +5,12 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { Connection, SfProject } from '@salesforce/core';
+import { Connection, SfError, SfProject } from '@salesforce/core';
 import { SaveResult, Schema } from '@jsforce/jsforce-node';
 import { Duration } from '@salesforce/kit';
 import { BundleCreateOptions, BundleSObjects, BundleVersionCreateOptions } from '../interfaces';
 import { createBundle } from './packageBundleCreate';
 import { PackageBundleVersion } from './packageBundleVersion';
-import { SfError } from '@salesforce/core';
 
 const BundleFields = [
   'BundleName',

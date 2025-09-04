@@ -15,7 +15,7 @@ import { PackageBundleVersionCreate } from '../../src/package/packageBundleVersi
 import { BundleVersionCreateOptions, BundleSObjects } from '../../src/interfaces';
 
 // @ts-expect-error accessing private method
-const getPackageVersion = PackageBundleVersionCreate.getPackageVersion;
+const getPackageVersion = (...args) => PackageBundleVersionCreate.getPackageVersion(...args);
 
 async function setupProject(setup: (project: SfProject) => void = () => {}) {
   const project = await SfProject.resolve();
