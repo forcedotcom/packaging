@@ -16,7 +16,7 @@ import { BundleVersionCreateOptions, BundleSObjects } from '../../src/interfaces
 
 const getPackageVersion = (
   ...args: [options: BundleVersionCreateOptions, project: SfProject, connection: Connection]
-) => (PackageBundleVersionCreate as any).getPackageVersion(...args);
+): Promise<{ MajorVersion: string; MinorVersion: string }> => (PackageBundleVersionCreate as any).getPackageVersion(...args);
 
 async function setupProject(setup: (project: SfProject) => void = () => {}) {
   const project = await SfProject.resolve();
