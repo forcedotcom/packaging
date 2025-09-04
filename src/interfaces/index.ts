@@ -6,3 +6,5 @@
  */
 export * from './packagingInterfacesAndType';
 export * from './packagingSObjects';
+export * from './bundleInterfacesAndType';
+export * from './bundleSObjects';
