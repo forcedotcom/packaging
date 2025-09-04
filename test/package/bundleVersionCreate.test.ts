@@ -14,10 +14,14 @@ import { PackageBundleVersion } from '../../src/package/packageBundleVersion';
 import { PackageBundleVersionCreate } from '../../src/package/packageBundleVersionCreate';
 import { BundleVersionCreateOptions, BundleSObjects } from '../../src/interfaces';
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
-const getPackageVersion = (
-  ...args: [options: BundleVersionCreateOptions, project: SfProject, connection: Connection]
-): Promise<{ MajorVersion: string; MinorVersion: string }> => (PackageBundleVersionCreate as any).getPackageVersion(...args);
+// Type for accessing private methods in tests
+interface PackageBundleVersionCreateWithPrivates {
+  getPackageVersion(
+    options: BundleVersionCreateOptions,
+    project: SfProject,
+    connection: Connection
+  ): Promise<{ MajorVersion: string; MinorVersion: string }>;
+}
 
 async function setupProject(setup: (project: SfProject) => void = () => {}) {
   const project = await SfProject.resolve();
@@ -609,7 +613,9 @@ describe('PackageBundleVersion.create', () => {
       };
 
       // Call the private method through reflection for testing
-      const result = await getPackageVersion(options, project, connection);
+      const result = await (
+        PackageBundleVersionCreate as unknown as PackageBundleVersionCreateWithPrivates
+      ).getPackageVersion(options, project, connection);
 
       expect(result).to.deep.equal({
         MajorVersion: '0',
@@ -675,7 +681,9 @@ describe('PackageBundleVersion.create', () => {
       };
 
       // Call the private method through reflection for testing
-      const result = await getPackageVersion(options, project, connection);
+      const result = await (
+        PackageBundleVersionCreate as unknown as PackageBundleVersionCreateWithPrivates
+      ).getPackageVersion(options, project, connection);
 
       expect(result).to.deep.equal({
         MajorVersion: '0',
@@ -734,7 +742,9 @@ describe('PackageBundleVersion.create', () => {
       };
 
       // Call the private method through reflection for testing
-      const result = await getPackageVersion(options, project, connection);
+      const result = await (
+        PackageBundleVersionCreate as unknown as PackageBundleVersionCreateWithPrivates
+      ).getPackageVersion(options, project, connection);
 
       expect(result).to.deep.equal({
         MajorVersion: '1',
