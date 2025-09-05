@@ -19,3 +19,5 @@ export {
   getPackageVersionStrings,
   getPackageVersionNumber,
 } from './packageUtils';
+
+export { massageErrorMessage } from './bundleUtils';

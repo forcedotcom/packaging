@@ -13,10 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from './interfaces';
-export * from './package';
-export * from './package1';
-export * from './utils';
-export * from './package/packageBundle';
-export * from './package/packageBundleVersionCreate';
-export * from './package/packageBundleInstall';
+
+import { Messages } from '@salesforce/core';
+
+Messages.importMessagesDirectory(__dirname);
+const messages = Messages.loadMessages('@salesforce/packaging', 'bundle_utils');
+
+export function massageErrorMessage(err: Error): Error {
+  if (err.name === 'STRING_TOO_LONG') {
+    err['message'] = messages.getMessage('STRING_TOO_LONG');
+  }
+
+  return err;
+}

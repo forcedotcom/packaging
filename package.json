@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/packaging",
-  "version": "4.12.0",
+  "version": "4.13.0",
   "description": "Packaging library for the Salesforce packaging platform",
   "main": "lib/exported",
   "types": "lib/exported.d.ts",
@@ -42,10 +42,10 @@
     "!lib/**/*.map"
   ],
   "dependencies": {
-    "@jsforce/jsforce-node": "^3.6.5",
-    "@salesforce/core": "^8.18.5",
+    "@jsforce/jsforce-node": "^3.10.4",
+    "@salesforce/core": "^8.23.0",
     "@salesforce/kit": "^3.2.3",
-    "@salesforce/schemas": "^1.9.1",
+    "@salesforce/schemas": "^1.10.3",
     "@salesforce/source-deploy-retrieve": "^12.16.9",
     "@salesforce/ts-types": "^2.0.11",
     "@salesforce/types": "^1.2.0",
@@ -58,7 +58,7 @@
     "object-treeify": "^2"
   },
   "devDependencies": {
-    "@salesforce/cli-plugins-testkit": "^5.3.33",
+    "@salesforce/cli-plugins-testkit": "^5.3.41",
     "@salesforce/dev-scripts": "^11.0.4",
     "@types/globby": "^9.1.0",
     "@types/jszip": "^3.4.1",
