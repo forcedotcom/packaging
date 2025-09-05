@@ -58,8 +58,8 @@
     "object-treeify": "^2"
   },
   "devDependencies": {
-    "@salesforce/cli-plugins-testkit": "^5.3.33",
-    "@salesforce/dev-scripts": "^11.0.2",
+    "@salesforce/cli-plugins-testkit": "^5.3.41",
+    "@salesforce/dev-scripts": "^11.0.4",
     "@types/globby": "^9.1.0",
     "@types/jszip": "^3.4.1",
     "eslint-plugin-sf-plugin": "^1.20.8",
@@ -68,7 +68,8 @@
     "typescript": "^5.5.4"
   },
   "resolutions": {
-    "@jsforce/jsforce-node/node-fetch/whatwg-url": "^14.0.0"
+    "@jsforce/jsforce-node/node-fetch/whatwg-url": "^14.0.0",
+    "string-width": "^4.2.3"
   },
   "publishConfig": {
     "access": "public"
