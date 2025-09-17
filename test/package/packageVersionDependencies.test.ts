@@ -59,7 +59,7 @@ describe('Package Version Dependencies', () => {
     expect(connectionStub.firstCall.args[0]).to.contain('Package2Version');
     expect(connectionStub.secondCall.args[0]).to.contain('05iXXXXXXXXXXXXXXX');
     expect(connectionStub.secondCall.args[0]).to.contain('Package2VersionCreateRequest');
-    expect(pvd['resolvedPackageVersionId']).to.equal('08cXXXXXXXXXXXXXXX');
+    expect(pvd['resolvedPackageVersionCreateRequestId']).to.equal('08cXXXXXXXXXXXXXXX');
   });
 
   it('should throw an error if invalid package id is provided', async () => {
@@ -97,9 +97,11 @@ describe('Package Version Dependencies', () => {
       project: mockProject,
       packageVersionId: '08cXXXXXXXXXXXXXXX',
     });
-    expect(pvd['resolvedPackageVersionId']).to.equal('08cXXXXXXXXXXXXXXX');
-    const isValid = await pvd['validatePackageVersion']();
+    expect(pvd['resolvedPackageVersionCreateRequestId']).to.equal('08cXXXXXXXXXXXXXXX');
+    const isValid = pvd['isValidPackageVersion']();
     expect(isValid).to.be.true;
+    const isTransitiveDependenciesCalculated = await pvd['isTransitiveDependenciesCalculated']();
+    expect(isTransitiveDependenciesCalculated).to.be.true;
     expect(connectionStub.called).to.be.true;
     expect(connectionStub.firstCall.args[0]).to.contain('08cXXXXXXXXXXXXXXX');
     expect(connectionStub.firstCall.args[0]).to.contain('Package2VersionCreateRequest');
