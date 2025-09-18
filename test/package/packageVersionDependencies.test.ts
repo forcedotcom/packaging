@@ -107,7 +107,7 @@ describe('Package Version Dependencies', () => {
     expect(connectionStub.firstCall.args[0]).to.contain('Package2VersionCreateRequest');
   });
 
-  it('should should throw an error if calcTransitiveDependencies is false and but an 08c was provided', async () => {
+  it('should throw an error if calcTransitiveDependencies is false but an 08c was provided', async () => {
     resolveDependencyGraphJsonCall(
       connectionStub,
       [0, 1, 2],
