@@ -12,4 +12,4 @@ Can't display package dependencies. There's an issue generating the dependency g
 
 # noDependencyGraphJsonMustProvideVersion
 
-Can't display package dependencies. This version create request does not have calcTransitiveDependencies set to true. To display package dependencies, either specify a package version id (starts with 04t or 05i) or create a new package version with calculateTransitiveDependencies set to true.
+Can't display package dependencies. This Package2VersionCreateRequest does not have CalcTransitiveDependencies set to true. To display package dependencies, either specify a package version id (starts with 04t or 05i) or create a new package version with the calculateTransitiveDependencies parameter in the sfdx-project.json file to "true".
