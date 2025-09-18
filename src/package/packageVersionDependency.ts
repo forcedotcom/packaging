@@ -114,8 +114,15 @@ export class PackageVersionDependency extends AsyncCreatable<PackageVersionDepen
       nodes: [],
       edges: [],
     };
+
+    flatDependencyGraph.nodes.push({ id: this.allPackageVersionId });
+
     result.records[0].Dependencies?.ids.forEach((dependency) => {
       flatDependencyGraph.nodes.push({ id: dependency.subscriberPackageVersionId });
+      flatDependencyGraph.edges.push({
+        source: dependency.subscriberPackageVersionId,
+        target: this.allPackageVersionId,
+      });
     });
 
     return JSON.stringify(flatDependencyGraph);
@@ -197,8 +204,6 @@ export class PackageVersionDependency extends AsyncCreatable<PackageVersionDepen
           } else {
             throw messages.createError('invalidDependencyGraphError');
           }
-        } else {
-          throw messages.createError('transitiveDependenciesRequiredError');
         }
       }
     }
