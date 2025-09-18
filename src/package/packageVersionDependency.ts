@@ -106,7 +106,7 @@ export class PackageVersionDependency extends AsyncCreatable<PackageVersionDepen
       Dependencies: { ids: Array<{ subscriberPackageVersionId: string }> } | null;
     }>(query);
 
-    if (result.records?.length !== 1) {
+    if (result?.records?.length !== 1) {
       throw messages.createError('invalidPackageVersionIdError', [this.userPackageVersionId]);
     }
 
@@ -169,7 +169,7 @@ export class PackageVersionDependency extends AsyncCreatable<PackageVersionDepen
   }
 
   private isValidPackageVersion(): boolean {
-    if (!this.resolvedPackageVersionCreateRequestId) {
+    if (!this.resolvedPackageVersionCreateRequestId && !this.allPackageVersionId) {
       throw messages.createError('invalidPackageVersionIdError', [this.userPackageVersionId]);
     }
 
