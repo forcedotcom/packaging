@@ -63,7 +63,6 @@
     "@types/globby": "^9.1.0",
     "@types/jszip": "^3.4.1",
     "eslint-plugin-sf-plugin": "^1.20.8",
-    "shelljs": "0.8.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
   },
