@@ -59,7 +59,7 @@ describe('Package Version Dependencies', () => {
     expect(connectionStub.firstCall.args[0]).to.contain('Package2Version');
     expect(connectionStub.secondCall.args[0]).to.contain('05iXXXXXXXXXXXXXXX');
     expect(connectionStub.secondCall.args[0]).to.contain('Package2VersionCreateRequest');
-    expect(pvd['resolvedPackageVersionId']).to.equal('08cXXXXXXXXXXXXXXX');
+    expect(pvd['resolvedPackageVersionCreateRequestId']).to.equal('08cXXXXXXXXXXXXXXX');
   });
 
   it('should throw an error if invalid package id is provided', async () => {
@@ -97,32 +97,37 @@ describe('Package Version Dependencies', () => {
       project: mockProject,
       packageVersionId: '08cXXXXXXXXXXXXXXX',
     });
-    expect(pvd['resolvedPackageVersionId']).to.equal('08cXXXXXXXXXXXXXXX');
-    const isValid = await pvd['validatePackageVersion']();
+    expect(pvd['resolvedPackageVersionCreateRequestId']).to.equal('08cXXXXXXXXXXXXXXX');
+    const isValid = pvd['isValidPackageVersion']();
     expect(isValid).to.be.true;
+    const isTransitiveDependenciesCalculated = await pvd['isTransitiveDependenciesCalculated']();
+    expect(isTransitiveDependenciesCalculated).to.be.true;
     expect(connectionStub.called).to.be.true;
     expect(connectionStub.firstCall.args[0]).to.contain('08cXXXXXXXXXXXXXXX');
     expect(connectionStub.firstCall.args[0]).to.contain('Package2VersionCreateRequest');
   });
 
-  it('should throw an error if calcTransitiveDependencies is false', async () => {
+  it('should throw an error if calcTransitiveDependencies is false but an 08c was provided', async () => {
     resolveDependencyGraphJsonCall(
       connectionStub,
       [0, 1, 2],
       false,
       '{"nodes": [{"id": "04tXXXXXXXXXXXXXXX"}], "edges":[]}'
     );
+
     const pvd = await PackageVersionDependency.create({
       connection: mockConnection,
       project: mockProject,
       packageVersionId: '08cXXXXXXXXXXXXXXX',
     });
+
     try {
       await pvd.getDependencyDotProducer();
-      expect.fail('Expected TransitiveDependenciesRequiredError to be thrown');
+      expect.fail('Expected NoDependencyGraphJsonMustProvideVersionError to be thrown');
     } catch (error: unknown) {
-      expect((error as Error).name).to.equal('TransitiveDependenciesRequiredError');
+      expect((error as Error).name).to.equal('NoDependencyGraphJsonMustProvideVersionError');
     }
+
     expect(connectionStub.called).to.be.true;
     expect(connectionStub.firstCall.args[0]).to.contain('08cXXXXXXXXXXXXXXX');
     expect(connectionStub.firstCall.args[0]).to.contain('Package2VersionCreateRequest');
@@ -237,6 +242,29 @@ describe('Package Version Dependencies', () => {
     expect(dotOutput).to.contain('node_04tXXXXXXXXXXXXXX2 [label="PackageBeingBuilt@1.5.0.0" color="green"]');
     expect(dotOutput).to.contain('node_04tXXXXXXXXXXXXXX2 -> node_04tXXXXXXXXXXXXXX1');
     expect(dotOutput).to.contain('}');
+  });
+
+  it('should create a flat dependency graph if calcTransitiveDependencies is false and an 04t was provided', async () => {
+    resolveDependencyGraphJsonCall(connectionStub, [0, 1, 2, 3], false, null);
+    resolveSelectedNodeIdsCall(connectionStub, 4, ['04tXXXXXXXXXXXXXX1', '04tXXXXXXXXXXXXXX2']);
+    resolveDependencyNodeCall(connectionStub, 5, '04tXXXXXXXXXXXXXX0', 'PackageBeingBuilt', 2, 1, 0, 0);
+    resolveDependencyNodeCall(connectionStub, 6, '04tXXXXXXXXXXXXXX1', 'ParentPackage', 2, 1, 0, 0);
+    resolveDependencyNodeCall(connectionStub, 7, '04tXXXXXXXXXXXXXX2', 'ParentPackage', 2, 1, 0, 0);
+
+    const pvd = await PackageVersionDependency.create({
+      connection: mockConnection,
+      project: mockProject,
+      packageVersionId: '04tXXXXXXXXXXXXXX0',
+    });
+
+    const dotProducer = await pvd.getDependencyDotProducer();
+    const dependencyGraphData = dotProducer['dependencyGraphData'];
+    expect(dependencyGraphData.nodes).to.have.length(3);
+    expect(dependencyGraphData.edges).to.have.length(2);
+
+    expect(connectionStub.called).to.be.true;
+    expect(connectionStub.firstCall.args[0]).to.contain('04tXXXXXXXXXXXXXX0');
+    expect(connectionStub.firstCall.args[0]).to.contain('Package2Version');
   });
 });
 
