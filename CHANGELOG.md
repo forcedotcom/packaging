@@ -1,3 +1,12 @@
+## [4.14.1](https://github.com/forcedotcom/packaging/compare/4.14.0...4.14.1) (2025-09-23)
+
+
+### Bug Fixes
+
+* remove unnecessary shelljs dev dep ([e8601f8](https://github.com/forcedotcom/packaging/commit/e8601f81405aef275a4afadcfe17d7c2d97cd570))
+
+
+
 # [4.14.0](https://github.com/forcedotcom/packaging/compare/4.13.1...4.14.0) (2025-09-23)
 
 
