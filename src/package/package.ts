@@ -321,6 +321,10 @@ export class Package {
         throw messages.createError('appAnalyticsEnabledApiPriorTo59Error');
       }
 
+      if (opts.RecommendedVersionId !== undefined && this.options.connection.getApiVersion() < '66.0') {
+        throw messages.createError('recommendedVersionApiPriorTo66Error');
+      }
+
       const result = await this.options.connection.tooling.update('Package2', opts);
       if (!result.success) {
         throw new SfError(result.errors.join(', '));
