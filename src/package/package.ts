@@ -66,6 +66,7 @@ export const Package2Fields = [
   'ConvertedFromPackageId',
   'PackageErrorUsername',
   'AppAnalyticsEnabled',
+  'RecommendedVersionId',
 ];
 
 /**
@@ -246,7 +247,9 @@ export class Package {
 
   private static getPackage2Fields(connection: Connection): string[] {
     const apiVersion = connection.getApiVersion();
-    return Package2Fields.filter((field) => (apiVersion >= '59.0' ? true : field !== 'AppAnalyticsEnabled'));
+    return Package2Fields.filter((field) => (apiVersion >= '59.0' ? true : field !== 'AppAnalyticsEnabled')).filter(
+      (field) => (apiVersion >= '66.0' ? true : field !== 'RecommendedVersionId')
+    );
   }
 
   /**

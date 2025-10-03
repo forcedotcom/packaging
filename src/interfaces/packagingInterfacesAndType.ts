@@ -62,6 +62,7 @@ export type PackageUpdateOptions = {
   Description?: string;
   PackageErrorUsername?: string;
   AppAnalyticsEnabled?: boolean;
+  RecommendedVersionId?: string;
 };
 
 export type PackageIdType =
