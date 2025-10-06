@@ -48,4 +48,4 @@ Can't retrieve package metadata. The org you specified doesn't have the required
 
 # recommendedVersionApiPriorTo66Error
 
-Enabling Recommended Version is only possible with API version 66.0 or higher.
+To enable Recommended Version, use API version 66.0 or higher.
