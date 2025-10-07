@@ -1,8 +1,17 @@
 /*
- * Copyright (c) 2025, salesforce.com, inc.
- * All rights reserved.
- * Licensed under the BSD 3-Clause license.
- * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
+ * Copyright 2025, Salesforce, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 import * as fs from 'node:fs';
 import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
@@ -82,13 +91,16 @@ export class PackageBundleVersionCreate {
         ? { MajorVersion: options.MajorVersion, MinorVersion: options.MinorVersion }
         : await PackageBundleVersionCreate.getPackageVersion(options, project, connection);
 
+    // Get the versionName from the bundle configuration
+    const versionName = await PackageBundleVersionCreate.getVersionNameFromBundle(
+      options.PackageBundle,
+      project,
+      connection
+    );
+
     const request: BundleSObjects.PkgBundleVersionCreateReq = {
       PackageBundleId: packageBundleId,
-      VersionName: PackageBundleVersionCreate.getVersionName(
-        options.PackageBundle,
-        version.MajorVersion,
-        version.MinorVersion
-      ),
+      VersionName: versionName,
       MajorVersion: version.MajorVersion,
       MinorVersion: version.MinorVersion,
       BundleVersionComponents: JSON.stringify(bundleVersionComponents),
@@ -106,7 +118,8 @@ export class PackageBundleVersionCreate {
     }
 
     if (!createResult?.success) {
-      throw SfError.wrap(massageErrorMessage(new Error(messages.getMessage('failedToCreatePackageBundleVersion'))));
+      const errStr = createResult.errors?.length ? createResult.errors.join(', ') : messages.getMessage('failedToCreatePackageBundleVersion');
+      throw SfError.wrap(massageErrorMessage(new Error(errStr)));
     }
 
     if (options.polling) {
@@ -117,11 +130,7 @@ export class PackageBundleVersionCreate {
       Id: createResult.id,
       PackageBundleVersionId: createResult.id,
       PackageBundleId: packageBundleId,
-      VersionName: PackageBundleVersionCreate.getVersionName(
-        options.PackageBundle,
-        version.MajorVersion,
-        version.MinorVersion
-      ),
+      VersionName: versionName,
       MajorVersion: version.MajorVersion,
       MinorVersion: version.MinorVersion,
       BundleVersionComponents: JSON.stringify(bundleVersionComponents),
@@ -170,8 +179,28 @@ export class PackageBundleVersionCreate {
     }
   }
 
-  private static getVersionName(packageBundle: string, majorVersion: string, minorVersion: string): string {
-    return `${packageBundle}@${majorVersion}.${minorVersion}`;
+  private static async getVersionNameFromBundle(
+    packageBundle: string,
+    project: SfProject,
+    connection: Connection
+  ): Promise<string> {
+    const packageBundleId = PackageBundleVersionCreate.parsePackageBundleId(packageBundle, project);
+    
+    const query = `SELECT BundleName FROM PackageBundle WHERE Id = '${packageBundleId}'`;
+    const result = await connection.tooling.query<{ BundleName: string }>(query);
+
+    if (!result.records || result.records.length === 0) {
+      throw new SfError(messages.getMessage('noBundleFoundWithId', [packageBundleId]));
+    }
+
+    const bundleName = result.records[0].BundleName;
+    const bundles = project.getSfProjectJson().getPackageBundles();
+    const bundle = bundles.find((b) => b.name === bundleName);
+    if (!bundle) {
+      throw new SfError(messages.getMessage('noBundleFoundWithName', [bundleName]));
+    }
+
+    return bundle.versionName;
   }
 
   private static parsePackageBundleId(packageBundle: string, project: SfProject): string {
