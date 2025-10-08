@@ -322,7 +322,7 @@ export class Package {
       }
 
       if (opts.RecommendedVersionId !== undefined && this.options.connection.getApiVersion() < '66.0') {
-        throw messages.createError('recommendedVersionApiPriorTo66Error');
+        throw messages.createError('recommendedVersionIdApiPriorTo66Error');
       }
 
       const result = await this.options.connection.tooling.update('Package2', opts);
