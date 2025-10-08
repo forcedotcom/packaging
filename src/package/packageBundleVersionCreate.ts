@@ -17,7 +17,6 @@ import * as fs from 'node:fs';
 import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
 import { BundleSObjects, BundleVersionCreateOptions } from '../interfaces';
 import { massageErrorMessage } from '../utils/bundleUtils';
-import { PackageBundleVersion } from './packageBundleVersion';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'bundle_version_create');
@@ -57,10 +56,8 @@ export class PackageBundleVersionCreate {
         CreatedById: record.CreatedById ?? '',
         ValidationError: record.ValidationError ?? '',
       };
-    } catch (err) {
-      const error =
-        err instanceof Error ? err : new Error(messages.getMessage('failedToGetPackageBundleVersionCreateStatus'));
-      throw SfError.wrap(massageErrorMessage(error));
+    } catch (error) {
+      throw massageErrorMessage(error as Error);
     }
   }
 
@@ -153,21 +150,18 @@ export class PackageBundleVersionCreate {
       throw SfError.wrap(massageErrorMessage(new Error(errorMessage)));
     }
 
-    if (options.polling) {
-      return PackageBundleVersion.pollCreateStatus(createResult.id, connection, project, options.polling);
-    }
-
     return {
       Id: createResult.id,
-      PackageBundleVersionId: createResult.id,
+      PackageBundleVersionId: '',
       PackageBundleId: packageBundleId,
       VersionName: versionName,
       MajorVersion: version.MajorVersion,
       MinorVersion: version.MinorVersion,
       BundleVersionComponents: JSON.stringify(bundleVersionComponents),
-      RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
+      RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.queued,
       CreatedDate: new Date().toISOString(),
       CreatedById: connection.getUsername() ?? 'unknown',
+      ValidationError: '',
     };
   }
 
@@ -229,6 +223,10 @@ export class PackageBundleVersionCreate {
     const bundle = bundles.find((b) => b.name === bundleName);
     if (!bundle) {
       throw new SfError(messages.getMessage('noBundleFoundWithName', [bundleName]));
+    }
+
+    if (!bundle.versionName) {
+      throw new SfError(`Bundle '${bundleName}' is missing versionName in sfdx-project.json. Please add a versionName field to the bundle configuration.`);
     }
 
     return bundle.versionName;
