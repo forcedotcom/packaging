@@ -79,18 +79,24 @@ export class PackageBundleVersion {
         const report = await PackageBundleVersionCreate.getCreateStatus(createPackageVersionRequestId, connection);
         switch (report.RequestStatus) {
           case BundleSObjects.PkgBundleVersionCreateReqStatus.queued:
-            await Lifecycle.getInstance().emit(BundleVersionEvents.create.enqueued, { ...report, remainingWaitTime });
+            if (Lifecycle.getInstance().getListeners(BundleVersionEvents.create.enqueued).length > 0) {
+              await Lifecycle.getInstance().emit(BundleVersionEvents.create.enqueued, { ...report, remainingWaitTime });
+            }
             remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
             return {
               completed: false,
               payload: report,
             };
           case BundleSObjects.PkgBundleVersionCreateReqStatus.success: {
-            await Lifecycle.getInstance().emit(BundleVersionEvents.create.success, report);
+            if (Lifecycle.getInstance().getListeners(BundleVersionEvents.create.success).length > 0) {
+              await Lifecycle.getInstance().emit(BundleVersionEvents.create.success, report);
+            }
             return { completed: true, payload: report };
           }
           case BundleSObjects.PkgBundleVersionCreateReqStatus.error:
-            await Lifecycle.getInstance().emit(BundleVersionEvents.create.error, report);
+            if (Lifecycle.getInstance().getListeners(BundleVersionEvents.create.error).length > 0) {
+              await Lifecycle.getInstance().emit(BundleVersionEvents.create.error, report);
+            }
             return { completed: true, payload: report };
         }
       },
@@ -102,7 +108,9 @@ export class PackageBundleVersion {
       return await pollingClient.subscribe<BundleSObjects.PackageBundleVersionCreateRequestResult>();
     } catch (err) {
       const report = await PackageBundleVersionCreate.getCreateStatus(createPackageVersionRequestId, connection);
-      await Lifecycle.getInstance().emit(BundleVersionEvents.create['timed-out'], report);
+      if (Lifecycle.getInstance().getListeners(BundleVersionEvents.create['timed-out']).length > 0) {
+        await Lifecycle.getInstance().emit(BundleVersionEvents.create['timed-out'], report);
+      }
       if (err instanceof Error) {
         throw applyErrorAction(err);
       }

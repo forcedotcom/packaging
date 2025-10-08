@@ -118,6 +118,7 @@ export namespace BundleSObjects {
     CreatedDate: string;
     CreatedById: string;
     Error?: string[];
+    ValidationError?: string;
   };
 
   export enum PkgBundleVersionCreateReqStatus {
@@ -145,6 +146,7 @@ export namespace BundleSObjects {
     CreatedDate: string;
     CreatedById: string;
     Error?: string[];
+    ValidationError?: string;
   } & Schema;
 
   export type PkgBundleVersionInstallReq = {

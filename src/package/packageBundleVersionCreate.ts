@@ -28,10 +28,35 @@ export class PackageBundleVersionCreate {
     connection: Connection
   ): Promise<BundleSObjects.PackageBundleVersionCreateRequestResult> {
     try {
-      const result = await connection.tooling
-        .sobject('PkgBundleVersionCreateReq')
-        .retrieve(createPackageVersionRequestId);
-      return result as unknown as BundleSObjects.PackageBundleVersionCreateRequestResult;
+      const query =
+        'SELECT Id, RequestStatus, PackageBundle.Id, PackageBundle.BundleName, PackageBundleVersion.Id, ' +
+        'VersionName, MajorVersion, MinorVersion, Ancestor.Id, BundleVersionComponents, ' +
+        'CreatedDate, CreatedById, ValidationError ' +
+        `FROM PkgBundleVersionCreateReq WHERE Id = '${createPackageVersionRequestId}'`;
+      
+      const queryResult = await connection.autoFetchQuery<BundleSObjects.PkgBundleVersionQueryRecord>(query, {
+        tooling: true,
+      });
+      
+      if (!queryResult.records || queryResult.records.length === 0) {
+        throw new Error(messages.getMessage('failedToGetPackageBundleVersionCreateStatus'));
+      }
+      
+      const record = queryResult.records[0];
+      return {
+        Id: record.Id,
+        RequestStatus: record.RequestStatus,
+        PackageBundleId: record.PackageBundle?.Id ?? '',
+        PackageBundleVersionId: record.PackageBundleVersion?.Id ?? '',
+        VersionName: record.VersionName ?? '',
+        MajorVersion: record.MajorVersion ?? '',
+        MinorVersion: record.MinorVersion ?? '',
+        Ancestor: record.Ancestor?.Id ?? '',
+        BundleVersionComponents: record.BundleVersionComponents ?? '',
+        CreatedDate: record.CreatedDate ?? '',
+        CreatedById: record.CreatedById ?? '',
+        ValidationError: record.ValidationError ?? '',
+      };
     } catch (err) {
       const error =
         err instanceof Error ? err : new Error(messages.getMessage('failedToGetPackageBundleVersionCreateStatus'));
@@ -47,7 +72,7 @@ export class PackageBundleVersionCreate {
     let query =
       'SELECT Id, RequestStatus, PackageBundle.Id, PackageBundle.BundleName, PackageBundleVersion.Id, ' +
       'VersionName, MajorVersion, MinorVersion, Ancestor.Id, BundleVersionComponents, ' +
-      'CreatedDate, CreatedById ' +
+      'CreatedDate, CreatedById, ValidationError ' +
       'FROM PkgBundleVersionCreateReq';
     if (status && createdLastDays) {
       query += ` WHERE RequestStatus = '${status}' AND CreatedDate = LAST_N_DAYS: ${createdLastDays}`;
@@ -71,6 +96,7 @@ export class PackageBundleVersionCreate {
       BundleVersionComponents: record.BundleVersionComponents ?? '',
       CreatedDate: record.CreatedDate ?? '',
       CreatedById: record.CreatedById ?? '',
+      ValidationError: record.ValidationError ?? '',
     }));
   }
 
@@ -118,8 +144,13 @@ export class PackageBundleVersionCreate {
     }
 
     if (!createResult?.success) {
-      const errStr = createResult.errors?.length ? createResult.errors.join(', ') : messages.getMessage('failedToCreatePackageBundleVersion');
-      throw SfError.wrap(massageErrorMessage(new Error(errStr)));
+      let errorMessage = messages.getMessage('failedToCreatePackageBundleVersion');
+      if (createResult.errors?.length) {
+        errorMessage = createResult.errors.join(', ');
+      } else if (createResult.errors && createResult.errors.length === 0) {
+        errorMessage = 'No specific error details available from Salesforce API';
+      }
+      throw SfError.wrap(massageErrorMessage(new Error(errorMessage)));
     }
 
     if (options.polling) {
