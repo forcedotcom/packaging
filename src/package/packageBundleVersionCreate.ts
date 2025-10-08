@@ -158,7 +158,7 @@ export class PackageBundleVersionCreate {
       MajorVersion: version.MajorVersion,
       MinorVersion: version.MinorVersion,
       BundleVersionComponents: JSON.stringify(bundleVersionComponents),
-      RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.queued,
+      RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
       CreatedDate: new Date().toISOString(),
       CreatedById: connection.getUsername() ?? 'unknown',
       ValidationError: '',
