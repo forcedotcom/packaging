@@ -20,7 +20,7 @@ export class PackageBundleInstall {
     try {
       const query =
         'SELECT Id, InstallStatus, PackageBundleVersionID, DevelopmentOrganization, ValidationError, ' +
-        'CreatedDate, CreatedById, Error ' +
+        'CreatedDate, CreatedById ' +
         `FROM PkgBundleVersionInstallReq WHERE Id = '${installRequestId}'`;
       
       const queryResult = await connection.autoFetchQuery<BundleSObjects.PkgBundleVersionInstallQueryRecord>(query, {
@@ -40,7 +40,6 @@ export class PackageBundleInstall {
         ValidationError: record.ValidationError ?? '',
         CreatedDate: record.CreatedDate ?? '',
         CreatedById: record.CreatedById ?? '',
-        Error: record.Error ?? [],
       };
     } catch (err) {
       const error =
@@ -56,7 +55,7 @@ export class PackageBundleInstall {
   ): Promise<BundleSObjects.PkgBundleVersionInstallReqResult[]> {
     let query =
       'SELECT Id, InstallStatus, PackageBundleVersionID, DevelopmentOrganization, ValidationError, ' +
-      'CreatedDate, CreatedById, Error ' +
+      'CreatedDate, CreatedById ' +
       'FROM PkgBundleVersionInstallReq';
     if (status && createdLastDays) {
       query += ` WHERE InstallStatus = '${status}' AND CreatedDate = LAST_N_DAYS: ${createdLastDays}`;
@@ -76,7 +75,6 @@ export class PackageBundleInstall {
       ValidationError: record.ValidationError ?? '',
       CreatedDate: record.CreatedDate ?? '',
       CreatedById: record.CreatedById ?? '',
-      Error: record.Error ?? [],
     }));
   }
 

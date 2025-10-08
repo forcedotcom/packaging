@@ -69,7 +69,7 @@ describe('PackageBundleInstall', () => {
       });
 
       const result = await PackageBundleInstall.getInstallStatus(installRequestId, connection);
-      expect(result).to.deep.equal({ ...mockInstallStatus, Error: [] });
+      expect(result).to.deep.equal(mockInstallStatus);
     });
 
     it('should get install status with error status', async () => {
@@ -87,10 +87,6 @@ describe('PackageBundleInstall', () => {
         ValidationError: 'Installation failed due to validation errors',
         CreatedDate: '2025-01-01T00:00:00.000+0000',
         CreatedById: '0050x0000000000001',
-        Error: [
-          'PropertyController: Invalid type: Schema.Property__c',
-          'SampleDataController: Invalid type: Schema.Property__c',
-        ],
       };
 
       Object.assign(connection, {
@@ -103,7 +99,6 @@ describe('PackageBundleInstall', () => {
       expect(result).to.deep.equal(mockInstallStatus);
       expect(result.InstallStatus).to.equal(BundleSObjects.PkgBundleVersionInstallReqStatus.error);
       expect(result.ValidationError).to.equal('Installation failed due to validation errors');
-      expect(result.Error).to.include('PropertyController: Invalid type: Schema.Property__c');
     });
 
     it('should get install status with queued status', async () => {
@@ -130,7 +125,7 @@ describe('PackageBundleInstall', () => {
       });
 
       const result = await PackageBundleInstall.getInstallStatus(installRequestId, connection);
-      expect(result).to.deep.equal({ ...mockInstallStatus, Error: [] });
+      expect(result).to.deep.equal(mockInstallStatus);
       expect(result.InstallStatus).to.equal(BundleSObjects.PkgBundleVersionInstallReqStatus.queued);
     });
 
@@ -212,7 +207,6 @@ describe('PackageBundleInstall', () => {
         ValidationError: null, // null validation error
         CreatedDate: '2025-01-01T00:00:00.000+0000',
         CreatedById: '0050x0000000000001',
-        Error: [], // empty error array
       };
 
       Object.assign(connection, {
@@ -224,7 +218,6 @@ describe('PackageBundleInstall', () => {
       const result = await PackageBundleInstall.getInstallStatus(installRequestId, connection);
       expect(result.InstallStatus).to.equal(BundleSObjects.PkgBundleVersionInstallReqStatus.success);
       expect(result.ValidationError).to.equal('');
-      expect(result.Error).to.be.an('array').that.is.empty;
     });
 
     it('should handle install status with complex validation error', async () => {
@@ -242,11 +235,6 @@ describe('PackageBundleInstall', () => {
         ValidationError: 'Multiple validation errors encountered',
         CreatedDate: '2025-01-01T00:00:00.000+0000',
         CreatedById: '0050x0000000000001',
-        Error: [
-          'FIELD_CUSTOM_VALIDATION_EXCEPTION: Custom validation rule failed',
-          'DUPLICATE_VALUE: Duplicate values found',
-          'REQUIRED_FIELD_MISSING: Required field is missing',
-        ],
       };
 
       Object.assign(connection, {
@@ -259,10 +247,6 @@ describe('PackageBundleInstall', () => {
       expect(result).to.deep.equal(mockInstallStatus);
       expect(result.InstallStatus).to.equal(BundleSObjects.PkgBundleVersionInstallReqStatus.error);
       expect(result.ValidationError).to.equal('Multiple validation errors encountered');
-      expect(result.Error).to.have.length(3);
-      expect(result.Error).to.include('FIELD_CUSTOM_VALIDATION_EXCEPTION: Custom validation rule failed');
-      expect(result.Error).to.include('DUPLICATE_VALUE: Duplicate values found');
-      expect(result.Error).to.include('REQUIRED_FIELD_MISSING: Required field is missing');
     });
   });
 });
