@@ -1,3 +1,39 @@
+## [4.14.1](https://github.com/forcedotcom/packaging/compare/4.14.0...4.14.1) (2025-09-23)
+
+
+### Bug Fixes
+
+* remove unnecessary shelljs dev dep ([e8601f8](https://github.com/forcedotcom/packaging/commit/e8601f81405aef275a4afadcfe17d7c2d97cd570))
+
+
+
+# [4.14.0](https://github.com/forcedotcom/packaging/compare/4.13.1...4.14.0) (2025-09-23)
+
+
+### Bug Fixes
+
+* flatDependencyGraph should include root node and edges ([0d4b96c](https://github.com/forcedotcom/packaging/commit/0d4b96cfc1a9823db8cf474e90900ed557219fdc))
+* message updates ([b04d95d](https://github.com/forcedotcom/packaging/commit/b04d95d181a7f71156620dd9fb191aced8f56816))
+* removed old error message ([2b837b9](https://github.com/forcedotcom/packaging/commit/2b837b9eac3bf0a6d7e2dbeb9a8c16eb7a76a543))
+* typos ([f603a12](https://github.com/forcedotcom/packaging/commit/f603a12ad936f1843d3baab01f08a35980ec9245))
+* unit tests ([bb79381](https://github.com/forcedotcom/packaging/commit/bb7938169c78aeb4a2c2f45579b05ac775f73162))
+
+
+### Features
+
+* support command on all versions ([7dbb88f](https://github.com/forcedotcom/packaging/commit/7dbb88fd42dd524f3e2199fd8ef985863db36e9e))
+
+
+
+## [4.13.1](https://github.com/forcedotcom/packaging/compare/4.13.0...4.13.1) (2025-09-05)
+
+
+### Bug Fixes
+
+* oss compliance ([3d9d164](https://github.com/forcedotcom/packaging/commit/3d9d1645403a31ba4bf53fc1ea31ec76dab07ca2))
+
+
+
 # [4.13.0](https://github.com/forcedotcom/packaging/compare/4.12.0...4.13.0) (2025-09-04)
 
 
