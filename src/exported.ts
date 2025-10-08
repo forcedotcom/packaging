@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 export * from './interfaces';
-export * from './interfaces/bundleInterfacesAndType';
 export * from './package';
 export * from './package1';
 export * from './utils';

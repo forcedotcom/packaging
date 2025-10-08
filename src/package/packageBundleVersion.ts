@@ -20,8 +20,6 @@ import { Duration } from '@salesforce/kit';
 import { Schema } from '@jsforce/jsforce-node';
 import {
   BundleVersionCreateOptions,
-} from '../interfaces/bundleInterfacesAndType';
-import {
   BundleSObjects,
   PackageVersionEvents,
   PackagingSObjects,
