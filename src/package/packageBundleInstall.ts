@@ -18,8 +18,30 @@ export class PackageBundleInstall {
     connection: Connection
   ): Promise<BundleSObjects.PkgBundleVersionInstallReqResult> {
     try {
-      const result = await connection.tooling.sobject('PkgBundleVersionInstallReq').retrieve(installRequestId);
-      return result as unknown as BundleSObjects.PkgBundleVersionInstallReqResult;
+      const query =
+        'SELECT Id, InstallStatus, PackageBundleVersionID, DevelopmentOrganization, ValidationError, ' +
+        'CreatedDate, CreatedById, Error ' +
+        `FROM PkgBundleVersionInstallReq WHERE Id = '${installRequestId}'`;
+      
+      const queryResult = await connection.autoFetchQuery<BundleSObjects.PkgBundleVersionInstallQueryRecord>(query, {
+        tooling: true,
+      });
+      
+      if (!queryResult.records || queryResult.records.length === 0) {
+        throw new Error(messages.getMessage('failedToGetPackageBundleInstallStatus'));
+      }
+      
+      const record = queryResult.records[0];
+      return {
+        Id: record.Id,
+        InstallStatus: record.InstallStatus,
+        PackageBundleVersionID: record.PackageBundleVersionID ?? '',
+        DevelopmentOrganization: record.DevelopmentOrganization ?? '',
+        ValidationError: record.ValidationError ?? '',
+        CreatedDate: record.CreatedDate ?? '',
+        CreatedById: record.CreatedById ?? '',
+        Error: record.Error ?? [],
+      };
     } catch (err) {
       const error =
         err instanceof Error ? err : new Error(messages.getMessage('failedToGetPackageBundleInstallStatus'));
@@ -34,7 +56,7 @@ export class PackageBundleInstall {
   ): Promise<BundleSObjects.PkgBundleVersionInstallReqResult[]> {
     let query =
       'SELECT Id, InstallStatus, PackageBundleVersionID, DevelopmentOrganization, ValidationError, ' +
-      'CreatedDate, CreatedById ' +
+      'CreatedDate, CreatedById, Error ' +
       'FROM PkgBundleVersionInstallReq';
     if (status && createdLastDays) {
       query += ` WHERE InstallStatus = '${status}' AND CreatedDate = LAST_N_DAYS: ${createdLastDays}`;
@@ -54,6 +76,7 @@ export class PackageBundleInstall {
       ValidationError: record.ValidationError ?? '',
       CreatedDate: record.CreatedDate ?? '',
       CreatedById: record.CreatedById ?? '',
+      Error: record.Error ?? [],
     }));
   }
 

@@ -109,10 +109,14 @@ describe('PackageBundleInstall.installBundle', () => {
               success: true,
               id: '08c000000000000',
             }),
-          retrieve: () => {
-            callCount++;
-            if (callCount === 1) {
-              return Promise.resolve({
+        }),
+      });
+      Object.assign(connection, {
+        autoFetchQuery: () => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve({
+              records: [{
                 Id: '08c000000000000',
                 InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.queued,
                 PackageBundleVersionID: '05i000000000001',
@@ -120,9 +124,12 @@ describe('PackageBundleInstall.installBundle', () => {
                 ValidationError: '',
                 CreatedDate: new Date().toISOString(),
                 CreatedById: 'testUser',
-              });
-            } else {
-              return Promise.resolve({
+                Error: [],
+              }],
+            });
+          } else {
+            return Promise.resolve({
+              records: [{
                 Id: '08c000000000000',
                 InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.success,
                 PackageBundleVersionID: '05i000000000001',
@@ -130,10 +137,11 @@ describe('PackageBundleInstall.installBundle', () => {
                 ValidationError: '',
                 CreatedDate: new Date().toISOString(),
                 CreatedById: 'testUser',
-              });
-            }
-          },
-        }),
+                Error: [],
+              }],
+            });
+          }
+        },
       });
 
       const options: BundleInstallOptions = {
@@ -163,8 +171,12 @@ describe('PackageBundleInstall.installBundle', () => {
               success: true,
               id: '08c000000000000',
             }),
-          retrieve: () =>
-            Promise.resolve({
+        }),
+      });
+      Object.assign(connection, {
+        autoFetchQuery: () =>
+          Promise.resolve({
+            records: [{
               Id: '08c000000000000',
               InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.success,
               PackageBundleVersionID: '05i000000000001',
@@ -172,8 +184,9 @@ describe('PackageBundleInstall.installBundle', () => {
               ValidationError: '',
               CreatedDate: new Date().toISOString(),
               CreatedById: 'testUser',
-            }),
-        }),
+              Error: [],
+            }],
+          }),
       });
 
       const options: BundleInstallOptions = {
@@ -202,8 +215,12 @@ describe('PackageBundleInstall.installBundle', () => {
               success: true,
               id: '08c000000000000',
             }),
-          retrieve: () =>
-            Promise.resolve({
+        }),
+      });
+      Object.assign(connection, {
+        autoFetchQuery: () =>
+          Promise.resolve({
+            records: [{
               Id: '08c000000000000',
               InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.queued,
               PackageBundleVersionID: '05i000000000001',
@@ -211,8 +228,9 @@ describe('PackageBundleInstall.installBundle', () => {
               ValidationError: '',
               CreatedDate: new Date().toISOString(),
               CreatedById: 'testUser',
-            }),
-        }),
+              Error: [],
+            }],
+          }),
       });
 
       const options: BundleInstallOptions = {
@@ -246,8 +264,12 @@ describe('PackageBundleInstall.installBundle', () => {
               success: true,
               id: '08c000000000000',
             }),
-          retrieve: () =>
-            Promise.resolve({
+        }),
+      });
+      Object.assign(connection, {
+        autoFetchQuery: () =>
+          Promise.resolve({
+            records: [{
               Id: '08c000000000000',
               InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.error,
               PackageBundleVersionID: '05i000000000001',
@@ -256,8 +278,8 @@ describe('PackageBundleInstall.installBundle', () => {
               CreatedDate: new Date().toISOString(),
               CreatedById: 'testUser',
               Error: ['Test error message'],
-            }),
-        }),
+            }],
+          }),
       });
 
       const options: BundleInstallOptions = {

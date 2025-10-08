@@ -62,14 +62,14 @@ describe('PackageBundleInstall', () => {
         CreatedById: '0050x0000000000001',
       };
 
-      Object.assign(connection.tooling, {
-        sobject: () => ({
-          retrieve: () => Promise.resolve(mockInstallStatus),
+      Object.assign(connection, {
+        autoFetchQuery: () => Promise.resolve({
+          records: [mockInstallStatus],
         }),
       });
 
       const result = await PackageBundleInstall.getInstallStatus(installRequestId, connection);
-      expect(result).to.deep.equal(mockInstallStatus);
+      expect(result).to.deep.equal({ ...mockInstallStatus, Error: [] });
     });
 
     it('should get install status with error status', async () => {
@@ -93,9 +93,9 @@ describe('PackageBundleInstall', () => {
         ],
       };
 
-      Object.assign(connection.tooling, {
-        sobject: () => ({
-          retrieve: () => Promise.resolve(mockInstallStatus),
+      Object.assign(connection, {
+        autoFetchQuery: () => Promise.resolve({
+          records: [mockInstallStatus],
         }),
       });
 
@@ -123,14 +123,14 @@ describe('PackageBundleInstall', () => {
         CreatedById: '0050x0000000000001',
       };
 
-      Object.assign(connection.tooling, {
-        sobject: () => ({
-          retrieve: () => Promise.resolve(mockInstallStatus),
+      Object.assign(connection, {
+        autoFetchQuery: () => Promise.resolve({
+          records: [mockInstallStatus],
         }),
       });
 
       const result = await PackageBundleInstall.getInstallStatus(installRequestId, connection);
-      expect(result).to.deep.equal(mockInstallStatus);
+      expect(result).to.deep.equal({ ...mockInstallStatus, Error: [] });
       expect(result.InstallStatus).to.equal(BundleSObjects.PkgBundleVersionInstallReqStatus.queued);
     });
 
@@ -142,10 +142,8 @@ describe('PackageBundleInstall', () => {
 
       const installRequestId = '08c0x0000000000000';
 
-      Object.assign(connection.tooling, {
-        sobject: () => ({
-          retrieve: () => Promise.reject(new Error('Connection failed')),
-        }),
+      Object.assign(connection, {
+        autoFetchQuery: () => Promise.reject(new Error('Connection failed')),
       });
 
       try {
@@ -165,10 +163,8 @@ describe('PackageBundleInstall', () => {
 
       const installRequestId = 'invalid_id';
 
-      Object.assign(connection.tooling, {
-        sobject: () => ({
-          retrieve: () => Promise.reject(new Error('Invalid ID: invalid_id')),
-        }),
+      Object.assign(connection, {
+        autoFetchQuery: () => Promise.reject(new Error('Invalid ID: invalid_id')),
       });
 
       try {
@@ -188,10 +184,8 @@ describe('PackageBundleInstall', () => {
 
       const installRequestId = '08c0x0000000000000';
 
-      Object.assign(connection.tooling, {
-        sobject: () => ({
-          retrieve: () => Promise.reject('Unknown error string'),
-        }),
+      Object.assign(connection, {
+        autoFetchQuery: () => Promise.reject('Unknown error string'),
       });
 
       try {
@@ -221,16 +215,15 @@ describe('PackageBundleInstall', () => {
         Error: [], // empty error array
       };
 
-      Object.assign(connection.tooling, {
-        sobject: () => ({
-          retrieve: () => Promise.resolve(mockInstallStatus),
+      Object.assign(connection, {
+        autoFetchQuery: () => Promise.resolve({
+          records: [mockInstallStatus],
         }),
       });
 
       const result = await PackageBundleInstall.getInstallStatus(installRequestId, connection);
-      expect(result).to.deep.equal(mockInstallStatus);
       expect(result.InstallStatus).to.equal(BundleSObjects.PkgBundleVersionInstallReqStatus.success);
-      expect(result.ValidationError).to.be.null;
+      expect(result.ValidationError).to.equal('');
       expect(result.Error).to.be.an('array').that.is.empty;
     });
 
@@ -256,9 +249,9 @@ describe('PackageBundleInstall', () => {
         ],
       };
 
-      Object.assign(connection.tooling, {
-        sobject: () => ({
-          retrieve: () => Promise.resolve(mockInstallStatus),
+      Object.assign(connection, {
+        autoFetchQuery: () => Promise.resolve({
+          records: [mockInstallStatus],
         }),
       });
 
