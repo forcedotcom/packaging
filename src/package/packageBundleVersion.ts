@@ -11,8 +11,10 @@ import { Duration } from '@salesforce/kit';
 import { Schema } from '@jsforce/jsforce-node';
 import {
   BundleVersionCreateOptions,
+  BundleVersionEvents,
+} from '../interfaces/bundleInterfacesAndType';
+import {
   BundleSObjects,
-  PackageVersionEvents,
   PackagingSObjects,
   PackageType,
   QueryRecord,
@@ -68,18 +70,18 @@ export class PackageBundleVersion {
         const report = await PackageBundleVersionCreate.getCreateStatus(createPackageVersionRequestId, connection);
         switch (report.RequestStatus) {
           case BundleSObjects.PkgBundleVersionCreateReqStatus.queued:
-            await Lifecycle.getInstance().emit(PackageVersionEvents.create.enqueued, { ...report, remainingWaitTime });
+            await Lifecycle.getInstance().emit(BundleVersionEvents.create.enqueued, { ...report, remainingWaitTime });
             remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
             return {
               completed: false,
               payload: report,
             };
           case BundleSObjects.PkgBundleVersionCreateReqStatus.success: {
-            await Lifecycle.getInstance().emit(PackageVersionEvents.create.success, report);
+            await Lifecycle.getInstance().emit(BundleVersionEvents.create.success, report);
             return { completed: true, payload: report };
           }
           case BundleSObjects.PkgBundleVersionCreateReqStatus.error:
-            await Lifecycle.getInstance().emit(PackageVersionEvents.create.error, report);
+            await Lifecycle.getInstance().emit(BundleVersionEvents.create.error, report);
             return { completed: true, payload: report };
         }
       },
@@ -91,7 +93,7 @@ export class PackageBundleVersion {
       return await pollingClient.subscribe<BundleSObjects.PackageBundleVersionCreateRequestResult>();
     } catch (err) {
       const report = await PackageBundleVersionCreate.getCreateStatus(createPackageVersionRequestId, connection);
-      await Lifecycle.getInstance().emit(PackageVersionEvents.create['timed-out'], report);
+      await Lifecycle.getInstance().emit(BundleVersionEvents.create['timed-out'], report);
       if (err instanceof Error) {
         throw applyErrorAction(err);
       }

@@ -43,3 +43,13 @@ export type BundleInstallOptions = {
 };
 
 export type BundleSaveResult = SaveResult;
+
+export const BundleVersionEvents = {
+  create: {
+    enqueued: 'BundleVersion/create-enqueued',
+    progress: 'BundleVersion/create-in-progress',
+    success: 'BundleVersion/create-success',
+    error: 'BundleVersion/create-error',
+    'timed-out': 'BundleVersion/create-timed-out',
+  },
+};
