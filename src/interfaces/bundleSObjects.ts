@@ -123,12 +123,14 @@ export namespace BundleSObjects {
 
   export enum PkgBundleVersionCreateReqStatus {
     queued = 'Queued',
+    inProgress = 'InProgress',
     success = 'Success',
     error = 'Error',
   }
 
   export enum PkgBundleVersionInstallReqStatus {
     queued = 'Queued',
+    inProgress = 'InProgress',
     success = 'Success',
     error = 'Error',
   }

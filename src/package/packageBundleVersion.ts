@@ -76,7 +76,8 @@ export class PackageBundleVersion {
         const report = await PackageBundleVersionCreate.getCreateStatus(createPackageVersionRequestId, connection);
         switch (report.RequestStatus) {
           case BundleSObjects.PkgBundleVersionCreateReqStatus.queued:
-            await Lifecycle.getInstance().emit(PackageVersionEvents.create.enqueued, { ...report, remainingWaitTime });
+          case BundleSObjects.PkgBundleVersionCreateReqStatus.inProgress:
+            await Lifecycle.getInstance().emit(PackageVersionEvents.create.progress, { ...report, remainingWaitTime });
             remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
             return {
               completed: false,
@@ -89,6 +90,14 @@ export class PackageBundleVersion {
           case BundleSObjects.PkgBundleVersionCreateReqStatus.error:
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.error, report);
             return { completed: true, payload: report };
+          default:
+            // Handle any unexpected status by continuing to poll
+            await Lifecycle.getInstance().emit(PackageVersionEvents.create.progress, { ...report, remainingWaitTime });
+            remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
+            return {
+              completed: false,
+              payload: report,
+            };
         }
       },
       frequency: polling.frequency,
