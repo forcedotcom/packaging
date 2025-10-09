@@ -118,16 +118,19 @@ export namespace BundleSObjects {
     CreatedDate: string;
     CreatedById: string;
     Error?: string[];
+    ValidationError?: string;
   };
 
   export enum PkgBundleVersionCreateReqStatus {
     queued = 'Queued',
+    inProgress = 'InProgress',
     success = 'Success',
     error = 'Error',
   }
 
   export enum PkgBundleVersionInstallReqStatus {
     queued = 'Queued',
+    inProgress = 'InProgress',
     success = 'Success',
     error = 'Error',
   }
@@ -145,6 +148,7 @@ export namespace BundleSObjects {
     CreatedDate: string;
     CreatedById: string;
     Error?: string[];
+    ValidationError?: string;
   } & Schema;
 
   export type PkgBundleVersionInstallReq = {

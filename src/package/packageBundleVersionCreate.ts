@@ -17,7 +17,6 @@ import * as fs from 'node:fs';
 import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
 import { BundleSObjects, BundleVersionCreateOptions } from '../interfaces';
 import { massageErrorMessage } from '../utils/bundleUtils';
-import { PackageBundleVersion } from './packageBundleVersion';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'bundle_version_create');
@@ -28,14 +27,37 @@ export class PackageBundleVersionCreate {
     connection: Connection
   ): Promise<BundleSObjects.PackageBundleVersionCreateRequestResult> {
     try {
-      const result = await connection.tooling
-        .sobject('PkgBundleVersionCreateReq')
-        .retrieve(createPackageVersionRequestId);
-      return result as unknown as BundleSObjects.PackageBundleVersionCreateRequestResult;
-    } catch (err) {
-      const error =
-        err instanceof Error ? err : new Error(messages.getMessage('failedToGetPackageBundleVersionCreateStatus'));
-      throw SfError.wrap(massageErrorMessage(error));
+      const query =
+        'SELECT Id, RequestStatus, PackageBundle.Id, PackageBundle.BundleName, PackageBundleVersion.Id, ' +
+        'VersionName, MajorVersion, MinorVersion, Ancestor.Id, BundleVersionComponents, ' +
+        'CreatedDate, CreatedById, ValidationError ' +
+        `FROM PkgBundleVersionCreateReq WHERE Id = '${createPackageVersionRequestId}'`;
+      
+      const queryResult = await connection.autoFetchQuery<BundleSObjects.PkgBundleVersionQueryRecord>(query, {
+        tooling: true,
+      });
+      
+      if (!queryResult.records || queryResult.records.length === 0) {
+        throw new Error(messages.getMessage('failedToGetPackageBundleVersionCreateStatus'));
+      }
+      
+      const record = queryResult.records[0];
+      return {
+        Id: record.Id,
+        RequestStatus: record.RequestStatus,
+        PackageBundleId: record.PackageBundle?.Id ?? '',
+        PackageBundleVersionId: record.PackageBundleVersion?.Id ?? '',
+        VersionName: record.VersionName ?? '',
+        MajorVersion: record.MajorVersion ?? '',
+        MinorVersion: record.MinorVersion ?? '',
+        Ancestor: record.Ancestor?.Id ?? '',
+        BundleVersionComponents: record.BundleVersionComponents ?? '',
+        CreatedDate: record.CreatedDate ?? '',
+        CreatedById: record.CreatedById ?? '',
+        ValidationError: record.ValidationError ?? '',
+      };
+    } catch (error) {
+      throw massageErrorMessage(error as Error);
     }
   }
 
@@ -47,7 +69,7 @@ export class PackageBundleVersionCreate {
     let query =
       'SELECT Id, RequestStatus, PackageBundle.Id, PackageBundle.BundleName, PackageBundleVersion.Id, ' +
       'VersionName, MajorVersion, MinorVersion, Ancestor.Id, BundleVersionComponents, ' +
-      'CreatedDate, CreatedById ' +
+      'CreatedDate, CreatedById, ValidationError ' +
       'FROM PkgBundleVersionCreateReq';
     if (status && createdLastDays) {
       query += ` WHERE RequestStatus = '${status}' AND CreatedDate = LAST_N_DAYS: ${createdLastDays}`;
@@ -71,6 +93,7 @@ export class PackageBundleVersionCreate {
       BundleVersionComponents: record.BundleVersionComponents ?? '',
       CreatedDate: record.CreatedDate ?? '',
       CreatedById: record.CreatedById ?? '',
+      ValidationError: record.ValidationError ?? '',
     }));
   }
 
@@ -91,13 +114,16 @@ export class PackageBundleVersionCreate {
         ? { MajorVersion: options.MajorVersion, MinorVersion: options.MinorVersion }
         : await PackageBundleVersionCreate.getPackageVersion(options, project, connection);
 
+    // Get the versionName from the bundle configuration
+    const versionName = await PackageBundleVersionCreate.getVersionNameFromBundle(
+      options.PackageBundle,
+      project,
+      connection
+    );
+
     const request: BundleSObjects.PkgBundleVersionCreateReq = {
       PackageBundleId: packageBundleId,
-      VersionName: PackageBundleVersionCreate.getVersionName(
-        options.PackageBundle,
-        version.MajorVersion,
-        version.MinorVersion
-      ),
+      VersionName: versionName,
       MajorVersion: version.MajorVersion,
       MinorVersion: version.MinorVersion,
       BundleVersionComponents: JSON.stringify(bundleVersionComponents),
@@ -115,29 +141,18 @@ export class PackageBundleVersionCreate {
     }
 
     if (!createResult?.success) {
-      throw SfError.wrap(massageErrorMessage(new Error(messages.getMessage('failedToCreatePackageBundleVersion'))));
+      let errorMessage = messages.getMessage('failedToCreatePackageBundleVersion');
+      if (createResult.errors?.length) {
+        errorMessage = createResult.errors.join(', ');
+      } else if (createResult.errors && createResult.errors.length === 0) {
+        errorMessage = 'No specific error details available from Salesforce API';
+      }
+      throw SfError.wrap(massageErrorMessage(new Error(errorMessage)));
     }
 
-    if (options.polling) {
-      return PackageBundleVersion.pollCreateStatus(createResult.id, connection, project, options.polling);
-    }
-
-    return {
-      Id: createResult.id,
-      PackageBundleVersionId: createResult.id,
-      PackageBundleId: packageBundleId,
-      VersionName: PackageBundleVersionCreate.getVersionName(
-        options.PackageBundle,
-        version.MajorVersion,
-        version.MinorVersion
-      ),
-      MajorVersion: version.MajorVersion,
-      MinorVersion: version.MinorVersion,
-      BundleVersionComponents: JSON.stringify(bundleVersionComponents),
-      RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
-      CreatedDate: new Date().toISOString(),
-      CreatedById: connection.getUsername() ?? 'unknown',
-    };
+    // Return the request result with the ID - polling will be handled by the caller if needed
+    // Query the actual status from the server to get accurate information including the request ID
+    return PackageBundleVersionCreate.getCreateStatus(createResult.id, connection);
   }
 
   private static readBundleVersionComponents(filePath: string, project: SfProject): string[] {
@@ -179,8 +194,32 @@ export class PackageBundleVersionCreate {
     }
   }
 
-  private static getVersionName(packageBundle: string, majorVersion: string, minorVersion: string): string {
-    return `${packageBundle}@${majorVersion}.${minorVersion}`;
+  private static async getVersionNameFromBundle(
+    packageBundle: string,
+    project: SfProject,
+    connection: Connection
+  ): Promise<string> {
+    const packageBundleId = PackageBundleVersionCreate.parsePackageBundleId(packageBundle, project);
+    
+    const query = `SELECT BundleName FROM PackageBundle WHERE Id = '${packageBundleId}'`;
+    const result = await connection.tooling.query<{ BundleName: string }>(query);
+
+    if (!result.records || result.records.length === 0) {
+      throw new SfError(messages.getMessage('noBundleFoundWithId', [packageBundleId]));
+    }
+
+    const bundleName = result.records[0].BundleName;
+    const bundles = project.getSfProjectJson().getPackageBundles();
+    const bundle = bundles.find((b) => b.name === bundleName);
+    if (!bundle) {
+      throw new SfError(messages.getMessage('noBundleFoundWithName', [bundleName]));
+    }
+
+    if (!bundle.versionName) {
+      throw new SfError(`Bundle '${bundleName}' is missing versionName in sfdx-project.json. Please add a versionName field to the bundle configuration.`);
+    }
+
+    return bundle.versionName;
   }
 
   private static parsePackageBundleId(packageBundle: string, project: SfProject): string {

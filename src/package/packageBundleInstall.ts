@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Connection, Messages, SfError, SfProject, PollingClient, StatusResult } from '@salesforce/core';
+import { Connection, Lifecycle, Messages, SfError, SfProject, PollingClient, StatusResult } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import { BundleSObjects, BundleInstallOptions } from '../interfaces';
 import { massageErrorMessage } from '../utils/bundleUtils';
@@ -27,8 +27,31 @@ export class PackageBundleInstall {
     connection: Connection
   ): Promise<BundleSObjects.PkgBundleVersionInstallReqResult> {
     try {
-      const result = await connection.tooling.sobject('PkgBundleVersionInstallReq').retrieve(installRequestId);
-      return result as unknown as BundleSObjects.PkgBundleVersionInstallReqResult;
+      const query =
+        'SELECT Id, InstallStatus, PackageBundleVersionID, DevelopmentOrganization, ValidationError, ' +
+        'CreatedDate, CreatedById ' +
+        `FROM PkgBundleVersionInstallReq WHERE Id = '${installRequestId}'`;
+
+      const queryResult = await connection.autoFetchQuery<BundleSObjects.PkgBundleVersionInstallQueryRecord>(query, {
+        tooling: true,
+      });
+
+      if (!queryResult.records || queryResult.records.length === 0) {
+        throw new Error(messages.getMessage('failedToGetPackageBundleInstallStatus'));
+      }
+
+      const record = queryResult.records[0];
+
+      return {
+        Id: record.Id,
+        InstallStatus: record.InstallStatus,
+        PackageBundleVersionID: record.PackageBundleVersionID ?? '',
+        DevelopmentOrganization: record.DevelopmentOrganization ?? '',
+        ValidationError: record.ValidationError ?? '',
+        CreatedDate: record.CreatedDate ?? '',
+        CreatedById: record.CreatedById ?? '',
+        Error: record.Error,
+      };
     } catch (err) {
       const error =
         err instanceof Error ? err : new Error(messages.getMessage('failedToGetPackageBundleInstallStatus'));
@@ -63,6 +86,7 @@ export class PackageBundleInstall {
       ValidationError: record.ValidationError ?? '',
       CreatedDate: record.CreatedDate ?? '',
       CreatedById: record.CreatedById ?? '',
+      Error: record.Error,
     }));
   }
 
@@ -99,15 +123,8 @@ export class PackageBundleInstall {
       return PackageBundleInstall.pollInstallStatus(installResult.id, connection, options.polling);
     }
 
-    return {
-      Id: installResult.id,
-      PackageBundleVersionID: packageBundleVersionId,
-      DevelopmentOrganization: options.DevelopmentOrganization,
-      InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.queued,
-      ValidationError: '',
-      CreatedDate: new Date().toISOString(),
-      CreatedById: connection.getUsername() ?? 'unknown',
-    };
+    // When not polling, query the actual status from the server to get accurate information
+    return PackageBundleInstall.getInstallStatus(installResult.id, connection);
   }
 
   private static parsePackageBundleVersionId(packageBundleVersion: string, project: SfProject): string {
@@ -133,13 +150,33 @@ export class PackageBundleInstall {
       return PackageBundleInstall.getInstallStatus(installRequestId, connection);
     }
 
+    let remainingWaitTime: Duration = polling.timeout;
     const pollingClient = await PollingClient.create({
       poll: async (): Promise<StatusResult> => {
-        const status = await PackageBundleInstall.getInstallStatus(installRequestId, connection);
-        if (status.InstallStatus === BundleSObjects.PkgBundleVersionInstallReqStatus.success) {
-          return { completed: true, payload: status };
+        const report = await PackageBundleInstall.getInstallStatus(installRequestId, connection);
+        switch (report.InstallStatus) {
+          case BundleSObjects.PkgBundleVersionInstallReqStatus.queued:
+          case BundleSObjects.PkgBundleVersionInstallReqStatus.inProgress:
+            // Emit progress event for UI updates
+            await Lifecycle.getInstance().emit('bundle-install-progress', { ...report, remainingWaitTime });
+            remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
+            return {
+              completed: false,
+              payload: report,
+            };
+          case BundleSObjects.PkgBundleVersionInstallReqStatus.success:
+            return { completed: true, payload: report };
+          case BundleSObjects.PkgBundleVersionInstallReqStatus.error:
+            return { completed: true, payload: report };
+          default:
+            // Handle any unexpected status by continuing to poll
+            await Lifecycle.getInstance().emit('bundle-install-progress', { ...report, remainingWaitTime });
+            remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
+            return {
+              completed: false,
+              payload: report,
+            };
         }
-        return { completed: false, payload: status };
       },
       frequency: polling.frequency,
       timeout: polling.timeout,
@@ -148,8 +185,11 @@ export class PackageBundleInstall {
     try {
       return await pollingClient.subscribe<BundleSObjects.PkgBundleVersionInstallReqResult>();
     } catch (err) {
+      const report = await PackageBundleInstall.getInstallStatus(installRequestId, connection);
       if (err instanceof Error) {
-        throw new Error('Install request timed out');
+        const timeoutError = new SfError(`Install request timed out. Run 'sf package bundle install report -i ${installRequestId} -o <target-org>' to check the status.`);
+        timeoutError.setData({ InstallRequestId: installRequestId, ...report });
+        throw timeoutError;
       }
       throw err;
     }

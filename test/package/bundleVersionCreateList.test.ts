@@ -117,6 +117,7 @@ describe('bundleList', () => {
         BundleVersionComponents: '[{"packageId": "0Ho000000000002", "versionNumber": "1.0.0"}]',
         CreatedDate: '2024-01-01T00:00:00.000+0000',
         CreatedById: '005000000000000',
+        ValidationError: '',
       });
       expect(statuses[1]).to.deep.equal({
         Id: '0Ho000000000004',
@@ -130,6 +131,7 @@ describe('bundleList', () => {
         BundleVersionComponents: '[{"packageId": "0Ho000000000005", "versionNumber": "2.0.0"}]',
         CreatedDate: '2024-01-02T00:00:00.000+0000',
         CreatedById: '005000000000001',
+        ValidationError: '',
       });
     });
 

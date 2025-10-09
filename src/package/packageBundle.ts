@@ -65,7 +65,7 @@ export class PackageBundle {
       timeout: Duration.seconds(0),
     }
   ): Promise<BundleSObjects.PackageBundleVersionCreateRequestResult> {
-    return PackageBundleVersion.create(options, polling);
+    return PackageBundleVersion.create({ ...options, polling });
   }
 
   public static async delete(connection: Connection, project: SfProject, idOrAlias: string): Promise<SaveResult> {

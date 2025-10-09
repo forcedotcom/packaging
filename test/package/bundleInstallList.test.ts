@@ -69,6 +69,7 @@ describe('bundleInstallList', () => {
           ValidationError: '',
           CreatedDate: '2024-01-01T00:00:00.000+0000',
           CreatedById: '005000000000000',
+          Error: [],
         },
         {
           Id: '08c000000000002',
@@ -78,6 +79,7 @@ describe('bundleInstallList', () => {
           ValidationError: '',
           CreatedDate: '2024-01-02T00:00:00.000+0000',
           CreatedById: '005000000000001',
+          Error: [],
         },
       ];
 
@@ -105,6 +107,7 @@ describe('bundleInstallList', () => {
         ValidationError: '',
         CreatedDate: '2024-01-01T00:00:00.000+0000',
         CreatedById: '005000000000000',
+        Error: [],
       });
       expect(statuses[1]).to.deep.equal({
         Id: '08c000000000002',
@@ -114,6 +117,7 @@ describe('bundleInstallList', () => {
         ValidationError: '',
         CreatedDate: '2024-01-02T00:00:00.000+0000',
         CreatedById: '005000000000001',
+        Error: [],
       });
     });
 
@@ -130,6 +134,7 @@ describe('bundleInstallList', () => {
           ValidationError: '',
           CreatedDate: '2024-01-01T00:00:00.000+0000',
           CreatedById: '005000000000000',
+          Error: [],
         },
       ];
 
@@ -172,6 +177,7 @@ describe('bundleInstallList', () => {
           ValidationError: '',
           CreatedDate: '2024-01-01T00:00:00.000+0000',
           CreatedById: '005000000000000',
+          Error: [],
         },
       ];
 
@@ -210,6 +216,7 @@ describe('bundleInstallList', () => {
           ValidationError: 'Test validation error',
           CreatedDate: '2024-01-01T00:00:00.000+0000',
           CreatedById: '005000000000000',
+          Error: [],
         },
       ];
 

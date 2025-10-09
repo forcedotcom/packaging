@@ -87,6 +87,12 @@ describe('PackageBundleVersion.create', () => {
       MajorVersion: '1',
       MinorVersion: '0',
     });
+
+    // Stub the getVersionNameFromBundle method to return expected version name
+    testContext.SANDBOX.stub(
+      PackageBundleVersionCreate,
+      'getVersionNameFromBundle' as keyof typeof PackageBundleVersionCreate
+    ).resolves('ver 1.0');
   });
 
   afterEach(async () => {
@@ -127,6 +133,34 @@ describe('PackageBundleVersion.create', () => {
           }),
       });
 
+      // Mock autoFetchQuery for getCreateStatus
+      Object.assign(connection, {
+        autoFetchQuery: () =>
+          Promise.resolve({
+            records: [
+              {
+                Id: '0Ho000000000000',
+                RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
+                PackageBundle: {
+                  Id: '0Ho123456789012',
+                  BundleName: 'testBundle',
+                },
+                PackageBundleVersion: {
+                  Id: '1Q8000000000001',
+                },
+                VersionName: 'ver 1.0',
+                MajorVersion: '1',
+                MinorVersion: '0',
+                Ancestor: null,
+                BundleVersionComponents: JSON.stringify(components),
+                CreatedDate: '2025-01-01T00:00:00.000Z',
+                CreatedById: '005000000000000',
+                ValidationError: '',
+              },
+            ],
+          }),
+      });
+
       const options: BundleVersionCreateOptions = {
         connection,
         project,
@@ -142,7 +176,7 @@ describe('PackageBundleVersion.create', () => {
       expect(result).to.have.property('Id', '0Ho000000000000');
       expect(result).to.have.property('RequestStatus', BundleSObjects.PkgBundleVersionCreateReqStatus.success);
       expect(result).to.have.property('PackageBundleId');
-      expect(result).to.have.property('VersionName', 'testBundle@1.0');
+      expect(result).to.have.property('VersionName', 'ver 1.0');
       expect(result).to.have.property('MajorVersion', '1');
       expect(result).to.have.property('MinorVersion', '0');
 
@@ -167,36 +201,6 @@ describe('PackageBundleVersion.create', () => {
               success: true,
               id: '0Ho000000000000',
             }),
-          retrieve: () => {
-            callCount++;
-            if (callCount === 1) {
-              return Promise.resolve({
-                Id: '0Ho000000000000',
-                RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.queued,
-                PackageBundleId: '0Ho000000000000',
-                PackageBundleVersionId: '',
-                VersionName: 'testBundle@1.0',
-                MajorVersion: '1',
-                MinorVersion: '0',
-                BundleVersionComponents: JSON.stringify(['04t000000000002', '04t000000000000004']), // Resolved IDs
-                CreatedDate: new Date().toISOString(),
-                CreatedById: 'testUser',
-              });
-            } else {
-              return Promise.resolve({
-                Id: '0Ho000000000000',
-                RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
-                PackageBundleId: '0Ho000000000000',
-                PackageBundleVersionId: '0Ho000000000001',
-                VersionName: 'testBundle@1.0',
-                MajorVersion: '1',
-                MinorVersion: '0',
-                BundleVersionComponents: JSON.stringify(['04t000000000002', '04t000000000000004']), // Resolved IDs
-                CreatedDate: new Date().toISOString(),
-                CreatedById: 'testUser',
-              });
-            }
-          },
         }),
         query: () =>
           Promise.resolve({
@@ -206,6 +210,46 @@ describe('PackageBundleVersion.create', () => {
               },
             ],
           }),
+      });
+
+      // Mock autoFetchQuery for getCreateStatus
+      Object.assign(connection, {
+        autoFetchQuery: () => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve({
+              records: [{
+                Id: '0Ho000000000000',
+                RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.queued,
+                PackageBundle: { Id: '0Ho000000000000' },
+                PackageBundleVersion: { Id: '' },
+                VersionName: 'ver 1.0',
+                MajorVersion: '1',
+                MinorVersion: '0',
+                BundleVersionComponents: JSON.stringify(['04t000000000002', '04t000000000000004']),
+                CreatedDate: new Date().toISOString(),
+                CreatedById: 'testUser',
+                ValidationError: '',
+              }],
+            });
+          } else {
+            return Promise.resolve({
+              records: [{
+                Id: '0Ho000000000000',
+                RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
+                PackageBundle: { Id: '0Ho000000000000' },
+                PackageBundleVersion: { Id: '0Ho000000000001' },
+                VersionName: 'ver 1.0',
+                MajorVersion: '1',
+                MinorVersion: '0',
+                BundleVersionComponents: JSON.stringify(['04t000000000002', '04t000000000000004']),
+                CreatedDate: new Date().toISOString(),
+                CreatedById: 'testUser',
+                ValidationError: '',
+              }],
+            });
+          }
+        },
       });
 
       const options: BundleVersionCreateOptions = {
@@ -223,7 +267,7 @@ describe('PackageBundleVersion.create', () => {
         timeout: Duration.seconds(5),
       };
 
-      const result = await PackageBundleVersion.create(options, polling);
+      const result = await PackageBundleVersion.create({ ...options, polling });
 
       expect(result).to.have.property('Id', '0Ho000000000000');
       expect(result).to.have.property('RequestStatus', BundleSObjects.PkgBundleVersionCreateReqStatus.success);
@@ -250,19 +294,6 @@ describe('PackageBundleVersion.create', () => {
               success: true,
               id: '0Ho000000000000',
             }),
-          retrieve: () =>
-            Promise.resolve({
-              Id: '0Ho000000000000',
-              RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
-              PackageBundleId: '0Ho000000000000',
-              PackageBundleVersionId: '0Ho000000000001',
-              VersionName: 'testBundle@1.0',
-              MajorVersion: '1',
-              MinorVersion: '0',
-              BundleVersionComponents: JSON.stringify(['04t000000000001', '04t000000000000005']), // Resolved IDs
-              CreatedDate: new Date().toISOString(),
-              CreatedById: 'testUser',
-            }),
         }),
         query: () =>
           Promise.resolve({
@@ -271,6 +302,26 @@ describe('PackageBundleVersion.create', () => {
                 BundleName: 'testBundle',
               },
             ],
+          }),
+      });
+
+      // Mock autoFetchQuery for immediate success
+      Object.assign(connection, {
+        autoFetchQuery: () =>
+          Promise.resolve({
+            records: [{
+              Id: '0Ho000000000000',
+              RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
+              PackageBundle: { Id: '0Ho000000000000' },
+              PackageBundleVersion: { Id: '0Ho000000000001' },
+              VersionName: 'ver 1.0',
+              MajorVersion: '1',
+              MinorVersion: '0',
+              BundleVersionComponents: JSON.stringify(['04t000000000001', '04t000000000000005']),
+              CreatedDate: new Date().toISOString(),
+              CreatedById: 'testUser',
+              ValidationError: '',
+            }],
           }),
       });
 
@@ -289,7 +340,7 @@ describe('PackageBundleVersion.create', () => {
         timeout: Duration.seconds(5),
       };
 
-      const result = await PackageBundleVersion.create(options, polling);
+      const result = await PackageBundleVersion.create({ ...options, polling });
 
       expect(result).to.have.property('Id', '0Ho000000000000');
       expect(result).to.have.property('RequestStatus', BundleSObjects.PkgBundleVersionCreateReqStatus.success);
@@ -315,25 +366,38 @@ describe('PackageBundleVersion.create', () => {
               success: true,
               id: '0Ho000000000000',
             }),
-          retrieve: () =>
-            Promise.resolve({
-              Id: '0Ho000000000000',
-              RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.queued,
-              PackageBundleId: '0Ho000000000000',
-              PackageBundleVersionId: '',
-              VersionName: 'testBundle@1.0',
-              MajorVersion: '1',
-              MinorVersion: '0',
-              BundleVersionComponents: JSON.stringify(['04t000000000002', '04t000000000000006']), // Resolved IDs
-              CreatedDate: new Date().toISOString(),
-              CreatedById: 'testUser',
-            }),
         }),
         query: () =>
           Promise.resolve({
             records: [
               {
                 BundleName: 'testBundle',
+              },
+            ],
+          }),
+      });
+
+      // Mock autoFetchQuery to always return queued status (causing timeout)
+      Object.assign(connection, {
+        autoFetchQuery: () =>
+          Promise.resolve({
+            records: [
+              {
+                Id: '0Ho000000000000',
+                RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.queued,
+                PackageBundle: {
+                  Id: '0Ho000000000000',
+                  BundleName: 'testBundle',
+                },
+                PackageBundleVersion: null,
+                VersionName: 'ver 1.0',
+                MajorVersion: '1',
+                MinorVersion: '0',
+                Ancestor: null,
+                BundleVersionComponents: JSON.stringify(['04t000000000002', '04t000000000000006']),
+                CreatedDate: new Date().toISOString(),
+                CreatedById: 'testUser',
+                ValidationError: '',
               },
             ],
           }),
@@ -355,7 +419,7 @@ describe('PackageBundleVersion.create', () => {
       };
 
       try {
-        await PackageBundleVersion.create(options, polling);
+        await PackageBundleVersion.create({ ...options, polling });
         expect.fail('Expected timeout error was not thrown');
       } catch (err) {
         const error = err as Error;
@@ -384,20 +448,6 @@ describe('PackageBundleVersion.create', () => {
               success: true,
               id: '0Ho000000000000',
             }),
-          retrieve: () =>
-            Promise.resolve({
-              Id: '0Ho000000000000',
-              RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.error,
-              PackageBundleId: '0Ho000000000000',
-              PackageBundleVersionId: '',
-              VersionName: 'testBundle@1.0',
-              MajorVersion: '1',
-              MinorVersion: '0',
-              BundleVersionComponents: JSON.stringify(['04t000000000001', '04t000000000000007']), // Resolved IDs
-              CreatedDate: new Date().toISOString(),
-              CreatedById: 'testUser',
-              Error: ['Test error message'],
-            }),
         }),
         query: () =>
           Promise.resolve({
@@ -406,6 +456,26 @@ describe('PackageBundleVersion.create', () => {
                 BundleName: 'testBundle',
               },
             ],
+          }),
+      });
+
+      // Mock autoFetchQuery for error status
+      Object.assign(connection, {
+        autoFetchQuery: () =>
+          Promise.resolve({
+            records: [{
+              Id: '0Ho000000000000',
+              RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.error,
+              PackageBundle: { Id: '0Ho000000000000' },
+              PackageBundleVersion: { Id: '' },
+              VersionName: 'ver 1.0',
+              MajorVersion: '1',
+              MinorVersion: '0',
+              BundleVersionComponents: JSON.stringify(['04t000000000001', '04t000000000000007']),
+              CreatedDate: new Date().toISOString(),
+              CreatedById: 'testUser',
+              ValidationError: 'Test error message',
+            }],
           }),
       });
 
@@ -424,11 +494,11 @@ describe('PackageBundleVersion.create', () => {
         timeout: Duration.seconds(5),
       };
 
-      const result = await PackageBundleVersion.create(options, polling);
+      const result = await PackageBundleVersion.create({ ...options, polling });
 
       expect(result).to.have.property('Id', '0Ho000000000000');
       expect(result).to.have.property('RequestStatus', BundleSObjects.PkgBundleVersionCreateReqStatus.error);
-      expect(result).to.have.property('Error').that.includes('Test error message');
+      expect(result).to.have.property('ValidationError').that.includes('Test error message');
 
       // Clean up
       fs.unlinkSync(componentsPath);
@@ -450,19 +520,6 @@ describe('PackageBundleVersion.create', () => {
               success: true,
               id: '0Ho000000000000',
             }),
-          retrieve: () =>
-            Promise.resolve({
-              Id: '0Ho000000000000',
-              RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
-              PackageBundleId: '0Ho000000000000',
-              PackageBundleVersionId: '0Ho000000000001',
-              VersionName: 'testBundle@1.0',
-              MajorVersion: '1',
-              MinorVersion: '0',
-              BundleVersionComponents: JSON.stringify(['04t000000000002', '04t000000000000008']), // Resolved IDs
-              CreatedDate: new Date().toISOString(),
-              CreatedById: 'testUser',
-            }),
         }),
         query: () =>
           Promise.resolve({
@@ -471,6 +528,26 @@ describe('PackageBundleVersion.create', () => {
                 BundleName: 'testBundle',
               },
             ],
+          }),
+      });
+
+      // Mock autoFetchQuery for immediate success
+      Object.assign(connection, {
+        autoFetchQuery: () =>
+          Promise.resolve({
+            records: [{
+              Id: '0Ho000000000000',
+              RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
+              PackageBundle: { Id: '0Ho000000000000' },
+              PackageBundleVersion: { Id: '0Ho000000000001' },
+              VersionName: 'ver 1.0',
+              MajorVersion: '1',
+              MinorVersion: '0',
+              BundleVersionComponents: JSON.stringify(['04t000000000002', '04t000000000000008']),
+              CreatedDate: new Date().toISOString(),
+              CreatedById: 'testUser',
+              ValidationError: '',
+            }],
           }),
       });
 
@@ -489,7 +566,7 @@ describe('PackageBundleVersion.create', () => {
         timeout: Duration.seconds(0), // Zero timeout means no polling
       };
 
-      const result = await PackageBundleVersion.create(options, polling);
+      const result = await PackageBundleVersion.create({ ...options, polling });
 
       expect(result).to.have.property('Id', '0Ho000000000000');
       expect(result).to.have.property('RequestStatus', BundleSObjects.PkgBundleVersionCreateReqStatus.success);
@@ -603,7 +680,7 @@ describe('PackageBundleVersion.create', () => {
           {
             Id: '0Ho000000000001',
             PackageBundle: { Id: testBundleId, BundleName: testBundleName },
-            VersionName: 'testBundle@0.1',
+            VersionName: 'ver 0.1',
             MajorVersion: '0',
             MinorVersion: '1',
             IsReleased: true,

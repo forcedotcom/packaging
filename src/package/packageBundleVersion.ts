@@ -27,8 +27,8 @@ import {
   QueryRecord,
   AncestorRecord,
 } from '../interfaces';
-import { massageErrorMessage } from '../utils/bundleUtils';
 import { applyErrorAction } from '../utils/packageUtils';
+import { massageErrorMessage } from '../utils/bundleUtils';
 import { PackageBundleVersionCreate } from './packageBundleVersionCreate';
 
 Messages.importMessagesDirectory(__dirname);
@@ -36,8 +36,7 @@ const bundleVersionMessages = Messages.loadMessages('@salesforce/packaging', 'bu
 
 export class PackageBundleVersion {
   public static async create(
-    options: BundleVersionCreateOptions,
-    polling?: { frequency: Duration; timeout: Duration }
+    options: BundleVersionCreateOptions
   ): Promise<BundleSObjects.PackageBundleVersionCreateRequestResult> {
     const createResult = await PackageBundleVersionCreate.createBundleVersion(
       options.connection,
@@ -45,8 +44,8 @@ export class PackageBundleVersion {
       options
     );
 
-    if (polling) {
-      return PackageBundleVersion.pollCreateStatus(createResult.Id, options.connection, options.project, polling).catch(
+    if (options.polling) {
+      return PackageBundleVersion.pollCreateStatus(createResult.Id, options.connection, options.project, options.polling).catch(
         (error: SfError) => {
           if (error.name === 'PollingClientTimeout') {
             const modifiedError = new SfError(error.message);
@@ -77,7 +76,8 @@ export class PackageBundleVersion {
         const report = await PackageBundleVersionCreate.getCreateStatus(createPackageVersionRequestId, connection);
         switch (report.RequestStatus) {
           case BundleSObjects.PkgBundleVersionCreateReqStatus.queued:
-            await Lifecycle.getInstance().emit(PackageVersionEvents.create.enqueued, { ...report, remainingWaitTime });
+          case BundleSObjects.PkgBundleVersionCreateReqStatus.inProgress:
+            await Lifecycle.getInstance().emit(PackageVersionEvents.create.progress, { ...report, remainingWaitTime });
             remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
             return {
               completed: false,
@@ -90,6 +90,14 @@ export class PackageBundleVersion {
           case BundleSObjects.PkgBundleVersionCreateReqStatus.error:
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.error, report);
             return { completed: true, payload: report };
+          default:
+            // Handle any unexpected status by continuing to poll
+            await Lifecycle.getInstance().emit(PackageVersionEvents.create.progress, { ...report, remainingWaitTime });
+            remainingWaitTime = Duration.seconds(remainingWaitTime.seconds - polling.frequency.seconds);
+            return {
+              completed: false,
+              payload: report,
+            };
         }
       },
       frequency: polling.frequency,
