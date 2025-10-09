@@ -28,6 +28,7 @@ import {
   AncestorRecord,
 } from '../interfaces';
 import { applyErrorAction } from '../utils/packageUtils';
+import { massageErrorMessage } from '../utils/bundleUtils';
 import { PackageBundleVersionCreate } from './packageBundleVersionCreate';
 
 Messages.importMessagesDirectory(__dirname);
@@ -37,11 +38,27 @@ export class PackageBundleVersion {
   public static async create(
     options: BundleVersionCreateOptions
   ): Promise<BundleSObjects.PackageBundleVersionCreateRequestResult> {
-    return PackageBundleVersionCreate.createBundleVersion(
+    const createResult = await PackageBundleVersionCreate.createBundleVersion(
       options.connection,
       options.project,
       options
     );
+
+    if (options.polling) {
+      return PackageBundleVersion.pollCreateStatus(createResult.Id, options.connection, options.project, options.polling).catch(
+        (error: SfError) => {
+          if (error.name === 'PollingClientTimeout') {
+            const modifiedError = new SfError(error.message);
+            modifiedError.setData({ VersionCreateRequestId: createResult.Id });
+            modifiedError.message += ` Run 'sf package bundle version create report -i ${createResult.Id}' to check the status.`;
+            throw applyErrorAction(massageErrorMessage(modifiedError));
+          }
+          throw applyErrorAction(massageErrorMessage(error));
+        }
+      );
+    }
+
+    return createResult;
   }
 
   public static async pollCreateStatus(
