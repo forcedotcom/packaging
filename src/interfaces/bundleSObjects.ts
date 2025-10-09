@@ -162,16 +162,17 @@ export namespace BundleSObjects {
     ValidationError: string;
     CreatedDate: string;
     CreatedById: string;
-    Error?: string[];
   };
   export type PkgBundleVersionInstallQueryRecord = {
     Id: string;
     InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus;
     PackageBundleVersionID: string;
+    PackageBundleVersion?: {
+      Id: string;
+    };
     DevelopmentOrganization: string;
     ValidationError: string;
     CreatedDate: string;
     CreatedById: string;
-    Error?: string[];
   } & Schema;
 }

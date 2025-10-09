@@ -31,16 +31,17 @@ export class PackageBundleInstall {
         'SELECT Id, InstallStatus, PackageBundleVersionID, DevelopmentOrganization, ValidationError, ' +
         'CreatedDate, CreatedById ' +
         `FROM PkgBundleVersionInstallReq WHERE Id = '${installRequestId}'`;
-      
+
       const queryResult = await connection.autoFetchQuery<BundleSObjects.PkgBundleVersionInstallQueryRecord>(query, {
         tooling: true,
       });
-      
+
       if (!queryResult.records || queryResult.records.length === 0) {
         throw new Error(messages.getMessage('failedToGetPackageBundleInstallStatus'));
       }
-      
+
       const record = queryResult.records[0];
+
       return {
         Id: record.Id,
         InstallStatus: record.InstallStatus,
@@ -63,7 +64,7 @@ export class PackageBundleInstall {
     createdLastDays?: number
   ): Promise<BundleSObjects.PkgBundleVersionInstallReqResult[]> {
     let query =
-      'SELECT Id, InstallStatus, PackageBundleVersionID, DevelopmentOrganization, ValidationError, ' +
+      'SELECT Id, InstallStatus, PackageBundleVersionID, PackageBundleVersion.Id, DevelopmentOrganization, ValidationError, ' +
       'CreatedDate, CreatedById ' +
       'FROM PkgBundleVersionInstallReq';
     if (status && createdLastDays) {
@@ -79,7 +80,7 @@ export class PackageBundleInstall {
     return queryResult.records.map((record) => ({
       Id: record.Id,
       InstallStatus: record.InstallStatus,
-      PackageBundleVersionID: record.PackageBundleVersionID ?? '',
+      PackageBundleVersionID: record.PackageBundleVersion?.Id ?? record.PackageBundleVersionID ?? '',
       DevelopmentOrganization: record.DevelopmentOrganization ?? '',
       ValidationError: record.ValidationError ?? '',
       CreatedDate: record.CreatedDate ?? '',
