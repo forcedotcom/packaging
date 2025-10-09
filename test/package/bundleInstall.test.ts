@@ -93,6 +93,24 @@ describe('PackageBundleInstall.installBundle', () => {
         }),
       });
 
+      // Mock autoFetchQuery for getInstallStatus
+      Object.assign(connection, {
+        autoFetchQuery: () =>
+          Promise.resolve({
+            records: [
+              {
+                Id: '08c000000000000',
+                InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.queued,
+                PackageBundleVersionID: '05i000000000001',
+                DevelopmentOrganization: '00D000000000000',
+                ValidationError: '',
+                CreatedDate: '2025-01-01T00:00:00.000Z',
+                CreatedById: '005000000000000',
+              },
+            ],
+          }),
+      });
+
       const options: BundleInstallOptions = {
         connection,
         project,
@@ -260,8 +278,7 @@ describe('PackageBundleInstall.installBundle', () => {
 
     it('should handle polling error status with wait flag', async () => {
       // Mock the connection to return error status during polling
-      // Note: The current implementation will timeout when there's an error status
-      // because the polling logic only treats success as completed
+      // The polling should complete immediately when error status is returned
       Object.assign(connection.tooling, {
         sobject: () => ({
           create: () =>
@@ -292,18 +309,17 @@ describe('PackageBundleInstall.installBundle', () => {
         PackageBundleVersion: 'testPackage@1.0',
         DevelopmentOrganization: '00D000000000000',
         polling: {
-          timeout: Duration.seconds(2), // Short timeout since error status will cause timeout
+          timeout: Duration.seconds(2),
           frequency: Duration.seconds(1),
         },
       };
 
-      try {
-        await PackageBundleInstall.installBundle(connection, project, options);
-        expect.fail('Expected timeout error was not thrown');
-      } catch (err) {
-        const error = err as Error;
-        expect(error.message).to.include('Install request timed out');
-      }
+      const result = await PackageBundleInstall.installBundle(connection, project, options);
+
+      // Error status should complete polling immediately and return the error result
+      expect(result).to.have.property('Id', '08c000000000000');
+      expect(result).to.have.property('InstallStatus', BundleSObjects.PkgBundleVersionInstallReqStatus.error);
+      expect(result).to.have.property('ValidationError', 'Test validation error');
     });
 
     it('should handle create failure', async () => {
@@ -391,6 +407,24 @@ describe('PackageBundleInstall.installBundle', () => {
               id: '08c000000000000',
             }),
         }),
+      });
+
+      // Mock autoFetchQuery for getInstallStatus
+      Object.assign(connection, {
+        autoFetchQuery: () =>
+          Promise.resolve({
+            records: [
+              {
+                Id: '08c000000000000',
+                InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.queued,
+                PackageBundleVersionID: '1Q8000000000001234',
+                DevelopmentOrganization: '00D000000000000',
+                ValidationError: '',
+                CreatedDate: '2025-01-01T00:00:00.000Z',
+                CreatedById: '005000000000000',
+              },
+            ],
+          }),
       });
 
       const options: BundleInstallOptions = {

@@ -133,6 +133,34 @@ describe('PackageBundleVersion.create', () => {
           }),
       });
 
+      // Mock autoFetchQuery for getCreateStatus
+      Object.assign(connection, {
+        autoFetchQuery: () =>
+          Promise.resolve({
+            records: [
+              {
+                Id: '0Ho000000000000',
+                RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
+                PackageBundle: {
+                  Id: '0Ho123456789012',
+                  BundleName: 'testBundle',
+                },
+                PackageBundleVersion: {
+                  Id: '1Q8000000000001',
+                },
+                VersionName: 'ver 1.0',
+                MajorVersion: '1',
+                MinorVersion: '0',
+                Ancestor: null,
+                BundleVersionComponents: JSON.stringify(components),
+                CreatedDate: '2025-01-01T00:00:00.000Z',
+                CreatedById: '005000000000000',
+                ValidationError: '',
+              },
+            ],
+          }),
+      });
+
       const options: BundleVersionCreateOptions = {
         connection,
         project,
@@ -338,25 +366,38 @@ describe('PackageBundleVersion.create', () => {
               success: true,
               id: '0Ho000000000000',
             }),
-          retrieve: () =>
-            Promise.resolve({
-              Id: '0Ho000000000000',
-              RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.queued,
-              PackageBundleId: '0Ho000000000000',
-              PackageBundleVersionId: '',
-              VersionName: 'ver 1.0',
-              MajorVersion: '1',
-              MinorVersion: '0',
-              BundleVersionComponents: JSON.stringify(['04t000000000002', '04t000000000000006']), // Resolved IDs
-              CreatedDate: new Date().toISOString(),
-              CreatedById: 'testUser',
-            }),
         }),
         query: () =>
           Promise.resolve({
             records: [
               {
                 BundleName: 'testBundle',
+              },
+            ],
+          }),
+      });
+
+      // Mock autoFetchQuery to always return queued status (causing timeout)
+      Object.assign(connection, {
+        autoFetchQuery: () =>
+          Promise.resolve({
+            records: [
+              {
+                Id: '0Ho000000000000',
+                RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.queued,
+                PackageBundle: {
+                  Id: '0Ho000000000000',
+                  BundleName: 'testBundle',
+                },
+                PackageBundleVersion: null,
+                VersionName: 'ver 1.0',
+                MajorVersion: '1',
+                MinorVersion: '0',
+                Ancestor: null,
+                BundleVersionComponents: JSON.stringify(['04t000000000002', '04t000000000000006']),
+                CreatedDate: new Date().toISOString(),
+                CreatedById: 'testUser',
+                ValidationError: '',
               },
             ],
           }),
