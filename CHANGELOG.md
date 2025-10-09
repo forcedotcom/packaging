@@ -1,3 +1,15 @@
+# [4.15.0](https://github.com/forcedotcom/packaging/compare/4.14.1...4.15.0) (2025-10-09)
+
+
+### Features
+
+* add RecommendedVersionId ([6ade1f9](https://github.com/forcedotcom/packaging/commit/6ade1f94af4c786cde21e3739ab924160a9cb6ec))
+* add unit test for api version ([05e7f3b](https://github.com/forcedotcom/packaging/commit/05e7f3bd059f38280dcb7b06b5342197fcecb5ad))
+* refine message name ([8e658b1](https://github.com/forcedotcom/packaging/commit/8e658b16c046ecdd2e1e11874608a51f94051b23))
+* update recommendedVersoinApiPriorTo66Error with approved message ([1f14cae](https://github.com/forcedotcom/packaging/commit/1f14caea7f978b3159ed5520b399fb214444e399))
+
+
+
 ## [4.14.1](https://github.com/forcedotcom/packaging/compare/4.14.0...4.14.1) (2025-09-23)
 
 
