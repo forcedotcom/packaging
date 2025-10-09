@@ -65,7 +65,7 @@ export class PackageBundleInstall {
     createdLastDays?: number
   ): Promise<BundleSObjects.PkgBundleVersionInstallReqResult[]> {
     let query =
-      'SELECT Id, InstallStatus, PackageBundleVersionID, PackageBundleVersion.Id, DevelopmentOrganization, ValidationError, ' +
+      'SELECT Id, InstallStatus, PackageBundleVersionID, DevelopmentOrganization, ValidationError, ' +
       'CreatedDate, CreatedById ' +
       'FROM PkgBundleVersionInstallReq';
     if (status && createdLastDays) {
@@ -81,7 +81,7 @@ export class PackageBundleInstall {
     return queryResult.records.map((record) => ({
       Id: record.Id,
       InstallStatus: record.InstallStatus,
-      PackageBundleVersionID: record.PackageBundleVersion?.Id ?? record.PackageBundleVersionID ?? '',
+      PackageBundleVersionID: record.PackageBundleVersionID ?? '',
       DevelopmentOrganization: record.DevelopmentOrganization ?? '',
       ValidationError: record.ValidationError ?? '',
       CreatedDate: record.CreatedDate ?? '',
