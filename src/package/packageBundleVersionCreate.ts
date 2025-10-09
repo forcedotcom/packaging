@@ -17,6 +17,7 @@ import * as fs from 'node:fs';
 import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
 import { BundleSObjects, BundleVersionCreateOptions } from '../interfaces';
 import { massageErrorMessage } from '../utils/bundleUtils';
+import { PackageBundleVersion } from './packageBundleVersion';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'bundle_version_create');
@@ -148,6 +149,10 @@ export class PackageBundleVersionCreate {
         errorMessage = 'No specific error details available from Salesforce API';
       }
       throw SfError.wrap(massageErrorMessage(new Error(errorMessage)));
+    }
+
+    if (options.polling) {
+      return PackageBundleVersion.pollCreateStatus(createResult.id, connection, project, options.polling);
     }
 
     return {

@@ -27,7 +27,6 @@ import {
   QueryRecord,
   AncestorRecord,
 } from '../interfaces';
-import { massageErrorMessage } from '../utils/bundleUtils';
 import { applyErrorAction } from '../utils/packageUtils';
 import { PackageBundleVersionCreate } from './packageBundleVersionCreate';
 
@@ -36,30 +35,13 @@ const bundleVersionMessages = Messages.loadMessages('@salesforce/packaging', 'bu
 
 export class PackageBundleVersion {
   public static async create(
-    options: BundleVersionCreateOptions,
-    polling?: { frequency: Duration; timeout: Duration }
+    options: BundleVersionCreateOptions
   ): Promise<BundleSObjects.PackageBundleVersionCreateRequestResult> {
-    const createResult = await PackageBundleVersionCreate.createBundleVersion(
+    return PackageBundleVersionCreate.createBundleVersion(
       options.connection,
       options.project,
       options
     );
-
-    if (polling) {
-      return PackageBundleVersion.pollCreateStatus(createResult.Id, options.connection, options.project, polling).catch(
-        (error: SfError) => {
-          if (error.name === 'PollingClientTimeout') {
-            const modifiedError = new SfError(error.message);
-            modifiedError.setData({ VersionCreateRequestId: createResult.Id });
-            modifiedError.message += ` Run 'sf package bundle version create report -i ${createResult.Id}' to check the status.`;
-            throw applyErrorAction(massageErrorMessage(modifiedError));
-          }
-          throw applyErrorAction(massageErrorMessage(error));
-        }
-      );
-    }
-
-    return createResult;
   }
 
   public static async pollCreateStatus(

@@ -239,7 +239,7 @@ describe('PackageBundleVersion.create', () => {
         timeout: Duration.seconds(5),
       };
 
-      const result = await PackageBundleVersion.create(options, polling);
+      const result = await PackageBundleVersion.create({ ...options, polling });
 
       expect(result).to.have.property('Id', '0Ho000000000000');
       expect(result).to.have.property('RequestStatus', BundleSObjects.PkgBundleVersionCreateReqStatus.success);
@@ -312,7 +312,7 @@ describe('PackageBundleVersion.create', () => {
         timeout: Duration.seconds(5),
       };
 
-      const result = await PackageBundleVersion.create(options, polling);
+      const result = await PackageBundleVersion.create({ ...options, polling });
 
       expect(result).to.have.property('Id', '0Ho000000000000');
       expect(result).to.have.property('RequestStatus', BundleSObjects.PkgBundleVersionCreateReqStatus.success);
@@ -378,7 +378,7 @@ describe('PackageBundleVersion.create', () => {
       };
 
       try {
-        await PackageBundleVersion.create(options, polling);
+        await PackageBundleVersion.create({ ...options, polling });
         expect.fail('Expected timeout error was not thrown');
       } catch (err) {
         const error = err as Error;
@@ -453,7 +453,7 @@ describe('PackageBundleVersion.create', () => {
         timeout: Duration.seconds(5),
       };
 
-      const result = await PackageBundleVersion.create(options, polling);
+      const result = await PackageBundleVersion.create({ ...options, polling });
 
       expect(result).to.have.property('Id', '0Ho000000000000');
       expect(result).to.have.property('RequestStatus', BundleSObjects.PkgBundleVersionCreateReqStatus.error);
@@ -525,7 +525,7 @@ describe('PackageBundleVersion.create', () => {
         timeout: Duration.seconds(0), // Zero timeout means no polling
       };
 
-      const result = await PackageBundleVersion.create(options, polling);
+      const result = await PackageBundleVersion.create({ ...options, polling });
 
       expect(result).to.have.property('Id', '0Ho000000000000');
       expect(result).to.have.property('RequestStatus', BundleSObjects.PkgBundleVersionCreateReqStatus.success);
