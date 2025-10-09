@@ -1,3 +1,26 @@
+## [4.15.1](https://github.com/forcedotcom/packaging/compare/4.15.0...4.15.1) (2025-10-09)
+
+
+### Bug Fixes
+
+* add spanner to install ([58fb295](https://github.com/forcedotcom/packaging/commit/58fb2950c28ae250a05c61c589e873841ce2c797))
+* clean up ([d009f17](https://github.com/forcedotcom/packaging/commit/d009f17b1b9cc9b8f0c07c75e99702f4e91afbdd))
+* clean up ([5a0742b](https://github.com/forcedotcom/packaging/commit/5a0742bb1abb627ab68c8f28c56f411ef2ae710f))
+* finish create and display error correctly for install ([dd8c8f6](https://github.com/forcedotcom/packaging/commit/dd8c8f6d549da57edef1fd5e1a077eb082292f75))
+* fix all tests error regarding create error ([500d769](https://github.com/forcedotcom/packaging/commit/500d769435a6db11cfdc50a5ab6d658a7f5032a7))
+* fix all tests error regarding create error ([5ff24a4](https://github.com/forcedotcom/packaging/commit/5ff24a4cd4d1220c88331cd160e1870454050a3d))
+* fix bundle cli issues dev preview ([ba3b59d](https://github.com/forcedotcom/packaging/commit/ba3b59dff1849e97c6e723807706d90757b5999c))
+* fix polling issue ([7283c6b](https://github.com/forcedotcom/packaging/commit/7283c6b25c073f0fdc20f1546c1290443ffbc90a))
+* fix test ([3479865](https://github.com/forcedotcom/packaging/commit/34798654b2fa3cca5e9284d5df3c744fcaf2e137))
+* fix version create ([5ea79c0](https://github.com/forcedotcom/packaging/commit/5ea79c053501d27cdd3764ec02bb098f02929cd0))
+* revert create ([dfbeddd](https://github.com/forcedotcom/packaging/commit/dfbeddd61a1f2b867d006369977cddeb20450a66))
+* revert create ([d76e8d0](https://github.com/forcedotcom/packaging/commit/d76e8d072f5c0aa78cd373fbb6d65fb1ef46483b))
+* surface bundle install error ([88f909b](https://github.com/forcedotcom/packaging/commit/88f909be92dfe0ae131aec2063aa3425c34de512))
+* surface bundle install error ([657c1e2](https://github.com/forcedotcom/packaging/commit/657c1e2b2ad14392fb2b2ffe04efb18d69723854))
+* use separate bundle version lifecycle event ([bde583b](https://github.com/forcedotcom/packaging/commit/bde583bb4bd63e5768929ecb57926c0833bedc81))
+
+
+
 # [4.15.0](https://github.com/forcedotcom/packaging/compare/4.14.1...4.15.0) (2025-10-09)
 
 
