@@ -168,9 +168,6 @@ export namespace BundleSObjects {
     Id: string;
     InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus;
     PackageBundleVersionID: string;
-    PackageBundleVersion?: {
-      Id: string;
-    };
     DevelopmentOrganization: string;
     ValidationError: string;
     CreatedDate: string;
