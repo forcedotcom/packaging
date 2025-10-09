@@ -106,6 +106,7 @@ describe('PackageBundleInstall.installBundle', () => {
                 ValidationError: '',
                 CreatedDate: '2025-01-01T00:00:00.000Z',
                 CreatedById: '005000000000000',
+                Error: [],
               },
             ],
           }),
@@ -151,6 +152,7 @@ describe('PackageBundleInstall.installBundle', () => {
                 ValidationError: '',
                 CreatedDate: new Date().toISOString(),
                 CreatedById: 'testUser',
+                Error: [],
               }],
             });
           } else {
@@ -163,6 +165,7 @@ describe('PackageBundleInstall.installBundle', () => {
                 ValidationError: '',
                 CreatedDate: new Date().toISOString(),
                 CreatedById: 'testUser',
+                Error: [],
               }],
             });
           }
@@ -209,6 +212,7 @@ describe('PackageBundleInstall.installBundle', () => {
               ValidationError: '',
               CreatedDate: new Date().toISOString(),
               CreatedById: 'testUser',
+              Error: [],
             }],
           }),
       });
@@ -252,6 +256,7 @@ describe('PackageBundleInstall.installBundle', () => {
               ValidationError: '',
               CreatedDate: new Date().toISOString(),
               CreatedById: 'testUser',
+              Error: [],
             }],
           }),
       });
@@ -299,6 +304,7 @@ describe('PackageBundleInstall.installBundle', () => {
               ValidationError: 'Test validation error',
               CreatedDate: new Date().toISOString(),
               CreatedById: 'testUser',
+              Error: [],
             }],
           }),
       });
@@ -422,6 +428,7 @@ describe('PackageBundleInstall.installBundle', () => {
                 ValidationError: '',
                 CreatedDate: '2025-01-01T00:00:00.000Z',
                 CreatedById: '005000000000000',
+                Error: [],
               },
             ],
           }),

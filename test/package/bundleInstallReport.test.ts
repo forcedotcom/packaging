@@ -69,6 +69,7 @@ describe('PackageBundleInstall', () => {
         ValidationError: '',
         CreatedDate: '2025-01-01T00:00:00.000+0000',
         CreatedById: '0050x0000000000001',
+        Error: [],
       };
 
       Object.assign(connection, {
@@ -96,6 +97,7 @@ describe('PackageBundleInstall', () => {
         ValidationError: 'Installation failed due to validation errors',
         CreatedDate: '2025-01-01T00:00:00.000+0000',
         CreatedById: '0050x0000000000001',
+        Error: [],
       };
 
       Object.assign(connection, {
@@ -125,6 +127,7 @@ describe('PackageBundleInstall', () => {
         ValidationError: '',
         CreatedDate: '2025-01-01T00:00:00.000+0000',
         CreatedById: '0050x0000000000001',
+        Error: [],
       };
 
       Object.assign(connection, {
@@ -244,6 +247,7 @@ describe('PackageBundleInstall', () => {
         ValidationError: 'Multiple validation errors encountered',
         CreatedDate: '2025-01-01T00:00:00.000+0000',
         CreatedById: '0050x0000000000001',
+        Error: [],
       };
 
       Object.assign(connection, {

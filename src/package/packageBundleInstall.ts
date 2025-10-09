@@ -50,6 +50,7 @@ export class PackageBundleInstall {
         ValidationError: record.ValidationError ?? '',
         CreatedDate: record.CreatedDate ?? '',
         CreatedById: record.CreatedById ?? '',
+        Error: record.Error,
       };
     } catch (err) {
       const error =
@@ -85,6 +86,7 @@ export class PackageBundleInstall {
       ValidationError: record.ValidationError ?? '',
       CreatedDate: record.CreatedDate ?? '',
       CreatedById: record.CreatedById ?? '',
+      Error: record.Error,
     }));
   }
 
