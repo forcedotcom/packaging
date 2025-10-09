@@ -187,7 +187,7 @@ export class PackageBundleInstall {
     } catch (err) {
       const report = await PackageBundleInstall.getInstallStatus(installRequestId, connection);
       if (err instanceof Error) {
-        const timeoutError = new SfError(`Install request timed out. Run 'sf package bundle install report -i ${installRequestId}' to check the status.`);
+        const timeoutError = new SfError(`Install request timed out. Run 'sf package bundle install report -i ${installRequestId} -o <target-org>' to check the status.`);
         timeoutError.setData({ InstallRequestId: installRequestId, ...report });
         throw timeoutError;
       }
