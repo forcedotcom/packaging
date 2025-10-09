@@ -35,6 +35,7 @@ export namespace PackagingSObjects {
     ConvertedFromPackageId: string;
     PackageErrorUsername: string;
     AppAnalyticsEnabled?: boolean;
+    RecommendedVersionId?: string;
   };
 
   export type Package2Version = {

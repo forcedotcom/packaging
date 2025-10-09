@@ -45,3 +45,7 @@ Can't retrieve package metadata. We're unable to retrieve metadata for the packa
 # packagingNotEnabledOnOrg
 
 Can't retrieve package metadata. The org you specified doesn't have the required second-generation packaging permission enabled. Enable this permission on your Dev Hub org, and try again.
+
+# recommendedVersionIdApiPriorTo66Error
+
+To enable Recommended Version, use API version 66.0 or higher.

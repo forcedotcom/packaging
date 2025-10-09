@@ -183,6 +183,60 @@ describe('Package', () => {
         expect(e.message).to.include('App Analytics').and.to.include('59.0');
       }
     });
+
+    it('should update package RecommendedVersionId', async () => {
+      $$.inProject(true);
+      project = await setupProject((p) => {
+        p.getSfProjectJson().set('packageAliases', { mypkgalias: pkgId });
+      });
+
+      let objProvided = '';
+      let optsProvided: PackageUpdateOptions = { Id: '' };
+      const conn = {
+        tooling: {
+          update: (obj: string, opts: PackageUpdateOptions) => {
+            objProvided = obj;
+            optsProvided = opts;
+            return { success: true };
+          },
+        },
+        getApiVersion: () => '66.0',
+      } as unknown as Connection;
+
+      const pkg = new Package({ connection: conn, packageAliasOrId: pkgId, project });
+      const result = await pkg.update({
+        Id: pkgId,
+        RecommendedVersionId: '04tasdsadfasdf',
+      });
+      assert(result.success);
+      expect(objProvided).to.equal('Package2');
+      expect(optsProvided.Id).to.equal(pkgId);
+      expect(optsProvided.RecommendedVersionId).to.equal('04tasdsadfasdf');
+    });
+
+    it('should error if RecommendedVersionId is defined for api version < 66.0', async () => {
+      $$.inProject(true);
+      project = await setupProject((p) => {
+        p.getSfProjectJson().set('packageAliases', { mypkgalias: pkgId });
+      });
+      const conn = {
+        tooling: {
+          update: () => {},
+        },
+        getApiVersion: () => '65.0',
+      } as unknown as Connection;
+      const pkg = new Package({ connection: conn, packageAliasOrId: pkgId, project });
+      try {
+        await pkg.update({
+          Id: pkgId,
+          RecommendedVersionId: '04tasdsadfasdf',
+        });
+        expect.fail('The update did not throw an error when it should have');
+      } catch (e) {
+        assert(e instanceof Error);
+        expect(e.message).to.include('Recommended Version').and.to.include('66.0');
+      }
+    });
   });
 
   describe('lazy load package data', () => {
