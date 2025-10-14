@@ -16,7 +16,7 @@
 
 import { Connection, Lifecycle, Messages, PollingClient, SfError, StatusResult } from '@salesforce/core';
 import { SfProject } from '@salesforce/core';
-import { Duration } from '@salesforce/kit';
+import { Duration, env } from '@salesforce/kit';
 import { Schema } from '@jsforce/jsforce-node';
 import {
   BundleVersionCreateOptions,
@@ -45,7 +45,7 @@ export class PackageBundleVersion {
     );
 
     if (options.polling) {
-      return PackageBundleVersion.pollCreateStatus(createResult.Id, options.connection, options.project, options.polling).catch(
+      const finalResult = await PackageBundleVersion.pollCreateStatus(createResult.Id, options.connection, options.project, options.polling).catch(
         (error: SfError) => {
           if (error.name === 'PollingClientTimeout') {
             const modifiedError = new SfError(error.message);
@@ -56,6 +56,20 @@ export class PackageBundleVersion {
           throw applyErrorAction(massageErrorMessage(error));
         }
       );
+
+      // Add bundle version alias to sfdx-project.json after successful creation
+      if (finalResult.RequestStatus === BundleSObjects.PkgBundleVersionCreateReqStatus.success && finalResult.PackageBundleVersionId) {
+        await PackageBundleVersion.addBundleVersionAlias(options.project, finalResult);
+      }
+
+      return finalResult;
+    }
+
+    // Add bundle version alias to sfdx-project.json after successful creation (non-polling case)
+    // Note: In the non-polling case, the bundle version may not be created yet (status is 'Queued' or 'InProgress')
+    // So we only add the alias if the status is already 'Success'
+    if (createResult.RequestStatus === BundleSObjects.PkgBundleVersionCreateReqStatus.success && createResult.PackageBundleVersionId) {
+      await PackageBundleVersion.addBundleVersionAlias(options.project, createResult);
     }
 
     return createResult;
@@ -308,5 +322,34 @@ export class PackageBundleVersion {
       LastModifiedById: packageBundle?.LastModifiedById ?? '',
       SystemModstamp: packageBundle?.SystemModstamp ?? '',
     };
+  }
+
+  /**
+   * Add a bundle version alias to the sfdx-project.json file after successful bundle version creation.
+   * Creates an alias in the format: <BundleName>@<MajorVersion>.<MinorVersion>
+   *
+   * @param project The SfProject instance
+   * @param result The bundle version create result containing bundle information
+   */
+  private static async addBundleVersionAlias(
+    project: SfProject,
+    result: BundleSObjects.PackageBundleVersionCreateRequestResult
+  ): Promise<void> {
+    // Skip if auto-update is disabled
+    if (env.getBoolean('SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE')) {
+      return;
+    }
+
+    // Ensure we have the necessary information to create the alias
+    if (!result.PackageBundleVersionId || !result.VersionName || !result.MajorVersion || !result.MinorVersion) {
+      return;
+    }
+
+    // Create alias in format: BundleName@MajorVersion.MinorVersion
+    const alias = `${result.VersionName}@${result.MajorVersion}.${result.MinorVersion}`;
+
+    // Add the alias to the sfdx-project.json file
+    project.getSfProjectJson().addPackageBundleAlias(alias, result.PackageBundleVersionId);
+    await project.getSfProjectJson().write();
   }
 }
