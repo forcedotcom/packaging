@@ -1,3 +1,12 @@
+# [4.16.0](https://github.com/forcedotcom/packaging/compare/4.15.1...4.16.0) (2025-10-15)
+
+
+### Features
+
+* add bundle version to sfdx project ([31ec6f0](https://github.com/forcedotcom/packaging/commit/31ec6f0e638b5cddd3caaa162dbc69aeddfd499b))
+
+
+
 ## [4.15.1](https://github.com/forcedotcom/packaging/compare/4.15.0...4.15.1) (2025-10-09)
 
 
