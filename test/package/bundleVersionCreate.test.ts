@@ -843,5 +843,164 @@ describe('PackageBundleVersion.create', () => {
         `SELECT BundleName FROM PackageBundle WHERE Id = '${testBundleId}'`
       );
     });
+
+    it('should add bundle version alias to sfdx-project.json after successful creation with polling', async () => {
+      const componentsPath = path.join(project.getPath(), 'bundle-components.json');
+      const components = [{ packageVersion: 'pkgA@1.1' }];
+      fs.writeFileSync(componentsPath, JSON.stringify(components));
+
+      // Mock the connection for polling scenario
+      let callCount = 0;
+      Object.assign(connection.tooling, {
+        sobject: () => ({
+          create: () =>
+            Promise.resolve({
+              success: true,
+              id: '0Ho000000000000',
+            }),
+        }),
+        query: () =>
+          Promise.resolve({
+            records: [{ BundleName: 'MyTestBundle' }],
+          }),
+      });
+
+      // Mock autoFetchQuery for getCreateStatus
+      Object.assign(connection, {
+        autoFetchQuery: () => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve({
+              records: [
+                {
+                  Id: '0Ho000000000000',
+                  RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.queued,
+                  PackageBundle: { Id: '1Fl000000000001' },
+                  PackageBundleVersion: { Id: '' },
+                  VersionName: 'MyTestBundle',
+                  MajorVersion: '1',
+                  MinorVersion: '0',
+                  BundleVersionComponents: JSON.stringify(['04t000000000001']),
+                  CreatedDate: new Date().toISOString(),
+                  CreatedById: 'testUser',
+                  ValidationError: '',
+                },
+              ],
+            });
+          } else {
+            return Promise.resolve({
+              records: [
+                {
+                  Id: '0Ho000000000000',
+                  RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
+                  PackageBundle: { Id: '1Fl000000000001' },
+                  PackageBundleVersion: { Id: '1Q8000000000001' },
+                  VersionName: 'MyTestBundle',
+                  MajorVersion: '1',
+                  MinorVersion: '0',
+                  BundleVersionComponents: JSON.stringify(['04t000000000001']),
+                  CreatedDate: new Date().toISOString(),
+                  CreatedById: 'testUser',
+                  ValidationError: '',
+                },
+              ],
+            });
+          }
+        },
+      });
+
+      const options: BundleVersionCreateOptions = {
+        connection,
+        project,
+        PackageBundle: 'MyTestBundle',
+        MajorVersion: '1',
+        MinorVersion: '0',
+        Ancestor: null,
+        BundleVersionComponentsPath: componentsPath,
+        polling: {
+          timeout: Duration.seconds(10),
+          frequency: Duration.seconds(1),
+        },
+      };
+
+      const result = await PackageBundleVersion.create(options);
+
+      // Verify the result is successful
+      expect(result).to.have.property('RequestStatus', BundleSObjects.PkgBundleVersionCreateReqStatus.success);
+      expect(result).to.have.property('PackageBundleVersionId', '1Q8000000000001');
+
+      // Verify that the bundle version alias was added to sfdx-project.json
+      const packageBundleAliases = project.getSfProjectJson().getPackageBundleAliases();
+      expect(packageBundleAliases).to.have.property('MyTestBundle@1.0', '1Q8000000000001');
+
+      // Clean up
+      fs.unlinkSync(componentsPath);
+    });
+
+    it('should add bundle version alias to sfdx-project.json after successful creation without polling', async () => {
+      const componentsPath = path.join(project.getPath(), 'bundle-components.json');
+      const components = [{ packageVersion: 'pkgA@1.1' }];
+      fs.writeFileSync(componentsPath, JSON.stringify(components));
+
+      // Mock the connection for immediate success
+      Object.assign(connection.tooling, {
+        sobject: () => ({
+          create: () =>
+            Promise.resolve({
+              success: true,
+              id: '0Ho000000000000',
+            }),
+        }),
+        query: () =>
+          Promise.resolve({
+            records: [{ BundleName: 'AnotherTestBundle' }],
+          }),
+      });
+
+      // Mock autoFetchQuery for getCreateStatus - immediate success
+      Object.assign(connection, {
+        autoFetchQuery: () =>
+          Promise.resolve({
+            records: [
+              {
+                Id: '0Ho000000000000',
+                RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
+                PackageBundle: { Id: '1Fl000000000002' },
+                PackageBundleVersion: { Id: '1Q8000000000002' },
+                VersionName: 'AnotherTestBundle',
+                MajorVersion: '2',
+                MinorVersion: '3',
+                BundleVersionComponents: JSON.stringify(['04t000000000001']),
+                CreatedDate: new Date().toISOString(),
+                CreatedById: 'testUser',
+                ValidationError: '',
+              },
+            ],
+          }),
+      });
+
+      const options: BundleVersionCreateOptions = {
+        connection,
+        project,
+        PackageBundle: 'AnotherTestBundle',
+        MajorVersion: '2',
+        MinorVersion: '3',
+        Ancestor: null,
+        BundleVersionComponentsPath: componentsPath,
+      };
+
+      const result = await PackageBundleVersion.create(options);
+
+      // Verify the result is successful
+      expect(result).to.have.property('RequestStatus', BundleSObjects.PkgBundleVersionCreateReqStatus.success);
+      expect(result).to.have.property('PackageBundleVersionId', '1Q8000000000002');
+
+      // Verify that the bundle version alias was added to sfdx-project.json
+      const packageBundleAliases = project.getSfProjectJson().getPackageBundleAliases();
+      expect(packageBundleAliases).to.have.property('AnotherTestBundle@2.3', '1Q8000000000002');
+
+      // Clean up
+      fs.unlinkSync(componentsPath);
+    });
   });
 });
