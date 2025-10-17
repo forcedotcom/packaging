@@ -192,12 +192,25 @@ describe('Package', () => {
 
       let objProvided = '';
       let optsProvided: PackageUpdateOptions = { Id: '' };
+      let queryProvided = '';
       const conn = {
         tooling: {
           update: (obj: string, opts: PackageUpdateOptions) => {
             objProvided = obj;
             optsProvided = opts;
             return { success: true };
+          },
+          query: (query: string) => {
+            queryProvided = query;
+            return {
+              records: [
+                {
+                  Id: pkgId,
+                  RecommendedVersionId: '04tasdsadfasdf',
+                },
+              ],
+              totalSize: 1,
+            };
           },
         },
         getApiVersion: () => '66.0',
@@ -212,6 +225,7 @@ describe('Package', () => {
       expect(objProvided).to.equal('Package2');
       expect(optsProvided.Id).to.equal(pkgId);
       expect(optsProvided.RecommendedVersionId).to.equal('04tasdsadfasdf');
+      expect(queryProvided).to.equal(`SELECT RecommendedVersionId FROM Package2 WHERE Id = '${pkgId}'`);
     });
 
     it('should error if RecommendedVersionId is defined for api version < 66.0', async () => {
