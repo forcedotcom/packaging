@@ -329,7 +329,7 @@ export class Package {
         throw messages.createError('recommendedVersionIdApiPriorTo66Error');
       }
 
-      if (opts.SkipAncestorCheck !== undefined && opts.RecommendedVersionId === undefined) {
+      if (skipAncestorCheck === true && opts.RecommendedVersionId === undefined) {
         throw messages.createError('skipAncestorCheckRequiresRecommendedVersionIdError');
       }
 

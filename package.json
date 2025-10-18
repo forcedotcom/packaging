@@ -67,7 +67,6 @@
     "typescript": "^5.5.4"
   },
   "resolutions": {
-    "@jsforce/jsforce-node": "^3.10.8",
     "@jsforce/jsforce-node/node-fetch/whatwg-url": "^14.0.0",
     "string-width": "^4.2.3"
   },
