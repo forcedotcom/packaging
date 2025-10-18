@@ -42,11 +42,11 @@
     "!lib/**/*.map"
   ],
   "dependencies": {
-    "@jsforce/jsforce-node": "^3.10.4",
-    "@salesforce/core": "^8.23.0",
+    "@jsforce/jsforce-node": "^3.10.8",
+    "@salesforce/core": "^8.23.2",
     "@salesforce/kit": "^3.2.3",
     "@salesforce/schemas": "^1.10.3",
-    "@salesforce/source-deploy-retrieve": "^12.16.9",
+    "@salesforce/source-deploy-retrieve": "^12.24.0",
     "@salesforce/ts-types": "^2.0.11",
     "@salesforce/types": "^1.2.0",
     "fast-xml-parser": "^4.5.0",
