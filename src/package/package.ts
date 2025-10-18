@@ -49,7 +49,7 @@ const packagePrefixes = {
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package');
 
-const packageVersionQuery = 'SELECT SubscriberPackageVersionId, AncestorId, RecommendedVersionId FROM Package2Version';
+const packageVersionQuery = 'SELECT SubscriberPackageVersionId, AncestorId FROM Package2Version';
 const package2Query = 'SELECT RecommendedVersionId FROM Package2';
 
 export const Package2Fields = [
@@ -314,7 +314,7 @@ export class Package {
    *
    * @param options
    */
-  public async update(options: PackageUpdateOptions): Promise<PackageSaveResult> {
+  public async update(options: PackageUpdateOptions, skipAncestorCheck?: boolean): Promise<PackageSaveResult> {
     try {
       // filter out any undefined values and their keys
       const opts = Object.fromEntries(
@@ -333,7 +333,7 @@ export class Package {
         throw messages.createError('skipAncestorCheckRequiresRecommendedVersionIdError');
       }
 
-      if (opts.SkipAncestorCheck === undefined && opts.RecommendedVersionId !== undefined) {
+      if (skipAncestorCheck !== true && opts.RecommendedVersionId !== undefined) {
         await this.checkRecommendedVersionAncestors(opts);
       }
 
@@ -401,7 +401,9 @@ export class Package {
       graph.addNode(record.SubscriberPackageVersionId);
 
       if (record.AncestorId) {
-        graph.addNode(record.AncestorId);
+        if (!graph.hasNode(record.AncestorId)) {
+          graph.addNode(record.AncestorId);
+        }
         graph.addEdge(record.SubscriberPackageVersionId, record.AncestorId);
       }
     });
@@ -424,9 +426,9 @@ export class Package {
           }
         }
       }
-      throw messages.createError('recommendedVersionNotAncestorOfPriorVersionError');
-    } else if (graph.outDegree(opts.RecommendedVersionId) === 0) {
+    } else if (graph.outDegree(opts.RecommendedVersionId) === 0 && result.records.length === 1) {
       return;
     }
+    throw messages.createError('recommendedVersionNotAncestorOfPriorVersionError');
   }
 }
