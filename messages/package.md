@@ -60,4 +60,4 @@ No package versions were found for the given Package 2 ID (0Ho). At least one re
 
 # recommendedVersionNotAncestorOfPriorVersionError
 
-The new recommended version is not an ancestor of the previous recommended version. To bypass this check, use the --skip-ancestor-check CLI flag.
+The new recommended version is not a descendant of the previous recommended version. To bypass this check, use the --skip-ancestor-check CLI flag.
