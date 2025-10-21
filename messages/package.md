@@ -49,3 +49,15 @@ Can't retrieve package metadata. The org you specified doesn't have the required
 # recommendedVersionIdApiPriorTo66Error
 
 To enable Recommended Version, use API version 66.0 or higher.
+
+# skipAncestorCheckRequiresRecommendedVersionIdError
+
+The skip ancestor check requires a recommended version ID.
+
+# noPackageVersionsForGivenPackage2FoundError
+
+No package versions were found for the given Package 2 ID (0Ho). At least one released package version must exist.
+
+# recommendedVersionNotAncestorOfPriorVersionError
+
+The new recommended version is not a descendant of the previous recommended version. To bypass this check, use the --skip-ancestor-check CLI flag.

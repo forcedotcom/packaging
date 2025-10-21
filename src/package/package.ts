@@ -15,6 +15,7 @@
  */
 import type { Schema } from '@jsforce/jsforce-node';
 import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
+import { DirectedGraph } from 'graphology';
 import {
   ConvertPackageOptions,
   PackageCreateOptions,
@@ -47,6 +48,9 @@ const packagePrefixes = {
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package');
+
+const packageVersionQuery = 'SELECT SubscriberPackageVersionId, AncestorId FROM Package2Version';
+const package2Query = 'SELECT RecommendedVersionId FROM Package2';
 
 export const Package2Fields = [
   'Id',
@@ -310,7 +314,7 @@ export class Package {
    *
    * @param options
    */
-  public async update(options: PackageUpdateOptions): Promise<PackageSaveResult> {
+  public async update(options: PackageUpdateOptions, skipAncestorCheck?: boolean): Promise<PackageSaveResult> {
     try {
       // filter out any undefined values and their keys
       const opts = Object.fromEntries(
@@ -323,6 +327,14 @@ export class Package {
 
       if (opts.RecommendedVersionId !== undefined && this.options.connection.getApiVersion() < '66.0') {
         throw messages.createError('recommendedVersionIdApiPriorTo66Error');
+      }
+
+      if (skipAncestorCheck === true && opts.RecommendedVersionId === undefined) {
+        throw messages.createError('skipAncestorCheckRequiresRecommendedVersionIdError');
+      }
+
+      if (skipAncestorCheck !== true && opts.RecommendedVersionId !== undefined) {
+        await this.checkRecommendedVersionAncestors(opts);
       }
 
       const result = await this.options.connection.tooling.update('Package2', opts);
@@ -353,5 +365,70 @@ export class Package {
       }
     }
     return this.packageData;
+  }
+
+  /**
+   *
+   * @param options
+   */
+  private async checkRecommendedVersionAncestors(opts: PackageUpdateOptions): Promise<void> {
+    if (opts.RecommendedVersionId === undefined) {
+      return;
+    }
+
+    const queryP2 = `${package2Query} WHERE Id = '${this.packageId}'`;
+    const priorRecommendedVersionId = (await this.options.connection.tooling.query<PackagingSObjects.Package2>(queryP2))
+      .records[0].RecommendedVersionId;
+
+    if (priorRecommendedVersionId === undefined || opts.RecommendedVersionId === priorRecommendedVersionId) {
+      return;
+    }
+
+    const queryP2V = `${packageVersionQuery} WHERE Package2Id = '${this.packageId}'`;
+    const result = await this.options.connection.tooling.query<PackageVersionListResult>(queryP2V);
+
+    if (result.totalSize === 0) {
+      throw messages.createError('noPackageVersionsForGivenPackage2FoundError');
+    } else if (result.totalSize === 1) {
+      return;
+    }
+
+    const graph = new DirectedGraph();
+    const stack: string[] = [opts.RecommendedVersionId];
+    const visited: Set<string> = new Set([opts.RecommendedVersionId]);
+
+    result.records.forEach((record) => {
+      graph.addNode(record.SubscriberPackageVersionId);
+
+      if (record.AncestorId) {
+        if (!graph.hasNode(record.AncestorId)) {
+          graph.addNode(record.AncestorId);
+        }
+        graph.addEdge(record.SubscriberPackageVersionId, record.AncestorId);
+      }
+    });
+
+    if (
+      graph.outDegree(opts.RecommendedVersionId) > 0 &&
+      result.records.some((record) => record.SubscriberPackageVersionId === priorRecommendedVersionId)
+    ) {
+      while (stack.length > 0) {
+        const node = stack.pop()!;
+
+        for (const neighbor of graph.neighbors(node)) {
+          if (neighbor === priorRecommendedVersionId) {
+            return;
+          }
+
+          if (!visited.has(neighbor)) {
+            visited.add(neighbor);
+            stack.push(neighbor);
+          }
+        }
+      }
+    } else if (graph.outDegree(opts.RecommendedVersionId) === 0 && result.records.length === 1) {
+      return;
+    }
+    throw messages.createError('recommendedVersionNotAncestorOfPriorVersionError');
   }
 }
