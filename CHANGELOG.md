@@ -1,3 +1,14 @@
+# [4.17.0](https://github.com/forcedotcom/packaging/compare/4.16.0...4.17.0) (2025-10-21)
+
+
+### Features
+
+* check ancestry when setting recommended version ([af31911](https://github.com/forcedotcom/packaging/commit/af319112a0edc57f7271c8a902aff73c1b17a4bc))
+* include logic for skip ancestry ([f8816ab](https://github.com/forcedotcom/packaging/commit/f8816abf802c7c0bc869f83914df09f592ca8217))
+* remove skipAncestorCheck from interface ([170c446](https://github.com/forcedotcom/packaging/commit/170c446c45f346cc9c86a69d9dd649fff7e48dcd))
+
+
+
 # [4.16.0](https://github.com/forcedotcom/packaging/compare/4.15.1...4.16.0) (2025-10-15)
 
 
