@@ -52,7 +52,7 @@ To enable Recommended Version, use API version 66.0 or higher.
 
 # skipAncestorCheckRequiresRecommendedVersionIdError
 
-Skip ancestor check requires a Recommended Version ID.
+The skip ancestor check requires a recommended version ID.
 
 # noPackageVersionsForGivenPackage2FoundError
 
