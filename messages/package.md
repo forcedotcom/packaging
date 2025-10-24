@@ -64,7 +64,7 @@ The new recommended version is not a descendant of the previous recommended vers
 
 # invalidRecommendedVersionError
 
-Please provide a valid subscriber package version (04t) for the recommended version.
+Provide a valid subscriber package version (04t) for the recommended version.
 
 # unassociatedRecommendedVersionError
 
