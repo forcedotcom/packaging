@@ -96,7 +96,7 @@ Can’t create package version because you didn’t specify a package ancestor. 
 
 # errorAncestorNotHighest
 
-Can’t create package version. The ancestor version [%s] you specified isn’t the highest released package version. Set the ancestor version to %s, and try creating the package version again. You can also specify --skip-ancestor-check to override the ancestry requirement.
+Can’t create package version. The ancestor version [%s] you specified isn’t the highest released package version. Set the ancestor version to %s and try creating the package version again. You can also specify --skip-ancestor-check to override the ancestry requirement.
 
 # errorInvalidBuildNumberForKeywords
 
