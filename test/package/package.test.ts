@@ -206,7 +206,7 @@ describe('Package', () => {
               records: [
                 {
                   Id: pkgId,
-                  RecommendedVersionId: '04tasdsadfasdf',
+                  RecommendedVersionId: '04tasdsadfasdfa',
                 },
               ],
               totalSize: 1,
@@ -219,12 +219,12 @@ describe('Package', () => {
       const pkg = new Package({ connection: conn, packageAliasOrId: pkgId, project });
       const result = await pkg.update({
         Id: pkgId,
-        RecommendedVersionId: '04tasdsadfasdf',
+        RecommendedVersionId: '04tasdsadfasdfa',
       });
       assert(result.success);
       expect(objProvided).to.equal('Package2');
       expect(optsProvided.Id).to.equal(pkgId);
-      expect(optsProvided.RecommendedVersionId).to.equal('04tasdsadfasdf');
+      expect(optsProvided.RecommendedVersionId).to.equal('04tasdsadfasdfa');
       expect(queryProvided).to.equal(`SELECT RecommendedVersionId FROM Package2 WHERE Id = '${pkgId}'`);
     });
 
@@ -249,6 +249,30 @@ describe('Package', () => {
       } catch (e) {
         assert(e instanceof Error);
         expect(e.message).to.include('Recommended Version').and.to.include('66.0');
+      }
+    });
+
+    it('should error if RecommendedVersionId is blank', async () => {
+      $$.inProject(true);
+      project = await setupProject((p) => {
+        p.getSfProjectJson().set('packageAliases', { mypkgalias: pkgId });
+      });
+      const conn = {
+        tooling: {
+          update: () => {},
+        },
+        getApiVersion: () => '66.0',
+      } as unknown as Connection;
+      const pkg = new Package({ connection: conn, packageAliasOrId: pkgId, project });
+      try {
+        await pkg.update({
+          Id: pkgId,
+          RecommendedVersionId: '',
+        });
+        expect.fail('The update did not throw an error when it should have');
+      } catch (e) {
+        assert(e instanceof Error);
+        expect(e.message).to.include('recommended version').and.to.include('(04t)');
       }
     });
   });
