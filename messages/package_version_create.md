@@ -92,7 +92,7 @@ Provide a valid positive number for %s. %d
 
 # errorAncestorNoneNotAllowed
 
-Can’t create package version because you didn’t specify a package ancestor. Set the ancestor version to %s, and try creating the package version. You can also specify --skip-ancestor-check to override the ancestry requirement.
+Can’t create package version because you didn’t specify a package ancestor. Set the ancestor version to %s and try creating the package version again. You can also specify --skip-ancestor-check to override the ancestry requirement.
 
 # errorAncestorNotHighest
 
