@@ -329,6 +329,14 @@ export class Package {
         throw messages.createError('recommendedVersionIdApiPriorTo66Error');
       }
 
+      if (opts.RecommendedVersionId !== undefined) {
+        const trimmedId = opts.RecommendedVersionId.trim();
+
+        if (trimmedId === '' || !trimmedId.startsWith('04t') || (trimmedId.length !== 15 && trimmedId.length !== 18)) {
+          throw messages.createError('invalidRecommendedVersionError');
+        }
+      }
+
       if (skipAncestorCheck === true && opts.RecommendedVersionId === undefined) {
         throw messages.createError('skipAncestorCheckRequiresRecommendedVersionIdError');
       }
@@ -394,29 +402,40 @@ export class Package {
     }
 
     const graph = new DirectedGraph();
-    const stack: string[] = [opts.RecommendedVersionId];
-    const visited: Set<string> = new Set([opts.RecommendedVersionId]);
+    const truncatedRecommendedVersionId = opts.RecommendedVersionId.substring(0, 15);
+    const stack: string[] = [truncatedRecommendedVersionId];
+    const visited: Set<string> = new Set([truncatedRecommendedVersionId]);
 
     result.records.forEach((record) => {
-      graph.addNode(record.SubscriberPackageVersionId);
+      const truncatedSubscriberId = record.SubscriberPackageVersionId.substring(0, 15);
+      graph.addNode(truncatedSubscriberId);
 
       if (record.AncestorId) {
-        if (!graph.hasNode(record.AncestorId)) {
-          graph.addNode(record.AncestorId);
+        const truncatedAncestorId = record.AncestorId.substring(0, 15);
+        if (!graph.hasNode(truncatedAncestorId)) {
+          graph.addNode(truncatedAncestorId);
         }
-        graph.addEdge(record.SubscriberPackageVersionId, record.AncestorId);
+        graph.addEdge(truncatedSubscriberId, truncatedAncestorId);
       }
     });
 
+    if (!graph.hasNode(truncatedRecommendedVersionId)) {
+      throw messages.createError('unassociatedRecommendedVersionError');
+    }
+
+    const truncatedPriorRecommendedVersionId = priorRecommendedVersionId?.substring(0, 15);
+
     if (
-      graph.outDegree(opts.RecommendedVersionId) > 0 &&
-      result.records.some((record) => record.SubscriberPackageVersionId === priorRecommendedVersionId)
+      graph.outDegree(truncatedRecommendedVersionId) > 0 &&
+      result.records.some(
+        (record) => record.SubscriberPackageVersionId.substring(0, 15) === truncatedPriorRecommendedVersionId
+      )
     ) {
       while (stack.length > 0) {
         const node = stack.pop()!;
 
         for (const neighbor of graph.neighbors(node)) {
-          if (neighbor === priorRecommendedVersionId) {
+          if (neighbor === truncatedPriorRecommendedVersionId) {
             return;
           }
 
@@ -426,7 +445,7 @@ export class Package {
           }
         }
       }
-    } else if (graph.outDegree(opts.RecommendedVersionId) === 0 && result.records.length === 1) {
+    } else if (graph.outDegree(truncatedRecommendedVersionId) === 0 && result.records.length === 1) {
       return;
     }
     throw messages.createError('recommendedVersionNotAncestorOfPriorVersionError');
