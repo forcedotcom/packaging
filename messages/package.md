@@ -68,4 +68,4 @@ Provide a valid subscriber package version (04t) for the recommended version.
 
 # unassociatedRecommendedVersionError
 
-The provided recommended version is not associated with this package.
+The provided recommended version isn't associated with this package.
