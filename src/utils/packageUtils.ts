@@ -20,6 +20,7 @@ import { pipeline as cbPipeline } from 'node:stream';
 import util, { promisify } from 'node:util';
 import { randomBytes } from 'node:crypto';
 import { Connection, Logger, Messages, ScratchOrgInfo, SfdcUrl, SfError, SfProject } from '@salesforce/core';
+import { isPackagingDirectory } from '@salesforce/core/project';
 import { isNumber, isString, Many, Optional } from '@salesforce/ts-types';
 import type { SaveError } from '@jsforce/jsforce-node';
 import { Duration, ensureArray } from '@salesforce/kit';
@@ -50,6 +51,9 @@ const ID_REGISTRY = [
     label: 'Subscriber Package Version Id',
   },
 ];
+const PACKAGE_DESCRIPTOR_FIELD_ALLOWLIST: ReadonlyArray<keyof PackageDescriptorJson> = [
+  'apexTestAccess',
+] as const satisfies ReadonlyArray<keyof PackageDescriptorJson>;
 
 export type IdRegistryValue = { prefix: string; label: string };
 export type IdRegistry = {
@@ -520,6 +524,67 @@ export function copyDescriptorProperties(
       )
     )
   ) as PackageDescriptorJson;
+}
+
+/**
+ * Copies only the allowlisted properties from source to target. Mutates and returns target.
+ */
+function copyPropsAllowlist<T extends object, K extends keyof T>(
+  target: Partial<T>,
+  source: T | undefined,
+  allowed: readonly K[]
+): Partial<T> {
+  if (!source) return target;
+  for (const key of allowed) {
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
+      const value = source[key];
+      if (value !== undefined) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore - index type on generic target
+        target[key] = value;
+      }
+    }
+  }
+  return target;
+}
+
+/**
+ * Builds a base PackageDescriptorJson for a given packageId and optionally copies
+ * an allowlist of properties from the matching packaging directory in the project.
+ *
+ * @param packageId
+ * @param base - a partial package descriptor json with predefined properties
+ * @param project
+ * @returns a package descriptor json with the predefined properties and allowed properties from the matching packaging directory in the project
+ */
+export function buildPackageDescriptorJson(args: {
+  packageId: string;
+  base?: Partial<PackageDescriptorJson>;
+  project?: SfProject;
+}): PackageDescriptorJson {
+  const { packageId, base, project } = args;
+  const descriptor: Partial<PackageDescriptorJson> = {
+    id: packageId,
+    ...(base ?? {}),
+  };
+
+  if (project) {
+    const packageObject = project.findPackage((namedPackageDir) => {
+      if (!isPackagingDirectory(namedPackageDir)) return false;
+      const dirPackageId = project.getPackageIdFromAlias(namedPackageDir.package) ?? namedPackageDir.package;
+      return dirPackageId === packageId;
+    });
+
+    if (packageObject && isPackagingDirectory(packageObject)) {
+      copyPropsAllowlist(
+        descriptor as PackageDescriptorJson,
+        packageObject as unknown as PackageDescriptorJson,
+        PACKAGE_DESCRIPTOR_FIELD_ALLOWLIST
+      );
+    }
+  }
+
+  return descriptor as PackageDescriptorJson;
 }
 
 /**
