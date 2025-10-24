@@ -1,3 +1,13 @@
+## [4.17.1](https://github.com/forcedotcom/packaging/compare/4.17.0...4.17.1) (2025-10-24)
+
+
+### Bug Fixes
+
+* check for blank recommended version id ([1429eb3](https://github.com/forcedotcom/packaging/commit/1429eb3536bd11d0bf0dc633187fea2ce61f5870))
+* error handling if not recommended version ID not associated with package ([2e65498](https://github.com/forcedotcom/packaging/commit/2e654982c41411b598c8e9f5948f7083ea9aa634))
+
+
+
 # [4.17.0](https://github.com/forcedotcom/packaging/compare/4.16.0...4.17.0) (2025-10-21)
 
 
