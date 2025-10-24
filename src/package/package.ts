@@ -419,6 +419,10 @@ export class Package {
       }
     });
 
+    if (!graph.hasNode(truncatedRecommendedVersionId)) {
+      throw messages.createError('unassociatedRecommendedVersionError');
+    }
+
     const truncatedPriorRecommendedVersionId = priorRecommendedVersionId?.substring(0, 15);
 
     if (
