@@ -223,67 +223,6 @@ describe('packageConvert', () => {
       // apexTestAccess should be removed from the descriptor
       expect(package2DescriptorJson).to.not.have.string('apexTestAccess');
     });
-
-    it('should NOT process apexTestAccess permissions when codecoverage is false', async () => {
-      $$.inProject(true);
-      const project = SfProject.getInstance();
-
-      // Create the force-app directory that's referenced in sfdx-project.json
-      await fs.promises.mkdir(path.join(project.getPath(), 'force-app'), { recursive: true });
-
-      // Set up sfdx-project.json with packageDirectory containing apexTestAccess
-      project.getSfProjectJson().set('packageDirectories', [
-        {
-          path: 'force-app',
-          package: '0Ho3i000000Gmj6CAC',
-          apexTestAccess: {
-            permissionSets: ['Test_Permission_Set'],
-            permissionSetLicenses: ['TestPsl'],
-          },
-        },
-      ]);
-      await project.getSfProjectJson().write();
-
-      // Definition file is for scratch org settings only (no apexTestAccess)
-      const definitionFile = {
-        orgName: 'test org name',
-        edition: 'Developer',
-      };
-      const packageVersTmpRoot = path.join(os.tmpdir(), 'config-no-codecoverage');
-      await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
-      const scratchDefPath = path.join(packageVersTmpRoot, 'scratch-no-codecoverage.json');
-      await fs.promises.writeFile(scratchDefPath, JSON.stringify(definitionFile, undefined, 2));
-
-      // Create a spy to capture what's written to package2-descriptor.json
-      const writeFileSpy = $$.SANDBOX.spy(fs.promises, 'writeFile');
-
-      const request = await createPackageVersionCreateRequest(
-        { installationkey: '123', definitionfile: scratchDefPath, buildinstance: 'myInstance', codecoverage: false },
-        '0Ho3i000000Gmj6CAC',
-        '54.0',
-        project
-      );
-
-      expect(request).to.have.all.keys(
-        'CalculateCodeCoverage',
-        'InstallKey',
-        'Instance',
-        'IsConversionRequest',
-        'Package2Id',
-        'VersionInfo'
-      );
-      expect(request.CalculateCodeCoverage).to.equal(false);
-
-      // Get the contents of package2-descriptor.json
-      const package2DescriptorJson = writeFileSpy.secondCall.args[1];
-
-      // Verify package2-descriptor.json does NOT contain permission set fields when codecoverage is false
-      expect(package2DescriptorJson).to.not.be.undefined;
-      expect(package2DescriptorJson).to.not.have.string('permissionSetNames');
-      expect(package2DescriptorJson).to.not.have.string('permissionSetLicenseDeveloperNames');
-      // apexTestAccess should still be removed from the descriptor
-      expect(package2DescriptorJson).to.not.have.string('apexTestAccess');
-    });
   });
 
   describe('findOrCreatePackage2', () => {

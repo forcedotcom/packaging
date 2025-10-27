@@ -30,9 +30,15 @@ import {
   ScratchOrgSettingsGenerator,
 } from '@salesforce/core';
 import { camelCaseToTitleCase, Duration, env } from '@salesforce/kit';
+import { isPackagingDirectory } from '@salesforce/core/project';
 import { Many } from '@salesforce/ts-types';
 import * as pkgUtils from '../utils/packageUtils';
-import { copyDescriptorProperties, generatePackageAliasEntry, uniqid } from '../utils/packageUtils';
+import {
+  copyDescriptorProperties,
+  generatePackageAliasEntry,
+  uniqid,
+  resolveBuildUserPermissions,
+} from '../utils/packageUtils';
 import {
   ConvertPackageOptions,
   PackageDescriptorJson,
@@ -199,7 +205,7 @@ export async function createPackageVersionCreateRequest(
   const metadataZipFile = path.join(packageVersBlobDirectory, 'package.zip');
   const packageVersBlobZipFile = path.join(packageVersTmpRoot, 'package-version-info.zip');
 
-  let packageDescriptorJson: PackageDescriptorJson = pkgUtils.buildPackageDescriptorJson({
+  let packageDescriptorJson: PackageDescriptorJson = buildPackageDescriptorJson({
     packageId,
     base: { versionNumber: context.patchversion },
     project,
@@ -259,7 +265,7 @@ export async function createPackageVersionCreateRequest(
   // Zip the packageVersMetadataFolder folder and put the zip in {packageVersBlobDirectory}/package.zip
   await pkgUtils.zipDir(packageVersMetadataFolder, metadataZipFile);
 
-  resolveBuildUserPermissions(packageDescriptorJson, context.codecoverage ?? false);
+  packageDescriptorJson = resolveBuildUserPermissions(packageDescriptorJson, context.codecoverage ?? false);
 
   await fs.promises.writeFile(
     path.join(packageVersBlobDirectory, 'package2-descriptor.json'),
@@ -270,48 +276,38 @@ export async function createPackageVersionCreateRequest(
   return createRequestObject(packageId, context, packageVersTmpRoot, packageVersBlobZipFile);
 }
 
-/** side effect: modifies the passed in parameter! */
-function resolveBuildUserPermissions(packageDescriptorJson: PackageDescriptorJson, codecoverage: boolean): void {
-  // Process permissionSet and permissionSetLicenses that should be enabled when running Apex tests
-  // This only applies if code coverage is enabled
-  if (codecoverage) {
-    // Assuming no permission sets are named 0, 0n, null, undefined, false, NaN, and the empty string
-    if (packageDescriptorJson.apexTestAccess?.permissionSets) {
-      let permSets = packageDescriptorJson.apexTestAccess.permissionSets;
-      if (!Array.isArray(permSets)) {
-        permSets = permSets.split(',');
+function buildPackageDescriptorJson(args: {
+  packageId: string;
+  base?: Partial<PackageDescriptorJson>;
+  project?: SfProject;
+}): PackageDescriptorJson {
+  const { packageId, base, project } = args;
+  const descriptor: Partial<PackageDescriptorJson> = {
+    id: packageId,
+    ...(base ?? {}),
+  };
+
+  if (project) {
+    const packageObject = project.findPackage((namedPackageDir) => {
+      if (!isPackagingDirectory(namedPackageDir)) return false;
+      const dirPackageId = project.getPackageIdFromAlias(namedPackageDir.package) ?? namedPackageDir.package;
+      return dirPackageId === packageId;
+    });
+
+    if (packageObject && isPackagingDirectory(packageObject)) {
+      const allowedKeys: Array<keyof PackageDescriptorJson> = ['apexTestAccess'];
+      for (const key of allowedKeys) {
+        if (Object.prototype.hasOwnProperty.call(packageObject, key)) {
+          const value = (packageObject as unknown as PackageDescriptorJson)[key];
+          if (value !== undefined) {
+            (descriptor as PackageDescriptorJson)[key] = value as never;
+          }
+        }
       }
-      packageDescriptorJson.permissionSetNames = permSets.map((s) => s.trim());
-    }
-
-    if (packageDescriptorJson.apexTestAccess?.permissionSetLicenses) {
-      let permissionSetLicenses = packageDescriptorJson.apexTestAccess.permissionSetLicenses;
-      if (!Array.isArray(permissionSetLicenses)) {
-        permissionSetLicenses = permissionSetLicenses.split(',');
-      }
-      packageDescriptorJson.permissionSetLicenseDeveloperNames = permissionSetLicenses.map((s) => s.trim());
     }
   }
 
-  // Process permissionSet and permissionsetLicenses that should be enabled for the package metadata deploy
-  if (packageDescriptorJson.packageMetadataAccess?.permissionSets) {
-    let permSets = packageDescriptorJson.packageMetadataAccess.permissionSets;
-    if (!Array.isArray(permSets)) {
-      permSets = permSets.split(',');
-    }
-    packageDescriptorJson.packageMetadataPermissionSetNames = permSets.map((s) => s.trim());
-  }
-
-  if (packageDescriptorJson.packageMetadataAccess?.permissionSetLicenses) {
-    let permissionSetLicenses = packageDescriptorJson.packageMetadataAccess.permissionSetLicenses;
-    if (!Array.isArray(permissionSetLicenses)) {
-      permissionSetLicenses = permissionSetLicenses.split(',');
-    }
-    packageDescriptorJson.packageMetadataPermissionSetLicenseNames = permissionSetLicenses.map((s) => s.trim());
-  }
-
-  delete packageDescriptorJson.apexTestAccess;
-  delete packageDescriptorJson.packageMetadataAccess;
+  return descriptor as PackageDescriptorJson;
 }
 
 async function createRequestObject(

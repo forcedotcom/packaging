@@ -409,7 +409,10 @@ export class PackageVersionCreate {
       packageDescriptorJson = copyDescriptorProperties(packageDescriptorJson, definitionFileJson);
     }
 
-    this.resolveBuildUserPermissions(packageDescriptorJson);
+    packageDescriptorJson = pkgUtils.resolveBuildUserPermissions(
+      packageDescriptorJson,
+      this.options.codecoverage ?? false
+    );
 
     // All dependencies for the packaging dir should be resolved to an 04t id to be passed to the server.
     // (see resolveSubscriberPackageVersionId() for details)
@@ -609,49 +612,7 @@ export class PackageVersionCreate {
     await zipDir(packageVersBlobDirectory, packageVersBlobZipFile);
   }
 
-  /** side effect: modifies the passed in parameter! */
-  private resolveBuildUserPermissions(packageDescriptorJson: PackageDescriptorJson): void {
-    // Process permissionSet and permissionSetLicenses that should be enabled when running Apex tests
-    // This only applies if code coverage is enabled
-    if (this.options.codecoverage) {
-      // Assuming no permission sets are named 0, 0n, null, undefined, false, NaN, and the empty string
-      if (packageDescriptorJson.apexTestAccess?.permissionSets) {
-        let permSets = packageDescriptorJson.apexTestAccess.permissionSets;
-        if (!Array.isArray(permSets)) {
-          permSets = permSets.split(',');
-        }
-        packageDescriptorJson.permissionSetNames = permSets.map((s) => s.trim());
-      }
-
-      if (packageDescriptorJson.apexTestAccess?.permissionSetLicenses) {
-        let permissionSetLicenses = packageDescriptorJson.apexTestAccess.permissionSetLicenses;
-        if (!Array.isArray(permissionSetLicenses)) {
-          permissionSetLicenses = permissionSetLicenses.split(',');
-        }
-        packageDescriptorJson.permissionSetLicenseDeveloperNames = permissionSetLicenses.map((s) => s.trim());
-      }
-    }
-
-    // Process permissionSet and permissionsetLicenses that should be enabled for the package metadata deploy
-    if (packageDescriptorJson.packageMetadataAccess?.permissionSets) {
-      let permSets = packageDescriptorJson.packageMetadataAccess.permissionSets;
-      if (!Array.isArray(permSets)) {
-        permSets = permSets.split(',');
-      }
-      packageDescriptorJson.packageMetadataPermissionSetNames = permSets.map((s) => s.trim());
-    }
-
-    if (packageDescriptorJson.packageMetadataAccess?.permissionSetLicenses) {
-      let permissionSetLicenses = packageDescriptorJson.packageMetadataAccess.permissionSetLicenses;
-      if (!Array.isArray(permissionSetLicenses)) {
-        permissionSetLicenses = permissionSetLicenses.split(',');
-      }
-      packageDescriptorJson.packageMetadataPermissionSetLicenseNames = permissionSetLicenses.map((s) => s.trim());
-    }
-
-    delete packageDescriptorJson.apexTestAccess;
-    delete packageDescriptorJson.packageMetadataAccess;
-  }
+  // removed: resolveBuildUserPermissions - replaced by pkgUtils.normalizeBuildUserPermissions
 
   // eslint-disable-next-line complexity
   private async packageVersionCreate(): Promise<PackageVersionCreateRequestResult> {

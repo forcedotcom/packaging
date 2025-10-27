@@ -20,7 +20,6 @@ import { pipeline as cbPipeline } from 'node:stream';
 import util, { promisify } from 'node:util';
 import { randomBytes } from 'node:crypto';
 import { Connection, Logger, Messages, ScratchOrgInfo, SfdcUrl, SfError, SfProject } from '@salesforce/core';
-import { isPackagingDirectory } from '@salesforce/core/project';
 import { isNumber, isString, Many, Optional } from '@salesforce/ts-types';
 import type { SaveError } from '@jsforce/jsforce-node';
 import { Duration, ensureArray } from '@salesforce/kit';
@@ -51,9 +50,7 @@ const ID_REGISTRY = [
     label: 'Subscriber Package Version Id',
   },
 ];
-const PACKAGE_DESCRIPTOR_FIELD_ALLOWLIST: ReadonlyArray<keyof PackageDescriptorJson> = [
-  'apexTestAccess',
-] as const satisfies ReadonlyArray<keyof PackageDescriptorJson>;
+//
 
 export type IdRegistryValue = { prefix: string; label: string };
 export type IdRegistry = {
@@ -527,65 +524,56 @@ export function copyDescriptorProperties(
 }
 
 /**
- * Copies only the allowlisted properties from source to target. Mutates and returns target.
- */
-function copyPropsAllowlist<T extends object, K extends keyof T>(
-  target: Partial<T>,
-  source: T | undefined,
-  allowed: readonly K[]
-): Partial<T> {
-  if (!source) return target;
-  for (const key of allowed) {
-    if (Object.prototype.hasOwnProperty.call(source, key)) {
-      const value = source[key];
-      if (value !== undefined) {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore - index type on generic target
-        target[key] = value;
-      }
-    }
-  }
-  return target;
-}
-
-/**
- * Builds a base PackageDescriptorJson for a given packageId and optionally copies
- * an allowlist of properties from the matching packaging directory in the project.
+ * Resolve descriptor permissions for build/test execution.
  *
- * @param packageId
- * @param base - a partial package descriptor json with predefined properties
- * @param project
- * @returns a package descriptor json with the predefined properties and allowed properties from the matching packaging directory in the project
+ * When {@link codecoverage} is true, converts {@link apexTestAccess} settings into
+ * permissionSetNames and permissionSetLicenseDeveloperNames.
+ * Always converts {@link packageMetadataAccess} settings into
+ * packageMetadataPermissionSetNames and packageMetadataPermissionSetLicenseNames.
+ * Removes apexTestAccess and packageMetadataAccess from the returned descriptor.
+ *
+ * @param descriptor Package descriptor to normalize
+ * @param codecoverage Whether to enable apexTestAccess-based permission processing
+ * @returns A normalized copy of the descriptor with flattened permission fields
  */
-export function buildPackageDescriptorJson(args: {
-  packageId: string;
-  base?: Partial<PackageDescriptorJson>;
-  project?: SfProject;
-}): PackageDescriptorJson {
-  const { packageId, base, project } = args;
-  const descriptor: Partial<PackageDescriptorJson> = {
-    id: packageId,
-    ...(base ?? {}),
-  };
+export function resolveBuildUserPermissions(
+  descriptor: PackageDescriptorJson,
+  codecoverage: boolean
+): PackageDescriptorJson {
+  const copy = structuredClone(descriptor);
 
-  if (project) {
-    const packageObject = project.findPackage((namedPackageDir) => {
-      if (!isPackagingDirectory(namedPackageDir)) return false;
-      const dirPackageId = project.getPackageIdFromAlias(namedPackageDir.package) ?? namedPackageDir.package;
-      return dirPackageId === packageId;
-    });
+  if (codecoverage) {
+    if (copy.apexTestAccess?.permissionSets) {
+      let permSets = copy.apexTestAccess.permissionSets;
+      if (!Array.isArray(permSets)) permSets = permSets.split(',');
+      copy.permissionSetNames = permSets.map((s) => s.trim());
+    }
 
-    if (packageObject && isPackagingDirectory(packageObject)) {
-      copyPropsAllowlist(
-        descriptor as PackageDescriptorJson,
-        packageObject as unknown as PackageDescriptorJson,
-        PACKAGE_DESCRIPTOR_FIELD_ALLOWLIST
-      );
+    if (copy.apexTestAccess?.permissionSetLicenses) {
+      let psl = copy.apexTestAccess.permissionSetLicenses;
+      if (!Array.isArray(psl)) psl = psl.split(',');
+      copy.permissionSetLicenseDeveloperNames = psl.map((s) => s.trim());
     }
   }
 
-  return descriptor as PackageDescriptorJson;
+  if (copy.packageMetadataAccess?.permissionSets) {
+    let permSets = copy.packageMetadataAccess.permissionSets;
+    if (!Array.isArray(permSets)) permSets = permSets.split(',');
+    copy.packageMetadataPermissionSetNames = permSets.map((s) => s.trim());
+  }
+
+  if (copy.packageMetadataAccess?.permissionSetLicenses) {
+    let psl = copy.packageMetadataAccess.permissionSetLicenses;
+    if (!Array.isArray(psl)) psl = psl.split(',');
+    copy.packageMetadataPermissionSetLicenseNames = psl.map((s) => s.trim());
+  }
+
+  delete copy.apexTestAccess;
+  delete copy.packageMetadataAccess;
+  return copy;
 }
+
+//
 
 /**
  * Brand new SFDX projects contain a force-app directory tree containing empty folders
