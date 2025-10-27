@@ -612,8 +612,6 @@ export class PackageVersionCreate {
     await zipDir(packageVersBlobDirectory, packageVersBlobZipFile);
   }
 
-  // removed: resolveBuildUserPermissions - replaced by pkgUtils.normalizeBuildUserPermissions
-
   // eslint-disable-next-line complexity
   private async packageVersionCreate(): Promise<PackageVersionCreateRequestResult> {
     // For the first rollout of validating sfdx-project.json data against schema, make it optional and defaulted

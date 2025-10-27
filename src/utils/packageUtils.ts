@@ -50,8 +50,6 @@ const ID_REGISTRY = [
     label: 'Subscriber Package Version Id',
   },
 ];
-//
-
 export type IdRegistryValue = { prefix: string; label: string };
 export type IdRegistry = {
   [key: string]: IdRegistryValue;
@@ -572,8 +570,6 @@ export function resolveBuildUserPermissions(
   delete copy.packageMetadataAccess;
   return copy;
 }
-
-//
 
 /**
  * Brand new SFDX projects contain a force-app directory tree containing empty folders
