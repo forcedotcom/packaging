@@ -22,6 +22,7 @@ import {
   Lifecycle,
   Logger,
   Messages,
+  NamedPackageDir,
   PollingClient,
   ScratchOrgInfo,
   SfError,
@@ -31,13 +32,14 @@ import {
 } from '@salesforce/core';
 import { camelCaseToTitleCase, Duration, env } from '@salesforce/kit';
 import { isPackagingDirectory } from '@salesforce/core/project';
-import { Many } from '@salesforce/ts-types';
+import { Many, Optional } from '@salesforce/ts-types';
 import * as pkgUtils from '../utils/packageUtils';
 import {
   copyDescriptorProperties,
   generatePackageAliasEntry,
   uniqid,
   resolveBuildUserPermissions,
+  findPackageDirectory,
 } from '../utils/packageUtils';
 import {
   ConvertPackageOptions,
@@ -193,7 +195,7 @@ export async function createPackageVersionCreateRequest(
   },
   packageId: string,
   apiVersion: string,
-  project: SfProject | undefined
+  project?: SfProject
 ): Promise<PackagingSObjects.Package2VersionCreateRequest> {
   const uniqueId = uniqid({ template: `${packageId}-%s` });
   const packageVersTmpRoot = path.join(os.tmpdir(), uniqueId);
@@ -205,10 +207,11 @@ export async function createPackageVersionCreateRequest(
   const metadataZipFile = path.join(packageVersBlobDirectory, 'package.zip');
   const packageVersBlobZipFile = path.join(packageVersTmpRoot, 'package-version-info.zip');
 
+  const packageObject = project ? findPackageDirectory(project, packageId) : undefined;
   let packageDescriptorJson: PackageDescriptorJson = buildPackageDescriptorJson({
     packageId,
     base: { versionNumber: context.patchversion },
-    project,
+    packageObject,
   });
 
   const settingsGenerator = new ScratchOrgSettingsGenerator({ asDirectory: true });
@@ -279,34 +282,24 @@ export async function createPackageVersionCreateRequest(
 function buildPackageDescriptorJson(args: {
   packageId: string;
   base?: Partial<PackageDescriptorJson>;
-  project?: SfProject;
+  packageObject?: Optional<NamedPackageDir>;
 }): PackageDescriptorJson {
-  const { packageId, base, project } = args;
+  const { packageId, base, packageObject } = args;
   const descriptor: Partial<PackageDescriptorJson> = {
     id: packageId,
     ...(base ?? {}),
   };
-
-  if (project) {
-    const packageObject = project.findPackage((namedPackageDir) => {
-      if (!isPackagingDirectory(namedPackageDir)) return false;
-      const dirPackageId = project.getPackageIdFromAlias(namedPackageDir.package) ?? namedPackageDir.package;
-      return dirPackageId === packageId;
-    });
-
-    if (packageObject && isPackagingDirectory(packageObject)) {
-      const allowedKeys: Array<keyof PackageDescriptorJson> = ['apexTestAccess'];
-      for (const key of allowedKeys) {
-        if (Object.prototype.hasOwnProperty.call(packageObject, key)) {
-          const value = (packageObject as unknown as PackageDescriptorJson)[key];
-          if (value !== undefined) {
-            (descriptor as PackageDescriptorJson)[key] = value as never;
-          }
+  if (packageObject && isPackagingDirectory(packageObject)) {
+    const allowedKeys: Array<keyof PackageDescriptorJson> = ['apexTestAccess'];
+    for (const key of allowedKeys) {
+      if (Object.prototype.hasOwnProperty.call(packageObject, key)) {
+        const value = (packageObject as unknown as PackageDescriptorJson)[key];
+        if (value !== undefined) {
+          (descriptor as PackageDescriptorJson)[key] = value as never;
         }
       }
     }
   }
-
   return descriptor as PackageDescriptorJson;
 }
 

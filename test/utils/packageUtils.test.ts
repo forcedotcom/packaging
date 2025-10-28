@@ -19,12 +19,14 @@ import os from 'node:os';
 import path from 'node:path';
 import { assert, expect } from 'chai';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/testSetup';
+import { SfProject } from '@salesforce/core';
 import type { SaveError } from '@jsforce/jsforce-node';
 import { Duration } from '@salesforce/kit';
 import JSZIP from 'jszip';
 import {
   applyErrorAction,
   combineSaveErrors,
+  findPackageDirectory,
   resolveBuildUserPermissions,
   getPackageVersionNumber,
   getPackageVersionStrings,
@@ -134,6 +136,127 @@ describe('packageUtils', () => {
       expect(original).to.have.property('packageMetadataAccess');
     });
   });
+
+  describe('findPackageDirectory', () => {
+    it('should return undefined when project is undefined', () => {
+      const result = findPackageDirectory(undefined, '0HoXXXXXXXXXXXX');
+      expect(result).to.be.undefined;
+    });
+
+    it('should return undefined when package not found in project', () => {
+      const mockProject = {
+        findPackage: () => undefined,
+        getPackageIdFromAlias: () => undefined,
+      } as unknown as SfProject;
+
+      const result = findPackageDirectory(mockProject, '0HoXXXXXXXXXXXX');
+      expect(result).to.be.undefined;
+    });
+
+    it('should return undefined when package object is not a packaging directory', () => {
+      const mockProject = {
+        findPackage: (callback: (dir: unknown) => boolean) => {
+          const dir = { path: 'some-path' }; // This object doesn't have required packaging directory properties
+          return callback(dir) ? dir : undefined;
+        },
+        getPackageIdFromAlias: () => undefined,
+      } as unknown as SfProject;
+
+      const result = findPackageDirectory(mockProject, '0HoXXXXXXXXXXXX');
+      expect(result).to.be.undefined;
+    });
+
+    it('should return package directory when found by exact package ID match', () => {
+      const mockPackageDir = {
+        path: 'force-app',
+        package: '0HoXXXXXXXXXXXX',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        apexTestAccess: { permissionSets: ['Test'] },
+      };
+
+      const mockProject = {
+        findPackage: (callback: (dir: unknown) => boolean) => (callback(mockPackageDir) ? mockPackageDir : undefined),
+        getPackageIdFromAlias: () => '0HoXXXXXXXXXXXX',
+      } as unknown as SfProject;
+
+      const result = findPackageDirectory(mockProject, '0HoXXXXXXXXXXXX');
+      expect(result).to.deep.equal(mockPackageDir);
+    });
+
+    it('should return package directory when found by alias resolution', () => {
+      const mockPackageDir = {
+        path: 'force-app',
+        package: 'MyPackage',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        apexTestAccess: { permissionSets: ['Test'] },
+      };
+
+      const mockProject = {
+        findPackage: (callback: (dir: unknown) => boolean) => (callback(mockPackageDir) ? mockPackageDir : undefined),
+        getPackageIdFromAlias: () => '0HoXXXXXXXXXXXX',
+      } as unknown as SfProject;
+
+      const result = findPackageDirectory(mockProject, '0HoXXXXXXXXXXXX');
+      expect(result).to.deep.equal(mockPackageDir);
+    });
+
+    it('should return undefined when alias does not match packageId', () => {
+      const mockPackageDir = {
+        path: 'force-app',
+        package: 'MyPackage',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        apexTestAccess: { permissionSets: ['Test'] },
+      };
+
+      const mockProject = {
+        findPackage: (callback: (dir: unknown) => boolean) => (callback(mockPackageDir) ? mockPackageDir : undefined),
+        getPackageIdFromAlias: () => '0HoYYYYYYYYYYYY',
+      } as unknown as SfProject;
+
+      const result = findPackageDirectory(mockProject, '0HoXXXXXXXXXXXX');
+      expect(result).to.be.undefined;
+    });
+
+    it('should return undefined when package name does not match packageId', () => {
+      const mockPackageDir = {
+        path: 'force-app',
+        package: '0HoYYYYYYYYYYYY',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        apexTestAccess: { permissionSets: ['Test'] },
+      };
+
+      const mockProject = {
+        findPackage: (callback: (dir: unknown) => boolean) => (callback(mockPackageDir) ? mockPackageDir : undefined),
+        getPackageIdFromAlias: () => undefined,
+      } as unknown as SfProject;
+
+      const result = findPackageDirectory(mockProject, '0HoXXXXXXXXXXXX');
+      expect(result).to.be.undefined;
+    });
+
+    it('should handle getPackageIdFromAlias returning undefined', () => {
+      const mockPackageDir = {
+        path: 'force-app',
+        package: '0HoXXXXXXXXXXXX',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        apexTestAccess: { permissionSets: ['Test'] },
+      };
+
+      const mockProject = {
+        findPackage: (callback: (dir: unknown) => boolean) => (callback(mockPackageDir) ? mockPackageDir : undefined),
+        getPackageIdFromAlias: () => undefined,
+      } as unknown as SfProject;
+
+      const result = findPackageDirectory(mockProject, '0HoXXXXXXXXXXXX');
+      expect(result).to.deep.equal(mockPackageDir);
+    });
+  });
+
   describe('applyErrorAction', () => {
     describe('INVALID_TYPE', () => {
       it('should modify error message if packaging is not enabled', () => {

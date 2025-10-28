@@ -20,6 +20,7 @@ import { pipeline as cbPipeline } from 'node:stream';
 import util, { promisify } from 'node:util';
 import { randomBytes } from 'node:crypto';
 import { Connection, Logger, Messages, ScratchOrgInfo, SfdcUrl, SfError, SfProject } from '@salesforce/core';
+import { isPackagingDirectory, NamedPackageDir } from '@salesforce/core/project';
 import { isNumber, isString, Many, Optional } from '@salesforce/ts-types';
 import type { SaveError } from '@jsforce/jsforce-node';
 import { Duration, ensureArray } from '@salesforce/kit';
@@ -569,6 +570,24 @@ export function resolveBuildUserPermissions(
   delete copy.apexTestAccess;
   delete copy.packageMetadataAccess;
   return copy;
+}
+
+/**
+ * This function finds the package directory in the project that matches the given packageId
+ *
+ * @param project The SfProject instance to search
+ * @param packageId The package ID to match against
+ * @returns A NamedPackageDir or empty object if not found
+ */
+export function findPackageDirectory(project: SfProject | undefined, packageId: string): Optional<NamedPackageDir> {
+  if (!project) {
+    return undefined;
+  }
+  return project.findPackage((namedPackageDir) => {
+    if (!isPackagingDirectory(namedPackageDir)) return false;
+    const dirPackageId = project.getPackageIdFromAlias(namedPackageDir.package) ?? namedPackageDir.package;
+    return dirPackageId === packageId;
+  });
 }
 
 /**
