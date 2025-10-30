@@ -43,8 +43,8 @@
   ],
   "dependencies": {
     "@jsforce/jsforce-node": "^3.10.8",
-    "@salesforce/core": "^8.23.2",
-    "@salesforce/kit": "^3.2.3",
+    "@salesforce/core": "^8.23.3",
+    "@salesforce/kit": "^3.2.4",
     "@salesforce/schemas": "^1.10.3",
     "@salesforce/source-deploy-retrieve": "^12.24.0",
     "@salesforce/ts-types": "^2.0.11",

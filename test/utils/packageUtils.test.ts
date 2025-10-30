@@ -19,18 +19,22 @@ import os from 'node:os';
 import path from 'node:path';
 import { assert, expect } from 'chai';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/testSetup';
+import { SfProject } from '@salesforce/core';
 import type { SaveError } from '@jsforce/jsforce-node';
 import { Duration } from '@salesforce/kit';
 import JSZIP from 'jszip';
 import {
   applyErrorAction,
   combineSaveErrors,
+  findPackageDirectory,
+  resolveBuildUserPermissions,
   getPackageVersionNumber,
   getPackageVersionStrings,
   massageErrorMessage,
   numberToDuration,
   zipDir,
 } from '../../src/utils/packageUtils';
+import { PackageDescriptorJson } from '../../src/interfaces';
 import { PackagingSObjects } from '../../src/interfaces';
 
 describe('packageUtils', () => {
@@ -57,6 +61,202 @@ describe('packageUtils', () => {
       expect(result).to.be.equal('1.2.3');
     });
   });
+
+  describe('resolveBuildUserPermissions', () => {
+    it('should process apexTestAccess and packageMetadataAccess when codecoverage is true, and remove source fields', () => {
+      const original: PackageDescriptorJson = {
+        id: '0HoXXXXXXXXXXXX',
+        versionNumber: '1.0.0.1',
+        apexTestAccess: {
+          permissionSets: 'PS_A, PS_B',
+          permissionSetLicenses: ' LIC_A , LIC_B ',
+        },
+        packageMetadataAccess: {
+          permissionSets: ['PM_PS_1', ' PM_PS_2 '],
+          permissionSetLicenses: ['PM_PSL_1', 'PM_PSL_2'],
+        },
+      } as unknown as PackageDescriptorJson;
+
+      const result = resolveBuildUserPermissions(original, true);
+
+      expect(result.permissionSetNames).to.deep.equal(['PS_A', 'PS_B']);
+      expect(result.permissionSetLicenseDeveloperNames).to.deep.equal(['LIC_A', 'LIC_B']);
+      expect(result.packageMetadataPermissionSetNames).to.deep.equal(['PM_PS_1', 'PM_PS_2']);
+      expect(result.packageMetadataPermissionSetLicenseNames).to.deep.equal(['PM_PSL_1', 'PM_PSL_2']);
+
+      expect(result).to.not.have.property('apexTestAccess');
+      expect(result).to.not.have.property('packageMetadataAccess');
+
+      // original should be unchanged
+      expect(original).to.have.property('apexTestAccess');
+      expect(original).to.have.property('packageMetadataAccess');
+    });
+
+    it('should process apexTestAccess (arrays) for codecoverage true', () => {
+      const original: PackageDescriptorJson = {
+        id: '0HoYYYYYYYYYYYY',
+        apexTestAccess: {
+          permissionSets: ['PS1', ' PS2 '],
+          permissionSetLicenses: ['LIC1', ' LIC2 '],
+        },
+      } as unknown as PackageDescriptorJson;
+
+      const result = resolveBuildUserPermissions(original, true);
+      expect(result.permissionSetNames).to.deep.equal(['PS1', 'PS2']);
+      expect(result.permissionSetLicenseDeveloperNames).to.deep.equal(['LIC1', 'LIC2']);
+      expect(result).to.not.have.property('apexTestAccess');
+    });
+
+    it('should not process apexTestAccess when codecoverage is false but still remove apexTestAccess; should process packageMetadataAccess regardless', () => {
+      const original: PackageDescriptorJson = {
+        id: '0HoZZZZZZZZZZZZ',
+        apexTestAccess: {
+          permissionSets: 'PS_X,PS_Y',
+          permissionSetLicenses: 'LIC_X,LIC_Y',
+        },
+        packageMetadataAccess: {
+          permissionSets: 'PM1, PM2',
+          permissionSetLicenses: 'PML1 , PML2',
+        },
+      } as unknown as PackageDescriptorJson;
+
+      const result = resolveBuildUserPermissions(original, false);
+
+      expect(result).to.not.have.property('permissionSetNames');
+      expect(result).to.not.have.property('permissionSetLicenseDeveloperNames');
+
+      expect(result.packageMetadataPermissionSetNames).to.deep.equal(['PM1', 'PM2']);
+      expect(result.packageMetadataPermissionSetLicenseNames).to.deep.equal(['PML1', 'PML2']);
+
+      expect(result).to.not.have.property('apexTestAccess');
+      expect(result).to.not.have.property('packageMetadataAccess');
+
+      // original should still retain inputs
+      expect(original).to.have.property('apexTestAccess');
+      expect(original).to.have.property('packageMetadataAccess');
+    });
+  });
+
+  describe('findPackageDirectory', () => {
+    it('should return undefined when project is undefined', () => {
+      const result = findPackageDirectory(undefined, '0HoXXXXXXXXXXXX');
+      expect(result).to.be.undefined;
+    });
+
+    it('should return undefined when package not found in project', () => {
+      const mockProject = {
+        findPackage: () => undefined,
+        getPackageIdFromAlias: () => undefined,
+      } as unknown as SfProject;
+
+      const result = findPackageDirectory(mockProject, '0HoXXXXXXXXXXXX');
+      expect(result).to.be.undefined;
+    });
+
+    it('should return undefined when package object is not a packaging directory', () => {
+      const mockProject = {
+        findPackage: (callback: (dir: unknown) => boolean) => {
+          const dir = { path: 'some-path' }; // This object doesn't have required packaging directory properties
+          return callback(dir) ? dir : undefined;
+        },
+        getPackageIdFromAlias: () => undefined,
+      } as unknown as SfProject;
+
+      const result = findPackageDirectory(mockProject, '0HoXXXXXXXXXXXX');
+      expect(result).to.be.undefined;
+    });
+
+    it('should return package directory when found by exact package ID match', () => {
+      const mockPackageDir = {
+        path: 'force-app',
+        package: '0HoXXXXXXXXXXXX',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        apexTestAccess: { permissionSets: ['Test'] },
+      };
+
+      const mockProject = {
+        findPackage: (callback: (dir: unknown) => boolean) => (callback(mockPackageDir) ? mockPackageDir : undefined),
+        getPackageIdFromAlias: () => '0HoXXXXXXXXXXXX',
+      } as unknown as SfProject;
+
+      const result = findPackageDirectory(mockProject, '0HoXXXXXXXXXXXX');
+      expect(result).to.deep.equal(mockPackageDir);
+    });
+
+    it('should return package directory when found by alias resolution', () => {
+      const mockPackageDir = {
+        path: 'force-app',
+        package: 'MyPackage',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        apexTestAccess: { permissionSets: ['Test'] },
+      };
+
+      const mockProject = {
+        findPackage: (callback: (dir: unknown) => boolean) => (callback(mockPackageDir) ? mockPackageDir : undefined),
+        getPackageIdFromAlias: () => '0HoXXXXXXXXXXXX',
+      } as unknown as SfProject;
+
+      const result = findPackageDirectory(mockProject, '0HoXXXXXXXXXXXX');
+      expect(result).to.deep.equal(mockPackageDir);
+    });
+
+    it('should return undefined when alias does not match packageId', () => {
+      const mockPackageDir = {
+        path: 'force-app',
+        package: 'MyPackage',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        apexTestAccess: { permissionSets: ['Test'] },
+      };
+
+      const mockProject = {
+        findPackage: (callback: (dir: unknown) => boolean) => (callback(mockPackageDir) ? mockPackageDir : undefined),
+        getPackageIdFromAlias: () => '0HoYYYYYYYYYYYY',
+      } as unknown as SfProject;
+
+      const result = findPackageDirectory(mockProject, '0HoXXXXXXXXXXXX');
+      expect(result).to.be.undefined;
+    });
+
+    it('should return undefined when package name does not match packageId', () => {
+      const mockPackageDir = {
+        path: 'force-app',
+        package: '0HoYYYYYYYYYYYY',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        apexTestAccess: { permissionSets: ['Test'] },
+      };
+
+      const mockProject = {
+        findPackage: (callback: (dir: unknown) => boolean) => (callback(mockPackageDir) ? mockPackageDir : undefined),
+        getPackageIdFromAlias: () => undefined,
+      } as unknown as SfProject;
+
+      const result = findPackageDirectory(mockProject, '0HoXXXXXXXXXXXX');
+      expect(result).to.be.undefined;
+    });
+
+    it('should handle getPackageIdFromAlias returning undefined', () => {
+      const mockPackageDir = {
+        path: 'force-app',
+        package: '0HoXXXXXXXXXXXX',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        apexTestAccess: { permissionSets: ['Test'] },
+      };
+
+      const mockProject = {
+        findPackage: (callback: (dir: unknown) => boolean) => (callback(mockPackageDir) ? mockPackageDir : undefined),
+        getPackageIdFromAlias: () => undefined,
+      } as unknown as SfProject;
+
+      const result = findPackageDirectory(mockProject, '0HoXXXXXXXXXXXX');
+      expect(result).to.deep.equal(mockPackageDir);
+    });
+  });
+
   describe('applyErrorAction', () => {
     describe('INVALID_TYPE', () => {
       it('should modify error message if packaging is not enabled', () => {

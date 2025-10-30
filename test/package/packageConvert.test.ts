@@ -18,7 +18,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { expect } from 'chai';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/testSetup';
-import { Connection, Lifecycle, Messages } from '@salesforce/core';
+import { Connection, Lifecycle, Messages, SfProject } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import {
   convertPackage,
@@ -67,7 +67,8 @@ describe('packageConvert', () => {
       const request = await createPackageVersionCreateRequest(
         { installationkey: '123', definitionfile: scratchDefPath, buildinstance: 'myInstance', codecoverage: true },
         '0Ho3i000000Gmj6CAC',
-        '54.0'
+        '54.0',
+        undefined
       );
       expect(request).to.have.all.keys(
         'CalculateCodeCoverage',
@@ -88,7 +89,7 @@ describe('packageConvert', () => {
 
     it('should return a valid request', async () => {
       $$.inProject(true);
-      const request = await createPackageVersionCreateRequest({}, '0Ho3i000000Gmj6CAC', '54.0');
+      const request = await createPackageVersionCreateRequest({}, '0Ho3i000000Gmj6CAC', '54.0', undefined);
       expect(request).to.have.all.keys(
         'CalculateCodeCoverage',
         'InstallKey',
@@ -116,7 +117,8 @@ describe('packageConvert', () => {
       const request = await createPackageVersionCreateRequest(
         { installationkey: '123', buildinstance: 'myInstance', seedmetadata: 'seed', codecoverage: false },
         '0Ho3i000000Gmj6CAC',
-        '54.0'
+        '54.0',
+        undefined
       );
       expect(request).to.have.all.keys(
         'CalculateCodeCoverage',
@@ -147,13 +149,79 @@ describe('packageConvert', () => {
         await createPackageVersionCreateRequest(
           { installationkey: '123', buildinstance: 'myInstance', seedmetadata: 'non-existent' },
           '0Ho3i000000Gmj6CAC',
-          '54.0'
+          '54.0',
+          undefined
         );
       } catch (e) {
         expect((e as Error).message).to.include(
           'Seed metadata directory non-existent was specified but does not exist'
         );
       }
+    });
+
+    it('should set apexTestAccess permissions in package2descriptor.json when codecoverage is enabled', async () => {
+      $$.inProject(true);
+      const project = SfProject.getInstance();
+
+      // Create the force-app directory that's referenced in sfdx-project.json
+      await fs.promises.mkdir(path.join(project.getPath(), 'force-app'), { recursive: true });
+
+      // Set up sfdx-project.json with packageDirectory containing apexTestAccess
+      project.getSfProjectJson().set('packageDirectories', [
+        {
+          path: 'force-app',
+          package: '0Ho3i000000Gmj6CAC',
+          apexTestAccess: {
+            permissionSets: ['Test_Permission_Set', 'Another_Test_PermSet'],
+            permissionSetLicenses: ['TestPsl', 'AnotherTestPsl'],
+          },
+        },
+      ]);
+      await project.getSfProjectJson().write();
+
+      // Definition file is for scratch org settings only (no apexTestAccess)
+      const definitionFile = {
+        orgName: 'test org name',
+        edition: 'Developer',
+      };
+      const packageVersTmpRoot = path.join(os.tmpdir(), 'config-apex-test-access');
+      await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
+      const scratchDefPath = path.join(packageVersTmpRoot, 'scratch-with-apex-test-access.json');
+      await fs.promises.writeFile(scratchDefPath, JSON.stringify(definitionFile, undefined, 2));
+
+      // Create a spy to capture what's written to package2-descriptor.json
+      const writeFileSpy = $$.SANDBOX.spy(fs.promises, 'writeFile');
+
+      const request = await createPackageVersionCreateRequest(
+        { installationkey: '123', definitionfile: scratchDefPath, buildinstance: 'myInstance', codecoverage: true },
+        '0Ho3i000000Gmj6CAC',
+        '54.0',
+        project
+      );
+
+      expect(request).to.have.all.keys(
+        'CalculateCodeCoverage',
+        'InstallKey',
+        'Instance',
+        'IsConversionRequest',
+        'Package2Id',
+        'VersionInfo'
+      );
+      expect(request.CalculateCodeCoverage).to.equal(true);
+
+      // Get the contents of package2-descriptor.json
+      const package2DescriptorJson = writeFileSpy.secondCall.args[1];
+
+      // Verify package2-descriptor.json contains the transformed permission sets
+      expect(package2DescriptorJson).to.not.be.undefined;
+      expect(package2DescriptorJson).to.have.string('permissionSetNames');
+      expect(package2DescriptorJson).to.have.string('permissionSetLicenseDeveloperNames');
+      expect(package2DescriptorJson).to.have.string('Test_Permission_Set');
+      expect(package2DescriptorJson).to.have.string('Another_Test_PermSet');
+      expect(package2DescriptorJson).to.have.string('TestPsl');
+      expect(package2DescriptorJson).to.have.string('AnotherTestPsl');
+      // apexTestAccess should be removed from the descriptor
+      expect(package2DescriptorJson).to.not.have.string('apexTestAccess');
     });
   });
 

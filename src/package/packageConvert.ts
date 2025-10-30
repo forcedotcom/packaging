@@ -22,6 +22,7 @@ import {
   Lifecycle,
   Logger,
   Messages,
+  NamedPackageDir,
   PollingClient,
   ScratchOrgInfo,
   SfError,
@@ -30,9 +31,16 @@ import {
   ScratchOrgSettingsGenerator,
 } from '@salesforce/core';
 import { camelCaseToTitleCase, Duration, env } from '@salesforce/kit';
-import { Many } from '@salesforce/ts-types';
+import { isPackagingDirectory } from '@salesforce/core/project';
+import { Many, Optional } from '@salesforce/ts-types';
 import * as pkgUtils from '../utils/packageUtils';
-import { copyDescriptorProperties, generatePackageAliasEntry, uniqid } from '../utils/packageUtils';
+import {
+  copyDescriptorProperties,
+  generatePackageAliasEntry,
+  uniqid,
+  resolveBuildUserPermissions,
+  findPackageDirectory,
+} from '../utils/packageUtils';
 import {
   ConvertPackageOptions,
   PackageDescriptorJson,
@@ -126,7 +134,8 @@ export async function convertPackage(
     packageId,
     // TODO: createPackageVersionCreateRequest requires apiVersion exist.
     // UT fail if we validate that it exists (there might not even be a project)
-    apiVersion as string
+    apiVersion as string,
+    project
   );
 
   // TODO: a lot of this is duplicated from PC, PVC, and PVCR.
@@ -185,7 +194,8 @@ export async function createPackageVersionCreateRequest(
     codecoverage?: boolean;
   },
   packageId: string,
-  apiVersion: string
+  apiVersion: string,
+  project?: SfProject
 ): Promise<PackagingSObjects.Package2VersionCreateRequest> {
   const uniqueId = uniqid({ template: `${packageId}-%s` });
   const packageVersTmpRoot = path.join(os.tmpdir(), uniqueId);
@@ -197,10 +207,12 @@ export async function createPackageVersionCreateRequest(
   const metadataZipFile = path.join(packageVersBlobDirectory, 'package.zip');
   const packageVersBlobZipFile = path.join(packageVersTmpRoot, 'package-version-info.zip');
 
-  let packageDescriptorJson: PackageDescriptorJson = {
-    id: packageId,
-    versionNumber: context.patchversion,
-  };
+  const packageObject = project ? findPackageDirectory(project, packageId) : undefined;
+  let packageDescriptorJson: PackageDescriptorJson = buildPackageDescriptorJson({
+    packageId,
+    base: { versionNumber: context.patchversion },
+    packageObject,
+  });
 
   const settingsGenerator = new ScratchOrgSettingsGenerator({ asDirectory: true });
   const definitionFile = context.definitionfile;
@@ -255,6 +267,9 @@ export async function createPackageVersionCreateRequest(
   await fs.promises.writeFile(path.join(packageVersMetadataFolder, 'package.xml'), currentPackageXml, 'utf-8');
   // Zip the packageVersMetadataFolder folder and put the zip in {packageVersBlobDirectory}/package.zip
   await pkgUtils.zipDir(packageVersMetadataFolder, metadataZipFile);
+
+  packageDescriptorJson = resolveBuildUserPermissions(packageDescriptorJson, context.codecoverage ?? false);
+
   await fs.promises.writeFile(
     path.join(packageVersBlobDirectory, 'package2-descriptor.json'),
     JSON.stringify(packageDescriptorJson, undefined, 2)
@@ -262,6 +277,30 @@ export async function createPackageVersionCreateRequest(
   // Zip the Version Info and package.zip files into another zip
   await pkgUtils.zipDir(packageVersBlobDirectory, packageVersBlobZipFile);
   return createRequestObject(packageId, context, packageVersTmpRoot, packageVersBlobZipFile);
+}
+
+function buildPackageDescriptorJson(args: {
+  packageId: string;
+  base?: Partial<PackageDescriptorJson>;
+  packageObject?: Optional<NamedPackageDir>;
+}): PackageDescriptorJson {
+  const { packageId, base, packageObject } = args;
+  const descriptor: Partial<PackageDescriptorJson> = {
+    id: packageId,
+    ...(base ?? {}),
+  };
+  if (packageObject && isPackagingDirectory(packageObject)) {
+    const allowedKeys: Array<keyof PackageDescriptorJson> = ['apexTestAccess'];
+    for (const key of allowedKeys) {
+      if (Object.prototype.hasOwnProperty.call(packageObject, key)) {
+        const value = (packageObject as unknown as PackageDescriptorJson)[key];
+        if (value !== undefined) {
+          (descriptor as PackageDescriptorJson)[key] = value as never;
+        }
+      }
+    }
+  }
+  return descriptor as PackageDescriptorJson;
 }
 
 async function createRequestObject(

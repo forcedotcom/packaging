@@ -20,6 +20,7 @@ import { pipeline as cbPipeline } from 'node:stream';
 import util, { promisify } from 'node:util';
 import { randomBytes } from 'node:crypto';
 import { Connection, Logger, Messages, ScratchOrgInfo, SfdcUrl, SfError, SfProject } from '@salesforce/core';
+import { isPackagingDirectory, NamedPackageDir } from '@salesforce/core/project';
 import { isNumber, isString, Many, Optional } from '@salesforce/ts-types';
 import type { SaveError } from '@jsforce/jsforce-node';
 import { Duration, ensureArray } from '@salesforce/kit';
@@ -50,7 +51,6 @@ const ID_REGISTRY = [
     label: 'Subscriber Package Version Id',
   },
 ];
-
 export type IdRegistryValue = { prefix: string; label: string };
 export type IdRegistry = {
   [key: string]: IdRegistryValue;
@@ -520,6 +520,74 @@ export function copyDescriptorProperties(
       )
     )
   ) as PackageDescriptorJson;
+}
+
+/**
+ * Resolve descriptor permissions for build/test execution.
+ *
+ * When {@link codecoverage} is true, converts {@link apexTestAccess} settings into
+ * permissionSetNames and permissionSetLicenseDeveloperNames.
+ * Always converts {@link packageMetadataAccess} settings into
+ * packageMetadataPermissionSetNames and packageMetadataPermissionSetLicenseNames.
+ * Removes apexTestAccess and packageMetadataAccess from the returned descriptor.
+ *
+ * @param descriptor Package descriptor to normalize
+ * @param codecoverage Whether to enable apexTestAccess-based permission processing
+ * @returns A normalized copy of the descriptor with flattened permission fields
+ */
+export function resolveBuildUserPermissions(
+  descriptor: PackageDescriptorJson,
+  codecoverage: boolean
+): PackageDescriptorJson {
+  const copy = structuredClone(descriptor);
+
+  if (codecoverage) {
+    if (copy.apexTestAccess?.permissionSets) {
+      let permSets = copy.apexTestAccess.permissionSets;
+      if (!Array.isArray(permSets)) permSets = permSets.split(',');
+      copy.permissionSetNames = permSets.map((s) => s.trim());
+    }
+
+    if (copy.apexTestAccess?.permissionSetLicenses) {
+      let psl = copy.apexTestAccess.permissionSetLicenses;
+      if (!Array.isArray(psl)) psl = psl.split(',');
+      copy.permissionSetLicenseDeveloperNames = psl.map((s) => s.trim());
+    }
+  }
+
+  if (copy.packageMetadataAccess?.permissionSets) {
+    let permSets = copy.packageMetadataAccess.permissionSets;
+    if (!Array.isArray(permSets)) permSets = permSets.split(',');
+    copy.packageMetadataPermissionSetNames = permSets.map((s) => s.trim());
+  }
+
+  if (copy.packageMetadataAccess?.permissionSetLicenses) {
+    let psl = copy.packageMetadataAccess.permissionSetLicenses;
+    if (!Array.isArray(psl)) psl = psl.split(',');
+    copy.packageMetadataPermissionSetLicenseNames = psl.map((s) => s.trim());
+  }
+
+  delete copy.apexTestAccess;
+  delete copy.packageMetadataAccess;
+  return copy;
+}
+
+/**
+ * This function finds the package directory in the project that matches the given packageId
+ *
+ * @param project The SfProject instance to search
+ * @param packageId The package ID to match against
+ * @returns A NamedPackageDir or empty object if not found
+ */
+export function findPackageDirectory(project: SfProject | undefined, packageId: string): Optional<NamedPackageDir> {
+  if (!project) {
+    return undefined;
+  }
+  return project.findPackage((namedPackageDir) => {
+    if (!isPackagingDirectory(namedPackageDir)) return false;
+    const dirPackageId = project.getPackageIdFromAlias(namedPackageDir.package) ?? namedPackageDir.package;
+    return dirPackageId === packageId;
+  });
 }
 
 /**
