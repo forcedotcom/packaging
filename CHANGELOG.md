@@ -1,3 +1,16 @@
+## [4.17.2](https://github.com/forcedotcom/packaging/compare/4.17.1...4.17.2) (2025-10-30)
+
+
+### Bug Fixes
+
+* address pr comments ([db1eb03](https://github.com/forcedotcom/packaging/commit/db1eb03294febe9f31f66496a5528065c4c512df))
+* perm sets preserved during package conversion ([9707011](https://github.com/forcedotcom/packaging/commit/97070116b9decdcbfeb42fe87bf5cc8e864717c1))
+* revert changes to package/tsconfig files ([e77cc82](https://github.com/forcedotcom/packaging/commit/e77cc82e2a8e21597fb565569d468b1b2e19d8b2))
+* update dependencies to match plugin-packaging ([5752001](https://github.com/forcedotcom/packaging/commit/5752001aa4d5c0fe30a798214b2524b5c322feb4))
+* updated dependencies changed after rebase ([234f9f7](https://github.com/forcedotcom/packaging/commit/234f9f74fca775a0873b3bd1e6d06f4d29f62c03))
+
+
+
 ## [4.17.1](https://github.com/forcedotcom/packaging/compare/4.17.0...4.17.1) (2025-10-24)
 
 
