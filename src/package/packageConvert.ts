@@ -35,6 +35,7 @@ import { isPackagingDirectory } from '@salesforce/core/project';
 import { Many, Optional } from '@salesforce/ts-types';
 import * as pkgUtils from '../utils/packageUtils';
 import {
+  cleanPackageDescriptorJson,
   copyDescriptorProperties,
   generatePackageAliasEntry,
   uniqid,
@@ -208,6 +209,7 @@ export async function createPackageVersionCreateRequest(
   const packageVersBlobZipFile = path.join(packageVersTmpRoot, 'package-version-info.zip');
 
   const packageObject = project ? findPackageDirectory(project, packageId) : undefined;
+
   let packageDescriptorJson: PackageDescriptorJson = buildPackageDescriptorJson({
     packageId,
     base: { versionNumber: context.patchversion },
@@ -238,8 +240,10 @@ export async function createPackageVersionCreateRequest(
   await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
   await fs.promises.mkdir(packageVersMetadataFolder, { recursive: true });
 
+  // Use CLI seedMetadata if provided, otherwise fall back to project configuration
+  const seedMetadataPath = context.seedmetadata ?? packageDescriptorJson.seedMetadata?.path;
   const hasSeedMetadata = await new MetadataResolver().resolveMetadata(
-    context.seedmetadata,
+    seedMetadataPath,
     seedMetadataFolder,
     'seedMDDirectoryDoesNotExist',
     apiVersion
@@ -248,7 +252,7 @@ export async function createPackageVersionCreateRequest(
   if (hasSeedMetadata) {
     // Zip the seedMetadataFolder folder and put the zip in {packageVersBlobDirectory}/{seedMetadataZipFile}
     Logger.childFromRoot('packageConvert:pollForStatusWithInterval').debug(
-      `Including metadata found in '${context.seedmetadata ?? '<undefined seedmetadata>'}'.`
+      `Including metadata found in '${seedMetadataPath ?? '<undefined seedmetadata>'}'.`
     );
     await pkgUtils.zipDir(seedMetadataFolder, seedMetadataZipFile);
   }
@@ -269,6 +273,7 @@ export async function createPackageVersionCreateRequest(
   await pkgUtils.zipDir(packageVersMetadataFolder, metadataZipFile);
 
   packageDescriptorJson = resolveBuildUserPermissions(packageDescriptorJson, context.codecoverage ?? false);
+  packageDescriptorJson = cleanPackageDescriptorJson(packageDescriptorJson);
 
   await fs.promises.writeFile(
     path.join(packageVersBlobDirectory, 'package2-descriptor.json'),
@@ -276,6 +281,7 @@ export async function createPackageVersionCreateRequest(
   );
   // Zip the Version Info and package.zip files into another zip
   await pkgUtils.zipDir(packageVersBlobDirectory, packageVersBlobZipFile);
+
   return createRequestObject(packageId, context, packageVersTmpRoot, packageVersBlobZipFile);
 }
 
@@ -290,7 +296,7 @@ function buildPackageDescriptorJson(args: {
     ...(base ?? {}),
   };
   if (packageObject && isPackagingDirectory(packageObject)) {
-    const allowedKeys: Array<keyof PackageDescriptorJson> = ['apexTestAccess'];
+    const allowedKeys: Array<keyof PackageDescriptorJson> = ['apexTestAccess', 'seedMetadata'];
     for (const key of allowedKeys) {
       if (Object.prototype.hasOwnProperty.call(packageObject, key)) {
         const value = (packageObject as unknown as PackageDescriptorJson)[key];

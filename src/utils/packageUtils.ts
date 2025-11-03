@@ -610,3 +610,21 @@ export function isPackageDirectoryEffectivelyEmpty(directory: string): boolean {
       : entry.name === '.eslintrc.json'
   );
 }
+
+/**
+ * Cleans client-side-only attribute(s) from the packageDescriptorJSON so it can go to API
+ */
+export function cleanPackageDescriptorJson(packageDescriptorJson: PackageDescriptorJson): PackageDescriptorJson {
+  // properties only used by the client side
+  const clientOnlyProps = [
+    'default',
+    'includeProfileUserLicenses',
+    'unpackagedMetadata',
+    'seedMetadata',
+    'branch',
+    'fullPath',
+    'name',
+    'scopeProfiles',
+  ];
+  return Object.fromEntries(Object.entries(packageDescriptorJson).filter(([key]) => !clientOnlyProps.includes(key)));
+}
