@@ -441,7 +441,7 @@ export class PackageVersionCreate {
     if (resultValues.length > 0) {
       packageDescriptorJson.dependencies = resultValues as PackageDirDependency[];
     }
-    packageDescriptorJson = cleanPackageDescriptorJson(packageDescriptorJson);
+    packageDescriptorJson = pkgUtils.cleanPackageDescriptorJson(packageDescriptorJson);
     packageDescriptorJson = setPackageDescriptorJsonValues(packageDescriptorJson, this.options, this.logger);
 
     await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
@@ -1174,22 +1174,4 @@ const setPackageDescriptorJsonValues = (
     logger.warn(messages.getMessage('defaultVersionName', [merged.versionName]));
   }
   return merged;
-};
-
-/**
- * Cleans client-side-only attribute(s) from the packageDescriptorJSON so it can go to API
- */
-const cleanPackageDescriptorJson = (packageDescriptorJson: PackageDescriptorJson): PackageDescriptorJson => {
-  // properties only used by the client side
-  const clientOnlyProps = [
-    'default',
-    'includeProfileUserLicenses',
-    'unpackagedMetadata',
-    'seedMetadata',
-    'branch',
-    'fullPath',
-    'name',
-    'scopeProfiles',
-  ];
-  return Object.fromEntries(Object.entries(packageDescriptorJson).filter(([key]) => !clientOnlyProps.includes(key)));
 };

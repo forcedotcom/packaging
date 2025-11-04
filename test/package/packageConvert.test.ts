@@ -27,6 +27,7 @@ import {
 } from '../../src/package/packageConvert';
 import { PackageEvents } from '../../src/interfaces';
 import { MetadataResolver } from '../../src/package/packageVersionCreate';
+import * as pkgUtils from '../../src/utils/packageUtils';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
@@ -222,6 +223,167 @@ describe('packageConvert', () => {
       expect(package2DescriptorJson).to.have.string('AnotherTestPsl');
       // apexTestAccess should be removed from the descriptor
       expect(package2DescriptorJson).to.not.have.string('apexTestAccess');
+    });
+
+    it('should use seedMetadata from project configuration when CLI option not provided', async () => {
+      $$.inProject(true);
+      const project = SfProject.getInstance();
+
+      // Create the force-app directory that's referenced in sfdx-project.json
+      await fs.promises.mkdir(path.join(project.getPath(), 'force-app'), { recursive: true });
+
+      // Set up sfdx-project.json with packageDirectory containing seedMetadata
+      project.getSfProjectJson().set('packageDirectories', [
+        {
+          path: 'force-app',
+          package: '0Ho3i000000Gmj6CAC',
+          seedMetadata: {
+            path: 'seed',
+          },
+        },
+      ]);
+      await project.getSfProjectJson().write();
+
+      // Spy on resolveMetadata to verify it's called with the project config path
+      const hasSeedMdSpy = $$.SANDBOX.spy(MetadataResolver.prototype, 'resolveMetadata');
+      // Spy on zipDir to verify seedMetadata zip is created
+      const zipDirSpy = $$.SANDBOX.spy(pkgUtils, 'zipDir');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      $$.SANDBOX.stub(MetadataResolver.prototype, 'generateMDFolderForArtifact' as any).resolves();
+      $$.SANDBOX.stub(fs, 'existsSync').returns(true);
+
+      // Create a spy to capture what's written to package2-descriptor.json
+      const writeFileSpy = $$.SANDBOX.spy(fs.promises, 'writeFile');
+
+      const request = await createPackageVersionCreateRequest(
+        {
+          installationkey: '123',
+          buildinstance: 'myInstance',
+          seedmetadata: undefined, // No CLI option
+          codecoverage: false,
+        },
+        '0Ho3i000000Gmj6CAC',
+        '54.0',
+        project
+      );
+
+      expect(request).to.have.all.keys(
+        'CalculateCodeCoverage',
+        'InstallKey',
+        'Instance',
+        'IsConversionRequest',
+        'Package2Id',
+        'VersionInfo'
+      );
+
+      // Verify resolveMetadata was called with the project config path
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const seedMD = hasSeedMdSpy.firstCall.args[0];
+      expect(seedMD).to.equal('seed');
+
+      // Verify seedMetadata zip file was created in the correct directory (package-version-info)
+      const zipDirCalls = zipDirSpy.getCalls();
+      const seedMetadataZipCall = zipDirCalls.find((call) => {
+        const zipPath = call.args[1];
+        return typeof zipPath === 'string' && zipPath.includes('seed-metadata-package.zip');
+      });
+      expect(seedMetadataZipCall).to.not.be.undefined;
+      // Verify the zip file is in the package-version-info directory (packageVersBlobDirectory)
+      const seedMetadataZipPath = seedMetadataZipCall?.args[1] as string;
+      expect(seedMetadataZipPath).to.include('package-version-info');
+      expect(seedMetadataZipPath).to.include('seed-metadata-package.zip');
+      expect(path.dirname(seedMetadataZipPath)).to.include('package-version-info');
+
+      // Verify seedMetadata is NOT in the package2-descriptor.json (it's client-only)
+      const descriptorWriteCall = writeFileSpy.getCalls().find((call) => {
+        const filePath = call.args[0];
+        return typeof filePath === 'string' && filePath.includes('package2-descriptor.json');
+      });
+      expect(descriptorWriteCall).to.not.be.undefined;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const descriptorContent = descriptorWriteCall?.args[1];
+      expect(descriptorContent).to.not.have.string('seedMetadata');
+    });
+
+    it('should prioritize CLI seedMetadata over project configuration', async () => {
+      $$.inProject(true);
+      const project = SfProject.getInstance();
+
+      // Create the force-app directory that's referenced in sfdx-project.json
+      await fs.promises.mkdir(path.join(project.getPath(), 'force-app'), { recursive: true });
+
+      // Set up sfdx-project.json with packageDirectory containing seedMetadata
+      project.getSfProjectJson().set('packageDirectories', [
+        {
+          path: 'force-app',
+          package: '0Ho3i000000Gmj6CAC',
+          seedMetadata: {
+            path: 'seed',
+          },
+        },
+      ]);
+      await project.getSfProjectJson().write();
+
+      // Spy on resolveMetadata to verify it's called with the CLI path (priority)
+      const hasSeedMdSpy = $$.SANDBOX.spy(MetadataResolver.prototype, 'resolveMetadata');
+      // Spy on zipDir to verify seedMetadata zip is created
+      const zipDirSpy = $$.SANDBOX.spy(pkgUtils, 'zipDir');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      $$.SANDBOX.stub(MetadataResolver.prototype, 'generateMDFolderForArtifact' as any).resolves();
+      $$.SANDBOX.stub(fs, 'existsSync').returns(true);
+
+      // Create a spy to capture what's written to package2-descriptor.json
+      const writeFileSpy = $$.SANDBOX.spy(fs.promises, 'writeFile');
+
+      const request = await createPackageVersionCreateRequest(
+        {
+          installationkey: '123',
+          buildinstance: 'myInstance',
+          seedmetadata: 'seed-cli', // CLI option should take precedence
+          codecoverage: false,
+        },
+        '0Ho3i000000Gmj6CAC',
+        '54.0',
+        project
+      );
+
+      expect(request).to.have.all.keys(
+        'CalculateCodeCoverage',
+        'InstallKey',
+        'Instance',
+        'IsConversionRequest',
+        'Package2Id',
+        'VersionInfo'
+      );
+
+      // Verify resolveMetadata was called with the CLI path, not the project config path
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const seedMD = hasSeedMdSpy.firstCall.args[0];
+      expect(seedMD).to.equal('seed-cli');
+      expect(seedMD).to.not.equal('seed');
+
+      // Verify seedMetadata zip file was created with CLI path in the correct directory
+      const zipDirCalls = zipDirSpy.getCalls();
+      const seedMetadataZipCall = zipDirCalls.find((call) => {
+        const zipPath = call.args[1];
+        return typeof zipPath === 'string' && zipPath.includes('seed-metadata-package.zip');
+      });
+      expect(seedMetadataZipCall).to.not.be.undefined;
+      // Verify the zip file is in the package-version-info directory (packageVersBlobDirectory)
+      const seedMetadataZipPath = seedMetadataZipCall?.args[1] as string;
+      expect(seedMetadataZipPath).to.include('package-version-info');
+      expect(seedMetadataZipPath).to.include('seed-metadata-package.zip');
+      expect(path.dirname(seedMetadataZipPath)).to.include('package-version-info');
+
+      // Verify seedMetadata is NOT in the package2-descriptor.json (it's client-only)
+      const descriptorWriteCall = writeFileSpy.getCalls().find((call) => {
+        const filePath = call.args[0];
+        return typeof filePath === 'string' && filePath.includes('package2-descriptor.json');
+      });
+      expect(descriptorWriteCall).to.not.be.undefined;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const descriptorContent = descriptorWriteCall?.args[1];
+      expect(descriptorContent).to.not.have.string('seedMetadata');
     });
   });
 
