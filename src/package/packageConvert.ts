@@ -240,7 +240,6 @@ export async function createPackageVersionCreateRequest(
   await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
   await fs.promises.mkdir(packageVersMetadataFolder, { recursive: true });
 
-  // Use CLI seedMetadata if provided, otherwise fall back to project configuration
   const seedMetadataPath = context.seedmetadata ?? packageDescriptorJson.seedMetadata?.path;
   const hasSeedMetadata = await new MetadataResolver().resolveMetadata(
     seedMetadataPath,
