@@ -1,3 +1,12 @@
+# [4.18.0](https://github.com/forcedotcom/packaging/compare/4.17.2...4.18.0) (2025-11-04)
+
+
+### Features
+
+* pass in seedMd in sfdx-project.json ([295ac9e](https://github.com/forcedotcom/packaging/commit/295ac9eda71833b75698668770e753d86ed414cb))
+
+
+
 ## [4.17.2](https://github.com/forcedotcom/packaging/compare/4.17.1...4.17.2) (2025-10-30)
 
 
