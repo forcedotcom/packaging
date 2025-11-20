@@ -152,7 +152,7 @@ export namespace BundleSObjects {
   } & Schema;
 
   export type PkgBundleVersionInstallReq = {
-    PackageBundleVersionID: string;
+    PackageBundleVersionId: string;
     DevelopmentOrganization: string;
   };
 
@@ -167,7 +167,7 @@ export namespace BundleSObjects {
   export type PkgBundleVersionInstallQueryRecord = {
     Id: string;
     InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus;
-    PackageBundleVersionID: string;
+    PackageBundleVersionId: string;
     DevelopmentOrganization: string;
     ValidationError: string;
     CreatedDate: string;

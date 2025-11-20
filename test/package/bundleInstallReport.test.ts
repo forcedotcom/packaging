@@ -64,7 +64,7 @@ describe('PackageBundleInstall', () => {
       const mockInstallStatus = {
         Id: installRequestId,
         InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.success,
-        PackageBundleVersionID: '05i0x0000000000001',
+        PackageBundleVersionId: '05i0x0000000000001',
         DevelopmentOrganization: '00D0x0000000000001',
         ValidationError: '',
         CreatedDate: '2025-01-01T00:00:00.000+0000',
@@ -92,7 +92,7 @@ describe('PackageBundleInstall', () => {
       const mockInstallStatus = {
         Id: installRequestId,
         InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.error,
-        PackageBundleVersionID: '05i0x0000000000001',
+        PackageBundleVersionId: '05i0x0000000000001',
         DevelopmentOrganization: '00D0x0000000000001',
         ValidationError: 'Installation failed due to validation errors',
         CreatedDate: '2025-01-01T00:00:00.000+0000',
@@ -122,7 +122,7 @@ describe('PackageBundleInstall', () => {
       const mockInstallStatus = {
         Id: installRequestId,
         InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.queued,
-        PackageBundleVersionID: '05i0x0000000000001',
+        PackageBundleVersionId: '05i0x0000000000001',
         DevelopmentOrganization: '00D0x0000000000001',
         ValidationError: '',
         CreatedDate: '2025-01-01T00:00:00.000+0000',
@@ -214,7 +214,7 @@ describe('PackageBundleInstall', () => {
       const mockInstallStatus = {
         Id: installRequestId,
         InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.success,
-        PackageBundleVersionID: '05i0x0000000000001',
+        PackageBundleVersionId: '05i0x0000000000001',
         DevelopmentOrganization: '00D0x0000000000001',
         ValidationError: null, // null validation error
         CreatedDate: '2025-01-01T00:00:00.000+0000',
@@ -242,7 +242,7 @@ describe('PackageBundleInstall', () => {
       const mockInstallStatus = {
         Id: installRequestId,
         InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.error,
-        PackageBundleVersionID: '05i0x0000000000001',
+        PackageBundleVersionId: '05i0x0000000000001',
         DevelopmentOrganization: '00D0x0000000000001',
         ValidationError: 'Multiple validation errors encountered',
         CreatedDate: '2025-01-01T00:00:00.000+0000',
