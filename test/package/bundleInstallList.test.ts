@@ -64,7 +64,7 @@ describe('bundleInstallList', () => {
         {
           Id: '08c000000000001',
           InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.success,
-          PackageBundleVersionID: '05i000000000001',
+          PackageBundleVersionId: '05i000000000001',
           DevelopmentOrganization: '00D000000000001',
           ValidationError: '',
           CreatedDate: '2024-01-01T00:00:00.000+0000',
@@ -74,7 +74,7 @@ describe('bundleInstallList', () => {
         {
           Id: '08c000000000002',
           InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.queued,
-          PackageBundleVersionID: '05i000000000002',
+          PackageBundleVersionId: '05i000000000002',
           DevelopmentOrganization: '00D000000000002',
           ValidationError: '',
           CreatedDate: '2024-01-02T00:00:00.000+0000',
@@ -102,7 +102,7 @@ describe('bundleInstallList', () => {
       expect(statuses[0]).to.deep.equal({
         Id: '08c000000000001',
         InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.success,
-        PackageBundleVersionID: '05i000000000001',
+        PackageBundleVersionId: '05i000000000001',
         DevelopmentOrganization: '00D000000000001',
         ValidationError: '',
         CreatedDate: '2024-01-01T00:00:00.000+0000',
@@ -112,7 +112,7 @@ describe('bundleInstallList', () => {
       expect(statuses[1]).to.deep.equal({
         Id: '08c000000000002',
         InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.queued,
-        PackageBundleVersionID: '05i000000000002',
+        PackageBundleVersionId: '05i000000000002',
         DevelopmentOrganization: '00D000000000002',
         ValidationError: '',
         CreatedDate: '2024-01-02T00:00:00.000+0000',
@@ -129,7 +129,7 @@ describe('bundleInstallList', () => {
         {
           Id: '08c000000000001',
           InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.success,
-          PackageBundleVersionID: '05i000000000001',
+          PackageBundleVersionId: '05i000000000001',
           DevelopmentOrganization: '00D000000000001',
           ValidationError: '',
           CreatedDate: '2024-01-01T00:00:00.000+0000',
@@ -172,7 +172,7 @@ describe('bundleInstallList', () => {
         {
           Id: '08c000000000001',
           InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.success,
-          PackageBundleVersionID: '05i000000000001',
+          PackageBundleVersionId: '05i000000000001',
           DevelopmentOrganization: '00D000000000001',
           ValidationError: '',
           CreatedDate: '2024-01-01T00:00:00.000+0000',
@@ -211,7 +211,7 @@ describe('bundleInstallList', () => {
         {
           Id: '08c000000000001',
           InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.error,
-          PackageBundleVersionID: '05i000000000001',
+          PackageBundleVersionId: '05i000000000001',
           DevelopmentOrganization: '00D000000000001',
           ValidationError: 'Test validation error',
           CreatedDate: '2024-01-01T00:00:00.000+0000',

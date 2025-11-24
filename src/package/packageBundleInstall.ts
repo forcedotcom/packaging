@@ -28,7 +28,7 @@ export class PackageBundleInstall {
   ): Promise<BundleSObjects.PkgBundleVersionInstallReqResult> {
     try {
       const query =
-        'SELECT Id, InstallStatus, PackageBundleVersionID, DevelopmentOrganization, ValidationError, ' +
+        'SELECT Id, InstallStatus, PackageBundleVersionId, DevelopmentOrganization, ValidationError, ' +
         'CreatedDate, CreatedById ' +
         `FROM PkgBundleVersionInstallReq WHERE Id = '${installRequestId}'`;
 
@@ -45,7 +45,7 @@ export class PackageBundleInstall {
       return {
         Id: record.Id,
         InstallStatus: record.InstallStatus,
-        PackageBundleVersionID: record.PackageBundleVersionID ?? '',
+        PackageBundleVersionId: record.PackageBundleVersionId ?? '',
         DevelopmentOrganization: record.DevelopmentOrganization ?? '',
         ValidationError: record.ValidationError ?? '',
         CreatedDate: record.CreatedDate ?? '',
@@ -65,7 +65,7 @@ export class PackageBundleInstall {
     createdLastDays?: number
   ): Promise<BundleSObjects.PkgBundleVersionInstallReqResult[]> {
     let query =
-      'SELECT Id, InstallStatus, PackageBundleVersionID, DevelopmentOrganization, ValidationError, ' +
+      'SELECT Id, InstallStatus, PackageBundleVersionId, DevelopmentOrganization, ValidationError, ' +
       'CreatedDate, CreatedById ' +
       'FROM PkgBundleVersionInstallReq';
     if (status && createdLastDays) {
@@ -81,7 +81,7 @@ export class PackageBundleInstall {
     return queryResult.records.map((record) => ({
       Id: record.Id,
       InstallStatus: record.InstallStatus,
-      PackageBundleVersionID: record.PackageBundleVersionID ?? '',
+      PackageBundleVersionId: record.PackageBundleVersionId ?? '',
       DevelopmentOrganization: record.DevelopmentOrganization ?? '',
       ValidationError: record.ValidationError ?? '',
       CreatedDate: record.CreatedDate ?? '',
@@ -101,7 +101,7 @@ export class PackageBundleInstall {
     );
 
     const request: BundleSObjects.PkgBundleVersionInstallReq = {
-      PackageBundleVersionID: packageBundleVersionId,
+      PackageBundleVersionId: packageBundleVersionId,
       DevelopmentOrganization: options.DevelopmentOrganization,
     };
     let installResult;

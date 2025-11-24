@@ -101,7 +101,7 @@ describe('PackageBundleInstall.installBundle', () => {
               {
                 Id: '08c000000000000',
                 InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.queued,
-                PackageBundleVersionID: '05i000000000001',
+                PackageBundleVersionId: '05i000000000001',
                 DevelopmentOrganization: '00D000000000000',
                 ValidationError: '',
                 CreatedDate: '2025-01-01T00:00:00.000Z',
@@ -123,7 +123,7 @@ describe('PackageBundleInstall.installBundle', () => {
 
       expect(result).to.have.property('Id', '08c000000000000');
       expect(result).to.have.property('InstallStatus', BundleSObjects.PkgBundleVersionInstallReqStatus.queued);
-      expect(result).to.have.property('PackageBundleVersionID', '05i000000000001');
+      expect(result).to.have.property('PackageBundleVersionId', '05i000000000001');
       expect(result).to.have.property('DevelopmentOrganization', '00D000000000000');
     });
 
@@ -147,7 +147,7 @@ describe('PackageBundleInstall.installBundle', () => {
               records: [{
                 Id: '08c000000000000',
                 InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.queued,
-                PackageBundleVersionID: '05i000000000001',
+                PackageBundleVersionId: '05i000000000001',
                 DevelopmentOrganization: '00D000000000000',
                 ValidationError: '',
                 CreatedDate: new Date().toISOString(),
@@ -160,7 +160,7 @@ describe('PackageBundleInstall.installBundle', () => {
               records: [{
                 Id: '08c000000000000',
                 InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.success,
-                PackageBundleVersionID: '05i000000000001',
+                PackageBundleVersionId: '05i000000000001',
                 DevelopmentOrganization: '00D000000000000',
                 ValidationError: '',
                 CreatedDate: new Date().toISOString(),
@@ -423,7 +423,7 @@ describe('PackageBundleInstall.installBundle', () => {
               {
                 Id: '08c000000000000',
                 InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.queued,
-                PackageBundleVersionID: '1Q8000000000001234',
+                PackageBundleVersionId: '1Q8000000000001234',
                 DevelopmentOrganization: '00D000000000000',
                 ValidationError: '',
                 CreatedDate: '2025-01-01T00:00:00.000Z',
@@ -444,7 +444,7 @@ describe('PackageBundleInstall.installBundle', () => {
       const result = await PackageBundleInstall.installBundle(connection, project, options);
 
       expect(result).to.have.property('Id', '08c000000000000');
-      expect(result).to.have.property('PackageBundleVersionID', '1Q8000000000001234');
+      expect(result).to.have.property('PackageBundleVersionId', '1Q8000000000001234');
     });
   });
 });
