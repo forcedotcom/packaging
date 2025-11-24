@@ -1,3 +1,12 @@
+## [4.18.1](https://github.com/forcedotcom/packaging/compare/4.18.0...4.18.1) (2025-11-24)
+
+
+### Bug Fixes
+
+* fix package bundle version id not showing bundle install list command ([906e310](https://github.com/forcedotcom/packaging/commit/906e310b4111e4c37b49f43c859d9f0f74f932d5))
+
+
+
 # [4.18.0](https://github.com/forcedotcom/packaging/compare/4.17.2...4.18.0) (2025-11-04)
 
 
