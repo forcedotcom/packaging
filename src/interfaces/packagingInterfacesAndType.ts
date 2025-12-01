@@ -452,7 +452,10 @@ export type InstalledPackages = {
   SubscriberPackageVersionId: string;
   MinPackageVersionId: string;
   SubscriberPackage?: PackagingSObjects.SubscriberPackage;
-  SubscriberPackageVersion?: Omit<MetadataPackageVersion, 'MetadataPackageId' | 'ReleaseState' | 'IsDeprecated'>;
+  SubscriberPackageVersion?: Omit<MetadataPackageVersion, 'MetadataPackageId' | 'ReleaseState' | 'IsDeprecated'> & {
+    IsManaged?: boolean;
+    Package2ContainerOptions?: string;
+  };
 };
 
 export type CodeCoverage = null | {
