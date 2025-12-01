@@ -20,3 +20,4 @@ export * from './utils';
 export * from './package/packageBundle';
 export * from './package/packageBundleVersionCreate';
 export * from './package/packageBundleInstall';
+export * from './package/packageBundleInstalledList';
