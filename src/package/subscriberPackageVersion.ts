@@ -185,7 +185,7 @@ export class SubscriberPackageVersion {
   public static async installedList(conn: Connection): Promise<InstalledPackages[]> {
     try {
       const query =
-        'SELECT Id, SubscriberPackageId, SubscriberPackage.NamespacePrefix, SubscriberPackage.Name, SubscriberPackageVersion.Id, SubscriberPackageVersion.Name, SubscriberPackageVersion.MajorVersion, SubscriberPackageVersion.MinorVersion, SubscriberPackageVersion.PatchVersion, SubscriberPackageVersion.BuildNumber FROM InstalledSubscriberPackage ORDER BY SubscriberPackageId';
+        'SELECT Id, SubscriberPackageId, SubscriberPackage.NamespacePrefix, SubscriberPackage.Name, SubscriberPackageVersion.Id, SubscriberPackageVersion.Name, SubscriberPackageVersion.MajorVersion, SubscriberPackageVersion.MinorVersion, SubscriberPackageVersion.PatchVersion, SubscriberPackageVersion.BuildNumber, SubscriberPackageVersion.IsManaged, SubscriberPackageVersion.Package2ContainerOptions FROM InstalledSubscriberPackage ORDER BY SubscriberPackageId';
       return (await conn.tooling.query<InstalledPackages>(query)).records;
     } catch (err) {
       if (err instanceof Error) {
