@@ -1,3 +1,12 @@
+## [4.18.2](https://github.com/forcedotcom/packaging/compare/4.18.1...4.18.2) (2025-12-08)
+
+
+### Bug Fixes
+
+* bump some libs to latest ([8ee9a66](https://github.com/forcedotcom/packaging/commit/8ee9a66f6ac1583fe756517a0ca8b8d0b6694592))
+
+
+
 ## [4.18.1](https://github.com/forcedotcom/packaging/compare/4.18.0...4.18.1) (2025-11-24)
 
 
