@@ -50,4 +50,14 @@ export type BundleInstallOptions = {
   };
 };
 
+export type BundleUninstallOptions = {
+  connection: Connection;
+  project: SfProject;
+  PackageBundleVersion: string;
+  polling?: {
+    timeout: Duration;
+    frequency: Duration;
+  };
+};
+
 export type BundleSaveResult = SaveResult;
