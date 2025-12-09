@@ -1,3 +1,12 @@
+## [4.18.3](https://github.com/forcedotcom/packaging/compare/4.18.2...4.18.3) (2025-12-09)
+
+
+### Bug Fixes
+
+* **deps:** bump mdast-util-to-hast from 13.2.0 to 13.2.1 ([056af51](https://github.com/forcedotcom/packaging/commit/056af515d61f726fa7171c23a06323c8dac55a5d))
+
+
+
 ## [4.18.2](https://github.com/forcedotcom/packaging/compare/4.18.1...4.18.2) (2025-12-08)
 
 
