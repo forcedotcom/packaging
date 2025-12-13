@@ -51,7 +51,7 @@
     "@salesforce/types": "^1.2.0",
     "fast-xml-parser": "^4.5.0",
     "globby": "^11",
-    "graphology": "^0.25.4",
+    "graphology": "^0.26.0",
     "graphology-traversal": "^0.3.1",
     "graphology-types": "^0.24.7",
     "jszip": "^3.10.1",
