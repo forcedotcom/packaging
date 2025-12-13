@@ -1,3 +1,12 @@
+## [4.18.4](https://github.com/forcedotcom/packaging/compare/4.18.3...4.18.4) (2025-12-13)
+
+
+### Bug Fixes
+
+* **deps:** bump graphology from 0.25.4 to 0.26.0 ([077f466](https://github.com/forcedotcom/packaging/commit/077f4665bc79a1207917e9f07dd21eac6189286d))
+
+
+
 ## [4.18.3](https://github.com/forcedotcom/packaging/compare/4.18.2...4.18.3) (2025-12-09)
 
 
