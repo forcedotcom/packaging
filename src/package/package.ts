@@ -388,7 +388,7 @@ export class Package {
     const priorRecommendedVersionId = (await this.options.connection.tooling.query<PackagingSObjects.Package2>(queryP2))
       .records[0].RecommendedVersionId;
 
-    if (priorRecommendedVersionId === undefined || opts.RecommendedVersionId === priorRecommendedVersionId) {
+    if (priorRecommendedVersionId === null || opts.RecommendedVersionId === priorRecommendedVersionId) {
       return;
     }
 
