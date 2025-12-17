@@ -1,3 +1,12 @@
+## [4.18.7](https://github.com/forcedotcom/packaging/compare/4.18.6...4.18.7) (2025-12-17)
+
+
+### Bug Fixes
+
+* setting the first recommended version incorrectly fails without --skip-ancestor-check ([e3bbb01](https://github.com/forcedotcom/packaging/commit/e3bbb01fd06c99670a4895e886c0d4d6b659dc8d))
+
+
+
 ## [4.18.6](https://github.com/forcedotcom/packaging/compare/4.18.5...4.18.6) (2025-12-13)
 
 
