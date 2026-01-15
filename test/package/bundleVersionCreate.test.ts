@@ -1,5 +1,5 @@
 /*
- * Copyright 2025, Salesforce, Inc.
+ * Copyright 2026, Salesforce, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -218,35 +218,39 @@ describe('PackageBundleVersion.create', () => {
           callCount++;
           if (callCount === 1) {
             return Promise.resolve({
-              records: [{
-                Id: '0Ho000000000000',
-                RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.queued,
-                PackageBundle: { Id: '0Ho000000000000' },
-                PackageBundleVersion: { Id: '' },
-                VersionName: 'ver 1.0',
-                MajorVersion: '1',
-                MinorVersion: '0',
-                BundleVersionComponents: JSON.stringify(['04t000000000002', '04t000000000000004']),
-                CreatedDate: new Date().toISOString(),
-                CreatedById: 'testUser',
-                ValidationError: '',
-              }],
+              records: [
+                {
+                  Id: '0Ho000000000000',
+                  RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.queued,
+                  PackageBundle: { Id: '0Ho000000000000' },
+                  PackageBundleVersion: { Id: '' },
+                  VersionName: 'ver 1.0',
+                  MajorVersion: '1',
+                  MinorVersion: '0',
+                  BundleVersionComponents: JSON.stringify(['04t000000000002', '04t000000000000004']),
+                  CreatedDate: new Date().toISOString(),
+                  CreatedById: 'testUser',
+                  ValidationError: '',
+                },
+              ],
             });
           } else {
             return Promise.resolve({
-              records: [{
-                Id: '0Ho000000000000',
-                RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
-                PackageBundle: { Id: '0Ho000000000000' },
-                PackageBundleVersion: { Id: '0Ho000000000001' },
-                VersionName: 'ver 1.0',
-                MajorVersion: '1',
-                MinorVersion: '0',
-                BundleVersionComponents: JSON.stringify(['04t000000000002', '04t000000000000004']),
-                CreatedDate: new Date().toISOString(),
-                CreatedById: 'testUser',
-                ValidationError: '',
-              }],
+              records: [
+                {
+                  Id: '0Ho000000000000',
+                  RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
+                  PackageBundle: { Id: '0Ho000000000000' },
+                  PackageBundleVersion: { Id: '0Ho000000000001' },
+                  VersionName: 'ver 1.0',
+                  MajorVersion: '1',
+                  MinorVersion: '0',
+                  BundleVersionComponents: JSON.stringify(['04t000000000002', '04t000000000000004']),
+                  CreatedDate: new Date().toISOString(),
+                  CreatedById: 'testUser',
+                  ValidationError: '',
+                },
+              ],
             });
           }
         },
@@ -309,19 +313,21 @@ describe('PackageBundleVersion.create', () => {
       Object.assign(connection, {
         autoFetchQuery: () =>
           Promise.resolve({
-            records: [{
-              Id: '0Ho000000000000',
-              RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
-              PackageBundle: { Id: '0Ho000000000000' },
-              PackageBundleVersion: { Id: '0Ho000000000001' },
-              VersionName: 'ver 1.0',
-              MajorVersion: '1',
-              MinorVersion: '0',
-              BundleVersionComponents: JSON.stringify(['04t000000000001', '04t000000000000005']),
-              CreatedDate: new Date().toISOString(),
-              CreatedById: 'testUser',
-              ValidationError: '',
-            }],
+            records: [
+              {
+                Id: '0Ho000000000000',
+                RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
+                PackageBundle: { Id: '0Ho000000000000' },
+                PackageBundleVersion: { Id: '0Ho000000000001' },
+                VersionName: 'ver 1.0',
+                MajorVersion: '1',
+                MinorVersion: '0',
+                BundleVersionComponents: JSON.stringify(['04t000000000001', '04t000000000000005']),
+                CreatedDate: new Date().toISOString(),
+                CreatedById: 'testUser',
+                ValidationError: '',
+              },
+            ],
           }),
       });
 
@@ -463,19 +469,21 @@ describe('PackageBundleVersion.create', () => {
       Object.assign(connection, {
         autoFetchQuery: () =>
           Promise.resolve({
-            records: [{
-              Id: '0Ho000000000000',
-              RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.error,
-              PackageBundle: { Id: '0Ho000000000000' },
-              PackageBundleVersion: { Id: '' },
-              VersionName: 'ver 1.0',
-              MajorVersion: '1',
-              MinorVersion: '0',
-              BundleVersionComponents: JSON.stringify(['04t000000000001', '04t000000000000007']),
-              CreatedDate: new Date().toISOString(),
-              CreatedById: 'testUser',
-              ValidationError: 'Test error message',
-            }],
+            records: [
+              {
+                Id: '0Ho000000000000',
+                RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.error,
+                PackageBundle: { Id: '0Ho000000000000' },
+                PackageBundleVersion: { Id: '' },
+                VersionName: 'ver 1.0',
+                MajorVersion: '1',
+                MinorVersion: '0',
+                BundleVersionComponents: JSON.stringify(['04t000000000001', '04t000000000000007']),
+                CreatedDate: new Date().toISOString(),
+                CreatedById: 'testUser',
+                ValidationError: 'Test error message',
+              },
+            ],
           }),
       });
 
@@ -535,19 +543,21 @@ describe('PackageBundleVersion.create', () => {
       Object.assign(connection, {
         autoFetchQuery: () =>
           Promise.resolve({
-            records: [{
-              Id: '0Ho000000000000',
-              RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
-              PackageBundle: { Id: '0Ho000000000000' },
-              PackageBundleVersion: { Id: '0Ho000000000001' },
-              VersionName: 'ver 1.0',
-              MajorVersion: '1',
-              MinorVersion: '0',
-              BundleVersionComponents: JSON.stringify(['04t000000000002', '04t000000000000008']),
-              CreatedDate: new Date().toISOString(),
-              CreatedById: 'testUser',
-              ValidationError: '',
-            }],
+            records: [
+              {
+                Id: '0Ho000000000000',
+                RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
+                PackageBundle: { Id: '0Ho000000000000' },
+                PackageBundleVersion: { Id: '0Ho000000000001' },
+                VersionName: 'ver 1.0',
+                MajorVersion: '1',
+                MinorVersion: '0',
+                BundleVersionComponents: JSON.stringify(['04t000000000002', '04t000000000000008']),
+                CreatedDate: new Date().toISOString(),
+                CreatedById: 'testUser',
+                ValidationError: '',
+              },
+            ],
           }),
       });
 

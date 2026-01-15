@@ -1,5 +1,5 @@
 /*
- * Copyright 2025, Salesforce, Inc.
+ * Copyright 2026, Salesforce, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ export const Package2VersionFields: Array<keyof Package2Version> = [
   'Branch',
   'AncestorId',
   'ValidationSkipped',
-  'ValidatedAsync',
+  'ValidatedAsync', // v61.0+
   'Name',
   'Description',
   'MajorVersion',
@@ -80,8 +80,8 @@ export const Package2VersionFields: Array<keyof Package2Version> = [
   'ReleaseVersion',
   'BuildDurationInSeconds',
   'HasMetadataRemoved',
-  'EndToEndBuildDurationInSeconds',
-  'DeveloperUsePkgZip',
+  'EndToEndBuildDurationInSeconds', // v61.0+
+  'DeveloperUsePkgZip', // v64.0+
 ];
 
 export type Package2VersionFieldTypes = Array<(typeof Package2VersionFields)[number]>;
@@ -421,9 +421,22 @@ export class PackageVersion {
   }
 
   private static getPackage2VersionFields(connection: Connection): string[] {
-    return parseInt(connection.getApiVersion(), 10) > 60
-      ? Package2VersionFields
-      : Package2VersionFields.filter((field) => field !== 'ValidatedAsync');
+    const apiVersion = parseInt(connection.getApiVersion(), 10);
+
+    // remove fields that are not available in the connection api version
+    const fieldsToExclude: string[] = [];
+
+    if (apiVersion < 64) {
+      fieldsToExclude.push('DeveloperUsePkgZip');
+    }
+
+    if (apiVersion < 61) {
+      fieldsToExclude.push('EndToEndBuildDurationInSeconds', 'ValidatedAsync');
+    }
+
+    return fieldsToExclude.length > 0
+      ? Package2VersionFields.filter((field) => !fieldsToExclude.includes(field))
+      : Package2VersionFields;
   }
 
   /**

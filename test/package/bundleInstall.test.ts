@@ -1,5 +1,5 @@
 /*
- * Copyright 2025, Salesforce, Inc.
+ * Copyright 2026, Salesforce, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -144,29 +144,33 @@ describe('PackageBundleInstall.installBundle', () => {
           callCount++;
           if (callCount === 1) {
             return Promise.resolve({
-              records: [{
-                Id: '08c000000000000',
-                InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.queued,
-                PackageBundleVersionId: '05i000000000001',
-                DevelopmentOrganization: '00D000000000000',
-                ValidationError: '',
-                CreatedDate: new Date().toISOString(),
-                CreatedById: 'testUser',
-                Error: [],
-              }],
+              records: [
+                {
+                  Id: '08c000000000000',
+                  InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.queued,
+                  PackageBundleVersionId: '05i000000000001',
+                  DevelopmentOrganization: '00D000000000000',
+                  ValidationError: '',
+                  CreatedDate: new Date().toISOString(),
+                  CreatedById: 'testUser',
+                  Error: [],
+                },
+              ],
             });
           } else {
             return Promise.resolve({
-              records: [{
-                Id: '08c000000000000',
-                InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.success,
-                PackageBundleVersionId: '05i000000000001',
-                DevelopmentOrganization: '00D000000000000',
-                ValidationError: '',
-                CreatedDate: new Date().toISOString(),
-                CreatedById: 'testUser',
-                Error: [],
-              }],
+              records: [
+                {
+                  Id: '08c000000000000',
+                  InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.success,
+                  PackageBundleVersionId: '05i000000000001',
+                  DevelopmentOrganization: '00D000000000000',
+                  ValidationError: '',
+                  CreatedDate: new Date().toISOString(),
+                  CreatedById: 'testUser',
+                  Error: [],
+                },
+              ],
             });
           }
         },
@@ -204,16 +208,18 @@ describe('PackageBundleInstall.installBundle', () => {
       Object.assign(connection, {
         autoFetchQuery: () =>
           Promise.resolve({
-            records: [{
-              Id: '08c000000000000',
-              InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.success,
-              PackageBundleVersionID: '05i000000000001',
-              DevelopmentOrganization: '00D000000000000',
-              ValidationError: '',
-              CreatedDate: new Date().toISOString(),
-              CreatedById: 'testUser',
-              Error: [],
-            }],
+            records: [
+              {
+                Id: '08c000000000000',
+                InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.success,
+                PackageBundleVersionID: '05i000000000001',
+                DevelopmentOrganization: '00D000000000000',
+                ValidationError: '',
+                CreatedDate: new Date().toISOString(),
+                CreatedById: 'testUser',
+                Error: [],
+              },
+            ],
           }),
       });
 
@@ -248,16 +254,18 @@ describe('PackageBundleInstall.installBundle', () => {
       Object.assign(connection, {
         autoFetchQuery: () =>
           Promise.resolve({
-            records: [{
-              Id: '08c000000000000',
-              InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.queued,
-              PackageBundleVersionID: '05i000000000001',
-              DevelopmentOrganization: '00D000000000000',
-              ValidationError: '',
-              CreatedDate: new Date().toISOString(),
-              CreatedById: 'testUser',
-              Error: [],
-            }],
+            records: [
+              {
+                Id: '08c000000000000',
+                InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.queued,
+                PackageBundleVersionID: '05i000000000001',
+                DevelopmentOrganization: '00D000000000000',
+                ValidationError: '',
+                CreatedDate: new Date().toISOString(),
+                CreatedById: 'testUser',
+                Error: [],
+              },
+            ],
           }),
       });
 
@@ -296,16 +304,18 @@ describe('PackageBundleInstall.installBundle', () => {
       Object.assign(connection, {
         autoFetchQuery: () =>
           Promise.resolve({
-            records: [{
-              Id: '08c000000000000',
-              InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.error,
-              PackageBundleVersionID: '05i000000000001',
-              DevelopmentOrganization: '00D000000000000',
-              ValidationError: 'Test validation error',
-              CreatedDate: new Date().toISOString(),
-              CreatedById: 'testUser',
-              Error: [],
-            }],
+            records: [
+              {
+                Id: '08c000000000000',
+                InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.error,
+                PackageBundleVersionID: '05i000000000001',
+                DevelopmentOrganization: '00D000000000000',
+                ValidationError: 'Test validation error',
+                CreatedDate: new Date().toISOString(),
+                CreatedById: 'testUser',
+                Error: [],
+              },
+            ],
           }),
       });
 

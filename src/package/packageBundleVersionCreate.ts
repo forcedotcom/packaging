@@ -1,5 +1,5 @@
 /*
- * Copyright 2025, Salesforce, Inc.
+ * Copyright 2026, Salesforce, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,15 +32,15 @@ export class PackageBundleVersionCreate {
         'VersionName, MajorVersion, MinorVersion, Ancestor.Id, BundleVersionComponents, ' +
         'CreatedDate, CreatedById, ValidationError ' +
         `FROM PkgBundleVersionCreateReq WHERE Id = '${createPackageVersionRequestId}'`;
-      
+
       const queryResult = await connection.autoFetchQuery<BundleSObjects.PkgBundleVersionQueryRecord>(query, {
         tooling: true,
       });
-      
+
       if (!queryResult.records || queryResult.records.length === 0) {
         throw new Error(messages.getMessage('failedToGetPackageBundleVersionCreateStatus'));
       }
-      
+
       const record = queryResult.records[0];
       return {
         Id: record.Id,
@@ -200,7 +200,7 @@ export class PackageBundleVersionCreate {
     connection: Connection
   ): Promise<string> {
     const packageBundleId = PackageBundleVersionCreate.parsePackageBundleId(packageBundle, project);
-    
+
     const query = `SELECT BundleName FROM PackageBundle WHERE Id = '${packageBundleId}'`;
     const result = await connection.tooling.query<{ BundleName: string }>(query);
 
@@ -216,7 +216,9 @@ export class PackageBundleVersionCreate {
     }
 
     if (!bundle.versionName) {
-      throw new SfError(`Bundle '${bundleName}' is missing versionName in sfdx-project.json. Please add a versionName field to the bundle configuration.`);
+      throw new SfError(
+        `Bundle '${bundleName}' is missing versionName in sfdx-project.json. Please add a versionName field to the bundle configuration.`
+      );
     }
 
     return bundle.versionName;

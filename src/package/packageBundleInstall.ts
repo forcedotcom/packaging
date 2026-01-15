@@ -1,5 +1,5 @@
 /*
- * Copyright 2025, Salesforce, Inc.
+ * Copyright 2026, Salesforce, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -187,7 +187,9 @@ export class PackageBundleInstall {
     } catch (err) {
       const report = await PackageBundleInstall.getInstallStatus(installRequestId, connection);
       if (err instanceof Error) {
-        const timeoutError = new SfError(`Install request timed out. Run 'sf package bundle install report -i ${installRequestId} -o <target-org>' to check the status.`);
+        const timeoutError = new SfError(
+          `Install request timed out. Run 'sf package bundle install report -i ${installRequestId} -o <target-org>' to check the status.`
+        );
         timeoutError.setData({ InstallRequestId: installRequestId, ...report });
         throw timeoutError;
       }

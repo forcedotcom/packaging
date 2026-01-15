@@ -1,5 +1,5 @@
 /*
- * Copyright 2025, Salesforce, Inc.
+ * Copyright 2026, Salesforce, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,20 +45,26 @@ export class PackageBundleVersion {
     );
 
     if (options.polling) {
-      const finalResult = await PackageBundleVersion.pollCreateStatus(createResult.Id, options.connection, options.project, options.polling).catch(
-        (error: SfError) => {
-          if (error.name === 'PollingClientTimeout') {
-            const modifiedError = new SfError(error.message);
-            modifiedError.setData({ VersionCreateRequestId: createResult.Id });
-            modifiedError.message += ` Run 'sf package bundle version create report -i ${createResult.Id}' to check the status.`;
-            throw applyErrorAction(massageErrorMessage(modifiedError));
-          }
-          throw applyErrorAction(massageErrorMessage(error));
+      const finalResult = await PackageBundleVersion.pollCreateStatus(
+        createResult.Id,
+        options.connection,
+        options.project,
+        options.polling
+      ).catch((error: SfError) => {
+        if (error.name === 'PollingClientTimeout') {
+          const modifiedError = new SfError(error.message);
+          modifiedError.setData({ VersionCreateRequestId: createResult.Id });
+          modifiedError.message += ` Run 'sf package bundle version create report -i ${createResult.Id}' to check the status.`;
+          throw applyErrorAction(massageErrorMessage(modifiedError));
         }
-      );
+        throw applyErrorAction(massageErrorMessage(error));
+      });
 
       // Add bundle version alias to sfdx-project.json after successful creation
-      if (finalResult.RequestStatus === BundleSObjects.PkgBundleVersionCreateReqStatus.success && finalResult.PackageBundleVersionId) {
+      if (
+        finalResult.RequestStatus === BundleSObjects.PkgBundleVersionCreateReqStatus.success &&
+        finalResult.PackageBundleVersionId
+      ) {
         await PackageBundleVersion.addBundleVersionAlias(options.project, finalResult);
       }
 
@@ -68,7 +74,10 @@ export class PackageBundleVersion {
     // Add bundle version alias to sfdx-project.json after successful creation (non-polling case)
     // Note: In the non-polling case, the bundle version may not be created yet (status is 'Queued' or 'InProgress')
     // So we only add the alias if the status is already 'Success'
-    if (createResult.RequestStatus === BundleSObjects.PkgBundleVersionCreateReqStatus.success && createResult.PackageBundleVersionId) {
+    if (
+      createResult.RequestStatus === BundleSObjects.PkgBundleVersionCreateReqStatus.success &&
+      createResult.PackageBundleVersionId
+    ) {
       await PackageBundleVersion.addBundleVersionAlias(options.project, createResult);
     }
 

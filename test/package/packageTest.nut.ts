@@ -1,5 +1,5 @@
 /*
- * Copyright 2025, Salesforce, Inc.
+ * Copyright 2026, Salesforce, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -183,6 +183,36 @@ describe('Integration tests for @salesforce/packaging library', () => {
         const p2v = PackageVersion.getPackage2VersionFields(connection);
         expect(res).to.be.an('Array').with.length.greaterThan(0);
         expect(res[0]).to.have.keys([...p2v, 'attributes']);
+      });
+
+      it('should not contain EndToEndBuildDurationInSeconds, DeveloperUsePkgZip, or ValidatedAsync fields with api version 60', async () => {
+        const connection = devHubOrg.getConnection();
+        connection.setApiVersion('60.0');
+        // @ts-expect-error using a private method for testing
+        const p2v = PackageVersion.getPackage2VersionFields(connection);
+        expect(p2v).to.not.include('EndToEndBuildDurationInSeconds');
+        expect(p2v).to.not.include('DeveloperUsePkgZip');
+        expect(p2v).to.not.include('ValidatedAsync');
+      });
+
+      it('should not contain DeveloperUsePkgZip field with api version 63', async () => {
+        const connection = devHubOrg.getConnection();
+        connection.setApiVersion('63.0');
+        // @ts-expect-error using a private method for testing
+        const p2v = PackageVersion.getPackage2VersionFields(connection);
+        expect(p2v).to.not.include('DeveloperUsePkgZip');
+        expect(p2v).to.include('EndToEndBuildDurationInSeconds');
+        expect(p2v).to.include('ValidatedAsync');
+      });
+
+      it('should not contain all fields with api version 64', async () => {
+        const connection = devHubOrg.getConnection();
+        connection.setApiVersion('64.0');
+        // @ts-expect-error using a private method for testing
+        const p2v = PackageVersion.getPackage2VersionFields(connection);
+        expect(p2v).to.include('EndToEndBuildDurationInSeconds');
+        expect(p2v).to.include('ValidatedAsync');
+        expect(p2v).to.include('DeveloperUsePkgZip');
       });
 
       it('should return expected results when querying Package2Version, with fields', async () => {
