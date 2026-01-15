@@ -1,3 +1,13 @@
+## [4.18.8](https://github.com/forcedotcom/packaging/compare/4.18.7...4.18.8) (2026-01-15)
+
+
+### Bug Fixes
+
+* bump core to 8.24.2 ([4d1134b](https://github.com/forcedotcom/packaging/commit/4d1134b5e6ddd094722e2f0d11d4dcc43e2b0af6))
+* filter certain Package2Version fields based on apiVersion ([4b14bf6](https://github.com/forcedotcom/packaging/commit/4b14bf653a483c9ffe3e5c333f553e30c34852d3))
+
+
+
 ## [4.18.7](https://github.com/forcedotcom/packaging/compare/4.18.6...4.18.7) (2025-12-17)
 
 
