@@ -1,5 +1,5 @@
 /*
- * Copyright 2025, Salesforce, Inc.
+ * Copyright 2026, Salesforce, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,9 +73,10 @@ describe('PackageBundleInstall', () => {
       };
 
       Object.assign(connection, {
-        autoFetchQuery: () => Promise.resolve({
-          records: [mockInstallStatus],
-        }),
+        autoFetchQuery: () =>
+          Promise.resolve({
+            records: [mockInstallStatus],
+          }),
       });
 
       const result = await PackageBundleInstall.getInstallStatus(installRequestId, connection);
@@ -101,9 +102,10 @@ describe('PackageBundleInstall', () => {
       };
 
       Object.assign(connection, {
-        autoFetchQuery: () => Promise.resolve({
-          records: [mockInstallStatus],
-        }),
+        autoFetchQuery: () =>
+          Promise.resolve({
+            records: [mockInstallStatus],
+          }),
       });
 
       const result = await PackageBundleInstall.getInstallStatus(installRequestId, connection);
@@ -131,9 +133,10 @@ describe('PackageBundleInstall', () => {
       };
 
       Object.assign(connection, {
-        autoFetchQuery: () => Promise.resolve({
-          records: [mockInstallStatus],
-        }),
+        autoFetchQuery: () =>
+          Promise.resolve({
+            records: [mockInstallStatus],
+          }),
       });
 
       const result = await PackageBundleInstall.getInstallStatus(installRequestId, connection);
@@ -222,9 +225,10 @@ describe('PackageBundleInstall', () => {
       };
 
       Object.assign(connection, {
-        autoFetchQuery: () => Promise.resolve({
-          records: [mockInstallStatus],
-        }),
+        autoFetchQuery: () =>
+          Promise.resolve({
+            records: [mockInstallStatus],
+          }),
       });
 
       const result = await PackageBundleInstall.getInstallStatus(installRequestId, connection);
@@ -251,9 +255,10 @@ describe('PackageBundleInstall', () => {
       };
 
       Object.assign(connection, {
-        autoFetchQuery: () => Promise.resolve({
-          records: [mockInstallStatus],
-        }),
+        autoFetchQuery: () =>
+          Promise.resolve({
+            records: [mockInstallStatus],
+          }),
       });
 
       const result = await PackageBundleInstall.getInstallStatus(installRequestId, connection);
