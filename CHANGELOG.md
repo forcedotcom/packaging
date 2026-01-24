@@ -1,3 +1,12 @@
+## [4.18.11](https://github.com/forcedotcom/packaging/compare/4.18.10...4.18.11) (2026-01-24)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/core from 8.24.3 to 8.25.0 ([064c7ee](https://github.com/forcedotcom/packaging/commit/064c7ee9fb4f0359479a586934cda06629ebddcb))
+
+
+
 ## [4.18.10](https://github.com/forcedotcom/packaging/compare/4.18.9...4.18.10) (2026-01-17)
 
 
