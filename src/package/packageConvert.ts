@@ -202,8 +202,10 @@ export async function createPackageVersionCreateRequest(
   const packageVersTmpRoot = path.join(os.tmpdir(), uniqueId);
   const packageVersMetadataFolder = path.join(packageVersTmpRoot, 'md-files');
   const seedMetadataFolder = path.join(packageVersTmpRoot, 'seed-md-files');
+  const unpackagedMetadataFolder = path.join(packageVersTmpRoot, 'unpackaged-md-files');
   const packageVersBlobDirectory = path.join(packageVersTmpRoot, 'package-version-info');
   const seedMetadataZipFile = path.join(packageVersBlobDirectory, 'seed-metadata-package.zip');
+  const unpackagedMetadataZipFile = path.join(packageVersBlobDirectory, 'unpackaged-metadata-package.zip');
   const settingsZipFile = path.join(packageVersBlobDirectory, 'settings.zip');
   const metadataZipFile = path.join(packageVersBlobDirectory, 'package.zip');
   const packageVersBlobZipFile = path.join(packageVersTmpRoot, 'package-version-info.zip');
@@ -241,12 +243,30 @@ export async function createPackageVersionCreateRequest(
   await fs.promises.mkdir(packageVersMetadataFolder, { recursive: true });
 
   const seedMetadataPath = context.seedmetadata ?? packageDescriptorJson.seedMetadata?.path;
+
   const hasSeedMetadata = await new MetadataResolver().resolveMetadata(
     seedMetadataPath,
     seedMetadataFolder,
     'seedMDDirectoryDoesNotExist',
     apiVersion
   );
+
+  if (context.codecoverage) {
+    const unpackagedMetadataPath = packageDescriptorJson.unpackagedMetadata?.path;
+    const hasUnpackaged = await new MetadataResolver().resolveMetadata(
+      unpackagedMetadataPath,
+      unpackagedMetadataFolder,
+      'unpackagedMDDirectoryDoesNotExist',
+      apiVersion
+    );
+
+    if (hasUnpackaged) {
+      Logger.childFromRoot('packageConvert').debug(
+        `Including unpackaged metadata found in '${unpackagedMetadataPath ?? '<undefined unpackagedmetadata>'}'.`
+      );
+      await pkgUtils.zipDir(unpackagedMetadataFolder, unpackagedMetadataZipFile);
+    }
+  }
 
   if (hasSeedMetadata) {
     // Zip the seedMetadataFolder folder and put the zip in {packageVersBlobDirectory}/{seedMetadataZipFile}
@@ -295,7 +315,7 @@ function buildPackageDescriptorJson(args: {
     ...(base ?? {}),
   };
   if (packageObject && isPackagingDirectory(packageObject)) {
-    const allowedKeys: Array<keyof PackageDescriptorJson> = ['apexTestAccess', 'seedMetadata'];
+    const allowedKeys: Array<keyof PackageDescriptorJson> = ['apexTestAccess', 'seedMetadata', 'unpackagedMetadata'];
     for (const key of allowedKeys) {
       if (Object.prototype.hasOwnProperty.call(packageObject, key)) {
         const value = (packageObject as unknown as PackageDescriptorJson)[key];
