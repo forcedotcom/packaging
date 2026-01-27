@@ -33,6 +33,7 @@ export type BundleVersionCreateOptions = {
   Ancestor: Nullable<string>;
   BundleVersionComponentsPath: string;
   Description?: string; // Optional description for the bundle version
+  InstallationKey?: string; // Optional installation key for key-protected bundles
   polling?: {
     timeout: Duration;
     frequency: Duration;
@@ -44,6 +45,7 @@ export type BundleInstallOptions = {
   project: SfProject;
   PackageBundleVersion: string;
   DevelopmentOrganization: string;
+  InstallationKey?: string; // Optional installation key for key-protected bundles
   polling?: {
     timeout: Duration;
     frequency: Duration;

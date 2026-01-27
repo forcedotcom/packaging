@@ -128,6 +128,7 @@ export class PackageBundleVersionCreate {
       MinorVersion: version.MinorVersion,
       BundleVersionComponents: JSON.stringify(bundleVersionComponents),
       ...(options.Ancestor ? { Ancestor: options.Ancestor } : {}),
+      ...(options.InstallationKey ? { InstallationKey: options.InstallationKey } : {}),
     };
     let createResult;
     try {

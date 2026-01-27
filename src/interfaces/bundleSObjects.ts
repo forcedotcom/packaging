@@ -109,6 +109,7 @@ export namespace BundleSObjects {
     MinorVersion: string;
     BundleVersionComponents: string;
     Ancestor?: string | null;
+    InstallationKey?: string;
   };
 
   export type PackageBundleVersionCreateRequestResult = PkgBundleVersionCreateReq & {
@@ -168,6 +169,7 @@ export namespace BundleSObjects {
   export type PkgBundleVersionInstallReq = {
     PackageBundleVersionId: string;
     DevelopmentOrganization: string;
+    InstallationKey?: string;
   };
 
   export type PkgBundleVersionInstallReqResult = PkgBundleVersionInstallReq & {
