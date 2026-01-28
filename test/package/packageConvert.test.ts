@@ -160,6 +160,61 @@ describe('packageConvert', () => {
       }
     });
 
+    it('should pick up unpackagedMetadata from sfdx-project.json when codecoverage is enabled', async () => {
+      $$.inProject(true);
+      const project = SfProject.getInstance();
+
+      await fs.promises.mkdir(path.join(project.getPath(), 'force-app'), { recursive: true });
+
+      project.getSfProjectJson().set('packageDirectories', [
+        {
+          path: 'force-app',
+          package: '0Ho3i000000Gmj6CAC',
+          unpackagedMetadata: { path: 'unpackaged-md' },
+        },
+      ]);
+      await project.getSfProjectJson().write();
+
+      $$.SANDBOX.stub(fs, 'existsSync').returns(true);
+      const resolveMetadataSpy = $$.SANDBOX.spy(MetadataResolver.prototype, 'resolveMetadata');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      $$.SANDBOX.stub(MetadataResolver.prototype, 'generateMDFolderForArtifact' as any).resolves();
+
+      await createPackageVersionCreateRequest({ codecoverage: true }, '0Ho3i000000Gmj6CAC', '60.0', project);
+
+      // check that resolveMetadata was called with the unpackaged metadata directory
+      expect(resolveMetadataSpy.calledWith('unpackaged-md')).to.be.true;
+    });
+
+    it('should NOT pick up unpackagedMetadata from sfdx-project.json when codecoverage is disabled', async () => {
+      $$.inProject(true);
+      const project = SfProject.getInstance();
+
+      await fs.promises.mkdir(path.join(project.getPath(), 'force-app'), { recursive: true });
+
+      project.getSfProjectJson().set('packageDirectories', [
+        {
+          path: 'force-app',
+          package: '0Ho3i000000Gmj6CAC',
+          unpackagedMetadata: { path: 'unpackaged-md' },
+        },
+      ]);
+      await project.getSfProjectJson().write();
+
+      const resolveMetadataSpy = $$.SANDBOX.spy(MetadataResolver.prototype, 'resolveMetadata');
+
+      await createPackageVersionCreateRequest(
+        { codecoverage: false }, // disabled
+        '0Ho3i000000Gmj6CAC',
+        '60.0',
+        project
+      );
+
+      // Verify it was NOT called for the unpackaged directory
+      const unpackagedCall = resolveMetadataSpy.getCalls().find((call) => call.args[0] === 'unpackaged-md');
+      expect(unpackagedCall).to.be.undefined;
+    });
+
     it('should set apexTestAccess permissions in package2descriptor.json when codecoverage is enabled', async () => {
       $$.inProject(true);
       const project = SfProject.getInstance();
