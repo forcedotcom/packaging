@@ -1,3 +1,12 @@
+# [4.19.0](https://github.com/forcedotcom/packaging/compare/4.18.12...4.19.0) (2026-01-28)
+
+
+### Features
+
+* handle unpackaged md for conversion ([9782aeb](https://github.com/forcedotcom/packaging/commit/9782aeb5ef73d6a14fc207fffe2c657fa76cf03e))
+
+
+
 ## [4.18.12](https://github.com/forcedotcom/packaging/compare/4.18.11...4.18.12) (2026-01-24)
 
 
