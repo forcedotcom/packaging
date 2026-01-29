@@ -40,7 +40,7 @@ Can't retrieve package metadata. To use this feature, you must first assign your
 
 # downloadDeveloperPackageZipHasNoData
 
-Can't retrieve package metadata. Package metadata is only generated for converted 2GP package versions and versions created with the --dev-use-pkg-zip flag. To resolve, create a new package version and retry. For native 2GP packages, include the --dev-use-pkg-zip flag when creating the version. If your package is a 1GP, first convert it to 2GP.
+Can't retrieve package metadata. Package metadata is only generated for converted 2GP package versions and versions created with the --generate-pkg-zip flag. To resolve, create a new package version and retry. For native 2GP packages, include the --generate-pkg-zip flag when creating the version. For 1GP packages, first convert them to 2GP.
 
 # packagingNotEnabledOnOrg
 
