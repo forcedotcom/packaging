@@ -263,6 +263,20 @@ describe('Package Version Create', () => {
     expect(result).to.have.all.keys(expectedKeys);
   });
 
+  it('should create the package version create request with generatepkgzip', async () => {
+    const pvc = new PackageVersionCreate({
+      connection,
+      project,
+      generatepkgzip: true,
+      packageId,
+    });
+    stubConvert();
+
+    const result = await pvc.createPackageVersion();
+    expect(packageCreateStub.firstCall.args[1].IsDevUsePkgZipRequested).to.equal(true);
+    expect(result).to.have.all.keys(expectedKeys);
+  });
+
   it('should create the package version create request with installationkey', async () => {
     const pvc = new PackageVersionCreate({
       connection,
@@ -454,6 +468,54 @@ describe('Package Version Create', () => {
     expect(package2DescriptorJson).to.have.string('packageMetadataPermissionSetLicenseNames');
     expect(package2DescriptorJson).to.have.string('Allow_Trial_Permission');
     expect(package2DescriptorJson).to.have.string('B2BBuyerPsl');
+  });
+
+  it('should set apexTestAccess permission sets in package2descriptor.json when codecoverage is enabled and specified in sfdx-project.json', async () => {
+    project.getSfProjectJson().set('packageDirectories', [
+      {
+        path: 'force-app',
+        package: 'TEST',
+        versionName: 'ver 0.1',
+        versionNumber: '0.1.0.NEXT',
+        default: true,
+        apexTestAccess: {
+          permissionSets: ['Test_Permission_Set', 'Another_Test_PermSet'],
+          permissionSetLicenses: ['TestPsl', 'AnotherTestPsl'],
+        },
+      },
+    ]);
+
+    await project.getSfProjectJson().write();
+
+    const validationSpy = $$.SANDBOX.spy(project.getSfProjectJson(), 'schemaValidate');
+    const pvc = new PackageVersionCreate({
+      connection,
+      project,
+      validateschema: true,
+      packageId,
+      skipancestorcheck: true,
+      codecoverage: true, // Enable code coverage to process apexTestAccess
+    });
+    stubConvert();
+
+    const writeFileSpy = $$.SANDBOX.spy(fs.promises, 'writeFile');
+
+    const result = await pvc.createPackageVersion();
+    expect(validationSpy.callCount).to.equal(1);
+    expect(result).to.have.all.keys(expectedKeys);
+
+    const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // package2-descriptor.json contents
+
+    // Verify that apexTestAccess was converted to permissionSetNames and permissionSetLicenseDeveloperNames
+    expect(package2DescriptorJson).to.have.string('permissionSetNames');
+    expect(package2DescriptorJson).to.have.string('permissionSetLicenseDeveloperNames');
+    expect(package2DescriptorJson).to.have.string('Test_Permission_Set');
+    expect(package2DescriptorJson).to.have.string('Another_Test_PermSet');
+    expect(package2DescriptorJson).to.have.string('TestPsl');
+    expect(package2DescriptorJson).to.have.string('AnotherTestPsl');
+
+    // Verify that apexTestAccess was removed from the descriptor (it's a client-only property)
+    expect(package2DescriptorJson).to.not.have.string('apexTestAccess');
   });
 
   it('should validate options when package type = unlocked (scripts) - postinstall script', async () => {
