@@ -1,3 +1,12 @@
+# [4.20.0](https://github.com/forcedotcom/packaging/compare/4.19.0...4.20.0) (2026-01-30)
+
+
+### Features
+
+* include dev zip parameter in version create request ([5fb1162](https://github.com/forcedotcom/packaging/commit/5fb1162f61a92eceb1a080c7bec2c56586e351d7))
+
+
+
 # [4.19.0](https://github.com/forcedotcom/packaging/compare/4.18.12...4.19.0) (2026-01-28)
 
 
