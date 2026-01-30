@@ -288,6 +288,7 @@ export class PackageVersionCreate {
       CalculateCodeCoverage: this.options.codecoverage ?? false,
       SkipValidation: this.options.skipvalidation ?? false,
       AsyncValidation: this.options.asyncvalidation ?? false,
+      IsDevUsePkgZipRequested: this.options.generatepkgzip ?? false,
       Language: this.options.language, // note: the createRequest's Language corresponds to the AllPackageVersion's language
       CalcTransitiveDependencies: this.packageObject.calculateTransitiveDependencies ?? false,
     };

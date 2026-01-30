@@ -260,6 +260,7 @@ export type PackageVersionCreateRequest = {
   CalculateCodeCoverage: boolean;
   SkipValidation: boolean;
   AsyncValidation?: boolean;
+  IsDevUsePkgZipRequested?: boolean;
   CalcTransitiveDependencies?: boolean;
 };
 
@@ -388,6 +389,7 @@ export type PackageVersionCreateOptions = {
   skipancestorcheck: boolean;
   skipvalidation: boolean;
   asyncvalidation: boolean;
+  generatepkgzip?: boolean;
   sourceorg: string;
   tag: string;
   uninstallscript: string;
