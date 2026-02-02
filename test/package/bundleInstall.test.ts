@@ -127,6 +127,57 @@ describe('PackageBundleInstall.installBundle', () => {
       expect(result).to.have.property('DevelopmentOrganization', '00D000000000000');
     });
 
+    it('should install bundle with installation key', async () => {
+      let capturedRequest: Record<string, unknown> | undefined;
+
+      // Mock the connection and capture the request
+      Object.assign(connection.tooling, {
+        sobject: () => ({
+          create: (request: Record<string, unknown>) => {
+            capturedRequest = request;
+            return Promise.resolve({
+              success: true,
+              id: '08c000000000000',
+            });
+          },
+        }),
+      });
+
+      // Mock autoFetchQuery for getInstallStatus
+      Object.assign(connection, {
+        autoFetchQuery: () =>
+          Promise.resolve({
+            records: [
+              {
+                Id: '08c000000000000',
+                InstallStatus: BundleSObjects.PkgBundleVersionInstallReqStatus.success,
+                PackageBundleVersionId: '05i000000000001',
+                DevelopmentOrganization: '00D000000000000',
+                ValidationError: '',
+                CreatedDate: '2025-01-01T00:00:00.000Z',
+                CreatedById: '005000000000000',
+                Error: [],
+              },
+            ],
+          }),
+      });
+
+      const options: BundleInstallOptions = {
+        connection,
+        project,
+        PackageBundleVersion: 'testPackage@1.0',
+        DevelopmentOrganization: '00D000000000000',
+        InstallationKey: 'mySecretKey123',
+      };
+
+      const result = await PackageBundleInstall.installBundle(connection, project, options);
+
+      expect(result).to.have.property('Id', '08c000000000000');
+      expect(result).to.have.property('InstallStatus', BundleSObjects.PkgBundleVersionInstallReqStatus.success);
+      // Verify that InstallationKey was included in the request
+      expect(capturedRequest).to.have.property('InstallationKey', 'mySecretKey123');
+    });
+
     it('should install bundle with wait flag and polling success', async () => {
       // Mock the connection for polling scenario with wait flag
       let callCount = 0;

@@ -103,6 +103,7 @@ export class PackageBundleInstall {
     const request: BundleSObjects.PkgBundleVersionInstallReq = {
       PackageBundleVersionId: packageBundleVersionId,
       DevelopmentOrganization: options.DevelopmentOrganization,
+      ...(options.InstallationKey ? { InstallationKey: options.InstallationKey } : {}),
     };
     let installResult;
     try {
