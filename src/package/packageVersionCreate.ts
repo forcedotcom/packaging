@@ -71,6 +71,7 @@ import { BuildNumberToken, VersionNumber } from './versionNumber';
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
 const DESCRIPTOR_FILE = 'package2-descriptor.json';
+const DEFINITION_FILE = 'scratch-org-definition.json';
 
 export class PackageVersionCreate {
   private apiVersionFromPackageXml: string | undefined;
@@ -458,6 +459,9 @@ export class PackageVersionCreate {
       JSON.stringify(packageDescriptorJson),
       'utf-8'
     );
+    if (definitionFile) {
+      await fs.promises.copyFile(definitionFile, path.join(packageVersBlobDirectory, DEFINITION_FILE));
+    }
     await this.cleanGeneratedPackage({
       packageVersMetadataFolder,
       packageVersProfileFolder,
