@@ -17,6 +17,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/testSetup';
 import { assert, expect } from 'chai';
+import JSZip from 'jszip';
 import { Connection, Logger, SfProject } from '@salesforce/core';
 import { isPackagingDirectory } from '@salesforce/core/project';
 import { PackageDir, PackagePackageDir } from '@salesforce/schemas';
@@ -416,6 +417,11 @@ describe('Package Version Create', () => {
     const scratchOrgDefFileContent = '{ "language": "buildOrgLanguage" }';
     const scratchOrgDefFileName = 'project-scratch-def.json';
     $$.SANDBOX.stub(fs.promises, 'readFile').withArgs(scratchOrgDefFileName).resolves(scratchOrgDefFileContent);
+    $$.SANDBOX.stub(fs.promises, 'copyFile').callsFake(async (src: fs.PathLike, dest: fs.PathLike) => {
+      if (String(src) === scratchOrgDefFileName) {
+        await fs.promises.writeFile(dest, scratchOrgDefFileContent);
+      }
+    });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     $$.SANDBOX.stub(MetadataResolver.prototype, 'generateMDFolderForArtifact' as any).resolves();
     $$.SANDBOX.stub(fs, 'existsSync').returns(true);
@@ -428,6 +434,43 @@ describe('Package Version Create', () => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // package2-descriptor.json contents
     expect(package2DescriptorJson).to.have.string('buildOrgLanguage');
+  });
+
+  it('should include the definition file in the zip sent for the Package2VersionCreateRequest when definitionfile is specified', async () => {
+    const scratchOrgDefFileContent = '{ "language": "en_US" }';
+    const scratchOrgDefFileName = 'config/project-scratch-def.json';
+    const minimalPackageXml =
+      '<?xml version="1.0"?><Package xmlns="http://soap.sforce.com/2006/04/metadata"><types><members>MyApexClass</members><name>ApexClass</name></types><version>58.0</version></Package>';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    $$.SANDBOX.stub(fs.promises, 'readFile').callsFake((filePath: any) => {
+      const pathStr = String(filePath);
+      if (pathStr === scratchOrgDefFileName) {
+        return Promise.resolve(scratchOrgDefFileContent);
+      }
+      if (pathStr.endsWith('package.xml')) {
+        return Promise.resolve(minimalPackageXml);
+      }
+      return Promise.resolve('');
+    });
+    $$.SANDBOX.stub(fs.promises, 'copyFile').callsFake(async (src: fs.PathLike, dest: fs.PathLike) => {
+      if (String(src) === scratchOrgDefFileName) {
+        await fs.promises.writeFile(dest, scratchOrgDefFileContent);
+      }
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    $$.SANDBOX.stub(MetadataResolver.prototype, 'generateMDFolderForArtifact' as any).resolves();
+    $$.SANDBOX.stub(fs, 'existsSync').returns(true);
+
+    const pvc = new PackageVersionCreate({ connection, project, definitionfile: scratchOrgDefFileName, packageId });
+    await pvc.createPackageVersion();
+
+    const request = packageCreateStub.firstCall.args[1] as { VersionInfo: string };
+    expect(request.VersionInfo).to.be.a('string');
+    const zip = await JSZip.loadAsync(request.VersionInfo, { base64: true });
+    const definitionFileEntry = zip.file('scratch-org-definition.json');
+    expect(definitionFileEntry).to.not.be.null;
+    const definitionContent = await definitionFileEntry!.async('string');
+    expect(definitionContent).to.equal(scratchOrgDefFileContent);
   });
 
   it('should set packageMetadataPermissions in package2descriptor.json when specified in sfdx-project.json ', async () => {
@@ -905,6 +948,11 @@ describe('Package Version Create', () => {
       const scratchOrgDefFileContent = '{ "snapshot": "SnapScratchOrg" }';
       const scratchOrgDefFileName = 'project-scratch-def.json';
       $$.SANDBOX.stub(fs.promises, 'readFile').withArgs(scratchOrgDefFileName).resolves(scratchOrgDefFileContent);
+      $$.SANDBOX.stub(fs.promises, 'copyFile').callsFake(async (src: fs.PathLike, dest: fs.PathLike) => {
+        if (String(src) === scratchOrgDefFileName) {
+          await fs.promises.writeFile(dest, scratchOrgDefFileContent);
+        }
+      });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       $$.SANDBOX.stub(MetadataResolver.prototype, 'generateMDFolderForArtifact' as any).resolves();
       $$.SANDBOX.stub(fs, 'existsSync').returns(true);
@@ -923,6 +971,11 @@ describe('Package Version Create', () => {
       const scratchOrgDefFileContent = '{ "snapShot": "SnapScratchOrg2" }';
       const scratchOrgDefFileName = 'project-scratch-def.json';
       $$.SANDBOX.stub(fs.promises, 'readFile').withArgs(scratchOrgDefFileName).resolves(scratchOrgDefFileContent);
+      $$.SANDBOX.stub(fs.promises, 'copyFile').callsFake(async (src: fs.PathLike, dest: fs.PathLike) => {
+        if (String(src) === scratchOrgDefFileName) {
+          await fs.promises.writeFile(dest, scratchOrgDefFileContent);
+        }
+      });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       $$.SANDBOX.stub(MetadataResolver.prototype, 'generateMDFolderForArtifact' as any).resolves();
       $$.SANDBOX.stub(fs, 'existsSync').returns(true);
