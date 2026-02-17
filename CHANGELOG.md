@@ -1,3 +1,12 @@
+# [4.21.0](https://github.com/forcedotcom/packaging/compare/4.20.6...4.21.0) (2026-02-17)
+
+
+### Features
+
+* save sratch def file from version create with zip sent to server ([a7ebe8e](https://github.com/forcedotcom/packaging/commit/a7ebe8e5724b32ea8a97f7a76bdb1b704fa45a2c))
+
+
+
 ## [4.20.6](https://github.com/forcedotcom/packaging/compare/4.20.5...4.20.6) (2026-02-14)
 
 
