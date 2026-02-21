@@ -56,6 +56,7 @@ import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
+const DEFINITION_FILE = 'scratch-org-definition.json';
 
 const POLL_INTERVAL_SECONDS = 30;
 
@@ -298,6 +299,9 @@ export async function createPackageVersionCreateRequest(
     path.join(packageVersBlobDirectory, 'package2-descriptor.json'),
     JSON.stringify(packageDescriptorJson, undefined, 2)
   );
+  if (definitionFile) {
+    await fs.promises.copyFile(definitionFile, path.join(packageVersBlobDirectory, DEFINITION_FILE));
+  }
   // Zip the Version Info and package.zip files into another zip
   await pkgUtils.zipDir(packageVersBlobDirectory, packageVersBlobZipFile);
 

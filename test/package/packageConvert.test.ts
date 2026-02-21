@@ -17,6 +17,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { expect } from 'chai';
+import JSZip from 'jszip';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/testSetup';
 import { Connection, Lifecycle, Messages, SfProject } from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
@@ -86,6 +87,29 @@ describe('packageConvert', () => {
       expect(request.CalculateCodeCoverage).to.equal(true);
       // the most we can assert about VersionInfo because it is a zip file string representation, which changes with time
       expect(typeof request.VersionInfo).to.equal('string');
+    });
+
+    it('should include the definition file in the zip sent for the Package2VersionCreateRequest when definitionfile is specified', async () => {
+      $$.inProject(true);
+      const scratchOrgDefFileContent = '{ "language": "en_US" }';
+      const packageVersTmpRoot = path.join(os.tmpdir(), 'config-def-in-zip');
+      await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
+      const scratchDefPath = path.join(packageVersTmpRoot, 'scratch-def.json');
+      await fs.promises.writeFile(scratchDefPath, scratchOrgDefFileContent);
+
+      const request = await createPackageVersionCreateRequest(
+        { installationkey: '123', definitionfile: scratchDefPath, buildinstance: 'myInstance', codecoverage: false },
+        '0Ho3i000000Gmj6CAC',
+        '54.0',
+        undefined
+      );
+
+      expect(request.VersionInfo).to.be.a('string');
+      const zip = await JSZip.loadAsync(request.VersionInfo, { base64: true });
+      const definitionFileEntry = zip.file('scratch-org-definition.json');
+      expect(definitionFileEntry).to.not.be.null;
+      const definitionContent = await definitionFileEntry!.async('string');
+      expect(definitionContent).to.equal(scratchOrgDefFileContent);
     });
 
     it('should return a valid request', async () => {
