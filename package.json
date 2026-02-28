@@ -49,7 +49,7 @@
     "@salesforce/source-deploy-retrieve": "^12.31.11",
     "@salesforce/ts-types": "^2.0.12",
     "@salesforce/types": "^1.6.0",
-    "fast-xml-parser": "^5.3.4",
+    "fast-xml-parser": "^5.3.8",
     "globby": "^11",
     "graphology": "^0.26.0",
     "graphology-traversal": "^0.3.1",
