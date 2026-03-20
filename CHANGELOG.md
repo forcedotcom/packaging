@@ -1,3 +1,12 @@
+## [4.21.2](https://github.com/forcedotcom/packaging/compare/4.21.1...4.21.2) (2026-03-20)
+
+
+### Bug Fixes
+
+* xml-fast-parser ([c222468](https://github.com/forcedotcom/packaging/commit/c2224687c06a349dad14e2517fddb93266991653))
+
+
+
 ## [4.21.1](https://github.com/forcedotcom/packaging/compare/4.21.0...4.21.1) (2026-02-21)
 
 
