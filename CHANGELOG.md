@@ -1,3 +1,12 @@
+## [4.21.3](https://github.com/forcedotcom/packaging/compare/4.21.2...4.21.3) (2026-03-20)
+
+
+### Bug Fixes
+
+* bump maxTotalExpansions limit ([efdb506](https://github.com/forcedotcom/packaging/commit/efdb5068464728c71cb7de8c271e21a0b214007d))
+
+
+
 ## [4.21.2](https://github.com/forcedotcom/packaging/compare/4.21.1...4.21.2) (2026-03-20)
 
 
