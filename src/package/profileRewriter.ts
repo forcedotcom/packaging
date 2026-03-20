@@ -140,6 +140,11 @@ export const profileStringToProfile = (profileString: string): CorrectedProfile 
     cdataPropName: '__cdata',
     ignoreDeclaration: true,
     numberParseOptions: { leadingZeros: false, hex: false },
+    // Max entity expansion limit (1000) was enforced in fast-xml-parser 5.5.6.
+    processEntities: {
+      enabled: true,
+      maxTotalExpansions: 50_000,
+    },
     isArray: (name: string) => rewriteProps.includes(name as keyof RewriteProps),
   });
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion

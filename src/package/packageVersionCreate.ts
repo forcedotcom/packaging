@@ -1053,6 +1053,11 @@ export const packageXmlStringToPackageXmlJson = (rawXml: string): PackageXml => 
     cdataPropName: '__cdata',
     ignoreDeclaration: true,
     numberParseOptions: { leadingZeros: false, hex: false },
+    // Max entity expansion limit (1000) was enforced in fast-xml-parser 5.5.6.
+    processEntities: {
+      enabled: true,
+      maxTotalExpansions: 50_000,
+    },
     // make sure types and members is always an array
     isArray: (name: string) => ['types', 'members'].includes(name),
   });
