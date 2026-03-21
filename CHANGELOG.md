@@ -1,3 +1,12 @@
+## [4.21.4](https://github.com/forcedotcom/packaging/compare/4.21.3...4.21.4) (2026-03-21)
+
+
+### Bug Fixes
+
+* **deps:** bump flatted from 3.3.3 to 3.4.2 ([6a2eb1a](https://github.com/forcedotcom/packaging/commit/6a2eb1ab713def6c724c390173e1896b11c7ff0d))
+
+
+
 ## [4.21.3](https://github.com/forcedotcom/packaging/compare/4.21.2...4.21.3) (2026-03-20)
 
 
