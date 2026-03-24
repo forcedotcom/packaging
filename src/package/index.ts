@@ -21,4 +21,3 @@ export { VersionNumber } from './versionNumber';
 export * from './packageBundle';
 export * from './packageBundleVersion';
 export * from './packageBundleInstall';
-export * from './packageBundleUninstall';

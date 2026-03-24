@@ -136,20 +136,6 @@ export namespace BundleSObjects {
     error = 'Error',
   }
 
-  export enum PkgBundleVersionUninstallReqStatus {
-    queued = 'Queued',
-    inProgress = 'InProgress',
-    success = 'Success',
-    error = 'Error',
-  }
-
-  export enum PkgBundleVerCpntUnistlReqStatus {
-    queued = 'Queued',
-    inProgress = 'InProgress',
-    success = 'Success',
-    error = 'Error',
-  }
-
   export type PkgBundleVersionQueryRecord = {
     Id: string;
     RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus;
@@ -189,41 +175,6 @@ export namespace BundleSObjects {
     CreatedDate: string;
     CreatedById: string;
     Error?: string[];
-  } & Schema;
-
-  export type PkgBundleVerUninstallReq = {
-    PackageBundleVersionId: string;
-    InstalledPkgBundleVersionId?: string;
-    ValidationError?: string;
-  };
-
-  export type PkgBundleVerUninstallReqResult = PkgBundleVerUninstallReq & {
-    Id: string;
-    UninstallStatus: PkgBundleVersionUninstallReqStatus;
-    CreatedDate: string;
-    CreatedById: string;
-    Error?: string[];
-  };
-
-  export type PkgBundleVerUninstallReqQueryRecord = {
-    Id: string;
-    UninstallStatus: PkgBundleVersionUninstallReqStatus;
-    PackageBundleVersionId: string;
-    InstalledPkgBundleVersionId?: string;
-    ValidationError?: string;
-    CreatedDate: string;
-    CreatedById: string;
-    Error?: string[];
-  } & Schema;
-
-  export type PkgBundleVerCpntUnistlReqRecord = {
-    Id: string;
-    SequenceOrder: number;
-    UninstallStatus: PkgBundleVerCpntUnistlReqStatus;
-    PkgBundleVersionComponent?: {
-      Id: string;
-    };
-    Error?: string;
   } & Schema;
 
   export type InstalledPackageBundleVersionComponent = {
