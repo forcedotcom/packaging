@@ -1,3 +1,12 @@
+## [4.21.10](https://github.com/forcedotcom/packaging/compare/4.21.9...4.21.10) (2026-03-25)
+
+
+### Bug Fixes
+
+* **deps:** bump yaml from 2.8.1 to 2.8.3 ([5cceebf](https://github.com/forcedotcom/packaging/commit/5cceebf94d2f360593130cc65a5b8eb20e5a2674))
+
+
+
 ## [4.21.9](https://github.com/forcedotcom/packaging/compare/4.21.8...4.21.9) (2026-03-25)
 
 
