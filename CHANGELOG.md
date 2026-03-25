@@ -1,3 +1,12 @@
+## [4.21.8](https://github.com/forcedotcom/packaging/compare/4.21.7...4.21.8) (2026-03-25)
+
+
+### Bug Fixes
+
+* **deps:** bump basic-ftp from 5.0.5 to 5.2.0 ([1e15604](https://github.com/forcedotcom/packaging/commit/1e156049978ed3ceb62c9ffe2600f65ffc9ee141))
+
+
+
 ## [4.21.7](https://github.com/forcedotcom/packaging/compare/4.21.6...4.21.7) (2026-03-25)
 
 
