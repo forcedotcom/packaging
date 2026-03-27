@@ -135,6 +135,20 @@ export namespace BundleSObjects {
     error = 'Error',
   }
 
+  export enum PkgBundleVersionUninstallReqStatus {
+    queued = 'Queued',
+    inProgress = 'InProgress',
+    success = 'Success',
+    error = 'Error',
+  }
+
+  export enum PkgBundleVerCpntUnistlReqStatus {
+    queued = 'Queued',
+    inProgress = 'InProgress',
+    success = 'Success',
+    error = 'Error',
+  }
+
   export type PkgBundleVersionQueryRecord = {
     Id: string;
     RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus;
@@ -173,5 +187,126 @@ export namespace BundleSObjects {
     CreatedDate: string;
     CreatedById: string;
     Error?: string[];
+  } & Schema;
+
+  export type PkgBundleVerUninstallReq = {
+    PackageBundleVersionId: string;
+    InstalledPkgBundleVersionId?: string;
+    ValidationError?: string;
+  };
+
+  export type PkgBundleVerUninstallReqResult = PkgBundleVerUninstallReq & {
+    Id: string;
+    UninstallStatus: PkgBundleVersionUninstallReqStatus;
+    CreatedDate: string;
+    CreatedById: string;
+    Error?: string[];
+  };
+
+  export type PkgBundleVerUninstallReqQueryRecord = {
+    Id: string;
+    UninstallStatus: PkgBundleVersionUninstallReqStatus;
+    PackageBundleVersionId: string;
+    InstalledPkgBundleVersionId?: string;
+    ValidationError?: string;
+    CreatedDate: string;
+    CreatedById: string;
+    Error?: string[];
+  } & Schema;
+
+  export type PkgBundleVerCpntUnistlReqRecord = {
+    Id: string;
+    SequenceOrder: number;
+    UninstallStatus: PkgBundleVerCpntUnistlReqStatus;
+    PkgBundleVersionComponent?: {
+      Id: string;
+    };
+    Error?: string;
+  } & Schema;
+
+  export type InstalledPackageBundleVersionComponent = {
+    ExpectedPackageName: string;
+    ExpectedPackageVersionNumber: string;
+    ActualPackageName: string;
+    ActualPackageVersionNumber: string;
+  };
+
+  export type InstalledPackageBundleVersion = {
+    Id: string;
+    BundleName: string;
+    BundleId: string;
+    BundleVersionId: string;
+    BundleVersionName: string;
+    MajorVersion: number;
+    MinorVersion: number;
+    Description: string;
+    InstalledDate: string;
+    LastUpgradedDate: string;
+    Components: InstalledPackageBundleVersionComponent[];
+  };
+
+  export type InstalledPackageBundleVersionQueryRecord = {
+    Id: string;
+    PackageBundleVersion: {
+      Id: string;
+      VersionName: string;
+      MajorVersion: number;
+      MinorVersion: number;
+      PackageBundle: {
+        Id: string;
+        BundleName: string;
+        Description: string;
+      };
+    };
+    InstalledDate: string;
+    LastUpgradedDate: string;
+  } & Schema;
+
+  export type InstalledBundleRecord = {
+    Id: string;
+    PackageBundleId?: string; // CROSSORGFOREIGNKEY field ID
+    PackageBundleVersionId?: string; // CROSSORGFOREIGNKEY field ID
+    BundleName: string;
+    BundleVersionName: string;
+    MajorVersion: number;
+    MinorVersion: number;
+    CreatedDate?: string;
+    LastModifiedDate?: string;
+  } & Schema;
+
+  export type InstallRequestRecord = {
+    Id: string;
+  } & Schema;
+
+  export type BundleComponentInstallRecord = {
+    SubscriberPackageVersion: {
+      Id: string;
+      SubscriberPackageId: string;
+      MajorVersion: number;
+      MinorVersion: number;
+      PatchVersion: number;
+      BuildNumber: number;
+    };
+    InstalledComponent?: {
+      SubscriberPackage?: {
+        Name: string;
+      };
+    };
+    SequenceOrder: number;
+  } & Schema;
+
+  export type InstalledPackageRecord = {
+    Id: string;
+    SubscriberPackageId: string;
+    SubscriberPackage: {
+      Name: string;
+    };
+    SubscriberPackageVersion: {
+      Id: string;
+      MajorVersion: number;
+      MinorVersion: number;
+      PatchVersion: number;
+      BuildNumber: number;
+    };
   } & Schema;
 }
