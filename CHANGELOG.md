@@ -1,3 +1,12 @@
+## [4.21.11](https://github.com/forcedotcom/packaging/compare/4.21.10...4.21.11) (2026-03-28)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/kit from 3.2.4 to 3.2.6 ([7a6971e](https://github.com/forcedotcom/packaging/commit/7a6971e806c0c2ee60faa53db8abc79f079c4e8c))
+
+
+
 ## [4.21.10](https://github.com/forcedotcom/packaging/compare/4.21.9...4.21.10) (2026-03-25)
 
 
