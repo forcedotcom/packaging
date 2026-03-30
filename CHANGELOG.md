@@ -1,3 +1,13 @@
+# [4.22.0](https://github.com/forcedotcom/packaging/compare/4.21.12...4.22.0) (2026-03-30)
+
+
+### Features
+
+* add bundle uninstall command ([a17cb5d](https://github.com/forcedotcom/packaging/commit/a17cb5d2641296e8a96c2f8d0c3ca9eb96b0cc1c))
+* add bundle version installed list command ([5366ae9](https://github.com/forcedotcom/packaging/commit/5366ae9fbc6e3b51886d08f6fbafec7c18c41beb))
+
+
+
 ## [4.21.12](https://github.com/forcedotcom/packaging/compare/4.21.11...4.21.12) (2026-03-28)
 
 
