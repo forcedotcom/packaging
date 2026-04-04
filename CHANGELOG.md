@@ -1,3 +1,12 @@
+## [4.22.2](https://github.com/forcedotcom/packaging/compare/4.22.1...4.22.2) (2026-04-04)
+
+
+### Bug Fixes
+
+* **deps:** bump lodash from 4.17.23 to 4.18.1 ([0e508fc](https://github.com/forcedotcom/packaging/commit/0e508fc81fd60f1fc211e171d3c52fb40260a1a7))
+
+
+
 ## [4.22.1](https://github.com/forcedotcom/packaging/compare/4.22.0...4.22.1) (2026-04-04)
 
 
