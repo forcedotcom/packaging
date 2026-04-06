@@ -184,6 +184,77 @@ describe('PackageBundleVersion.create', () => {
       fs.unlinkSync(componentsPath);
     });
 
+    it('should accept 15-character 04t package version id in bundle components file', async () => {
+      const fifteenCharPvId = '04t5f000000WM9y';
+      const componentsPath = path.join(project.getPath(), 'bundle-components-15.json');
+      const components = [{ packageVersion: fifteenCharPvId }];
+      fs.writeFileSync(componentsPath, JSON.stringify(components));
+
+      let createPayload: Record<string, unknown> | undefined;
+      Object.assign(connection.tooling, {
+        sobject: () => ({
+          create: (payload: Record<string, unknown>) => {
+            createPayload = payload;
+            return Promise.resolve({
+              success: true,
+              id: '0Ho000000000000',
+            });
+          },
+        }),
+        query: () =>
+          Promise.resolve({
+            records: [
+              {
+                BundleName: 'testBundle',
+              },
+            ],
+          }),
+      });
+
+      Object.assign(connection, {
+        autoFetchQuery: () =>
+          Promise.resolve({
+            records: [
+              {
+                Id: '0Ho000000000000',
+                RequestStatus: BundleSObjects.PkgBundleVersionCreateReqStatus.success,
+                PackageBundle: {
+                  Id: '0Ho123456789012',
+                  BundleName: 'testBundle',
+                },
+                PackageBundleVersion: {
+                  Id: '1Q8000000000001',
+                },
+                VersionName: 'ver 1.0',
+                MajorVersion: '1',
+                MinorVersion: '0',
+                Ancestor: null,
+                BundleVersionComponents: JSON.stringify(components),
+                CreatedDate: '2025-01-01T00:00:00.000Z',
+                CreatedById: '005000000000000',
+                ValidationError: '',
+              },
+            ],
+          }),
+      });
+
+      const options: BundleVersionCreateOptions = {
+        connection,
+        project,
+        PackageBundle: 'testBundle',
+        MajorVersion: '1',
+        MinorVersion: '0',
+        Ancestor: null,
+        BundleVersionComponentsPath: componentsPath,
+      };
+
+      await PackageBundleVersion.create(options);
+
+      expect(createPayload?.BundleVersionComponents).to.equal(JSON.stringify([fifteenCharPvId]));
+
+      fs.unlinkSync(componentsPath);
+    });
+
     it('should create bundle version with wait flag and polling success', async () => {
       const componentsPath = path.join(project.getPath(), 'bundle-components.json');
       const components = [

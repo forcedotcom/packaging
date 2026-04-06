@@ -174,8 +174,8 @@ export class PackageBundleVersionCreate {
       return bundleVersionComponents.map((component) => {
         const packageVersion = component.packageVersion;
 
-        // Check if it's already an ID (04t followed by 15 characters)
-        if (/^04t[a-zA-Z0-9]{15}$/.test(packageVersion)) {
+        // Subscriber package version ID: 15-char (04t + 12) or 18-char (04t + 15 with checksum)
+        if (/^04t[a-zA-Z0-9]{12}(?:[a-zA-Z0-9]{3})?$/.test(packageVersion)) {
           return packageVersion;
         }
 
