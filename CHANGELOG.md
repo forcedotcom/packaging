@@ -1,3 +1,12 @@
+## [4.22.7](https://github.com/forcedotcom/packaging/compare/4.22.6...4.22.7) (2026-04-11)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/source-deploy-retrieve ([0c3d8d8](https://github.com/forcedotcom/packaging/commit/0c3d8d87b6a64f3e54bec581f2e9fead7351b3dc))
+
+
+
 ## [4.22.6](https://github.com/forcedotcom/packaging/compare/4.22.5...4.22.6) (2026-04-11)
 
 
