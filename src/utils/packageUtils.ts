@@ -88,33 +88,6 @@ export function uniqid(options?: { template?: string; length?: number }): string
     : `${options.template}${uniqueString}`;
 }
 
-/**
- * Converts a 15-character Salesforce ID to its 18-character case-insensitive equivalent.
- * Returns the ID unchanged if it is not exactly 15 characters.
- *
- * @param id - The Salesforce ID to convert
- * @returns The 18-character Salesforce ID
- */
-export function convertTo18CharId(id: string): string {
-  if (!id || id.length !== 15) {
-    return id;
-  }
-
-  const suffix: string[] = [];
-  for (let i = 0; i < 3; i++) {
-    let flags = 0;
-    for (let j = 0; j < 5; j++) {
-      const char = id.charAt(i * 5 + j);
-      if (char >= 'A' && char <= 'Z') {
-        flags += 1 << j;
-      }
-    }
-    suffix.push('ABCDEFGHIJKLMNOPQRSTUVWXYZ012345'.charAt(flags));
-  }
-
-  return id + suffix.join('');
-}
-
 export function validateId(idObj: Many<IdRegistryValue>, value: string | undefined): void {
   if (!value || !validateIdNoThrow(idObj, value)) {
     throw messages.createError('invalidIdOrAlias', [
