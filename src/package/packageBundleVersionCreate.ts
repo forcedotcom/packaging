@@ -17,6 +17,7 @@ import * as fs from 'node:fs';
 import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
 import { BundleSObjects, BundleVersionCreateOptions } from '../interfaces';
 import { massageErrorMessage } from '../utils/bundleUtils';
+import { convertTo18CharId } from '../utils/packageUtils';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'bundle_version_create');
@@ -174,9 +175,14 @@ export class PackageBundleVersionCreate {
       return bundleVersionComponents.map((component) => {
         const packageVersion = component.packageVersion;
 
-        // Check if it's already an ID (04t followed by 15 characters)
+        // Check if it's already an 18-char ID (04t followed by 15 characters)
         if (/^04t[a-zA-Z0-9]{15}$/.test(packageVersion)) {
           return packageVersion;
+        }
+
+        // Check if it's a 15-char ID (04t followed by 12 characters) and convert to 18-char
+        if (/^04t[a-zA-Z0-9]{12}$/.test(packageVersion)) {
+          return convertTo18CharId(packageVersion);
         }
 
         // Otherwise, treat it as an alias and resolve it from sfdx-project.json
