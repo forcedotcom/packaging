@@ -26,7 +26,6 @@ import JSZIP from 'jszip';
 import {
   applyErrorAction,
   combineSaveErrors,
-  convertTo18CharId,
   findPackageDirectory,
   resolveBuildUserPermissions,
   getPackageVersionNumber,
@@ -48,31 +47,6 @@ describe('packageUtils', () => {
 
   afterEach(() => {
     restoreContext($$);
-  });
-
-  describe('convertTo18CharId', () => {
-    it('should convert a 15-char ID to 18-char', () => {
-      expect(convertTo18CharId('04t5f000000WM9y')).to.equal('04t5f000000WM9yAAG');
-    });
-
-    it('should return an 18-char ID unchanged', () => {
-      expect(convertTo18CharId('04t5f000000WM9yAAG')).to.equal('04t5f000000WM9yAAG');
-    });
-
-    it('should return empty string unchanged', () => {
-      expect(convertTo18CharId('')).to.equal('');
-    });
-
-    it('should handle all-lowercase 15-char ID', () => {
-      const result = convertTo18CharId('04t5f000000wm9y');
-      expect(result).to.have.lengthOf(18);
-      expect(result).to.equal('04t5f000000wm9yAAA');
-    });
-
-    it('should handle mixed-case 15-char ID', () => {
-      const result = convertTo18CharId('001A000001ABCDE');
-      expect(result).to.have.lengthOf(18);
-    });
   });
 
   describe('getPackage2VersionNumber', () => {

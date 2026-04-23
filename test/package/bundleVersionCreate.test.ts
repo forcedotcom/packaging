@@ -585,11 +585,11 @@ describe('PackageBundleVersion.create', () => {
       fs.unlinkSync(componentsPath);
     });
 
-    it('should accept 15-char package version IDs and convert to 18-char', async () => {
+    it('should accept 15-char package version IDs', async () => {
       const componentsPath = path.join(project.getPath(), 'bundle-components.json');
       const components = [
         { packageVersion: '04t5f000000WM9y' }, // 15-char ID
-        { packageVersion: '04t000000000000003' }, // 18-char ID (should stay unchanged)
+        { packageVersion: '04t000000000000003' }, // 18-char ID
       ];
       fs.writeFileSync(componentsPath, JSON.stringify(components));
 
@@ -645,11 +645,11 @@ describe('PackageBundleVersion.create', () => {
       const result = await PackageBundleVersion.create(options);
       expect(result).to.have.property('RequestStatus', BundleSObjects.PkgBundleVersionCreateReqStatus.success);
 
-      // Verify the 15-char ID was converted to 18-char in the API request
+      // Verify both 15-char and 18-char IDs are passed through to the API
       expect(capturedRequest).to.not.be.undefined;
       const sentComponents = JSON.parse(capturedRequest!.BundleVersionComponents) as string[];
-      expect(sentComponents[0]).to.equal('04t5f000000WM9yAAG'); // converted from 15 to 18
-      expect(sentComponents[1]).to.equal('04t000000000000003'); // unchanged 18-char
+      expect(sentComponents[0]).to.equal('04t5f000000WM9y'); // 15-char passed through
+      expect(sentComponents[1]).to.equal('04t000000000000003'); // 18-char passed through
 
       fs.unlinkSync(componentsPath);
     });
