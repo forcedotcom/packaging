@@ -1,3 +1,12 @@
+## [4.22.15](https://github.com/forcedotcom/packaging/compare/4.22.14...4.22.15) (2026-05-07)
+
+
+### Bug Fixes
+
+* **deps:** bump ip-address from 10.0.1 to 10.2.0 ([bd21f6c](https://github.com/forcedotcom/packaging/commit/bd21f6cf529b1e0c23af766da855560038d427d1))
+
+
+
 ## [4.22.14](https://github.com/forcedotcom/packaging/compare/4.22.13...4.22.14) (2026-05-02)
 
 
