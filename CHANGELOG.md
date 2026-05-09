@@ -1,3 +1,12 @@
+## [4.22.16](https://github.com/forcedotcom/packaging/compare/4.22.15...4.22.16) (2026-05-09)
+
+
+### Bug Fixes
+
+* **deps:** bump fast-uri from 3.1.0 to 3.1.2 ([7577dca](https://github.com/forcedotcom/packaging/commit/7577dcaa65c0f6fc585ebc8c01655cde6068691a))
+
+
+
 ## [4.22.15](https://github.com/forcedotcom/packaging/compare/4.22.14...4.22.15) (2026-05-07)
 
 
