@@ -1,3 +1,18 @@
+# [4.23.0](https://github.com/forcedotcom/packaging/compare/4.22.16...4.23.0) (2026-05-19)
+
+
+### Bug Fixes
+
+* remove conversion logic, accept 15-char IDs as-is ([a07a6fb](https://github.com/forcedotcom/packaging/commit/a07a6fb9f95865048b74cdb6078a9987f379ec86))
+* tighten regex to accept only valid 15 or 18-char Salesforce IDs ([a3daa9b](https://github.com/forcedotcom/packaging/commit/a3daa9b3adc56a253bbfe46d4bba14c2b9ba18ec))
+
+
+### Features
+
+* accept 15-char package version IDs in bundle definition file ([9baed23](https://github.com/forcedotcom/packaging/commit/9baed23463b39cbdb4c8aa41001d8f4ea02fed81))
+
+
+
 ## [4.22.16](https://github.com/forcedotcom/packaging/compare/4.22.15...4.22.16) (2026-05-09)
 
 
