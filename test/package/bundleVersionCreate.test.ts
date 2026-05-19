@@ -654,6 +654,34 @@ describe('PackageBundleVersion.create', () => {
       fs.unlinkSync(componentsPath);
     });
 
+    it('should reject IDs with invalid lengths (16 or 17 chars) as aliases', async () => {
+      const componentsPath = path.join(project.getPath(), 'bundle-components.json');
+      const components = [
+        { packageVersion: '04t5f000000WM9yX' }, // 16-char ID (invalid)
+      ];
+      fs.writeFileSync(componentsPath, JSON.stringify(components));
+
+      const options: BundleVersionCreateOptions = {
+        connection,
+        project,
+        PackageBundle: 'testBundle',
+        MajorVersion: '1',
+        MinorVersion: '0',
+        Ancestor: null,
+        BundleVersionComponentsPath: componentsPath,
+      };
+
+      try {
+        await PackageBundleVersion.create(options);
+        expect.fail('Expected error for invalid ID length was not thrown');
+      } catch (err) {
+        const error = err as Error;
+        expect(error.message).to.include('No package version found with alias');
+      }
+
+      fs.unlinkSync(componentsPath);
+    });
+
     it('should handle invalid bundle components format', async () => {
       const componentsPath = path.join(project.getPath(), 'bundle-components.json');
 

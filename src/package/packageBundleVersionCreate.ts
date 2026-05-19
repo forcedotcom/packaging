@@ -175,7 +175,7 @@ export class PackageBundleVersionCreate {
         const packageVersion = component.packageVersion;
 
         // Check if it's a package version ID (04t prefix, 15 or 18 characters)
-        if (/^04t[a-zA-Z0-9]{12,15}$/.test(packageVersion)) {
+        if (/^04t[a-zA-Z0-9]{12}([a-zA-Z0-9]{3})?$/.test(packageVersion)) {
           return packageVersion;
         }
 
