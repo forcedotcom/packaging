@@ -344,7 +344,7 @@ describe('Package Version Retrieve', () => {
     $$.SANDBOX.stub(ZipTreeContainer, 'create').rejects(new Error('data length = 0'));
     queryPackage2VersionStub
       .withArgs(connection, { whereClause: `WHERE SubscriberPackageVersionId = '${packageVersionId2GP}'` })
-      .resolves([{ ...mockPackage2Version, ConvertedFromVersionId: '05ixx0000000conv' }]);
+      .resolves([{ ...mockPackage2Version, ConvertedFromVersionId: '04txx0000004HwAAAU' }]);
 
     try {
       await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
