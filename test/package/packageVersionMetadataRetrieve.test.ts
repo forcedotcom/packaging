@@ -19,6 +19,7 @@ import * as sinon from 'sinon';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/testSetup';
 import { assert, expect } from 'chai';
 import { Connection, SfProject, SfError } from '@salesforce/core';
+import { ZipTreeContainer } from '@salesforce/source-deploy-retrieve';
 import * as packageUtils from '../../src/utils/packageUtils';
 import { Package } from '../../src/package/package';
 import { PackageVersion } from '../../src/package/packageVersion';
@@ -318,6 +319,42 @@ describe('Package Version Retrieve', () => {
       expect(error.message).to.equal(
         "Can't retrieve package version metadata. The specified directory must be relative to your Salesforce DX project directory, and not an absolute path."
       );
+    }
+  });
+
+  it('should throw the native-2GP "unretrievable dev zip" error when ZipTreeContainer is empty and ConvertedFromVersionId is unset', async () => {
+    $$.SANDBOX.stub(ZipTreeContainer, 'create').rejects(new Error('data length = 0'));
+    queryPackage2VersionStub
+      .withArgs(connection, { whereClause: `WHERE SubscriberPackageVersionId = '${packageVersionId2GP}'` })
+      .resolves([{ ...mockPackage2Version, ConvertedFromVersionId: '' }]);
+
+    try {
+      await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
+      assert.fail('Expected test execution to raise an error');
+    } catch (e) {
+      const error = e as SfError;
+      expect(error.message).to.include('native 2GP package version is unretrievable');
+      expect(error.message).to.include('--generate-pkg-zip');
+      expect(error.message).to.include('Then retry retrieving your package metadata');
+      expect(error.message).to.not.include('converted');
+    }
+  });
+
+  it('should throw the converted-2GP "unretrievable dev zip" error when ZipTreeContainer is empty and ConvertedFromVersionId is set', async () => {
+    $$.SANDBOX.stub(ZipTreeContainer, 'create').rejects(new Error('data length = 0'));
+    queryPackage2VersionStub
+      .withArgs(connection, { whereClause: `WHERE SubscriberPackageVersionId = '${packageVersionId2GP}'` })
+      .resolves([{ ...mockPackage2Version, ConvertedFromVersionId: '04txx0000004HwAAAU' }]);
+
+    try {
+      await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
+      assert.fail('Expected test execution to raise an error');
+    } catch (e) {
+      const error = e as SfError;
+      expect(error.message).to.include('converted 2GP package version is unretrievable');
+      expect(error.message).to.include('retry conversion to produce a new converted package version');
+      expect(error.message).to.not.include('--generate-pkg-zip');
+      expect(error.message).to.not.include('native');
     }
   });
 
