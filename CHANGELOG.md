@@ -1,3 +1,17 @@
+# [4.24.0](https://github.com/forcedotcom/packaging/compare/4.23.0...4.24.0) (2026-05-28)
+
+
+### Bug Fixes
+
+* use public registry hosts in yarn.lock ([692695d](https://github.com/forcedotcom/packaging/commit/692695dc8cee64b1039ceefd05249b1a3beae9f0))
+
+
+### Features
+
+* split unretrievable dev-zip error into native and converted 2GP ([ff8690f](https://github.com/forcedotcom/packaging/commit/ff8690f33e444396785d7e90a15c193b3160de75))
+
+
+
 # [4.23.0](https://github.com/forcedotcom/packaging/compare/4.22.16...4.23.0) (2026-05-19)
 
 
