@@ -92,10 +92,7 @@ export async function retrievePackageVersionMetadata(
     tree = await ZipTreeContainer.create(buffer);
   } catch (e) {
     if (e instanceof Error && e.message.includes('data length = 0')) {
-      const messageKey = versionInfo.ConvertedFromVersionId
-        ? 'downloadDeveloperPackageZipHasNoDataConverted2GP'
-        : 'downloadDeveloperPackageZipHasNoDataNative2GP';
-      throw messages.createError(messageKey);
+      throw messages.createError('downloadDeveloperPackageZipHasNoData');
     }
     throw e;
   }
