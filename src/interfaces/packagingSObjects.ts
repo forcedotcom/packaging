@@ -75,6 +75,7 @@ export namespace PackagingSObjects {
     TotalNumberOfMetadataFiles: number;
     TotalSizeOfMetadataFiles: number;
     DeveloperUsePkgZip?: string;
+    HasVpi?: boolean;
   };
 
   export enum Package2VersionStatus {

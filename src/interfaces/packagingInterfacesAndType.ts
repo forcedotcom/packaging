@@ -147,6 +147,7 @@ export type PackageVersionListResult = {
   BuildDurationInSeconds?: number;
   HasMetadataRemoved?: boolean;
   Language?: string;
+  HasVpi?: boolean;
 };
 
 export type PackagePushRequestListQueryOptions = {

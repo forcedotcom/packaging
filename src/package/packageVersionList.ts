@@ -55,6 +55,8 @@ const verboseFields = ['CodeCoverage', 'HasPassedCodeCoverageCheck'];
 
 const verbose57Fields = ['Language'];
 
+const verbose67Fields = ['HasVpi'];
+
 // Ensure we only include the async validation property for api version of v60.0 or higher.
 const default61Fields = ['ValidatedAsync'];
 
@@ -91,6 +93,9 @@ export function constructQuery(connectionVersion: number, options?: PackageVersi
     queryFields = [...queryFields, ...verboseFields];
     if (connectionVersion >= 57) {
       queryFields = [...queryFields, ...verbose57Fields];
+    }
+    if (connectionVersion >= 67) {
+      queryFields = [...queryFields, ...verbose67Fields];
     }
   }
   const query = `SELECT ${queryFields.toString()} FROM Package2Version`;

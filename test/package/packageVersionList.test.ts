@@ -141,10 +141,11 @@ describe('package version list', () => {
         modifiedLastDays: 2,
         isReleased: true,
       };
-      const constQuery = constructQuery(59, options);
+      const constQuery = constructQuery(67, options);
       expect(constQuery).to.not.include('CodeCoverage');
       expect(constQuery).to.not.include('HasPassedCodeCoverageCheck');
       expect(constQuery).to.not.include('Language');
+      expect(constQuery).to.not.include('HasVpi');
     });
 
     it('should include validatedAsync field', async () => {
@@ -167,6 +168,30 @@ describe('package version list', () => {
       };
       const constQuery = constructQuery(59, options);
       expect(constQuery).to.not.include('ValidatedAsync');
+    });
+
+    it('should include HasVpi in verbose at api version 67', async () => {
+      const options = {
+        packages: ['0Ho3h000000xxxxCAG'],
+        createdLastDays: 1,
+        modifiedLastDays: 2,
+        isReleased: true,
+        verbose: true,
+      };
+      const constQuery = constructQuery(67, options);
+      expect(constQuery).to.include('HasVpi');
+    });
+
+    it('should not include HasVpi in verbose at api version 66', async () => {
+      const options = {
+        packages: ['0Ho3h000000xxxxCAG'],
+        createdLastDays: 1,
+        modifiedLastDays: 2,
+        isReleased: true,
+        verbose: true,
+      };
+      const constQuery = constructQuery(66, options);
+      expect(constQuery).to.not.include('HasVpi');
     });
   });
 

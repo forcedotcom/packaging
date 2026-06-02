@@ -82,6 +82,7 @@ export const Package2VersionFields: Array<keyof Package2Version> = [
   'HasMetadataRemoved',
   'EndToEndBuildDurationInSeconds', // v61.0+
   'DeveloperUsePkgZip', // v64.0+
+  'HasVpi', // v67.0+
 ];
 
 export type Package2VersionFieldTypes = Array<(typeof Package2VersionFields)[number]>;
@@ -425,6 +426,10 @@ export class PackageVersion {
 
     // remove fields that are not available in the connection api version
     const fieldsToExclude: string[] = [];
+
+    if (apiVersion < 67) {
+      fieldsToExclude.push('HasVpi');
+    }
 
     if (apiVersion < 64) {
       fieldsToExclude.push('DeveloperUsePkgZip');
