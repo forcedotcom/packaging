@@ -406,6 +406,9 @@ describe('Integration tests for @salesforce/packaging library', () => {
 
       expect(result.IsReleased, 'Expected IsReleased to be false').to.be.false;
       expect(result.ValidatedAsync, 'Expected ValidatedAsync to be false').to.be.false;
+      if (Number(devHubOrg.getConnection().version) >= 67) {
+        expect(result.HasVpi, 'Expected HasVpi to be false').to.be.false;
+      }
       expect(Object.values(projectFile.packageAliases ?? []).some((id) => id === subscriberPkgVersionId)).to.be.true;
     });
 

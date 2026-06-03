@@ -70,17 +70,18 @@ const getLogger = (): Logger => {
 };
 
 function constructQuery(connectionVersion: number, verbose: boolean): string {
-  // Ensure we only include the async validation property for api version of v60.0 or higher.
-  // TotalNumberOfMetadataFiles is included as query field for api version of v64.0 or higher.
+  // ValidatedAsync is included for api version v61.0 or higher.
+  // TotalNumberOfMetadataFiles, TotalSizeOfMetadataFiles are included for api version v64.0 or higher.
+  // HasVpi is included for api version v67.0 or higher.
   let queryFields =
-    connectionVersion > 66
+    connectionVersion >= 67
       ? [...defaultFields, ...default61Fields, ...default64Fields, ...default67Fields]
-      : connectionVersion > 63
+      : connectionVersion >= 64
       ? [...defaultFields, ...default61Fields, ...default64Fields]
-      : connectionVersion > 60
+      : connectionVersion >= 61
       ? [...defaultFields, ...default61Fields]
       : defaultFields;
-  verboseFields = connectionVersion > 60 ? [...verboseFields, ...verbose61Fields] : verboseFields;
+  verboseFields = connectionVersion >= 61 ? [...verboseFields, ...verbose61Fields] : verboseFields;
   if (verbose) {
     queryFields = [...queryFields, ...verboseFields];
   }
