@@ -1,3 +1,18 @@
+# [4.25.0](https://github.com/forcedotcom/packaging/compare/4.24.3...4.25.0) (2026-06-05)
+
+
+### Bug Fixes
+
+* restore connection API version after version gate tests ([f09423d](https://github.com/forcedotcom/packaging/commit/f09423d8000f7d1f5933fd67c2c75cc2297b98d9))
+* use >= for version gates, add HasVpi assertion to report NUT ([37e74af](https://github.com/forcedotcom/packaging/commit/37e74af00f24af38fea55873f56e25b8288b69ae))
+
+
+### Features
+
+* add HasVpi to package version list and report queries ([9f12317](https://github.com/forcedotcom/packaging/commit/9f1231792d1eba8a0cc927668f2a9ec3a7a93cc2))
+
+
+
 ## [4.24.3](https://github.com/forcedotcom/packaging/compare/4.24.2...4.24.3) (2026-05-30)
 
 
