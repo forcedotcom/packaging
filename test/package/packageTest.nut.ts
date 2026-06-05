@@ -215,6 +215,26 @@ describe('Integration tests for @salesforce/packaging library', () => {
         expect(p2v).to.include('DeveloperUsePkgZip');
       });
 
+      it('should not contain HasVpi field with api version 66', async () => {
+        const connection = devHubOrg.getConnection();
+        const originalVersion = connection.getApiVersion();
+        connection.setApiVersion('66.0');
+        // @ts-expect-error using a private method for testing
+        const p2v = PackageVersion.getPackage2VersionFields(connection);
+        expect(p2v).to.not.include('HasVpi');
+        connection.setApiVersion(originalVersion);
+      });
+
+      it('should contain HasVpi field with api version 67', async () => {
+        const connection = devHubOrg.getConnection();
+        const originalVersion = connection.getApiVersion();
+        connection.setApiVersion('67.0');
+        // @ts-expect-error using a private method for testing
+        const p2v = PackageVersion.getPackage2VersionFields(connection);
+        expect(p2v).to.include('HasVpi');
+        connection.setApiVersion(originalVersion);
+      });
+
       it('should return expected results when querying Package2Version, with fields', async () => {
         const connection = devHubOrg.getConnection();
         const fields = ['Id', 'Name'] satisfies Package2VersionFieldTypes;
@@ -390,6 +410,9 @@ describe('Integration tests for @salesforce/packaging library', () => {
 
       expect(result.IsReleased, 'Expected IsReleased to be false').to.be.false;
       expect(result.ValidatedAsync, 'Expected ValidatedAsync to be false').to.be.false;
+      if (Number(devHubOrg.getConnection().version) >= 67) {
+        expect(result.HasVpi, 'Expected HasVpi to be false').to.be.false;
+      }
       expect(Object.values(projectFile.packageAliases ?? []).some((id) => id === subscriberPkgVersionId)).to.be.true;
     });
 
