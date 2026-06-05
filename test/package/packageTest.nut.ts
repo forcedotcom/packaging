@@ -217,18 +217,22 @@ describe('Integration tests for @salesforce/packaging library', () => {
 
       it('should not contain HasVpi field with api version 66', async () => {
         const connection = devHubOrg.getConnection();
+        const originalVersion = connection.getApiVersion();
         connection.setApiVersion('66.0');
         // @ts-expect-error using a private method for testing
         const p2v = PackageVersion.getPackage2VersionFields(connection);
         expect(p2v).to.not.include('HasVpi');
+        connection.setApiVersion(originalVersion);
       });
 
       it('should contain HasVpi field with api version 67', async () => {
         const connection = devHubOrg.getConnection();
+        const originalVersion = connection.getApiVersion();
         connection.setApiVersion('67.0');
         // @ts-expect-error using a private method for testing
         const p2v = PackageVersion.getPackage2VersionFields(connection);
         expect(p2v).to.include('HasVpi');
+        connection.setApiVersion(originalVersion);
       });
 
       it('should return expected results when querying Package2Version, with fields', async () => {
