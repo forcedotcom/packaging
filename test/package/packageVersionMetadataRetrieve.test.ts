@@ -322,7 +322,7 @@ describe('Package Version Retrieve', () => {
     }
   });
 
-  it('should throw the native-2GP "unretrievable dev zip" error when ZipTreeContainer is empty and ConvertedFromVersionId is unset', async () => {
+  it('should throw the unified "unretrievable dev zip" error when ZipTreeContainer is empty and ConvertedFromVersionId is unset', async () => {
     $$.SANDBOX.stub(ZipTreeContainer, 'create').rejects(new Error('data length = 0'));
     queryPackage2VersionStub
       .withArgs(connection, { whereClause: `WHERE SubscriberPackageVersionId = '${packageVersionId2GP}'` })
@@ -333,14 +333,14 @@ describe('Package Version Retrieve', () => {
       assert.fail('Expected test execution to raise an error');
     } catch (e) {
       const error = e as SfError;
-      expect(error.message).to.include('native 2GP package version is unretrievable');
-      expect(error.message).to.include('--generate-pkg-zip');
-      expect(error.message).to.include('Then retry retrieving your package metadata');
-      expect(error.message).to.not.include('converted');
+      expect(error.name).to.equal('DownloadDeveloperPackageZipHasNoDataError');
+      expect(error.message).to.equal(
+        "Can't retrieve package metadata. Package metadata is only generated for converted 2GP package versions and versions created with the --generate-pkg-zip flag. To resolve, create a new package version and retry. For native 2GP packages, include the --generate-pkg-zip flag when creating the version. For 1GP packages, first convert them to 2GP."
+      );
     }
   });
 
-  it('should throw the converted-2GP "unretrievable dev zip" error when ZipTreeContainer is empty and ConvertedFromVersionId is set', async () => {
+  it('should throw the unified "unretrievable dev zip" error when ZipTreeContainer is empty and ConvertedFromVersionId is set', async () => {
     $$.SANDBOX.stub(ZipTreeContainer, 'create').rejects(new Error('data length = 0'));
     queryPackage2VersionStub
       .withArgs(connection, { whereClause: `WHERE SubscriberPackageVersionId = '${packageVersionId2GP}'` })
@@ -351,10 +351,10 @@ describe('Package Version Retrieve', () => {
       assert.fail('Expected test execution to raise an error');
     } catch (e) {
       const error = e as SfError;
-      expect(error.message).to.include('converted 2GP package version is unretrievable');
-      expect(error.message).to.include('retry conversion to produce a new converted package version');
-      expect(error.message).to.not.include('--generate-pkg-zip');
-      expect(error.message).to.not.include('native');
+      expect(error.name).to.equal('DownloadDeveloperPackageZipHasNoDataError');
+      expect(error.message).to.equal(
+        "Can't retrieve package metadata. Package metadata is only generated for converted 2GP package versions and versions created with the --generate-pkg-zip flag. To resolve, create a new package version and retry. For native 2GP packages, include the --generate-pkg-zip flag when creating the version. For 1GP packages, first convert them to 2GP."
+      );
     }
   });
 
