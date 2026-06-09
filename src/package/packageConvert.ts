@@ -278,6 +278,26 @@ export async function createPackageVersionCreateRequest(
 
   await settingsGenerator.createDeploy();
   await settingsGenerator.createDeployPackageContents(apiVersion);
+
+  // Developer edition LeadStatus picklist uses "Open - Not Contacted" instead of "New - Not Contacted"
+  const edition = definitionFile ? definitionFileJson!.Edition : undefined;
+  if (edition && String(edition).toLowerCase() === 'developer') {
+    const leadObjectFile = path.join(
+      settingsGenerator.getDestinationPath() ?? '',
+      settingsGenerator.getShapeDirName(),
+      'objects',
+      'Lead.object'
+    );
+    if (fs.existsSync(leadObjectFile)) {
+      const content = await fs.promises.readFile(leadObjectFile, 'utf8');
+      await fs.promises.writeFile(
+        leadObjectFile,
+        content.replace('New - Not Contacted', 'Open - Not Contacted'),
+        'utf8'
+      );
+    }
+  }
+
   await pkgUtils.zipDir(
     `${settingsGenerator.getDestinationPath() ?? ''}${path.sep}${settingsGenerator.getShapeDirName()}`,
     settingsZipFile

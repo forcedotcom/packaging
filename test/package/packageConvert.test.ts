@@ -442,6 +442,106 @@ describe('packageConvert', () => {
     });
   });
 
+  describe('Lead business process picklist fix', () => {
+    it('should replace "New - Not Contacted" with "Open - Not Contacted" when edition is Developer', async () => {
+      $$.inProject(true);
+      const definitionFile = {
+        orgName: 'test org',
+        Edition: 'Developer',
+        objectSettings: {
+          lead: {
+            defaultRecordType: 'default',
+          },
+        },
+      };
+      const packageVersTmpRoot = path.join(os.tmpdir(), 'lead-dev-test');
+      await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
+      const scratchDefPath = path.join(packageVersTmpRoot, 'scratch-dev.json');
+      await fs.promises.writeFile(scratchDefPath, JSON.stringify(definitionFile, undefined, 2));
+
+      const writeFileSpy = $$.SANDBOX.spy(fs.promises, 'writeFile');
+
+      await createPackageVersionCreateRequest(
+        { definitionfile: scratchDefPath },
+        '0Ho3i000000Gmj6CAC',
+        '54.0',
+        undefined
+      );
+
+      const leadWriteCall = writeFileSpy.getCalls().find((call) => {
+        const filePath = call.args[0];
+        return typeof filePath === 'string' && filePath.includes('Lead.object');
+      });
+      expect(leadWriteCall).to.not.be.undefined;
+      const leadContent = leadWriteCall!.args[1] as string;
+      expect(leadContent).to.include('Open - Not Contacted');
+      expect(leadContent).to.not.include('New - Not Contacted');
+    });
+
+    it('should NOT replace picklist value when edition is Enterprise', async () => {
+      $$.inProject(true);
+      const definitionFile = {
+        orgName: 'test org',
+        Edition: 'Enterprise',
+        objectSettings: {
+          lead: {
+            defaultRecordType: 'default',
+          },
+        },
+      };
+      const packageVersTmpRoot = path.join(os.tmpdir(), 'lead-ent-test');
+      await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
+      const scratchDefPath = path.join(packageVersTmpRoot, 'scratch-ent.json');
+      await fs.promises.writeFile(scratchDefPath, JSON.stringify(definitionFile, undefined, 2));
+
+      const writeFileSpy = $$.SANDBOX.spy(fs.promises, 'writeFile');
+
+      await createPackageVersionCreateRequest(
+        { definitionfile: scratchDefPath },
+        '0Ho3i000000Gmj6CAC',
+        '54.0',
+        undefined
+      );
+
+      // When edition is Enterprise, our fix should NOT write to Lead.object
+      const leadWriteCall = writeFileSpy.getCalls().find((call) => {
+        const filePath = call.args[0];
+        return typeof filePath === 'string' && filePath.includes('Lead.object');
+      });
+      expect(leadWriteCall).to.be.undefined;
+    });
+
+    it('should NOT generate Lead.object when no lead objectSettings specified', async () => {
+      $$.inProject(true);
+      const definitionFile = {
+        orgName: 'test org',
+        Edition: 'Developer',
+        settings: {
+          lightningExperienceSettings: { enableS1DesktopEnabled: true },
+        },
+      };
+      const packageVersTmpRoot = path.join(os.tmpdir(), 'lead-no-obj-test');
+      await fs.promises.mkdir(packageVersTmpRoot, { recursive: true });
+      const scratchDefPath = path.join(packageVersTmpRoot, 'scratch-no-lead.json');
+      await fs.promises.writeFile(scratchDefPath, JSON.stringify(definitionFile, undefined, 2));
+
+      const writeFileSpy = $$.SANDBOX.spy(fs.promises, 'writeFile');
+
+      await createPackageVersionCreateRequest(
+        { definitionfile: scratchDefPath },
+        '0Ho3i000000Gmj6CAC',
+        '54.0',
+        undefined
+      );
+
+      const leadWriteCall = writeFileSpy.getCalls().find((call) => {
+        const filePath = call.args[0];
+        return typeof filePath === 'string' && filePath.includes('Lead.object');
+      });
+      expect(leadWriteCall).to.be.undefined;
+    });
+  });
+
   describe('findOrCreatePackage2', () => {
     it('will error when more than one Package2 found', async () => {
       const conn = {

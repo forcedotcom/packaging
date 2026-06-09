@@ -390,6 +390,7 @@ export class PackageVersionCreate {
     const definitionFile = this.options.definitionfile
       ? this.options.definitionfile
       : packageDescriptorJson.definitionFile;
+    let definitionEdition: string | undefined;
     if (definitionFile) {
       // package2-descriptor.json sent to the server should contain only the features, snapshot & orgPreferences
       // defined in the definition file.
@@ -400,6 +401,7 @@ export class PackageVersionCreate {
 
       const definitionFilePayload = await fs.promises.readFile(definitionFile, 'utf8');
       const definitionFileJson = JSON.parse(definitionFilePayload) as ScratchOrgInfo;
+      definitionEdition = definitionFileJson.Edition;
 
       // Load any settings from the definition
       await settingsGenerator.extract(definitionFileJson);
@@ -474,6 +476,7 @@ export class PackageVersionCreate {
       unpackagedMetadataZipFile,
       seedMetadataZipFile,
       settingsGenerator,
+      definitionEdition,
     });
 
     return this.createRequestObject(preserveFiles, packageVersTmpRoot, packageVersBlobZipFile);
@@ -497,6 +500,7 @@ export class PackageVersionCreate {
     unpackagedMetadataZipFile,
     seedMetadataZipFile,
     settingsGenerator,
+    definitionEdition,
   }: {
     packageVersMetadataFolder: string;
     packageVersProfileFolder: string;
@@ -509,6 +513,7 @@ export class PackageVersionCreate {
     unpackagedMetadataZipFile: string;
     seedMetadataZipFile: string;
     settingsGenerator: ScratchOrgSettingsGenerator;
+    definitionEdition?: string;
   }): Promise<void> {
     // As part of the source convert process, the package.xml has been written into the tmp metadata directory.
     // The package.xml may need to be manipulated due to processing profiles in the workspace or additional
@@ -608,6 +613,25 @@ export class PackageVersionCreate {
     if (settingsGenerator.hasSettings()) {
       await settingsGenerator.createDeploy();
       await settingsGenerator.createDeployPackageContents(this.apiVersionFromPackageXml);
+
+      // Developer edition LeadStatus picklist uses "Open - Not Contacted" instead of "New - Not Contacted"
+      if (definitionEdition && String(definitionEdition).toLowerCase() === 'developer') {
+        const leadObjectFile = path.join(
+          settingsGenerator.getDestinationPath() ?? '',
+          settingsGenerator.getShapeDirName(),
+          'objects',
+          'Lead.object'
+        );
+        if (fs.existsSync(leadObjectFile)) {
+          const content = await fs.promises.readFile(leadObjectFile, 'utf8');
+          await fs.promises.writeFile(
+            leadObjectFile,
+            content.replace('New - Not Contacted', 'Open - Not Contacted'),
+            'utf8'
+          );
+        }
+      }
+
       await zipDir(
         `${settingsGenerator.getDestinationPath() ?? ''}${path.sep}${settingsGenerator.getShapeDirName()}`,
         settingsZipFile
