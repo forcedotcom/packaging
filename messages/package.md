@@ -38,13 +38,9 @@ Can't retrieve package version metadata. The specified directory must be relativ
 
 Can't retrieve package metadata. To use this feature, you must first assign yourself the DownloadPackageVersionZips user permission. Then retry retrieving your package metadata.
 
-# downloadDeveloperPackageZipHasNoDataNative2GP
+# downloadDeveloperPackageZipHasNoData
 
-Can't retrieve package metadata. The developer package zip for this native 2GP package version is unretrievable. To resolve, create a new package version with the --generate-pkg-zip flag. Then retry retrieving your package metadata.
-
-# downloadDeveloperPackageZipHasNoDataConverted2GP
-
-Can't retrieve package metadata. The developer package zip for this converted 2GP package version is unretrievable. To resolve, retry conversion to produce a new converted package version. Then retry retrieving your package metadata.
+Can't retrieve package metadata. Package metadata is only generated for converted 2GP package versions and versions created with the --generate-pkg-zip flag. To resolve, create a new package version and retry. For native 2GP packages, include the --generate-pkg-zip flag when creating the version. For 1GP packages, first convert them to 2GP.
 
 # packagingNotEnabledOnOrg
 
