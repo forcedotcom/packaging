@@ -520,6 +520,7 @@ export type PackageVersionDependencyOptions = {
   connection: Connection;
   verbose?: boolean;
   edgeDirection?: 'root-first' | 'root-last';
+  installationKey?: string;
 };
 
 export type DependencyGraphData = {

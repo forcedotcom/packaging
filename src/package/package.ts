@@ -204,7 +204,7 @@ export class Package {
     packageVersionId: string,
     project: SfProject | undefined,
     connection: Connection,
-    options?: { verbose?: boolean; edgeDirection?: 'root-first' | 'root-last' }
+    options?: { verbose?: boolean; edgeDirection?: 'root-first' | 'root-last'; installationKey?: string }
   ): Promise<PackageVersionDependency> {
     return PackageVersionDependency.create({
       packageVersionId,
@@ -212,6 +212,7 @@ export class Package {
       connection,
       verbose: options?.verbose ?? false,
       edgeDirection: options?.edgeDirection ?? 'root-first',
+      installationKey: options?.installationKey,
     });
   }
 
