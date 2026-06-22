@@ -1,3 +1,12 @@
+# [4.26.0](https://github.com/forcedotcom/packaging/compare/4.25.3...4.26.0) (2026-06-22)
+
+
+### Features
+
+* [@w-22893150](https://github.com/w-22893150) - add support for FragmentBundle metadata ([6c93861](https://github.com/forcedotcom/packaging/commit/6c93861a6d93790f780fa62dd2d63101bd824760))
+
+
+
 ## [4.25.3](https://github.com/forcedotcom/packaging/compare/4.25.2...4.25.3) (2026-06-13)
 
 
