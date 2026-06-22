@@ -1008,13 +1008,7 @@ export class MetadataResolver {
         throw messages.createError('packagePathCannotBeUndefined');
       }
       copyDir(convertResult.packagePath, outputDirectory);
-      try {
-        fs.rmSync(convertResult.packagePath, { recursive: true });
-      } catch (e) {
-        // rmdirSync is being deprecated and emits a warning
-        // but rmSync is introduced in node 14 so fall back to rmdirSync
-        fs.rmdirSync(convertResult.packagePath, { recursive: true });
-      }
+      fs.rmSync(convertResult.packagePath, { recursive: true });
 
       convertResult.packagePath = outputDirectory;
     }
