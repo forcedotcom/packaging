@@ -836,6 +836,27 @@ describe('Package Version Create', () => {
     expect(pkgTypeMembers[1].members).to.deep.equal(['Test Profile']);
   });
 
+  it('should exclude profiles from ./-prefixed directories when scopeProfiles is true', async () => {
+    const pkgProfileApi = await PackageProfileApi.create({ project, includeUserLicenses: false });
+    const types = [
+      { name: 'Layout', members: ['Test Layout'] },
+      { name: 'Profile', members: ['Excluded Profile', 'Included Profile'] },
+    ];
+    // create directories simulating ./-prefixed paths from sfdx-project.json
+    const excludedDir = path.join(project.getPath(), 'force-app', 'src-access-management');
+    const includedDir = path.join(project.getPath(), 'force-app', 'main');
+    await fs.promises.mkdir(excludedDir, { recursive: true });
+    await fs.promises.mkdir(includedDir, { recursive: true });
+    const fileContents = '<?xml version="1.0" encoding="UTF-8"?>';
+    await fs.promises.writeFile(path.join(excludedDir, 'Excluded Profile.profile-meta.xml'), fileContents);
+    await fs.promises.writeFile(path.join(includedDir, 'Included Profile.profile-meta.xml'), fileContents);
+
+    // Simulate the ./-prefixed path that comes from sfdx-project.json
+    const excludedDirectories = ['./src-access-management'];
+    const pkgTypeMembers = pkgProfileApi.filterAndGenerateProfilesForManifest(types, excludedDirectories);
+    expect(pkgTypeMembers.find((t) => t.name === 'Profile')?.members).to.deep.equal(['Included Profile']);
+  });
+
   describe('validateAncestorId', () => {
     it('should throw if the explicitUseNoAncestor is true and highestReleasedVersion is not undefined', () => {
       const ancestorId = 'ancestorId';

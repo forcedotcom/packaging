@@ -123,7 +123,10 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
 
   // Look for profiles in all package directories
   private findAllProfiles(excludedDirectories: string[] = []): string[] {
-    const ignore = excludedDirectories.map((dir) => `**/${dir.split(path.sep).join(path.posix.sep)}/**`);
+    const ignore = excludedDirectories.map((dir) => {
+      const normalized = path.normalize(dir).split(path.sep).filter(Boolean).join(path.posix.sep);
+      return `**/${normalized}/**`;
+    });
     const patterns = this.project
       .getUniquePackageDirectories()
       .map((pDir) => pDir.fullPath)
