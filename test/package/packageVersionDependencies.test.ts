@@ -266,6 +266,112 @@ describe('Package Version Dependencies', () => {
     expect(connectionStub.firstCall.args[0]).to.contain('04tXXXXXXXXXXXXXX0');
     expect(connectionStub.firstCall.args[0]).to.contain('Package2Version');
   });
+
+  it('should include installation key in SubscriberPackageVersion query for flat dependency graph', async () => {
+    // Use the same pattern as the existing flat graph test above
+    // Calls 0,1,2,3: resolve 04t and check CalcTransitiveDependencies (reused for 05i/08c resolution)
+    resolveDependencyGraphJsonCall(connectionStub, [0, 1, 2, 3], false, null);
+    // Call 4: createFlatDependencyGraph - SubscriberPackageVersion query (key should be appended)
+    connectionStub.onCall(4).resolves({
+      records: [{ Dependencies: { ids: [{ subscriberPackageVersionId: '04tXXXXXXXXXXXXXX1' }] } }],
+    });
+    // Calls 5,6: node resolution (Package2Version queries for each node in flat graph)
+    resolveDependencyNodeCall(connectionStub, 5, '04tXXXXXXXXXXXXXX0', 'ProtectedPkg', 1, 0, 0, 1);
+    resolveDependencyNodeCall(connectionStub, 6, '04tXXXXXXXXXXXXXX1', 'DependencyPkg', 2, 0, 0, 1);
+
+    const pvd = await PackageVersionDependency.create({
+      connection: mockConnection,
+      project: mockProject,
+      packageVersionId: '04tXXXXXXXXXXXXXX0',
+      installationKey: 'mySecretKey123',
+    });
+
+    await pvd.getDependencyDotProducer();
+
+    // Call 4: createFlatDependencyGraph query should contain the installation key
+    const flatDependencyQuery = connectionStub.getCall(4).args[0] as string;
+    expect(flatDependencyQuery).to.contain('SubscriberPackageVersion');
+    expect(flatDependencyQuery).to.contain("InstallationKey = 'mySecretKey123'");
+  });
+
+  it('should not include installation key in queries when no key is provided', async () => {
+    resolveDependencyGraphJsonCall(connectionStub, [0, 1, 2, 3], false, null);
+    // Call 4: createFlatDependencyGraph
+    connectionStub.onCall(4).resolves({
+      records: [{ Dependencies: { ids: [{ subscriberPackageVersionId: '04tXXXXXXXXXXXXXX1' }] } }],
+    });
+    // Calls 5,6: node resolution
+    resolveDependencyNodeCall(connectionStub, 5, '04tXXXXXXXXXXXXXX0', 'UnprotectedPkg', 1, 0, 0, 1);
+    resolveDependencyNodeCall(connectionStub, 6, '04tXXXXXXXXXXXXXX1', 'DependencyPkg', 2, 0, 0, 1);
+
+    const pvd = await PackageVersionDependency.create({
+      connection: mockConnection,
+      project: mockProject,
+      packageVersionId: '04tXXXXXXXXXXXXXX0',
+    });
+
+    await pvd.getDependencyDotProducer();
+
+    // Call 4: createFlatDependencyGraph query should NOT contain InstallationKey
+    const flatDependencyQuery = connectionStub.getCall(4).args[0] as string;
+    expect(flatDependencyQuery).to.contain('SubscriberPackageVersion');
+    expect(flatDependencyQuery).to.not.contain('InstallationKey');
+  });
+
+  it('should escape special characters in installation key', async () => {
+    resolveDependencyGraphJsonCall(connectionStub, [0, 1, 2, 3], false, null);
+    // Call 4: createFlatDependencyGraph
+    connectionStub.onCall(4).resolves({
+      records: [{ Dependencies: { ids: [{ subscriberPackageVersionId: '04tXXXXXXXXXXXXXX1' }] } }],
+    });
+    // Calls 5,6: node resolution
+    resolveDependencyNodeCall(connectionStub, 5, '04tXXXXXXXXXXXXXX0', 'ProtectedPkg', 1, 0, 0, 1);
+    resolveDependencyNodeCall(connectionStub, 6, '04tXXXXXXXXXXXXXX1', 'DependencyPkg', 2, 0, 0, 1);
+
+    const pvd = await PackageVersionDependency.create({
+      connection: mockConnection,
+      project: mockProject,
+      packageVersionId: '04tXXXXXXXXXXXXXX0',
+      installationKey: "key'with\\special",
+    });
+
+    await pvd.getDependencyDotProducer();
+
+    // The key should be escaped: single quotes and backslashes
+    const flatDependencyQuery = connectionStub.getCall(4).args[0] as string;
+    expect(flatDependencyQuery).to.contain("InstallationKey = 'key\\'with\\\\special'");
+  });
+
+  it('should include installation key in addSelectedNodeIds query for transitive dependency graph', async () => {
+    const dependencyGraphJson = JSON.stringify({
+      creator: 'test-creator',
+      nodes: [{ id: VERSION_BEING_BUILT }, { id: '04tXXXXXXXXXXXXXX1' }],
+      edges: [{ source: '04tXXXXXXXXXXXXXX1', target: VERSION_BEING_BUILT }],
+    });
+    // Calls 0,1,2: resolve 08c and get transitive dependency graph
+    resolveDependencyGraphJsonCall(connectionStub, [0, 1, 2], true, dependencyGraphJson);
+    // Call 3: createVersionBeingBuiltNode (resolves VERSION_BEING_BUILT to 04tXXXXXXXXXXXXXX3)
+    resolveVersionBeingBuiltNodeCall(connectionStub, 3, '04tXXXXXXXXXXXXXX3', 'ProtectedPkg', 1, 0, 0, 0);
+    // Call 4: resolveDependencyNode for 04tXXXXXXXXXXXXXX1
+    resolveDependencyNodeCall(connectionStub, 4, '04tXXXXXXXXXXXXXX1', 'DependencyPkg', 2, 0, 0, 1);
+    // Call 5: addSelectedNodeIds - SubscriberPackageVersion query (subscriberPackageVersionId is now 04tXXXXXXXXXXXXXX3)
+    resolveSelectedNodeIdsCall(connectionStub, 5, ['04tXXXXXXXXXXXXXX1']);
+
+    const pvd = await PackageVersionDependency.create({
+      connection: mockConnection,
+      project: mockProject,
+      packageVersionId: '08cXXXXXXXXXXXXXXX',
+      installationKey: 'transitiveKey456',
+    });
+
+    await pvd.getDependencyDotProducer();
+
+    // Call 5: addSelectedNodeIds query should contain the installation key
+    const addSelectedNodeIdsQuery = connectionStub.getCall(5).args[0] as string;
+    expect(addSelectedNodeIdsQuery).to.contain('SubscriberPackageVersion');
+    expect(addSelectedNodeIdsQuery).to.contain('04tXXXXXXXXXXXXXX3');
+    expect(addSelectedNodeIdsQuery).to.contain("InstallationKey = 'transitiveKey456'");
+  });
 });
 
 // package version is validated multiple times and requires multiple identical resolves
