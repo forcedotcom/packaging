@@ -280,6 +280,46 @@ describe('packageConvert', () => {
       expect(package2DescriptorJson).to.not.have.string('apexTestAccess');
     });
 
+    it('should write additionalbasepackages into the descriptor dependencies array', async () => {
+      $$.inProject(true);
+      const writeFileSpy = $$.SANDBOX.spy(fs.promises, 'writeFile');
+
+      await createPackageVersionCreateRequest(
+        { additionalbasepackages: ['04t3i000002OUEkAAO', '04t3i000002OUElAAO'] },
+        '0Ho3i000000Gmj6CAC',
+        '54.0',
+        undefined
+      );
+
+      const descriptorWriteCall = writeFileSpy.getCalls().find((call) => {
+        const filePath = call.args[0];
+        return typeof filePath === 'string' && filePath.includes('package2-descriptor.json');
+      });
+      expect(descriptorWriteCall).to.not.be.undefined;
+      const descriptorContent = descriptorWriteCall?.args[1] as string;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const descriptor = JSON.parse(descriptorContent);
+      expect(descriptor.dependencies).to.deep.equal([
+        { subscriberPackageVersionId: '04t3i000002OUEkAAO' },
+        { subscriberPackageVersionId: '04t3i000002OUElAAO' },
+      ]);
+    });
+
+    it('should not add a dependencies array when additionalbasepackages is omitted', async () => {
+      $$.inProject(true);
+      const writeFileSpy = $$.SANDBOX.spy(fs.promises, 'writeFile');
+
+      await createPackageVersionCreateRequest({}, '0Ho3i000000Gmj6CAC', '54.0', undefined);
+
+      const descriptorWriteCall = writeFileSpy.getCalls().find((call) => {
+        const filePath = call.args[0];
+        return typeof filePath === 'string' && filePath.includes('package2-descriptor.json');
+      });
+      expect(descriptorWriteCall).to.not.be.undefined;
+      const descriptorContent = descriptorWriteCall?.args[1] as string;
+      expect(descriptorContent).to.not.have.string('dependencies');
+    });
+
     it('should use seedMetadata from project configuration when CLI option not provided', async () => {
       $$.inProject(true);
       const project = SfProject.getInstance();

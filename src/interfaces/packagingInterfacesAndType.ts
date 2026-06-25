@@ -368,6 +368,8 @@ export type ConvertPackageOptions = {
   seedMetadata?: string;
   patchversion?: string;
   codecoverage?: boolean;
+  /** Subscriber package version IDs (04t) of 2GP base packages the 1GP package extends. */
+  additionalBasePackages?: string[];
 };
 
 export type PackageVersionCreateOptions = {

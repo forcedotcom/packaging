@@ -131,6 +131,7 @@ export async function convertPackage(
       seedmetadata: options.seedMetadata,
       patchversion: options.patchversion,
       codecoverage: options.codecoverage,
+      additionalbasepackages: options.additionalBasePackages,
     },
     packageId,
     // TODO: createPackageVersionCreateRequest requires apiVersion exist.
@@ -193,6 +194,7 @@ export async function createPackageVersionCreateRequest(
     seedmetadata?: string;
     patchversion?: string;
     codecoverage?: boolean;
+    additionalbasepackages?: string[];
   },
   packageId: string,
   apiVersion: string,
@@ -217,6 +219,14 @@ export async function createPackageVersionCreateRequest(
     base: { versionNumber: context.patchversion },
     packageObject,
   });
+
+  // Caller-supplied 2GP base packages (1GP-extends-2GP conversions) are written into the
+  // descriptor's dependencies array, the same contract `package version create` uses.
+  if (context.additionalbasepackages?.length) {
+    packageDescriptorJson.dependencies = context.additionalbasepackages.map((id) => ({
+      subscriberPackageVersionId: id,
+    })) as unknown as PackageDescriptorJson['dependencies'];
+  }
 
   const settingsGenerator = new ScratchOrgSettingsGenerator({ asDirectory: true });
   const definitionFile = context.definitionfile;
