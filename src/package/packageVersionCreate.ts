@@ -587,9 +587,10 @@ export class PackageVersionCreate {
       profileExcludeDirs
     );
 
+    const excludedProfileNames = excludedProfiles?.map((p) => path.basename(p));
     packageXmlAsJson.types = typesArr.map((type) => {
       if (type.name !== 'Profile') return type;
-      return { ...type, members: type.members.filter((m) => !excludedProfiles?.includes(m)) };
+      return { ...type, members: type.members.filter((m) => !excludedProfileNames?.includes(m)) };
     });
 
     const xml = packageXmlJsonToXmlString(packageXmlAsJson);

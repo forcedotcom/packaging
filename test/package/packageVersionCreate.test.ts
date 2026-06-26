@@ -836,6 +836,66 @@ describe('Package Version Create', () => {
     expect(pkgTypeMembers[1].members).to.deep.equal(['Test Profile']);
   });
 
+  it('should include profiles from all package directories when scopeProfiles is false', async () => {
+    project.getSfProjectJson().set('packageDirectories', [
+      { path: './src-access-management', package: 'ACCESS', versionName: 'ver 0.1', versionNumber: '0.1.0.NEXT' },
+      { path: 'force-app', package: 'TEST', versionName: 'ver 0.1', versionNumber: '0.1.0.NEXT', default: true },
+    ]);
+    await project.getSfProjectJson().write();
+
+    const siblingDir = path.join(project.getPath(), 'src-access-management');
+    await fs.promises.mkdir(siblingDir, { recursive: true });
+    const fileContents = '<?xml version="1.0" encoding="UTF-8"?>';
+    await fs.promises.writeFile(path.join(siblingDir, 'Sibling Profile.profile-meta.xml'), fileContents);
+    await fs.promises.writeFile(
+      path.join(project.getPath(), 'force-app', 'Target Profile.profile-meta.xml'),
+      fileContents
+    );
+
+    const pkgProfileApi = await PackageProfileApi.create({ project, includeUserLicenses: false });
+    const types = [
+      { name: 'Layout', members: ['Test Layout'] },
+      { name: 'Profile', members: ['Sibling Profile', 'Target Profile'] },
+    ];
+
+    // With no excludedDirectories (scopeProfiles=false), all profiles from all dirs are included
+    const pkgTypeMembers = pkgProfileApi.filterAndGenerateProfilesForManifest(types);
+    expect(pkgTypeMembers.find((t) => t.name === 'Profile')?.members).to.deep.equal([
+      'Sibling Profile',
+      'Target Profile',
+    ]);
+  });
+
+  it('should exclude profiles from ./-prefixed sibling package directories when scopeProfiles is true', async () => {
+    // Configure a multi-directory project where sibling uses ./ prefix in path
+    project.getSfProjectJson().set('packageDirectories', [
+      { path: './src-access-management', package: 'ACCESS', versionName: 'ver 0.1', versionNumber: '0.1.0.NEXT' },
+      { path: 'force-app', package: 'TEST', versionName: 'ver 0.1', versionNumber: '0.1.0.NEXT', default: true },
+    ]);
+    await project.getSfProjectJson().write();
+
+    const siblingDir = path.join(project.getPath(), 'src-access-management');
+    await fs.promises.mkdir(siblingDir, { recursive: true });
+    const fileContents = '<?xml version="1.0" encoding="UTF-8"?>';
+    await fs.promises.writeFile(path.join(siblingDir, 'Sibling Profile.profile-meta.xml'), fileContents);
+    await fs.promises.writeFile(
+      path.join(project.getPath(), 'force-app', 'Target Profile.profile-meta.xml'),
+      fileContents
+    );
+
+    const pkgProfileApi = await PackageProfileApi.create({ project, includeUserLicenses: false });
+    const types = [
+      { name: 'Layout', members: ['Test Layout'] },
+      { name: 'Profile', members: ['Sibling Profile', 'Target Profile'] },
+    ];
+
+    // When scopeProfiles is true, packageVersionCreate passes sibling package dir paths
+    // as excludedDirectories. These retain the ./ prefix from sfdx-project.json.
+    const excludedDirectories = ['./src-access-management'];
+    const pkgTypeMembers = pkgProfileApi.filterAndGenerateProfilesForManifest(types, excludedDirectories);
+    expect(pkgTypeMembers.find((t) => t.name === 'Profile')?.members).to.deep.equal(['Target Profile']);
+  });
+
   describe('validateAncestorId', () => {
     it('should throw if the explicitUseNoAncestor is true and highestReleasedVersion is not undefined', () => {
       const ancestorId = 'ancestorId';
