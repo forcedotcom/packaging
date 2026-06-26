@@ -1,3 +1,12 @@
+## [4.26.1](https://github.com/forcedotcom/packaging/compare/4.26.0...4.26.1) (2026-06-26)
+
+
+### Bug Fixes
+
+* scopeProfiles excludes profiles correctly with ./-prefixed paths @W-22149938@ ([34d8ea3](https://github.com/forcedotcom/packaging/commit/34d8ea3f8f4429a12ea535f790f8e05893436927))
+
+
+
 # [4.26.0](https://github.com/forcedotcom/packaging/compare/4.25.3...4.26.0) (2026-06-22)
 
 
