@@ -1,3 +1,12 @@
+## [4.26.5](https://github.com/forcedotcom/packaging/compare/4.26.4...4.26.5) (2026-06-27)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/types from 1.7.3 to 1.8.0 ([c2e9521](https://github.com/forcedotcom/packaging/commit/c2e95219a87667adb55aa787f80461adf4731b16))
+
+
+
 ## [4.26.4](https://github.com/forcedotcom/packaging/compare/4.26.3...4.26.4) (2026-06-27)
 
 
