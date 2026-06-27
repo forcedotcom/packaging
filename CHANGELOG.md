@@ -1,3 +1,12 @@
+## [4.26.3](https://github.com/forcedotcom/packaging/compare/4.26.2...4.26.3) (2026-06-27)
+
+
+### Bug Fixes
+
+* **deps:** bump form-data from 4.0.5 to 4.0.6 ([e03a49e](https://github.com/forcedotcom/packaging/commit/e03a49e93935a321ac043a17a00bdd1384d5db30))
+
+
+
 ## [4.26.2](https://github.com/forcedotcom/packaging/compare/4.26.1...4.26.2) (2026-06-27)
 
 
