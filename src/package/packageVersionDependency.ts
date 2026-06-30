@@ -23,6 +23,7 @@ import {
   DependencyGraphEdge,
   DependencyGraphData,
 } from '../interfaces';
+import { escapeInstallationKey } from '../utils/packageUtils';
 import { VersionNumber } from './versionNumber';
 
 Messages.importMessagesDirectory(__dirname);
@@ -38,6 +39,7 @@ export class PackageVersionDependency extends AsyncCreatable<PackageVersionDepen
   private userPackageVersionId: string;
   private verbose: boolean;
   private edgeDirection: 'root-first' | 'root-last';
+  private installationKey?: string;
   private resolvedPackageVersionCreateRequestId: string;
   private allPackageVersionId: string;
 
@@ -48,6 +50,7 @@ export class PackageVersionDependency extends AsyncCreatable<PackageVersionDepen
     this.userPackageVersionId = options.packageVersionId;
     this.verbose = options.verbose ?? false;
     this.edgeDirection = options.edgeDirection ?? 'root-first';
+    this.installationKey = options.installationKey;
     this.resolvedPackageVersionCreateRequestId = '';
     this.allPackageVersionId = '';
   }
@@ -76,7 +79,8 @@ export class PackageVersionDependency extends AsyncCreatable<PackageVersionDepen
       dependencyGraphJson,
       this.verbose,
       this.edgeDirection,
-      this.resolvedPackageVersionCreateRequestId
+      this.resolvedPackageVersionCreateRequestId,
+      this.installationKey
     );
     await producer.init();
     return producer;
@@ -101,7 +105,10 @@ export class PackageVersionDependency extends AsyncCreatable<PackageVersionDepen
       throw messages.createError('noDependencyGraphJsonMustProvideVersion');
     }
 
-    const query = `SELECT Dependencies FROM SubscriberPackageVersion WHERE Id = '${this.allPackageVersionId}'`;
+    let query = `SELECT Dependencies FROM SubscriberPackageVersion WHERE Id = '${this.allPackageVersionId}'`;
+    if (this.installationKey) {
+      query += ` AND InstallationKey = '${escapeInstallationKey(this.installationKey)}'`;
+    }
     const result = await this.connection.tooling.query<{
       Dependencies: { ids: Array<{ subscriberPackageVersionId: string }> } | null;
     }>(query);
@@ -219,6 +226,7 @@ export class DependencyDotProducer {
   private resolvedPackageVersionId: string;
   private subscriberPackageVersionId: string;
   private connection: Connection;
+  private installationKey?: string;
   private dependencyGraphData!: DependencyGraphData;
   private selectedNodeIds: string[] = [];
 
@@ -227,13 +235,15 @@ export class DependencyDotProducer {
     dependencyGraphString: string,
     verbose: boolean,
     edgeDirection: 'root-first' | 'root-last',
-    resolvedPackageVersionId: string
+    resolvedPackageVersionId: string,
+    installationKey?: string
   ) {
     this.verbose = verbose;
     this.edgeDirection = edgeDirection;
     this.resolvedPackageVersionId = resolvedPackageVersionId;
     this.connection = connection;
     this.dependencyGraphString = dependencyGraphString;
+    this.installationKey = installationKey;
     this.subscriberPackageVersionId = VERSION_BEING_BUILT;
   }
 
@@ -276,7 +286,10 @@ export class DependencyDotProducer {
       selectedNodes.push(this.subscriberPackageVersionId);
     } else if (this.subscriberPackageVersionId.startsWith('04t')) {
       selectedNodes.push(this.subscriberPackageVersionId);
-      const query = `SELECT Dependencies FROM SubscriberPackageVersion WHERE Id = '${this.subscriberPackageVersionId}'`;
+      let query = `SELECT Dependencies FROM SubscriberPackageVersion WHERE Id = '${this.subscriberPackageVersionId}'`;
+      if (this.installationKey) {
+        query += ` AND InstallationKey = '${escapeInstallationKey(this.installationKey)}'`;
+      }
       try {
         const result = await this.connection.tooling.query<{
           Dependencies: { ids: Array<{ subscriberPackageVersionId: string }> } | null;

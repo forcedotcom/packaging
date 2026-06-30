@@ -37,6 +37,6 @@ jobs:
       command: 'yarn test:nuts:package'
       os: ${{ matrix.os }}
       preSwapCommands: 'yarn upgrade @salesforce/core; yarn upgrade @jsforce/jsforce-node@latest; npx yarn-deduplicate; yarn install'
-      preExternalBuildCommands: 'npm why @salesforce/core --json'
+      preExternalBuildCommands: 'shx rm -rf node_modules/@salesforce/packaging/node_modules; npm why @salesforce/core --json'
       useCache: false
     secrets: inherit
