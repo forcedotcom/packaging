@@ -23,7 +23,7 @@ import { PackageVersionMetadataDownloadOptions, PackageVersionMetadataDownloadRe
 import { generatePackageAliasEntry, isPackageDirectoryEffectivelyEmpty } from '../utils/packageUtils';
 import { createPackageDirEntry } from './packageCreate';
 import { Package } from './package';
-import { PackageVersion } from './packageVersion';
+import { PackageVersion, Package2VersionFieldTypes } from './packageVersion';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package');
@@ -56,35 +56,46 @@ export async function retrievePackageVersionMetadata(
     throw messages.createError('sourcesDownloadDirectoryNotEmpty');
   }
 
-  // Get the DeveloperUsePkgZip URL from the Package2Version record
+  // Resolve an alias to the underlying 04t if one was passed.
   const subscriberPackageVersionId =
     project.getPackageIdFromAlias(options.subscriberPackageVersionId) ?? options.subscriberPackageVersionId;
 
-  // Query Package2Version to get the record by SubscriberPackageVersionId
+  // Select only the columns this flow reads. Omitting the permission-gated DeveloperUsePkgZip
+  // keeps this query from throwing "No such column" before we can disambiguate the failure.
   const queryOptions = {
     whereClause: `WHERE SubscriberPackageVersionId = '${subscriberPackageVersionId}'`,
+    fields: ['Package2Id', 'ConvertedFromVersionId'] as Package2VersionFieldTypes,
   };
   let versionInfo;
   try {
     [versionInfo] = await PackageVersion.queryPackage2Version(connection, queryOptions);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    if (msg.includes("No such column 'DeveloperUsePkgZip' on entity 'Package2Version'")) {
-      throw messages.createError('developerUsePkgZipFieldUnavailable');
-    }
     if (msg.includes("sObject type 'Package2Version' is not supported.")) {
       throw messages.createError('packagingNotEnabledOnOrg');
     }
     throw e;
   }
 
-  if (!versionInfo?.DeveloperUsePkgZip) {
+  // Not in this Dev Hub: tell "doesn't exist anywhere" apart from "exists but not here".
+  if (!versionInfo) {
+    const exists = await subscriberPackageVersionExists(connection, subscriberPackageVersionId);
+    throw messages.createError(exists ? 'packageVersionNotInDevHub' : 'packageVersionNotFound', [
+      subscriberPackageVersionId,
+    ]);
+  }
+
+  // Row exists; fetch the download URL separately. No URL means the user lacks the permission.
+  const developerUsePkgZipUrl = await getDeveloperUsePkgZipUrl(connection, subscriberPackageVersionId);
+  if (!developerUsePkgZipUrl) {
     throw messages.createError('developerUsePkgZipFieldUnavailable');
   }
 
-  const responseBase64 = await connection.tooling.request<string>(versionInfo.DeveloperUsePkgZip, {
-    encoding: 'base64',
-  });
+  const responseBase64 = await downloadDeveloperPackageZip(
+    connection,
+    developerUsePkgZipUrl,
+    subscriberPackageVersionId
+  );
   const buffer = Buffer.from(responseBase64, 'base64');
 
   let tree;
@@ -230,5 +241,67 @@ async function attemptToUpdateProjectJson(
     logger.error(
       `Encountered error trying to update sfdx-project.json after retrieving package version metadata: ${msg as string}`
     );
+  }
+}
+
+/** Download the package zip, mapping the servlet's late-stage access failures to actionable errors. */
+async function downloadDeveloperPackageZip(
+  connection: Connection,
+  developerUsePkgZipUrl: string,
+  subscriberPackageVersionId: string
+): Promise<string> {
+  try {
+    return await connection.tooling.request<string>(developerUsePkgZipUrl, { encoding: 'base64' });
+  } catch (e) {
+    const name = e instanceof Error ? e.name : '';
+    if (name === 'NOT_FOUND') {
+      throw messages.createError('packageVersionNotFound', [subscriberPackageVersionId]);
+    }
+    if (name === 'INSUFFICIENT_ACCESS' || name === 'INSUFFICIENT_ACCESS_OR_READONLY') {
+      throw messages.createError('packageVersionNotInDevHub', [subscriberPackageVersionId]);
+    }
+    throw e;
+  }
+}
+
+/**
+ * Fetch the permission-gated DeveloperUsePkgZip download URL on its own. Returns undefined when the
+ * user can't access it, so both an empty value and its "No such column" error read the same.
+ */
+async function getDeveloperUsePkgZipUrl(
+  connection: Connection,
+  subscriberPackageVersionId: string
+): Promise<string | undefined> {
+  try {
+    const [record] = await PackageVersion.queryPackage2Version(connection, {
+      whereClause: `WHERE SubscriberPackageVersionId = '${subscriberPackageVersionId}'`,
+      fields: ['DeveloperUsePkgZip'] as Package2VersionFieldTypes,
+    });
+    return record?.DeveloperUsePkgZip ?? undefined;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("No such column 'DeveloperUsePkgZip' on entity 'Package2Version'")) {
+      return undefined;
+    }
+    throw e;
+  }
+}
+
+/**
+ * True if a SubscriberPackageVersion with this 04t ID exists anywhere. That global view is
+ * queryable by any authenticated user, so it tells "not found" apart from "not in this Dev Hub".
+ */
+async function subscriberPackageVersionExists(
+  connection: Connection,
+  subscriberPackageVersionId: string
+): Promise<boolean> {
+  try {
+    const result = await connection.tooling.query<{ Id: string }>(
+      `SELECT Id FROM SubscriberPackageVersion WHERE Id = '${subscriberPackageVersionId}' LIMIT 1`
+    );
+    return (result.records?.length ?? 0) > 0;
+  } catch {
+    // If even the existence probe fails (malformed ID, etc.), fall back to "not found".
+    return false;
   }
 }

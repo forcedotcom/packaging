@@ -111,6 +111,22 @@ describe('Package Version Retrieve', () => {
   let queryPackage2VersionStub: sinon.SinonStub;
   let requestMetadataZipStub: sinon.SinonStub;
   let getPackageDataStub: sinon.SinonStub;
+  let toolingQueryStub: sinon.SinonStub;
+
+  // The retrieve flow issues two Package2Version queries: an existence query and a separate
+  // DeveloperUsePkgZip fetch. These matchers let tests control each independently.
+  const isZipUrlFetch = (opts?: { fields?: readonly string[] }): boolean =>
+    Array.isArray(opts?.fields) && opts?.fields.length === 1 && opts?.fields[0] === 'DeveloperUsePkgZip';
+  const existenceQuery = (id: string): sinon.SinonMatcher =>
+    sinon.match(
+      (opts: { whereClause?: string; fields?: readonly string[] }) =>
+        opts?.whereClause === `WHERE SubscriberPackageVersionId = '${id}'` && !isZipUrlFetch(opts)
+    );
+  const zipUrlQuery = (id: string): sinon.SinonMatcher =>
+    sinon.match(
+      (opts: { whereClause?: string; fields?: readonly string[] }) =>
+        opts?.whereClause === `WHERE SubscriberPackageVersionId = '${id}'` && isZipUrlFetch(opts)
+    );
 
   beforeEach(async () => {
     $$.inProject(true);
@@ -133,10 +149,18 @@ describe('Package Version Retrieve', () => {
     requestMetadataZipStub.withArgs(metadataZipURL2GP, { encoding: 'base64' }).resolves(secondGenBytesBase64);
     requestMetadataZipStub.withArgs(metadataZipURL1GP, { encoding: 'base64' }).resolves(firstGenBytesBase64);
 
+    // SubscriberPackageVersion existence probe used to disambiguate retrieve failures.
+    // Default to "exists" so happy-path tests are unaffected; override per-test as needed.
+    toolingQueryStub = $$.SANDBOX.stub(connection.tooling, 'query');
+    toolingQueryStub.resolves({ records: [{ Id: packageVersionId2GP }], done: true, totalSize: 1 });
+
     queryPackage2VersionStub = $$.SANDBOX.stub(PackageVersion, 'queryPackage2Version');
+    // Existence/disambiguation query (DeveloperUsePkgZip excluded) returns the row.
+    queryPackage2VersionStub.withArgs(connection, existenceQuery(packageVersionId2GP)).resolves([mockPackage2Version]);
+    // Targeted DeveloperUsePkgZip fetch returns the download URL.
     queryPackage2VersionStub
-      .withArgs(connection, { whereClause: `WHERE SubscriberPackageVersionId = '${packageVersionId2GP}'` })
-      .resolves([mockPackage2Version]);
+      .withArgs(connection, zipUrlQuery(packageVersionId2GP))
+      .resolves([{ DeveloperUsePkgZip: metadataZipURL2GP }]);
 
     $$.SANDBOX.stub(packageUtils, 'generatePackageAliasEntry').resolves([
       `${packageName}@0.1.0-1-main`,
@@ -211,10 +235,10 @@ describe('Package Version Retrieve', () => {
   });
 
   it('should not add a packageDirectory entry to sfdx-project.json after retrieving a managed 1GP version', async () => {
-    // For 1GP packages, queryPackage2Version returns empty array, which means no Package2Version found
-    queryPackage2VersionStub
-      .withArgs(connection, { whereClause: `WHERE SubscriberPackageVersionId = '${packageVersionId1GP}'` })
-      .resolves([]);
+    // For 1GP packages, queryPackage2Version returns empty array, which means no Package2Version found.
+    queryPackage2VersionStub.withArgs(connection, existenceQuery(packageVersionId1GP)).resolves([]);
+    // The SubscriberPackageVersion exists globally, so this resolves to "not in this Dev Hub".
+    toolingQueryStub.resolves({ records: [{ Id: packageVersionId1GP }], done: true, totalSize: 1 });
 
     try {
       await Package.downloadPackageVersionMetadata(project, downloadOptions1GP, connection);
@@ -222,7 +246,38 @@ describe('Package Version Retrieve', () => {
     } catch (e) {
       const error = e as SfError;
       expect(error.message).to.equal(
-        "Can't retrieve package metadata. To use this feature, you must first assign yourself the DownloadPackageVersionZips user permission. Then retry retrieving your package metadata."
+        "Can't retrieve package metadata. Package version 04txx00000000001gp isn't accessible from this Dev Hub org. You can only retrieve package metadata from the Dev Hub that created the package version. Verify that you specified the correct target Dev Hub."
+      );
+    }
+  });
+
+  it('should throw packageVersionNotFound when no Package2Version row exists and the 04t is unknown', async () => {
+    queryPackage2VersionStub.withArgs(connection, existenceQuery(packageVersionId1GP)).resolves([]);
+    // No SubscriberPackageVersion either => the 04t doesn't exist anywhere.
+    toolingQueryStub.resolves({ records: [], done: true, totalSize: 0 });
+
+    try {
+      await Package.downloadPackageVersionMetadata(project, downloadOptions1GP, connection);
+      assert.fail('Expected test execution to raise an error');
+    } catch (e) {
+      const error = e as SfError;
+      expect(error.message).to.equal(
+        "Can't retrieve package metadata. We can't find the package version 04txx00000000001gp. Verify that the 04t ID is correct and that the package version exists."
+      );
+    }
+  });
+
+  it('should throw packageVersionNotInDevHub when no Package2Version row exists but the SubscriberPackageVersion does', async () => {
+    queryPackage2VersionStub.withArgs(connection, existenceQuery(packageVersionId2GP)).resolves([]);
+    toolingQueryStub.resolves({ records: [{ Id: packageVersionId2GP }], done: true, totalSize: 1 });
+
+    try {
+      await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
+      assert.fail('Expected test execution to raise an error');
+    } catch (e) {
+      const error = e as SfError;
+      expect(error.message).to.equal(
+        "Can't retrieve package metadata. Package version 04txx00000000002gp isn't accessible from this Dev Hub org. You can only retrieve package metadata from the Dev Hub that created the package version. Verify that you specified the correct target Dev Hub."
       );
     }
   });
@@ -325,7 +380,7 @@ describe('Package Version Retrieve', () => {
   it('should throw the native-2GP "unretrievable dev zip" error when ZipTreeContainer is empty and ConvertedFromVersionId is unset', async () => {
     $$.SANDBOX.stub(ZipTreeContainer, 'create').rejects(new Error('data length = 0'));
     queryPackage2VersionStub
-      .withArgs(connection, { whereClause: `WHERE SubscriberPackageVersionId = '${packageVersionId2GP}'` })
+      .withArgs(connection, existenceQuery(packageVersionId2GP))
       .resolves([{ ...mockPackage2Version, ConvertedFromVersionId: '' }]);
 
     try {
@@ -343,7 +398,7 @@ describe('Package Version Retrieve', () => {
   it('should throw the converted-2GP "unretrievable dev zip" error when ZipTreeContainer is empty and ConvertedFromVersionId is set', async () => {
     $$.SANDBOX.stub(ZipTreeContainer, 'create').rejects(new Error('data length = 0'));
     queryPackage2VersionStub
-      .withArgs(connection, { whereClause: `WHERE SubscriberPackageVersionId = '${packageVersionId2GP}'` })
+      .withArgs(connection, existenceQuery(packageVersionId2GP))
       .resolves([{ ...mockPackage2Version, ConvertedFromVersionId: '04txx0000004HwAAAU' }]);
 
     try {
@@ -358,16 +413,11 @@ describe('Package Version Retrieve', () => {
     }
   });
 
-  it('should fail if the DeveloperUsePkgZip field is inaccessible to the user', async () => {
-    // Mock Package2Version without DeveloperUsePkgZip field to simulate field access issue
+  it('should fail if the DeveloperUsePkgZip field value is empty for the user', async () => {
+    // Row exists, but the download URL comes back empty: the user lacks the permission.
     queryPackage2VersionStub
-      .withArgs(connection, { whereClause: `WHERE SubscriberPackageVersionId = '${packageVersionId2GP}'` })
-      .resolves([
-        {
-          ...mockPackage2Version,
-          DeveloperUsePkgZip: undefined, // This will cause the error
-        },
-      ]);
+      .withArgs(connection, zipUrlQuery(packageVersionId2GP))
+      .resolves([{ DeveloperUsePkgZip: undefined }]);
 
     try {
       await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
@@ -378,5 +428,37 @@ describe('Package Version Retrieve', () => {
         "Can't retrieve package metadata. To use this feature, you must first assign yourself the DownloadPackageVersionZips user permission. Then retry retrieving your package metadata."
       );
     }
+  });
+
+  it('should fail if the DeveloperUsePkgZip column is not selectable for the user (No such column)', async () => {
+    // Selecting the gated column throws "No such column"; that must still surface the perm message.
+    queryPackage2VersionStub
+      .withArgs(connection, zipUrlQuery(packageVersionId2GP))
+      .rejects(new Error("No such column 'DeveloperUsePkgZip' on entity 'Package2Version'."));
+
+    try {
+      await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
+      assert.fail('Expected test execution to raise an error');
+    } catch (e) {
+      const error = e as SfError;
+      expect(error.message).to.equal(
+        "Can't retrieve package metadata. To use this feature, you must first assign yourself the DownloadPackageVersionZips user permission. Then retry retrieving your package metadata."
+      );
+    }
+  });
+
+  it('should select only the minimal fields (never the permission-gated DeveloperUsePkgZip) in the existence/disambiguation query', async () => {
+    await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
+    const existenceCall = queryPackage2VersionStub.getCalls().find((call) => {
+      const opts = call.args[1] as { whereClause?: string; fields?: readonly string[] } | undefined;
+      return (
+        opts?.whereClause === `WHERE SubscriberPackageVersionId = '${packageVersionId2GP}'` && !isZipUrlFetch(opts)
+      );
+    });
+    expect(existenceCall, 'expected an existence query call').to.not.be.undefined;
+    const existenceOpts = existenceCall?.args[1] as { fields?: readonly string[] } | undefined;
+    // Must select only the columns this flow reads, never the permission-gated DeveloperUsePkgZip.
+    expect(existenceOpts?.fields).to.deep.equal(['Package2Id', 'ConvertedFromVersionId']);
+    expect(existenceOpts?.fields).to.not.include('DeveloperUsePkgZip');
   });
 });
