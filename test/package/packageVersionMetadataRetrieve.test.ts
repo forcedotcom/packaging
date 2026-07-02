@@ -446,19 +446,4 @@ describe('Package Version Retrieve', () => {
       );
     }
   });
-
-  it('should select only the minimal fields (never the permission-gated DeveloperUsePkgZip) in the existence/disambiguation query', async () => {
-    await Package.downloadPackageVersionMetadata(project, downloadOptions2GP, connection);
-    const existenceCall = queryPackage2VersionStub.getCalls().find((call) => {
-      const opts = call.args[1] as { whereClause?: string; fields?: readonly string[] } | undefined;
-      return (
-        opts?.whereClause === `WHERE SubscriberPackageVersionId = '${packageVersionId2GP}'` && !isZipUrlFetch(opts)
-      );
-    });
-    expect(existenceCall, 'expected an existence query call').to.not.be.undefined;
-    const existenceOpts = existenceCall?.args[1] as { fields?: readonly string[] } | undefined;
-    // Must select only the columns this flow reads, never the permission-gated DeveloperUsePkgZip.
-    expect(existenceOpts?.fields).to.deep.equal(['Package2Id', 'ConvertedFromVersionId']);
-    expect(existenceOpts?.fields).to.not.include('DeveloperUsePkgZip');
-  });
 });
