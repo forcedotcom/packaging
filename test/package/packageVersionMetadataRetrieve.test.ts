@@ -25,6 +25,20 @@ import { Package } from '../../src/package/package';
 import { PackageVersion } from '../../src/package/packageVersion';
 import { PackageType } from '../../src/interfaces/packagingInterfacesAndType';
 
+// The retrieve flow issues two distinct queryPackage2Version calls that share a whereClause but
+// differ by their selected fields: a disambiguation query (non-gated columns) and a separate fetch
+// of the permission-gated DeveloperUsePkgZip URL. Match each by its field list.
+const disambiguationQuery = (subscriberPackageVersionId: string): sinon.SinonMatcher =>
+  sinon.match({
+    whereClause: `WHERE SubscriberPackageVersionId = '${subscriberPackageVersionId}'`,
+    fields: ['Package2Id', 'ConvertedFromVersionId'],
+  });
+const zipUrlQuery = (subscriberPackageVersionId: string): sinon.SinonMatcher =>
+  sinon.match({
+    whereClause: `WHERE SubscriberPackageVersionId = '${subscriberPackageVersionId}'`,
+    fields: ['DeveloperUsePkgZip'],
+  });
+
 describe('Package Version Retrieve', () => {
   const $$ = instantiateContext();
   const testOrg = new MockTestOrgData();
@@ -113,21 +127,6 @@ describe('Package Version Retrieve', () => {
   let getPackageDataStub: sinon.SinonStub;
   let toolingQueryStub: sinon.SinonStub;
 
-  // The retrieve flow issues two Package2Version queries: an existence query and a separate
-  // DeveloperUsePkgZip fetch. These matchers let tests control each independently.
-  const isZipUrlFetch = (opts?: { fields?: readonly string[] }): boolean =>
-    Array.isArray(opts?.fields) && opts?.fields.length === 1 && opts?.fields[0] === 'DeveloperUsePkgZip';
-  const existenceQuery = (id: string): sinon.SinonMatcher =>
-    sinon.match(
-      (opts: { whereClause?: string; fields?: readonly string[] }) =>
-        opts?.whereClause === `WHERE SubscriberPackageVersionId = '${id}'` && !isZipUrlFetch(opts)
-    );
-  const zipUrlQuery = (id: string): sinon.SinonMatcher =>
-    sinon.match(
-      (opts: { whereClause?: string; fields?: readonly string[] }) =>
-        opts?.whereClause === `WHERE SubscriberPackageVersionId = '${id}'` && isZipUrlFetch(opts)
-    );
-
   beforeEach(async () => {
     $$.inProject(true);
     project = SfProject.getInstance();
@@ -155,12 +154,7 @@ describe('Package Version Retrieve', () => {
     toolingQueryStub.resolves({ records: [{ Id: packageVersionId2GP }], done: true, totalSize: 1 });
 
     queryPackage2VersionStub = $$.SANDBOX.stub(PackageVersion, 'queryPackage2Version');
-    // Existence/disambiguation query (DeveloperUsePkgZip excluded) returns the row.
-    queryPackage2VersionStub.withArgs(connection, existenceQuery(packageVersionId2GP)).resolves([mockPackage2Version]);
-    // Targeted DeveloperUsePkgZip fetch returns the download URL.
-    queryPackage2VersionStub
-      .withArgs(connection, zipUrlQuery(packageVersionId2GP))
-      .resolves([{ DeveloperUsePkgZip: metadataZipURL2GP }]);
+    queryPackage2VersionStub.resolves([mockPackage2Version]);
 
     $$.SANDBOX.stub(packageUtils, 'generatePackageAliasEntry').resolves([
       `${packageName}@0.1.0-1-main`,
@@ -236,7 +230,7 @@ describe('Package Version Retrieve', () => {
 
   it('should not add a packageDirectory entry to sfdx-project.json after retrieving a managed 1GP version', async () => {
     // For 1GP packages, queryPackage2Version returns empty array, which means no Package2Version found.
-    queryPackage2VersionStub.withArgs(connection, existenceQuery(packageVersionId1GP)).resolves([]);
+    queryPackage2VersionStub.withArgs(connection, disambiguationQuery(packageVersionId1GP)).resolves([]);
     // The SubscriberPackageVersion exists globally, so this resolves to "not in this Dev Hub".
     toolingQueryStub.resolves({ records: [{ Id: packageVersionId1GP }], done: true, totalSize: 1 });
 
@@ -252,7 +246,7 @@ describe('Package Version Retrieve', () => {
   });
 
   it('should throw packageVersionNotFound when no Package2Version row exists and the 04t is unknown', async () => {
-    queryPackage2VersionStub.withArgs(connection, existenceQuery(packageVersionId1GP)).resolves([]);
+    queryPackage2VersionStub.withArgs(connection, disambiguationQuery(packageVersionId1GP)).resolves([]);
     // No SubscriberPackageVersion either => the 04t doesn't exist anywhere.
     toolingQueryStub.resolves({ records: [], done: true, totalSize: 0 });
 
@@ -268,7 +262,7 @@ describe('Package Version Retrieve', () => {
   });
 
   it('should throw packageVersionNotInDevHub when no Package2Version row exists but the SubscriberPackageVersion does', async () => {
-    queryPackage2VersionStub.withArgs(connection, existenceQuery(packageVersionId2GP)).resolves([]);
+    queryPackage2VersionStub.withArgs(connection, disambiguationQuery(packageVersionId2GP)).resolves([]);
     toolingQueryStub.resolves({ records: [{ Id: packageVersionId2GP }], done: true, totalSize: 1 });
 
     try {
@@ -380,7 +374,7 @@ describe('Package Version Retrieve', () => {
   it('should throw the native-2GP "unretrievable dev zip" error when ZipTreeContainer is empty and ConvertedFromVersionId is unset', async () => {
     $$.SANDBOX.stub(ZipTreeContainer, 'create').rejects(new Error('data length = 0'));
     queryPackage2VersionStub
-      .withArgs(connection, existenceQuery(packageVersionId2GP))
+      .withArgs(connection, disambiguationQuery(packageVersionId2GP))
       .resolves([{ ...mockPackage2Version, ConvertedFromVersionId: '' }]);
 
     try {
@@ -398,7 +392,7 @@ describe('Package Version Retrieve', () => {
   it('should throw the converted-2GP "unretrievable dev zip" error when ZipTreeContainer is empty and ConvertedFromVersionId is set', async () => {
     $$.SANDBOX.stub(ZipTreeContainer, 'create').rejects(new Error('data length = 0'));
     queryPackage2VersionStub
-      .withArgs(connection, existenceQuery(packageVersionId2GP))
+      .withArgs(connection, disambiguationQuery(packageVersionId2GP))
       .resolves([{ ...mockPackage2Version, ConvertedFromVersionId: '04txx0000004HwAAAU' }]);
 
     try {
@@ -414,7 +408,7 @@ describe('Package Version Retrieve', () => {
   });
 
   it('should fail if the DeveloperUsePkgZip field value is empty for the user', async () => {
-    // Row exists, but the download URL comes back empty: the user lacks the permission.
+    // Row exists (disambiguation succeeds), but the gated URL query comes back empty: no permission.
     queryPackage2VersionStub
       .withArgs(connection, zipUrlQuery(packageVersionId2GP))
       .resolves([{ DeveloperUsePkgZip: undefined }]);
