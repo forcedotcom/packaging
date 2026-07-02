@@ -19,11 +19,15 @@ import { Connection, Logger, Messages, SfProject } from '@salesforce/core';
 import { ComponentSet, MetadataConverter, ZipTreeContainer } from '@salesforce/source-deploy-retrieve';
 import { env } from '@salesforce/kit';
 import { PackageDir } from '@salesforce/schemas';
-import { PackageVersionMetadataDownloadOptions, PackageVersionMetadataDownloadResult } from '../interfaces';
+import {
+  PackageVersionMetadataDownloadOptions,
+  PackageVersionMetadataDownloadResult,
+  PackagingSObjects,
+} from '../interfaces';
 import { generatePackageAliasEntry, isPackageDirectoryEffectivelyEmpty } from '../utils/packageUtils';
 import { createPackageDirEntry } from './packageCreate';
 import { Package } from './package';
-import { PackageVersion } from './packageVersion';
+import { PackageVersion, Package2VersionFieldTypes } from './packageVersion';
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package');
@@ -56,33 +60,16 @@ export async function retrievePackageVersionMetadata(
     throw messages.createError('sourcesDownloadDirectoryNotEmpty');
   }
 
-  // Get the DeveloperUsePkgZip URL from the Package2Version record
+  // Resolve an alias to the underlying 04t if one was passed.
   const subscriberPackageVersionId =
     project.getPackageIdFromAlias(options.subscriberPackageVersionId) ?? options.subscriberPackageVersionId;
 
-  // Query Package2Version to get the record by SubscriberPackageVersionId
-  const queryOptions = {
-    whereClause: `WHERE SubscriberPackageVersionId = '${subscriberPackageVersionId}'`,
-  };
-  let versionInfo;
-  try {
-    [versionInfo] = await PackageVersion.queryPackage2Version(connection, queryOptions);
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    if (msg.includes("No such column 'DeveloperUsePkgZip' on entity 'Package2Version'")) {
-      throw messages.createError('developerUsePkgZipFieldUnavailable');
-    }
-    if (msg.includes("sObject type 'Package2Version' is not supported.")) {
-      throw messages.createError('packagingNotEnabledOnOrg');
-    }
-    throw e;
-  }
+  const versionInfo = await resolvePackage2Version(connection, subscriberPackageVersionId);
 
-  if (!versionInfo?.DeveloperUsePkgZip) {
-    throw messages.createError('developerUsePkgZipFieldUnavailable');
-  }
+  // The package version exists in this Dev Hub, so now we fetch the download URL.
+  const developerUsePkgZipUrl = await fetchDeveloperUsePkgZipUrl(connection, subscriberPackageVersionId);
 
-  const responseBase64 = await connection.tooling.request<string>(versionInfo.DeveloperUsePkgZip, {
+  const responseBase64 = await connection.tooling.request<string>(developerUsePkgZipUrl, {
     encoding: 'base64',
   });
   const buffer = Buffer.from(responseBase64, 'base64');
@@ -230,5 +217,91 @@ async function attemptToUpdateProjectJson(
     logger.error(
       `Encountered error trying to update sfdx-project.json after retrieving package version metadata: ${msg as string}`
     );
+  }
+}
+
+/**
+ * Query the Package2Version record for the given 04t, mapping a missing row to the right error: no
+ * packaging support on the org, not found anywhere, or found but not in this Dev Hub. Selects only
+ * columns any authenticated user can read, so the query always succeeds; selecting DeveloperUsePkgZip
+ * here (which requires the DownloadPackageVersionZips permission) would throw "No such column" for a
+ * user without that permission and mask those cases as a permission problem.
+ */
+async function resolvePackage2Version(
+  connection: Connection,
+  subscriberPackageVersionId: string
+): Promise<PackagingSObjects.Package2Version> {
+  const queryOptions = {
+    whereClause: `WHERE SubscriberPackageVersionId = '${subscriberPackageVersionId}'`,
+    fields: ['Package2Id', 'ConvertedFromVersionId'] as Package2VersionFieldTypes,
+  };
+  let versionInfo;
+  try {
+    [versionInfo] = await PackageVersion.queryPackage2Version(connection, queryOptions);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("sObject type 'Package2Version' is not supported.")) {
+      throw messages.createError('packagingNotEnabledOnOrg');
+    }
+    throw e;
+  }
+
+  // No Package2Version row in this Dev Hub. Use SubscriberPackageVersion, a global view any
+  // authenticated user can query, to tell "doesn't exist anywhere" from "exists but not here".
+  if (!versionInfo) {
+    const exists = await subscriberPackageVersionExists(connection, subscriberPackageVersionId);
+    throw messages.createError(exists ? 'packageVersionNotInDevHub' : 'packageVersionNotFound', [
+      subscriberPackageVersionId,
+    ]);
+  }
+
+  return versionInfo;
+}
+
+/**
+ * Fetch the DeveloperUsePkgZip download URL for a Package2Version row already confirmed to exist in
+ * this Dev Hub. Reading this column requires the DownloadPackageVersionZips permission, so once the
+ * row is known to exist, both a "No such column" error and a null value reliably mean the user lacks
+ * that permission.
+ */
+async function fetchDeveloperUsePkgZipUrl(connection: Connection, subscriberPackageVersionId: string): Promise<string> {
+  const queryOptions = {
+    whereClause: `WHERE SubscriberPackageVersionId = '${subscriberPackageVersionId}'`,
+    fields: ['DeveloperUsePkgZip'] as Package2VersionFieldTypes,
+  };
+  let versionInfo;
+  try {
+    [versionInfo] = await PackageVersion.queryPackage2Version(connection, queryOptions);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("No such column 'DeveloperUsePkgZip' on entity 'Package2Version'")) {
+      throw messages.createError('developerUsePkgZipFieldUnavailable');
+    }
+    throw e;
+  }
+
+  if (!versionInfo?.DeveloperUsePkgZip) {
+    throw messages.createError('developerUsePkgZipFieldUnavailable');
+  }
+
+  return versionInfo.DeveloperUsePkgZip;
+}
+
+/**
+ * True if a SubscriberPackageVersion with this 04t ID exists anywhere. That global view is
+ * queryable by any authenticated user, so it tells "not found" apart from "not in this Dev Hub".
+ */
+async function subscriberPackageVersionExists(
+  connection: Connection,
+  subscriberPackageVersionId: string
+): Promise<boolean> {
+  try {
+    const result = await connection.tooling.query<{ Id: string }>(
+      `SELECT Id FROM SubscriberPackageVersion WHERE Id = '${subscriberPackageVersionId}' LIMIT 1`
+    );
+    return (result.records?.length ?? 0) > 0;
+  } catch {
+    // If even the existence probe fails (malformed ID, etc.), fall back to "not found".
+    return false;
   }
 }
