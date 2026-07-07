@@ -261,6 +261,26 @@ describe('Package Version Retrieve', () => {
     }
   });
 
+  it('should throw packageVersionNotFound for a malformed 04t without querying', async () => {
+    const malformedId = '04tinvalid';
+
+    try {
+      await Package.downloadPackageVersionMetadata(
+        project,
+        { subscriberPackageVersionId: malformedId, destinationFolder },
+        connection
+      );
+      assert.fail('Expected test execution to raise an error');
+    } catch (e) {
+      const error = e as SfError;
+      expect(error.message).to.equal(
+        "Can't retrieve package metadata. We can't find the package version 04tinvalid. Verify that the 04t ID is correct and that the package version exists."
+      );
+      // The malformed ID must be rejected before any SOQL is issued, so no raw error can leak.
+      expect(queryPackage2VersionStub.called).to.equal(false);
+    }
+  });
+
   it('should throw packageVersionNotInDevHub when no Package2Version row exists but the SubscriberPackageVersion does', async () => {
     queryPackage2VersionStub.withArgs(connection, disambiguationQuery(packageVersionId2GP)).resolves([]);
     toolingQueryStub.resolves({ records: [{ Id: packageVersionId2GP }], done: true, totalSize: 1 });

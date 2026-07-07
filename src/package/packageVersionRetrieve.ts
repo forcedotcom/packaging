@@ -24,7 +24,12 @@ import {
   PackageVersionMetadataDownloadResult,
   PackagingSObjects,
 } from '../interfaces';
-import { generatePackageAliasEntry, isPackageDirectoryEffectivelyEmpty } from '../utils/packageUtils';
+import {
+  BY_LABEL,
+  generatePackageAliasEntry,
+  isPackageDirectoryEffectivelyEmpty,
+  validateIdNoThrow,
+} from '../utils/packageUtils';
 import { createPackageDirEntry } from './packageCreate';
 import { Package } from './package';
 import { PackageVersion, Package2VersionFieldTypes } from './packageVersion';
@@ -226,11 +231,18 @@ async function attemptToUpdateProjectJson(
  * columns any authenticated user can read, so the query always succeeds; selecting DeveloperUsePkgZip
  * here (which requires the DownloadPackageVersionZips permission) would throw "No such column" for a
  * user without that permission and mask those cases as a permission problem.
+ *
+ * Rejects a syntactically invalid 04t up front so it maps to packageVersionNotFound rather than
+ * leaking a raw "invalid ID field" SOQL error from the interpolated where clause.
  */
 async function resolvePackage2Version(
   connection: Connection,
   subscriberPackageVersionId: string
 ): Promise<PackagingSObjects.Package2Version> {
+  if (!validateIdNoThrow(BY_LABEL.SUBSCRIBER_PACKAGE_VERSION_ID, subscriberPackageVersionId)) {
+    throw messages.createError('packageVersionNotFound', [subscriberPackageVersionId]);
+  }
+
   const queryOptions = {
     whereClause: `WHERE SubscriberPackageVersionId = '${subscriberPackageVersionId}'`,
     fields: ['Package2Id', 'ConvertedFromVersionId'] as Package2VersionFieldTypes,
