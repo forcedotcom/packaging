@@ -38,6 +38,14 @@ Can't retrieve package version metadata. The specified directory must be relativ
 
 Can't retrieve package metadata. To use this feature, you must first assign yourself the DownloadPackageVersionZips user permission. Then retry retrieving your package metadata.
 
+# packageVersionNotFound
+
+Can't retrieve package metadata. We can't find the package version %s. Verify that the 04t ID is correct and that the package version exists.
+
+# packageVersionNotInDevHub
+
+Can't retrieve package metadata. Package version %s isn't accessible from this Dev Hub org. You can only retrieve package metadata from the Dev Hub that created the package version. Verify that you specified the correct target Dev Hub.
+
 # downloadDeveloperPackageZipHasNoDataNative2GP
 
 Can't retrieve package metadata. The developer package zip for this native 2GP package version is unretrievable. To resolve, create a new package version with the --generate-pkg-zip flag. Then retry retrieving your package metadata.
