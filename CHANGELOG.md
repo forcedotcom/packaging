@@ -1,3 +1,13 @@
+## [4.27.1](https://github.com/forcedotcom/packaging/compare/4.27.0...4.27.1) (2026-07-07)
+
+
+### Bug Fixes
+
+* map malformed 04t to packageVersionNotFound (@W-23089623@) ([968d413](https://github.com/forcedotcom/packaging/commit/968d413c77c7150109d6ce84a6468891cb10116c))
+* support new package version retrieve error messages (@W-23089623@) ([ec98ad3](https://github.com/forcedotcom/packaging/commit/ec98ad3b8add68c74da38a468c361289b0155ce5))
+
+
+
 # [4.27.0](https://github.com/forcedotcom/packaging/compare/4.26.5...4.27.0) (2026-06-30)
 
 
