@@ -1,3 +1,12 @@
+## [4.27.3](https://github.com/forcedotcom/packaging/compare/4.27.2...4.27.3) (2026-07-16)
+
+
+### Bug Fixes
+
+* **deps:** bump websocket-driver from 0.7.4 to 0.7.5 ([732b99c](https://github.com/forcedotcom/packaging/commit/732b99c0c8654bf037958c8cfe61e25c65e15704))
+
+
+
 ## [4.27.2](https://github.com/forcedotcom/packaging/compare/4.27.1...4.27.2) (2026-07-11)
 
 
