@@ -395,6 +395,57 @@ describe('Package Version Create', () => {
     expect(result).to.have.all.keys(expectedKeys);
   });
 
+  it('should fall back to null branch when --branch is set but dependency has no versions on that branch (LATEST)', async () => {
+    packageTypeQuery.restore();
+
+    const config = project.getSfProjectJson().getContents();
+    if (isDirWithDependencies(config.packageDirectories[1])) {
+      config.packageDirectories[1].dependencies[0].package = 'DEP';
+      config.packageDirectories[1].dependencies[0].versionNumber = '0.1.0.LATEST';
+    }
+    project.getSfProjectJson().set('packageDirectories', config.packageDirectories);
+    await project.getSfProjectJson().write();
+
+    // route tooling queries based on query content
+    // @ts-ignore - returning simplified promise instead of full Query type
+    packageTypeQuery = $$.SANDBOX.stub(connection.tooling, 'query').callsFake((query: string) => {
+      if (query.includes('ContainerOptions FROM Package2')) {
+        return Promise.resolve({ records: [{ ContainerOptions: 'Unlocked' }] });
+      }
+      if (query.includes('SELECT Id FROM Package2 WHERE')) {
+        return Promise.resolve({ records: [{ Id: '0Ho4J000000TNmPXXX' }] });
+      }
+      if (query.includes('MAX(BuildNumber)') && query.includes("Branch = 'feature-x'")) {
+        // no versions on the branch -> triggers fallback
+        return Promise.resolve({ records: [{ expr0: null }] });
+      }
+      if (query.includes('MAX(BuildNumber)') && query.includes('Branch = null')) {
+        // fallback: resolve from null branch
+        return Promise.resolve({ records: [{ expr0: 5 }] });
+      }
+      if (query.includes('SubscriberPackageVersionId')) {
+        return Promise.resolve({ records: [{ SubscriberPackageVersionId: '04t000000000001AAA' }] });
+      }
+      // default for any other query (e.g., ancestor)
+      return Promise.resolve({ records: [{ Id: '05i3i000000Gmj6XXX' }] });
+    });
+
+    const pvc = new PackageVersionCreate({
+      connection,
+      project,
+      branch: 'feature-x',
+      packageId,
+      skipancestorcheck: true,
+    });
+    stubConvert();
+
+    const result = await pvc.createPackageVersion();
+
+    // the package version create request should use 'feature-x' for the target package
+    expect(packageCreateStub.firstCall.args[1].Branch).to.equal('feature-x');
+    expect(result).to.have.all.keys(expectedKeys);
+  });
+
   it('should create the package version create request with language and API version >= 57.0', async () => {
     $$.SANDBOX.stub(connection, 'getApiVersion').returns('57.0');
     const pvc = new PackageVersionCreate({ connection, project, language: 'en_US', packageId });
