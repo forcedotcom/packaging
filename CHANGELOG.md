@@ -1,3 +1,12 @@
+## [4.27.4](https://github.com/forcedotcom/packaging/compare/4.27.3...4.27.4) (2026-07-24)
+
+
+### Bug Fixes
+
+* **deps:** bump linkify-it from 5.0.0 to 5.0.2 ([6e4a9cf](https://github.com/forcedotcom/packaging/commit/6e4a9cf2e5e13d5e3ba2e7278f784e4d5ce5a3b2))
+
+
+
 ## [4.27.3](https://github.com/forcedotcom/packaging/compare/4.27.2...4.27.3) (2026-07-16)
 
 
