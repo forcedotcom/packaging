@@ -125,7 +125,31 @@ export class PackageVersionCreate {
     const branchString = !branch ? 'null' : `'${branch}'`;
 
     // resolve a build number keyword to an actual number, if needed
-    const resolvedBuildNumber = await this.resolveBuildNumber(versionNumber, dependency.packageId, branch);
+    let resolvedBuildNumber: string;
+    let effectiveBranchString = branchString;
+    try {
+      resolvedBuildNumber = await this.resolveBuildNumber(versionNumber, dependency.packageId, branch);
+    } catch (e) {
+      // when --branch was inherited (not set on the dependency itself) and LATEST resolution fails
+      // specifically because no version exists on that branch, fall back to null branch
+      if (
+        e instanceof Error &&
+        e.name === 'NoReleaseVersionFoundForBranchError' &&
+        dependency.branch === undefined &&
+        this.options.branch &&
+        buildNumber === BuildNumberToken.LATEST_BUILD_NUMBER_TOKEN
+      ) {
+        this.logger.info(
+          `Dependency ${dependency.package ?? dependency.packageId} has no versions on branch '${String(
+            branch
+          )}'. Falling back to unscoped (no branch) resolution.`
+        );
+        effectiveBranchString = 'null';
+        resolvedBuildNumber = await this.resolveBuildNumber(versionNumber, dependency.packageId, undefined);
+      } else {
+        throw e;
+      }
+    }
 
     // now that we have a full build number, query for the associated 04t.
     // because the build number may not be unique across versions, add in conditionals for
@@ -133,14 +157,14 @@ export class PackageVersionCreate {
     const branchOrReleasedCondition =
       buildNumber === BuildNumberToken.RELEASED_BUILD_NUMBER_TOKEN
         ? 'AND IsReleased = true'
-        : `AND Branch = ${branchString}`;
+        : `AND Branch = ${effectiveBranchString}`;
     const query = `SELECT SubscriberPackageVersionId FROM Package2Version WHERE Package2Id = '${dependency.packageId}' AND MajorVersion = ${versionNumber.major} AND MinorVersion = ${versionNumber.minor} AND PatchVersion = ${versionNumber.patch} AND BuildNumber = ${resolvedBuildNumber} ${branchOrReleasedCondition}`;
     const pkgVerQueryResult = await this.connection.tooling.query<PackagingSObjects.Package2Version>(query);
     const subRecords = pkgVerQueryResult.records;
     if (!subRecords || subRecords.length !== 1) {
       throw messages.createError('versionNumberNotFoundInDevHub', [
         dependency.packageId,
-        branchString,
+        effectiveBranchString,
         versionNumber.toString(),
         resolvedBuildNumber,
       ]);
@@ -155,7 +179,7 @@ export class PackageVersionCreate {
           messages.getMessage('buildNumberResolvedForLatest', [
             dependency.package,
             versionNumber.toString(),
-            branchString,
+            effectiveBranchString,
             dependency.subscriberPackageVersionId,
           ])
         );
