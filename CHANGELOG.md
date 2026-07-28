@@ -1,3 +1,12 @@
+## [4.27.7](https://github.com/forcedotcom/packaging/compare/4.27.6...4.27.7) (2026-07-28)
+
+
+### Bug Fixes
+
+* stop scoping LATEST dependency resolution to --branch flag @W-21617695@ ([081e13f](https://github.com/forcedotcom/packaging/commit/081e13f18fa2118dcd03a8450c83d6199d687033))
+
+
+
 ## [4.27.6](https://github.com/forcedotcom/packaging/compare/4.27.5...4.27.6) (2026-07-24)
 
 
