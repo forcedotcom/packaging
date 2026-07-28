@@ -3,6 +3,7 @@
   "compilerOptions": {
     "baseUrl": "..",
     "resolveJsonModule": true,
+    "skipLibCheck": true,
     "paths": {
       "@salesforce/kit": ["node_modules/@salesforce/kit"]
     },

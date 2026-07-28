@@ -43,10 +43,10 @@
   ],
   "dependencies": {
     "@jsforce/jsforce-node": "^3.10.18",
-    "@salesforce/core": "^8.31.4",
+    "@salesforce/core": "^8.32.6",
     "@salesforce/kit": "^3.2.6",
     "@salesforce/schemas": "^1.10.3",
-    "@salesforce/source-deploy-retrieve": "^12.36.7",
+    "@salesforce/source-deploy-retrieve": "^12.37.2",
     "@salesforce/ts-types": "^2.0.12",
     "@salesforce/types": "^1.8.0",
     "fast-xml-parser": "^5.10.1",
