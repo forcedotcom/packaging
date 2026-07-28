@@ -1,3 +1,7 @@
+## [4.27.8](https://github.com/forcedotcom/packaging/compare/4.27.7...4.27.8) (2026-07-28)
+
+
+
 ## [4.27.7](https://github.com/forcedotcom/packaging/compare/4.27.6...4.27.7) (2026-07-28)
 
 
