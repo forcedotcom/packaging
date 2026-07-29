@@ -42,7 +42,7 @@
     "!lib/**/*.map"
   ],
   "dependencies": {
-    "@jsforce/jsforce-node": "^3.10.18",
+    "@jsforce/jsforce-node": "^3.10.19",
     "@salesforce/core": "^9.0.0",
     "@salesforce/kit": "^4.0.0",
     "@salesforce/schemas": "^1.10.3",
