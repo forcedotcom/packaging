@@ -1,3 +1,21 @@
+# [5.0.0](https://github.com/forcedotcom/packaging/compare/4.27.8...5.0.0) (2026-07-29)
+
+
+* feat!: require Node >=22, drop EOL Node versions (#903) @W-23480655@ ([c9e2868](https://github.com/forcedotcom/packaging/commit/c9e286815c3af702fd4d1ec3d4f1655174778ec4)), closes [#903](https://github.com/forcedotcom/packaging/issues/903)
+
+
+### BREAKING CHANGES
+
+* engines.node raised to >=22.0.0, dropping support for Node 18 and 20
+
+- engines.node bumped to >=22.0.0
+- @salesforce/core bumped to ^9.0.0
+- @salesforce/kit bumped to ^4.0.0
+- @salesforce/ts-types bumped to ^3.0.0
+- @salesforce/source-deploy-retrieve bumped to ^13.0.0
+
+
+
 ## [4.27.8](https://github.com/forcedotcom/packaging/compare/4.27.7...4.27.8) (2026-07-28)
 
 
