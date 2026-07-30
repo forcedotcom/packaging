@@ -1,3 +1,12 @@
+## [5.0.1](https://github.com/forcedotcom/packaging/compare/5.0.0...5.0.1) (2026-07-30)
+
+
+### Bug Fixes
+
+* **deps:** bump @jsforce/jsforce-node from 3.10.18 to 3.10.19 ([d85e801](https://github.com/forcedotcom/packaging/commit/d85e801178c80b2077fcb95fc4a063f9b4defa16))
+
+
+
 # [5.0.0](https://github.com/forcedotcom/packaging/compare/4.27.8...5.0.0) (2026-07-29)
 
 
