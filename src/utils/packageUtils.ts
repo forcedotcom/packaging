@@ -107,13 +107,12 @@ export function validateIdNoThrow(idObj: Many<IdRegistryValue>, value: string): 
 
 // applies actions to common package errors
 // eslint-disable-next-line complexity
-export function applyErrorAction(err: Error & { action?: string }): Error {
-  // append when actions already exist
-  const actions = [];
+export function applyErrorAction(err: Error | SfError): Error {
+  const actions: string[] = [];
 
   // include existing actions
-  if (err.action) {
-    actions.push(err.action);
+  if (err instanceof SfError && err.actions?.length) {
+    actions.push(...err.actions);
   }
 
   // TODO: (need to get with packaging team on this)
@@ -157,7 +156,11 @@ export function applyErrorAction(err: Error & { action?: string }): Error {
   }
 
   if (actions.length > 0) {
-    err['action'] = actions.join('\n');
+    if (err instanceof SfError) {
+      err.actions = actions;
+    } else {
+      (err as SfError).actions = actions;
+    }
   }
 
   return err;

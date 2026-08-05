@@ -19,7 +19,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { assert, expect } from 'chai';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/testSetup';
-import { SfProject } from '@salesforce/core';
+import { SfError, SfProject } from '@salesforce/core';
 import type { SaveError } from '@jsforce/jsforce-node';
 import { Duration } from '@salesforce/kit';
 import JSZIP from 'jszip';
@@ -259,12 +259,19 @@ describe('packageUtils', () => {
 
   describe('applyErrorAction', () => {
     describe('INVALID_TYPE', () => {
-      it('should modify error message if packaging is not enabled', () => {
-        const error = new Error() as Error & { action: string | undefined };
-        error.name = 'INVALID_TYPE';
-        error.message = "sObject type 'Package2Version' is not supported";
-        const result = applyErrorAction(error) as Error & { action: string | undefined };
-        expect(result.action).to.be.include('Packaging is not enabled on this org.');
+      it('should set actions on the error when packaging is not enabled', () => {
+        const error = new SfError("sObject type 'Package2Version' is not supported", 'INVALID_TYPE');
+        const result = applyErrorAction(error) as SfError;
+        expect(result.actions).to.be.an('array');
+        expect(result.actions?.join('\n')).to.include('Packaging is not enabled on this org.');
+      });
+
+      it('should preserve existing actions', () => {
+        const error = new SfError("sObject type 'Package2Version' is not supported", 'INVALID_TYPE');
+        error.actions = ['Existing action'];
+        const result = applyErrorAction(error) as SfError;
+        expect(result.actions).to.include('Existing action');
+        expect(result.actions?.join('\n')).to.include('Packaging is not enabled on this org.');
       });
     });
   });
