@@ -1,3 +1,12 @@
+## [5.0.5](https://github.com/forcedotcom/packaging/compare/5.0.4...5.0.5) (2026-08-05)
+
+
+### Bug Fixes
+
+* use SfError.actions (array) instead of action (string) ([9e38dff](https://github.com/forcedotcom/packaging/commit/9e38dff694b1867614846b762c3bdf3b4cda3fd5))
+
+
+
 ## [5.0.4](https://github.com/forcedotcom/packaging/compare/5.0.3...5.0.4) (2026-08-04)
 
 
