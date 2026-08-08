@@ -47,7 +47,7 @@
     "@salesforce/kit": "^4.0.0",
     "@salesforce/schemas": "^1.10.3",
     "@salesforce/source-deploy-retrieve": "^13.0.1",
-    "@salesforce/ts-types": "^3.0.0",
+    "@salesforce/ts-types": "^3.0.1",
     "@salesforce/types": "^1.8.0",
     "fast-xml-parser": "^5.10.1",
     "globby": "^11",
