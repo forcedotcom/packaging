@@ -1,3 +1,12 @@
+## [5.0.6](https://github.com/forcedotcom/packaging/compare/5.0.5...5.0.6) (2026-08-08)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/source-deploy-retrieve from 13.0.0 to 13.0.1 ([34165c8](https://github.com/forcedotcom/packaging/commit/34165c831dfff23fb57947ed2364b3d68bc4f6ec))
+
+
+
 ## [5.0.5](https://github.com/forcedotcom/packaging/compare/5.0.4...5.0.5) (2026-08-05)
 
 
