@@ -23,7 +23,7 @@ import { PackageUpdateOptions } from '../../src/interfaces';
 
 async function setupProject(setup: (project: SfProject) => void = () => {}) {
   // @ts-ignore
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+   
   const project: SfProject = new SfProject('a');
   const packageDirectories = [
     {

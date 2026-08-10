@@ -78,7 +78,7 @@ export class PackageBundle {
     if (!project) {
       throw new SfError('Project instance is required when deleting package bundle by alias');
     }
-    // eslint-disable-next-line no-param-reassign
+     
     idOrAlias = project.getPackageBundleIdFromAlias(idOrAlias) ?? idOrAlias;
 
     return connection.tooling.sobject('PackageBundle').delete(idOrAlias);

@@ -362,7 +362,7 @@ export class PackageVersion {
           case Package2VersionStatus.success:
             await Lifecycle.getInstance().emit(PackageVersionEvents.create.success, report);
             await new PackageVersion({
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+               
               idOrAlias: report.SubscriberPackageVersionId!,
               project,
               connection,

@@ -46,7 +46,7 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
     this.includeUserLicenses = options.includeUserLicenses ?? false;
   }
 
-  // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-empty-function
+  // eslint-disable-next-line class-methods-use-this
   public async init(): Promise<void> {}
 
   /**

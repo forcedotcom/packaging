@@ -325,7 +325,7 @@ function buildPackageDescriptorJson(args: {
       }
     }
   }
-  return descriptor as PackageDescriptorJson;
+  return descriptor;
 }
 
 async function createRequestObject(
@@ -403,7 +403,7 @@ async function pollForStatusWithInterval(
             // for multiple errors, display one per line prefixed with (x)
             if (results[0].Error.length > 1) {
               results[0].Error.forEach((error) => {
-                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                 
                 errors.push(`(${errors.length + 1}) ${error}`);
               });
               errors.unshift(messages.getMessage('versionCreateFailedWithMultipleErrors'));

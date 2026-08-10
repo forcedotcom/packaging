@@ -75,7 +75,7 @@ describe('packageUtils', () => {
           permissionSets: ['PM_PS_1', ' PM_PS_2 '],
           permissionSetLicenses: ['PM_PSL_1', 'PM_PSL_2'],
         },
-      } as unknown as PackageDescriptorJson;
+      };
 
       const result = resolveBuildUserPermissions(original, true);
 
@@ -99,7 +99,7 @@ describe('packageUtils', () => {
           permissionSets: ['PS1', ' PS2 '],
           permissionSetLicenses: ['LIC1', ' LIC2 '],
         },
-      } as unknown as PackageDescriptorJson;
+      };
 
       const result = resolveBuildUserPermissions(original, true);
       expect(result.permissionSetNames).to.deep.equal(['PS1', 'PS2']);
@@ -118,7 +118,7 @@ describe('packageUtils', () => {
           permissionSets: 'PM1, PM2',
           permissionSetLicenses: 'PML1 , PML2',
         },
-      } as unknown as PackageDescriptorJson;
+      };
 
       const result = resolveBuildUserPermissions(original, false);
 
