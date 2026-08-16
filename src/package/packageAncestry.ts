@@ -349,7 +349,7 @@ export class PackageAncestry extends AsyncCreatable<PackageAncestryOptions> {
   private async buildAncestryTreeFromRoots(roots: PackageAncestryNode[]): Promise<void> {
     while (roots.length > 0) {
       const subscriberPackageVersion = roots.shift();
-      // eslint-disable-next-line no-await-in-loop
+       
       if (subscriberPackageVersion) {
         // eslint-disable-next-line no-await-in-loop
         const descendants = await this.addDescendantsFromPackageVersion(subscriberPackageVersion);

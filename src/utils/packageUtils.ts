@@ -225,7 +225,7 @@ export function escapeInstallationKey(key: string): string {
  * @param packageIds The list of package IDs
  * @param connection For tooling query
  */
-// eslint-disable-next-line @typescript-eslint/require-await
+ 
 export async function getContainerOptions(
   packageIds: string | undefined | Array<string | undefined>,
   connection: Connection
@@ -256,7 +256,7 @@ export async function getContainerOptions(
  * @param subscriberPackageVersionIds
  * @param connection For tooling query
  */
-// eslint-disable-next-line @typescript-eslint/require-await
+ 
 export async function getPackageVersionStrings(
   subscriberPackageVersionIds: string[],
   connection: Connection

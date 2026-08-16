@@ -292,7 +292,7 @@ export class PackageVersionCreate {
         throw messages.createError('noReleaseVersionFoundForBranch', [packageId, branch, versionNumber.toString()]);
       }
     }
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+     
     return `${results.records[0].expr0}`;
   }
 
@@ -1081,7 +1081,7 @@ export const packageXmlStringToPackageXmlJson = (rawXml: string): PackageXml => 
     isArray: (name: string) => ['types', 'members'].includes(name),
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+   
   return (parser.parse(rawXml) as { Package: PackageXml }).Package;
 };
 

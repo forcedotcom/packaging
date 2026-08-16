@@ -157,7 +157,7 @@ export class SubscriberPackageVersion {
   public static async installStatus(
     connection: Connection,
     packageInstallRequestOrId: string | PackagingSObjects.PackageInstallRequest,
-    installationKey?: string | undefined | Nullable<string>,
+    installationKey?: string   | Nullable<string>,
     options?: PackageInstallOptions
   ): Promise<PackagingSObjects.PackageInstallRequest> {
     const id = typeof packageInstallRequestOrId === 'string' ? packageInstallRequestOrId : packageInstallRequestOrId.Id;
