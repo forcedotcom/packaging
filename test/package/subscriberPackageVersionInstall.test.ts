@@ -16,7 +16,7 @@
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/testSetup';
 import { assert, expect } from 'chai';
 import { Connection, Lifecycle, Messages, SfError } from '@salesforce/core';
-import type { QueryResult, SaveResult } from '@jsforce/jsforce-node';
+import type { SaveResult } from '@jsforce/jsforce-node';
 import { Duration } from '@salesforce/kit';
 import {
   isErrorFromSPVQueryRestriction,
@@ -158,12 +158,9 @@ describe('Package Install', () => {
       .resolves(inProgressPIR)
       .onSecondCall()
       .resolves(inProgressPIR);
-    otherQueryStub = $$.SANDBOX.stub(connection.tooling, 'query').resolves(
-      // @ts-expect-error: non-overlapping types
-      subscriberPackageVersion
-    );
+    otherQueryStub = $$.SANDBOX.stub(connection.tooling, 'query').resolves(subscriberPackageVersion);
     const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: undefined });
-     
+
     const result = await pkg.install(pkgInstallCreateRequest);
 
     // verify correct connection.tooling.create() call
@@ -171,14 +168,14 @@ describe('Package Install', () => {
     const createArgs = toolingCreateStub.args[0];
     expect(createArgs[0]).to.equal('PackageInstallRequest');
     const expectedRequest = Object.assign({}, pkgInstallCreateRequest, pkgInstallCreateRequestDefaults);
-     
+
     expect(createArgs[1]).to.deep.equal(expectedRequest);
 
     // verify correct connection.tooling.retrieve() calls
     expect(retrieveStub.calledTwice).to.be.true;
     const retrieveArgs = retrieveStub.args[0];
     expect(retrieveArgs[0]).to.equal('PackageInstallRequest');
-     
+
     expect(retrieveArgs[1]).to.equal('0Hf1h0000006runCAA');
 
     // verify expected return json
@@ -197,7 +194,6 @@ describe('Package Install', () => {
     queryStub.restore();
     otherQueryStub = $$.SANDBOX.stub(connection.tooling, 'query')
       .onFirstCall()
-      // @ts-expect-error: non-overlapping types
       .resolves(subscriberPackageVersion)
       .onSecondCall()
       .resolves({
@@ -226,24 +222,24 @@ describe('Package Install', () => {
       pollingFrequency: Duration.seconds(1),
       pollingTimeout: Duration.seconds(10),
     };
-     
+
     const result = await pkg.install(pkgInstallCreateRequest, installOptions);
 
     expect(toolingCreateStub.calledOnce).to.be.true;
 
     // verify we polled
     expect(retrieveStub.callCount).to.be.equal(4);
-     
+
     expect(lifecycleStub.callCount).to.equal(3);
     expect(lifecycleStub.args[0][0]).to.equal('Package/install-presend');
     const expectedRequest = Object.assign({}, pkgInstallCreateRequest, pkgInstallCreateRequestDefaults);
-     
+
     expect(lifecycleStub.args[0][1]).to.deep.equal(expectedRequest);
     expect(lifecycleStub.args[1][0]).to.equal('Package/install-postsend');
-     
+
     expect(lifecycleStub.args[1][1]).to.deep.equal(pkgInstallRequest);
     expect(lifecycleStub.args[2][0]).to.equal('Package/install-status');
-     
+
     expect(lifecycleStub.args[2][1]).to.deep.equal(pkgInstallResult);
 
     // verify expected return json
@@ -276,7 +272,7 @@ describe('Package Install', () => {
       pollingFrequency: Duration.seconds(1),
       pollingTimeout: Duration.seconds(10),
     };
-     
+
     const result = await pkg.install(pkgInstallCreateRequest, installOptions);
 
     expect(toolingCreateStub.calledOnce).to.be.true;
@@ -285,22 +281,22 @@ describe('Package Install', () => {
 
     // verify we polled
     expect(retrieveStub.callCount).to.be.equal(4);
-     
+
     expect(lifecycleStub.callCount).to.equal(5);
     expect(lifecycleStub.args[0][0]).to.equal('Package/install-subscriber-status');
-     
+
     expect(lifecycleStub.args[0][1]).to.deep.equal('NO_ERRORS_DETECTED');
     expect(lifecycleStub.args[1][0]).to.equal('Package/install-presend');
-     
+
     expect(lifecycleStub.args[1][1]).to.deep.equal(expectedRequest);
     expect(lifecycleStub.args[2][0]).to.equal('Package/install-postsend');
-     
+
     expect(lifecycleStub.args[2][1]).to.deep.equal(pkgInstallRequest);
     expect(lifecycleStub.args[3][0]).to.equal('Package/install-subscriber-status');
-     
+
     expect(lifecycleStub.args[3][1]).to.deep.equal('NO_ERRORS_DETECTED');
     expect(lifecycleStub.args[4][0]).to.equal('Package/install-status');
-     
+
     expect(lifecycleStub.args[4][1]).to.deep.equal(pkgInstallResult);
 
     // verify expected return json
@@ -418,11 +414,11 @@ describe('Package Install', () => {
       .resolves({ ...subscriberPackageVersion.records[0], ...{ RemoteSiteSettings, CspTrustedSites } });
 
     const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: undefined });
-     
+
     const externalSites = await pkg.getExternalSites();
 
     expect(queryStub.calledOnce).to.be.true;
-     
+
     expect(externalSites).to.deep.equal(sites);
   });
 
@@ -434,11 +430,11 @@ describe('Package Install', () => {
       .resolves(subscriberPackageVersion.records[0]);
 
     const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: installKey });
-     
+
     const externalSites = await pkg.getExternalSites();
 
     expect(queryStub.calledOnce).to.be.true;
-     
+
     expect(externalSites).to.be.undefined;
   });
 
@@ -453,7 +449,7 @@ describe('Package Install', () => {
     const overrides = { UpgradeType: 'deprecate-only', ApexCompileType: 'package' };
     const picRequest = Object.assign({}, pkgInstallCreateRequest, overrides);
     const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: undefined });
-     
+
     const result = await pkg.install(picRequest);
 
     // verify correct connection.tooling.create() call
@@ -467,29 +463,29 @@ describe('Package Install', () => {
     );
     delete expectedRequest.UpgradeType;
     delete expectedRequest.ApexCompileType;
-     
+
     expect(createArgs[1]).to.deep.equal(expectedRequest);
 
     // verify correct connection.tooling.retrieve() calls
     expect(retrieveStub.calledTwice).to.be.true;
     const retrieveArgs = retrieveStub.args[0];
     expect(retrieveArgs[0]).to.equal('PackageInstallRequest');
-     
+
     expect(retrieveArgs[1]).to.equal(pkgInstallRequestId);
 
     // verify expected return json
     expect(result).to.deep.equal(inProgressPIR);
 
     // verify all lifecycle events fired
-     
+
     expect(lifecycleStub.callCount).to.equal(4);
     const upgradeTypeWarning = installMsgs.getMessage('upgradeTypeOnlyForUnlockedWarning');
     expect(lifecycleStub.args[0][0]).to.equal('Package/install-warning');
-     
+
     expect(lifecycleStub.args[0][1]).to.equal(upgradeTypeWarning);
     const apexCompileTypeWarning = installMsgs.getMessage('apexCompileOnlyForUnlockedWarning');
     expect(lifecycleStub.args[1][0]).to.equal('Package/install-warning');
-     
+
     expect(lifecycleStub.args[1][1]).to.equal(apexCompileTypeWarning);
     expect(lifecycleStub.args[2][0]).to.equal('Package/install-presend');
     expect(lifecycleStub.args[3][0]).to.equal('Package/install-postsend');
@@ -506,28 +502,28 @@ describe('Package Install', () => {
       .resolves(inProgressPIR);
     const picRequest = Object.assign({}, pkgInstallCreateRequest, pkgInstallCreateRequestDefaults, overrides);
     const pkg = new SubscriberPackageVersion({ aliasOrId: myPackageVersion04t, connection, password: undefined });
-     
+
     const result = await pkg.install(picRequest);
 
     // verify correct connection.tooling.create() call
     expect(toolingCreateStub.calledOnce).to.be.true;
     const createArgs = toolingCreateStub.args[0];
     expect(createArgs[0]).to.equal('PackageInstallRequest');
-     
+
     expect(createArgs[1]).to.deep.equal(picRequest);
 
     // verify correct connection.tooling.retrieve() calls
     expect(retrieveStub.calledTwice).to.be.true;
     const retrieveArgs = retrieveStub.args[0];
     expect(retrieveArgs[0]).to.equal('PackageInstallRequest');
-     
+
     expect(retrieveArgs[1]).to.equal(pkgInstallRequestId);
 
     // verify expected return json
     expect(result).to.deep.equal(inProgressPIR);
 
     // verify all lifecycle events fired
-     
+
     expect(lifecycleStub.callCount).to.equal(2);
     expect(lifecycleStub.args[0][0]).to.equal('Package/install-presend');
     expect(lifecycleStub.args[1][0]).to.equal('Package/install-postsend');
