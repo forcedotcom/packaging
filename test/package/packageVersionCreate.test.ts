@@ -203,7 +203,7 @@ describe('Package Version Create', () => {
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].CalculateCodeCoverage).to.equal(true);
     expect(result).to.have.all.keys(expectedKeys);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+     
     const unpackagedMD = hasUnpackagedMdSpy.secondCall.args[0];
     expect(unpackagedMD).to.equal('unpackaged');
   });
@@ -216,7 +216,7 @@ describe('Package Version Create', () => {
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].CalculateCodeCoverage).to.equal(false);
     expect(result).to.have.all.keys(expectedKeys);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+     
     const hasSeedMd = hasSeedMdSpy.firstCall.args[0];
     expect(hasSeedMd).to.equal('seed');
   });
@@ -482,7 +482,7 @@ describe('Package Version Create', () => {
     const result = await pvc.createPackageVersion();
     expect(result).to.have.all.keys(expectedKeys);
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+     
     const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // package2-descriptor.json contents
     expect(package2DescriptorJson).to.have.string('buildOrgLanguage');
   });
@@ -792,7 +792,7 @@ describe('Package Version Create', () => {
     stubConvert();
     const result = await pvc.createPackageVersion();
     expect(result).to.have.all.keys(expectedKeys);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+     
     const excludedDirsGenerate = profileSpyGenerate.firstCall.args[2];
     expect(excludedDirsGenerate?.length).to.equal(2);
     expect(excludedDirsGenerate).to.contain('unpackaged-pkg');
@@ -1073,7 +1073,7 @@ describe('Package Version Create', () => {
       const result = await pvc.createPackageVersion();
       expect(result).to.have.all.keys(expectedKeys);
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+       
       const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // package2-descriptor.json contents
       expect(package2DescriptorJson).to.have.string('snapshot');
     });
@@ -1096,7 +1096,7 @@ describe('Package Version Create', () => {
       const result = await pvc.createPackageVersion();
       expect(result).to.have.all.keys(expectedKeys);
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+       
       const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // package2-descriptor.json contents
       expect(package2DescriptorJson).to.have.string('snapshot');
     });

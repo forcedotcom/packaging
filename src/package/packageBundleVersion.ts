@@ -284,7 +284,7 @@ export class PackageBundleVersion {
       CreatedById: record.PackageBundle?.CreatedById ?? '',
       LastModifiedDate: record.PackageBundle?.LastModifiedDate ?? '',
       LastModifiedById: record.PackageBundle?.LastModifiedById ?? '',
-      Ancestor: record.Ancestor?.Id ? PackageBundleVersion.mapAncestor(record.Ancestor as AncestorRecord) : null,
+      Ancestor: record.Ancestor?.Id ? PackageBundleVersion.mapAncestor(record.Ancestor) : null,
       IsReleased: record.IsReleased ?? false,
     };
   }

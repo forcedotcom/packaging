@@ -137,7 +137,7 @@ describe('packageConvert', () => {
       // the most we can assert about VersionInfo because it is a zip file string representation, which changes with time
       expect(typeof request.VersionInfo).to.equal('string');
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+       
       const seedMD = hasSeedMdSpy.firstCall.args[0];
       expect(seedMD).to.equal('seed');
     });
@@ -332,7 +332,7 @@ describe('packageConvert', () => {
       );
 
       // Verify resolveMetadata was called with the project config path
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+       
       const seedMD = hasSeedMdSpy.firstCall.args[0];
       expect(seedMD).to.equal('seed');
 
@@ -355,7 +355,7 @@ describe('packageConvert', () => {
         return typeof filePath === 'string' && filePath.includes('package2-descriptor.json');
       });
       expect(descriptorWriteCall).to.not.be.undefined;
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+       
       const descriptorContent = descriptorWriteCall?.args[1];
       expect(descriptorContent).to.not.have.string('seedMetadata');
     });
@@ -412,7 +412,7 @@ describe('packageConvert', () => {
       );
 
       // Verify resolveMetadata was called with the CLI path, not the project config path
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+       
       const seedMD = hasSeedMdSpy.firstCall.args[0];
       expect(seedMD).to.equal('seed-cli');
       expect(seedMD).to.not.equal('seed');
@@ -436,7 +436,7 @@ describe('packageConvert', () => {
         return typeof filePath === 'string' && filePath.includes('package2-descriptor.json');
       });
       expect(descriptorWriteCall).to.not.be.undefined;
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+       
       const descriptorContent = descriptorWriteCall?.args[1];
       expect(descriptorContent).to.not.have.string('seedMetadata');
     });
@@ -570,7 +570,7 @@ describe('packageConvert', () => {
     };
 
     Lifecycle.getInstance().on(PackageEvents.convert.progress, async (data) => {
-      // eslint-disable-next-line no-console
+       
       // @ts-ignore
       expect(data).to.deep.equal({
         id: '0Ho3i000000Gmj6YYY',

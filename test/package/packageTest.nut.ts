@@ -152,7 +152,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
       expect(pkgId).to.match(new RegExp(PKG2_ID_PREFIX));
 
       // verify update to project.json packageDiretory using fs
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+       
       const dxPjsonData = await fs.readFile(path.join(session.project.dir, 'sfdx-project.json'), 'utf8');
       const projectFile = JSON.parse(dxPjsonData) as ProjectJson;
       expect(projectFile).to.have.property('packageDirectories').with.length(1);
@@ -392,7 +392,7 @@ describe('Integration tests for @salesforce/packaging library', () => {
       );
 
       // TODO: PVC command writes new version to sfdx-project.json
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+       
       const dxPjsonData = await fs.readFile(path.join(session.project.dir, 'sfdx-project.json'), 'utf8');
       const projectFile = JSON.parse(dxPjsonData) as ProjectJson;
       assert(isPackagingDirectory(projectFile.packageDirectories[0]));

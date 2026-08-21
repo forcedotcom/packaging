@@ -85,7 +85,7 @@ describe('subscriberPackageVersion', () => {
   const password: string | undefined = undefined;
   let connection: Connection;
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   // @ts-ignore
   let queryStub: sinon.SinonStub;
   const $$ = instantiateContext();
