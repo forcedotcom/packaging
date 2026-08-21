@@ -1,3 +1,12 @@
+## [5.0.8](https://github.com/forcedotcom/packaging/compare/5.0.7...5.0.8) (2026-08-21)
+
+
+### Bug Fixes
+
+* rejiggered eslint.config.mjs (W-23928423) ([ee5d33b](https://github.com/forcedotcom/packaging/commit/ee5d33bf3709482b56e4d11f7af2c654bd1628c1))
+
+
+
 ## [5.0.7](https://github.com/forcedotcom/packaging/compare/5.0.6...5.0.7) (2026-08-08)
 
 
