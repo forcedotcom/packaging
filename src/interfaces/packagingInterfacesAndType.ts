@@ -186,6 +186,20 @@ export type PackagePushScheduleResult = {
   Status: string;
 };
 
+export type PackageLinkRequestOptions = {
+  // Org ID (starts with 00D) of the Verified Partner Business Org (PBO) to request a link to.
+  verifiedOrgId: string;
+};
+
+export type PackageLinkRequestResult = {
+  // Id of the link request record created on the authoring org.
+  LinkRequestId: string;
+  // Org ID of the Verified PBO the link was requested against.
+  VerifiedOrgId: string;
+  // Current state of the link request (e.g. Pending).
+  Status: string;
+};
+
 export type PackagePushRequestReportQueryOptions = {
   packagePushRequestId: string;
 };

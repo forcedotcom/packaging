@@ -17,6 +17,7 @@ export * from './package';
 export * from './packageVersion';
 export * from './subscriberPackageVersion';
 export * from './packagePushUpgrade';
+export * from './packageLink';
 export { VersionNumber } from './versionNumber';
 export * from './packageBundle';
 export * from './packageBundleVersion';
