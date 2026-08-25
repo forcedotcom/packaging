@@ -352,14 +352,13 @@ describe('packageConvert', () => {
       project.getSfProjectJson().set('packageDirectories', [
         {
           path: 'force-app',
-          package: 'TestPackageAlias',
+          package: '0Ho3i000000Gmj6CAC',
           apexTestAccess: {
             permissionSets: ['Test_Permission_Set', 'Another_Test_PermSet'],
             permissionSetLicenses: ['TestPsl', 'AnotherTestPsl'],
           },
         },
       ]);
-      project.getSfProjectJson().set('packageAliases', { TestPackageAlias: '0Ho3i000000Gmj6CAC' });
       await project.getSfProjectJson().write();
 
       // Definition file is for scratch org settings only (no apexTestAccess)
