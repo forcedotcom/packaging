@@ -23,7 +23,7 @@ import { PackageUpdateOptions } from '../../src/interfaces';
 
 async function setupProject(setup: (project: SfProject) => void = () => {}) {
   // @ts-ignore
-   
+
   const project: SfProject = new SfProject('a');
   const packageDirectories = [
     {
@@ -296,6 +296,43 @@ describe('Package', () => {
       expect(pkg.getId()).to.equal(pkgId);
       expect(await pkg.getType()).to.equal('Unlocked');
       expect(pkg['packageData']).to.be.ok;
+    });
+
+    it('should return the subscriber package ID', async () => {
+      $$.inProject(true);
+      project = await setupProject((p) => {
+        p.getSfProjectJson().set('packageAliases', { mypkgalias: pkgId });
+      });
+      const conn = {
+        tooling: {
+          sobject: () => ({
+            retrieve: () => ({ Id: pkgId, SubscriberPackageId: '033000000000001AAA' }),
+          }),
+        },
+      } as unknown as Connection;
+
+      const pkg = new Package({ connection: conn, packageAliasOrId: pkgId, project });
+      expect(await pkg.getSubscriberPackageId()).to.equal('033000000000001AAA');
+    });
+
+    it('should error when the subscriber package ID is missing', async () => {
+      $$.inProject(true);
+      project = await setupProject((p) => {
+        p.getSfProjectJson().set('packageAliases', { mypkgalias: pkgId });
+      });
+      const conn = {
+        tooling: {
+          sobject: () => ({ retrieve: () => ({ Id: pkgId }) }),
+        },
+      } as unknown as Connection;
+
+      const pkg = new Package({ connection: conn, packageAliasOrId: pkgId, project });
+      try {
+        await pkg.getSubscriberPackageId();
+        expect.fail('Expected a missing subscriber package ID error');
+      } catch (error) {
+        expect((error as Error).message).to.equal(`The subscriber package ID for package ${pkgId} was not found.`);
+      }
     });
   });
 });
