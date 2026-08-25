@@ -137,7 +137,6 @@ describe('packageConvert', () => {
       // the most we can assert about VersionInfo because it is a zip file string representation, which changes with time
       expect(typeof request.VersionInfo).to.equal('string');
 
-       
       const seedMD = hasSeedMdSpy.firstCall.args[0];
       expect(seedMD).to.equal('seed');
     });
@@ -215,6 +214,133 @@ describe('packageConvert', () => {
       expect(unpackagedCall).to.be.undefined;
     });
 
+    it('should fail fast when unpackagedMetadata is declared without a package property and codecoverage is enabled', async () => {
+      $$.inProject(true);
+      const project = SfProject.getInstance();
+
+      await fs.promises.mkdir(path.join(project.getPath(), 'force-app'), { recursive: true });
+
+      // packageDirectories entry declares unpackagedMetadata but omits `package`
+      project.getSfProjectJson().set('packageDirectories', [
+        {
+          path: 'force-app',
+          unpackagedMetadata: { path: 'unpackaged-md' },
+        },
+      ]);
+      await project.getSfProjectJson().write();
+
+      try {
+        await createPackageVersionCreateRequest({ codecoverage: true }, '0Ho3i000000Gmj6CAC', '60.0', project);
+        expect.fail('expected createPackageVersionCreateRequest to throw');
+      } catch (e) {
+        const error = e as Error & { name: string };
+        expect(error.name).to.equal('MissingPackagePropertyForDirectoryError');
+        expect(error.message).to.include('unpackagedMetadata');
+      }
+    });
+
+    it('should fail fast when apexTestAccess is declared without a package property and codecoverage is enabled', async () => {
+      $$.inProject(true);
+      const project = SfProject.getInstance();
+
+      await fs.promises.mkdir(path.join(project.getPath(), 'force-app'), { recursive: true });
+
+      // packageDirectories entry declares apexTestAccess but omits `package`
+      project.getSfProjectJson().set('packageDirectories', [
+        {
+          path: 'force-app',
+          apexTestAccess: {
+            permissionSets: ['Test_Permission_Set'],
+            permissionSetLicenses: ['TestPsl'],
+          },
+        },
+      ]);
+      await project.getSfProjectJson().write();
+
+      try {
+        await createPackageVersionCreateRequest({ codecoverage: true }, '0Ho3i000000Gmj6CAC', '60.0', project);
+        expect.fail('expected createPackageVersionCreateRequest to throw');
+      } catch (e) {
+        const error = e as Error & { name: string };
+        expect(error.name).to.equal('MissingPackagePropertyForDirectoryError');
+        expect(error.message).to.include('apexTestAccess');
+      }
+    });
+
+    it('should fail fast when the package property has no matching packageAliases entry and codecoverage is enabled', async () => {
+      $$.inProject(true);
+      const project = SfProject.getInstance();
+
+      await fs.promises.mkdir(path.join(project.getPath(), 'force-app'), { recursive: true });
+
+      // package is declared but its alias is absent from packageAliases, so it can't be resolved
+      project.getSfProjectJson().set('packageDirectories', [
+        {
+          path: 'force-app',
+          package: 'UnknownPackageAlias',
+          unpackagedMetadata: { path: 'unpackaged-md' },
+        },
+      ]);
+      await project.getSfProjectJson().write();
+
+      try {
+        await createPackageVersionCreateRequest({ codecoverage: true }, '0Ho3i000000Gmj6CAC', '60.0', project);
+        expect.fail('expected createPackageVersionCreateRequest to throw');
+      } catch (e) {
+        const error = e as Error & { name: string };
+        expect(error.name).to.equal('UnresolvedPackageAliasForDirectoryError');
+        expect(error.message).to.include('UnknownPackageAlias');
+        expect(error.message).to.include('unpackagedMetadata');
+      }
+    });
+
+    it('should NOT fail fast when a property is declared without a package property but codecoverage is disabled', async () => {
+      $$.inProject(true);
+      const project = SfProject.getInstance();
+
+      await fs.promises.mkdir(path.join(project.getPath(), 'force-app'), { recursive: true });
+
+      project.getSfProjectJson().set('packageDirectories', [
+        {
+          path: 'force-app',
+          unpackagedMetadata: { path: 'unpackaged-md' },
+        },
+      ]);
+      await project.getSfProjectJson().write();
+
+      // codecoverage disabled: these properties are never consumed, so no error is raised
+      const request = await createPackageVersionCreateRequest(
+        { codecoverage: false },
+        '0Ho3i000000Gmj6CAC',
+        '60.0',
+        project
+      );
+      expect(request.Package2Id).to.equal('0Ho3i000000Gmj6CAC');
+    });
+
+    it('should NOT fail fast for a plain source directory without these properties or a package property', async () => {
+      $$.inProject(true);
+      const project = SfProject.getInstance();
+
+      await fs.promises.mkdir(path.join(project.getPath(), 'force-app'), { recursive: true });
+
+      // Ordinary source directory: no package, no unpackagedMetadata/apexTestAccess — must not trip the guard
+      project.getSfProjectJson().set('packageDirectories', [
+        {
+          path: 'force-app',
+        },
+      ]);
+      await project.getSfProjectJson().write();
+
+      const request = await createPackageVersionCreateRequest(
+        { codecoverage: true },
+        '0Ho3i000000Gmj6CAC',
+        '60.0',
+        project
+      );
+      expect(request.Package2Id).to.equal('0Ho3i000000Gmj6CAC');
+    });
+
     it('should set apexTestAccess permissions in package2descriptor.json when codecoverage is enabled', async () => {
       $$.inProject(true);
       const project = SfProject.getInstance();
@@ -226,13 +352,14 @@ describe('packageConvert', () => {
       project.getSfProjectJson().set('packageDirectories', [
         {
           path: 'force-app',
-          package: '0Ho3i000000Gmj6CAC',
+          package: 'TestPackageAlias',
           apexTestAccess: {
             permissionSets: ['Test_Permission_Set', 'Another_Test_PermSet'],
             permissionSetLicenses: ['TestPsl', 'AnotherTestPsl'],
           },
         },
       ]);
+      project.getSfProjectJson().set('packageAliases', { TestPackageAlias: '0Ho3i000000Gmj6CAC' });
       await project.getSfProjectJson().write();
 
       // Definition file is for scratch org settings only (no apexTestAccess)
@@ -332,7 +459,7 @@ describe('packageConvert', () => {
       );
 
       // Verify resolveMetadata was called with the project config path
-       
+
       const seedMD = hasSeedMdSpy.firstCall.args[0];
       expect(seedMD).to.equal('seed');
 
@@ -355,7 +482,7 @@ describe('packageConvert', () => {
         return typeof filePath === 'string' && filePath.includes('package2-descriptor.json');
       });
       expect(descriptorWriteCall).to.not.be.undefined;
-       
+
       const descriptorContent = descriptorWriteCall?.args[1];
       expect(descriptorContent).to.not.have.string('seedMetadata');
     });
@@ -412,7 +539,7 @@ describe('packageConvert', () => {
       );
 
       // Verify resolveMetadata was called with the CLI path, not the project config path
-       
+
       const seedMD = hasSeedMdSpy.firstCall.args[0];
       expect(seedMD).to.equal('seed-cli');
       expect(seedMD).to.not.equal('seed');
@@ -436,7 +563,7 @@ describe('packageConvert', () => {
         return typeof filePath === 'string' && filePath.includes('package2-descriptor.json');
       });
       expect(descriptorWriteCall).to.not.be.undefined;
-       
+
       const descriptorContent = descriptorWriteCall?.args[1];
       expect(descriptorContent).to.not.have.string('seedMetadata');
     });
@@ -570,7 +697,6 @@ describe('packageConvert', () => {
     };
 
     Lifecycle.getInstance().on(PackageEvents.convert.progress, async (data) => {
-       
       // @ts-ignore
       expect(data).to.deep.equal({
         id: '0Ho3i000000Gmj6YYY',
