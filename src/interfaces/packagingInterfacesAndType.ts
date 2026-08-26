@@ -65,6 +65,31 @@ export type PackageUpdateOptions = {
   RecommendedVersionId?: string;
 };
 
+export type PackageAuthorizationOptions = {
+  connection: Connection;
+  subscriberPackageId?: string;
+};
+
+export type PackageAuthorizationRecord = {
+  Id: string;
+  SubscriberOrg: string;
+  SubscriberPackageId: string | null;
+  Status: 'Active' | 'Revoked';
+  CreatedDate: string;
+  CreatedById: string;
+  CreatedByUsername: string;
+};
+
+export type PackageAuthorizationAddResult = {
+  Id: string;
+  SubscriberOrg: string;
+};
+
+export type PackageAuthorizationRemoveResult = {
+  SubscriberOrg: string;
+  removed: boolean;
+};
+
 export type PackageIdType =
   | 'PackageId'
   | 'SubscriberPackageVersionId'
