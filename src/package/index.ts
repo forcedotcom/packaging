@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 export * from './package';
-export * from './packageLink';
+export * from './packageAuthorization';
 export * from './packageVersion';
 export * from './subscriberPackageVersion';
 export * from './packagePushUpgrade';
+export * from './packageTrustLink';
 export { VersionNumber } from './versionNumber';
 export * from './packageBundle';
 export * from './packageBundleVersion';

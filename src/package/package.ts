@@ -267,6 +267,19 @@ export class Package {
   }
 
   /**
+   * Returns the subscriber package ID associated with this package.
+   *
+   * @returns the subscriber package ID
+   */
+  public async getSubscriberPackageId(): Promise<string> {
+    const packageData = await this.getPackageData();
+    if (!packageData?.SubscriberPackageId) {
+      throw messages.createError('subscriberPackageIdNotFound', [this.packageId]);
+    }
+    return packageData.SubscriberPackageId;
+  }
+
+  /**
    * Returns the package type of the package.
    *
    * @returns {Promise<PackageType>}

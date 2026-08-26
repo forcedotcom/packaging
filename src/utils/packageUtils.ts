@@ -50,10 +50,6 @@ const ID_REGISTRY = [
     prefix: '04t',
     label: 'Subscriber Package Version Id',
   },
-  {
-    prefix: '00D',
-    label: 'Organization Id',
-  },
 ];
 export type IdRegistryValue = { prefix: string; label: string };
 export type IdRegistry = {

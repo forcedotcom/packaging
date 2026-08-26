@@ -65,21 +65,29 @@ export type PackageUpdateOptions = {
   RecommendedVersionId?: string;
 };
 
-/** CLI --status values for `sf package link list` (PBO-admin). */
-export type PackageLinkListStatusFilter = 'pending' | 'approved' | 'declined' | 'revoked';
+export type PackageAuthorizationOptions = {
+  connection: Connection;
+  subscriberPackageId?: string;
+};
 
-/** Tooling API values for PkgVrfyAuthOrgTrustRela.Status */
-export type PackageLinkStatus = 'Pending' | 'Accepted' | 'Declined' | 'Revoked' | 'Failed';
-
-export type PackageLinkRecord = {
+export type PackageAuthorizationRecord = {
   Id: string;
-  AuthoringOrg: string;
-  VerifiedOrg: string;
-  Status: PackageLinkStatus;
-  RequestedBy: string | null;
+  SubscriberOrg: string;
+  SubscriberPackageId: string | null;
+  Status: 'Active' | 'Revoked';
   CreatedDate: string;
-  EstablishedDate: string | null;
-  RevokedDate: string | null;
+  CreatedById: string;
+  CreatedByUsername: string;
+};
+
+export type PackageAuthorizationAddResult = {
+  Id: string;
+  SubscriberOrg: string;
+};
+
+export type PackageAuthorizationRemoveResult = {
+  SubscriberOrg: string;
+  removed: boolean;
 };
 
 export type PackageIdType =
@@ -203,18 +211,35 @@ export type PackagePushScheduleResult = {
   Status: string;
 };
 
-export type PackageLinkRequestOptions = {
-  // Org ID (starts with 00D) of the Verified Partner Business Org (PBO) to request a link to.
+export type PackageTrustLinkRequestOptions = {
+  // Org ID (starts with 00D) of the Verified Partner Business Org (PBO) to request a trust link to.
   verifiedOrgId: string;
 };
 
-export type PackageLinkRequestResult = {
-  // Id of the link request record created on the authoring org.
+export type PackageTrustLinkRequestResult = {
+  // Id of the trust link record created on the authoring org.
   LinkRequestId: string;
-  // Org ID of the Verified PBO the link was requested against.
+  // Org ID of the Verified PBO the trust link was requested against.
   VerifiedOrgId: string;
-  // Current state of the link request (e.g. Pending).
+  // Current state of the trust link (e.g. Pending).
   Status: string;
+};
+
+/** CLI --status values for `sf package link list` (PBO-admin). */
+export type PackageTrustLinkListStatusFilter = 'pending' | 'approved' | 'declined' | 'revoked';
+
+/** Tooling API values for PkgVrfyAuthOrgTrustRela.Status */
+export type PackageTrustLinkStatus = 'Pending' | 'Accepted' | 'Declined' | 'Revoked' | 'Failed';
+
+export type PackageTrustLinkRecord = {
+  Id: string;
+  AuthoringOrg: string;
+  VerifiedOrg: string;
+  Status: PackageTrustLinkStatus;
+  RequestedBy: string | null;
+  CreatedDate: string;
+  EstablishedDate: string | null;
+  RevokedDate: string | null;
 };
 
 export type PackagePushRequestReportQueryOptions = {
