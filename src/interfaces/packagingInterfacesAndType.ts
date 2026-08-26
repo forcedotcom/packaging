@@ -65,6 +65,27 @@ export type PackageUpdateOptions = {
   RecommendedVersionId?: string;
 };
 
+export type PackageLinkOptions = {
+  connection: Connection;
+};
+
+/** CLI --status values for `sf package link list` (PBO-admin). */
+export type PackageLinkListStatusFilter = 'pending' | 'approved' | 'declined' | 'revoked';
+
+/** Tooling API values for PkgVrfyAuthOrgTrustRela.Status */
+export type PackageLinkStatus = 'Pending' | 'Accepted' | 'Declined' | 'Revoked' | 'Failed';
+
+export type PackageLinkRecord = {
+  Id: string;
+  AuthoringOrg: string;
+  VerifiedOrg: string;
+  Status: PackageLinkStatus;
+  RequestedBy: string | null;
+  CreatedDate: string;
+  EstablishedDate: string | null;
+  RevokedDate: string | null;
+};
+
 export type PackageIdType =
   | 'PackageId'
   | 'SubscriberPackageVersionId'

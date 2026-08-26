@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 export * from './package';
+export * from './packageLink';
 export * from './packageVersion';
 export * from './subscriberPackageVersion';
 export * from './packagePushUpgrade';
