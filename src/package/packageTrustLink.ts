@@ -115,7 +115,7 @@ export class PackageTrustLink {
    *
    * Queries `PkgVrfyAuthOrgTrustRela` rows where this org is the Verified org, excluding the
    * self-trust record (`AuthoringOrg != VerifiedOrg`). Optional `--status` CLI values map to
-   * Tooling statuses (`approved` → `Accepted`).
+   * Tooling statuses (`approved` → `Accepted`). Matches `sf package trust link list`.
    */
   public static async list(
     connection: Connection,

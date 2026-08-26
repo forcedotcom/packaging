@@ -225,7 +225,7 @@ export type PackageTrustLinkRequestResult = {
   Status: string;
 };
 
-/** CLI --status values for `sf package link list` (PBO-admin). */
+/** CLI --status values for `sf package trust link list` (PBO-admin). */
 export type PackageTrustLinkListStatusFilter = 'pending' | 'approved' | 'declined' | 'revoked';
 
 /** Tooling API values for PkgVrfyAuthOrgTrustRela.Status */
