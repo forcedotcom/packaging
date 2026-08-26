@@ -4,4 +4,4 @@ The Verified Org ID %s isn't valid. Specify a valid organization ID (starts with
 
 # trustLinkAlreadyExists
 
-A trust link to Verified Org %s already exists with status '%s'. Delete the existing trust link before requesting a new one.
+This org already has a trust link to Verified Org %s with status '%s'. An org can have only one trust link at a time; delete the existing trust link before requesting a new one.

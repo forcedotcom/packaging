@@ -59,13 +59,15 @@ describe('PackageTrustLink', () => {
       ).to.equal(true);
     });
 
-    it('normalizes the org ID to 15 chars in the duplicate lookup query', async () => {
+    it('looks up any existing link for the authoring org, not scoped by verified org', async () => {
       const autoFetchQuery = sinon.stub().resolves({ records: [] });
       const connection = createConnection({ autoFetchQuery });
 
       await PackageTrustLink.request(connection, { verifiedOrgId: verifiedOrgId18 });
 
-      expect(autoFetchQuery.firstCall.args[0]).to.contain(`WHERE VerifiedOrg = '${verifiedOrgId15}'`);
+      // An org can hold only one link, and the Tooling API query already scopes to the
+      // connected org, so the duplicate lookup must not filter by VerifiedOrg.
+      expect(autoFetchQuery.firstCall.args[0]).to.not.contain('WHERE');
       expect(autoFetchQuery.firstCall.args[1]).to.deep.equal({ tooling: true });
     });
 
@@ -82,11 +84,13 @@ describe('PackageTrustLink', () => {
       expect(create.called).to.equal(false);
     });
 
-    it('blocks when any existing trust link is present, regardless of status', async () => {
-      // A Declined row still occupies the unique key, so it must block a re-request.
+    it('blocks when the org already has any trust link, even to a different verified org', async () => {
+      // A Declined row to some OTHER verified org still means this org is already linked,
+      // so a new request must be blocked and must report the existing link's verified org.
+      const otherVerifiedOrg = '00Dxx0000009zZZ';
       const autoFetchQuery = sinon
         .stub()
-        .resolves({ records: [{ Id: trustLinkId, VerifiedOrg: verifiedOrgId15, Status: 'Declined' }] });
+        .resolves({ records: [{ Id: trustLinkId, VerifiedOrg: otherVerifiedOrg, Status: 'Declined' }] });
       const create = sinon.stub();
       const connection = createConnection({ autoFetchQuery, create });
 
@@ -95,6 +99,7 @@ describe('PackageTrustLink', () => {
         expect.fail('expected an error for an existing trust link');
       } catch (err) {
         expect((err as Error).message).to.contain('Declined');
+        expect((err as Error).message).to.contain(otherVerifiedOrg);
       }
       expect(create.called).to.equal(false);
     });

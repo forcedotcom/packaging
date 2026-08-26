@@ -53,14 +53,16 @@ export class PackageTrustLink {
       throw messages.createError('invalidVerifiedOrgId', [options.verifiedOrgId]);
     }
     // VerifiedOrg is a TEXT field that core stores as a 15-char ID, so normalize before
-    // both the duplicate lookup and the insert to avoid 18-char mismatches.
+    // insert to avoid 18-char mismatches.
     const verifiedOrgId = trimTo15(options.verifiedOrgId);
 
-    // Idempotent guard: any existing relationship (in any status) occupies the unique key,
-    // so a re-request would fail on insert. Block until the existing row is deleted (unlinked).
-    const existing = await queryExistingTrustLink(connection, verifiedOrgId);
+    // An authoring org can hold at most one trust relationship at a time. The Tooling API
+    // query below runs against the connected authoring org and only returns that org's own
+    // rows (AuthoringOrg is server-set), so any existing row (in any status, to any verified
+    // org) blocks a new request until it's deleted (unlinked).
+    const existing = await queryExistingTrustLink(connection);
     if (existing) {
-      throw messages.createError('trustLinkAlreadyExists', [verifiedOrgId, existing.Status]);
+      throw messages.createError('trustLinkAlreadyExists', [existing.VerifiedOrg, existing.Status]);
     }
 
     // Create the trust relationship via the Tooling API. Status is required and must be
@@ -82,11 +84,8 @@ export class PackageTrustLink {
   }
 }
 
-async function queryExistingTrustLink(
-  connection: Connection,
-  verifiedOrgId: string
-): Promise<TrustLinkRecord | undefined> {
-  const query = `SELECT Id, VerifiedOrg, Status FROM ${TRUST_LINK_SOBJECT} WHERE VerifiedOrg = '${verifiedOrgId}' LIMIT 1`;
+async function queryExistingTrustLink(connection: Connection): Promise<TrustLinkRecord | undefined> {
+  const query = `SELECT Id, VerifiedOrg, Status FROM ${TRUST_LINK_SOBJECT} LIMIT 1`;
   const result = await connection.autoFetchQuery<TrustLinkRecord & Schema>(query, { tooling: true });
   return result.records?.[0];
 }
