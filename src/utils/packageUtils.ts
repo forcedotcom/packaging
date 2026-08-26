@@ -50,6 +50,10 @@ const ID_REGISTRY = [
     prefix: '04t',
     label: 'Subscriber Package Version Id',
   },
+  {
+    prefix: '00D',
+    label: 'Organization Id',
+  },
 ];
 export type IdRegistryValue = { prefix: string; label: string };
 export type IdRegistry = {
@@ -225,7 +229,7 @@ export function escapeInstallationKey(key: string): string {
  * @param packageIds The list of package IDs
  * @param connection For tooling query
  */
- 
+
 export async function getContainerOptions(
   packageIds: string | undefined | Array<string | undefined>,
   connection: Connection
@@ -256,7 +260,7 @@ export async function getContainerOptions(
  * @param subscriberPackageVersionIds
  * @param connection For tooling query
  */
- 
+
 export async function getPackageVersionStrings(
   subscriberPackageVersionIds: string[],
   connection: Connection

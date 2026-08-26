@@ -65,10 +65,6 @@ export type PackageUpdateOptions = {
   RecommendedVersionId?: string;
 };
 
-export type PackageLinkOptions = {
-  connection: Connection;
-};
-
 /** CLI --status values for `sf package link list` (PBO-admin). */
 export type PackageLinkListStatusFilter = 'pending' | 'approved' | 'declined' | 'revoked';
 
@@ -204,6 +200,20 @@ export type PackagePushScheduleQueryOptions = {
 export type PackagePushScheduleResult = {
   PushRequestId: string;
   ScheduledStartTime: string | undefined;
+  Status: string;
+};
+
+export type PackageLinkRequestOptions = {
+  // Org ID (starts with 00D) of the Verified Partner Business Org (PBO) to request a link to.
+  verifiedOrgId: string;
+};
+
+export type PackageLinkRequestResult = {
+  // Id of the link request record created on the authoring org.
+  LinkRequestId: string;
+  // Org ID of the Verified PBO the link was requested against.
+  VerifiedOrgId: string;
+  // Current state of the link request (e.g. Pending).
   Status: string;
 };
 
