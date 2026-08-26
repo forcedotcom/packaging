@@ -211,6 +211,20 @@ export type PackagePushScheduleResult = {
   Status: string;
 };
 
+export type PackageTrustLinkRequestOptions = {
+  // Org ID (starts with 00D) of the Verified Partner Business Org (PBO) to request a trust link to.
+  verifiedOrgId: string;
+};
+
+export type PackageTrustLinkRequestResult = {
+  // Id of the trust link record created on the authoring org.
+  LinkRequestId: string;
+  // Org ID of the Verified PBO the trust link was requested against.
+  VerifiedOrgId: string;
+  // Current state of the trust link (e.g. Pending).
+  Status: string;
+};
+
 export type PackagePushRequestReportQueryOptions = {
   packagePushRequestId: string;
 };
