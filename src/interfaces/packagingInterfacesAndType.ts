@@ -225,6 +225,17 @@ export type PackageTrustLinkRequestResult = {
   Status: string;
 };
 
+export type PackageTrustLinkUnlinkResult = {
+  // Whether an existing trust link was found and removed. false when the org was already Not Linked.
+  removed: boolean;
+  // Id of the removed trust link record, when one existed.
+  LinkRequestId?: string;
+  // Org ID of the Verified PBO the removed trust link pointed to, when one existed.
+  VerifiedOrgId?: string;
+  // State of the trust link at the time it was removed, when one existed.
+  Status?: string;
+};
+
 export type PackagePushRequestReportQueryOptions = {
   packagePushRequestId: string;
 };
