@@ -133,11 +133,11 @@ Couldn't find a package directory for package using %s %s. Add it to the package
 
 # missingPackagePropertyForDirectory
 
-A packageDirectories entry in your sfdx-project.json file has no "package" property, so the "%s" property it declares can't be resolved during conversion and is ignored. Add a "package" property matching a key in packageAliases to that entry.
+Can't convert package. Your project configuration file (sfdx-project.json) specifies unpackagedMetadata or apexTestAccess, but the attribute can't be resolved because the packageDirectories entry doesn't specify the package parameter. Specify a valid 0Ho package ID or a package alias.
 
 # unresolvedPackageAliasForDirectory
 
-The "%s" package specified in your sfdx-project.json file isn't a valid 0Ho package ID or a key in packageAliases that resolves to a 0Ho package ID, so the "%s" property it declares is ignored during conversion. Set the "package" property to a valid 0Ho package ID or a package alias.
+Can't convert package. Your project configuration file (sfdx-project.json) specifies unpackagedMetadata or apexTestAccess, but the attribute can't be resolved because the package specified as "%s" isn't a valid package ID or package alias. Specify a valid 0Ho package ID or a package alias that resolves to a valid 0Ho package ID.
 
 # noSourceInRootDirectory
 

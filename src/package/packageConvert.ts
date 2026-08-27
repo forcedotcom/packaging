@@ -338,12 +338,12 @@ function assertPackagePropertiesAreResolvable(project?: SfProject): void {
     const declared = packageScopedProperties.find((property) => property in dir);
     if (!declared) continue;
     if (!isPackagingDirectory(dir)) {
-      throw messages.createError('missingPackagePropertyForDirectory', [declared]);
+      throw messages.createError('missingPackagePropertyForDirectory');
     }
     // Package directory entries support either an alias or a literal 0Ho ID for backward compatibility.
     const resolvedPackageId = project?.getPackageIdFromAlias(dir.package) ?? dir.package;
     if (!pkgUtils.validateIdNoThrow(pkgUtils.BY_LABEL.PACKAGE_ID, resolvedPackageId)) {
-      throw messages.createError('unresolvedPackageAliasForDirectory', [dir.package, declared]);
+      throw messages.createError('unresolvedPackageAliasForDirectory', [dir.package]);
     }
   }
 }
