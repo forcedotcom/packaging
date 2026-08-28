@@ -123,6 +123,99 @@ describe('PackageTrustLink', () => {
     });
   });
 
+  describe('status', () => {
+    it('reports Not Linked when the org has no trust link', async () => {
+      const autoFetchQuery = sinon.stub().resolves({ records: [] });
+      const connection = createConnection({ autoFetchQuery });
+
+      const result = await PackageTrustLink.status(connection);
+
+      expect(result).to.deep.equal({ Status: 'Not Linked', linked: false });
+    });
+
+    it('reports the existing link status, verified org, and timestamps', async () => {
+      const autoFetchQuery = sinon.stub().resolves({
+        records: [
+          {
+            Id: trustLinkId,
+            VerifiedOrg: verifiedOrgId15,
+            Status: 'Accepted',
+            EstablishedDate: '2026-08-20T10:00:00.000+0000',
+            RevokedDate: null,
+            CreatedDate: '2026-08-19T09:00:00.000+0000',
+          },
+        ],
+      });
+      const connection = createConnection({ autoFetchQuery });
+
+      const result = await PackageTrustLink.status(connection);
+
+      expect(result).to.deep.equal({
+        Status: 'Accepted',
+        linked: true,
+        LinkRequestId: trustLinkId,
+        VerifiedOrgId: verifiedOrgId15,
+        RequestedDate: '2026-08-19T09:00:00.000+0000',
+        EstablishedDate: '2026-08-20T10:00:00.000+0000',
+      });
+    });
+
+    it('omits unset timestamps (e.g. a Pending link never established)', async () => {
+      const autoFetchQuery = sinon.stub().resolves({
+        records: [
+          {
+            Id: trustLinkId,
+            VerifiedOrg: verifiedOrgId15,
+            Status: 'Pending',
+            EstablishedDate: null,
+            RevokedDate: null,
+            CreatedDate: '2026-08-19T09:00:00.000+0000',
+          },
+        ],
+      });
+      const connection = createConnection({ autoFetchQuery });
+
+      const result = await PackageTrustLink.status(connection);
+
+      expect(result.Status).to.equal('Pending');
+      expect(result.linked).to.equal(true);
+      expect(result.RequestedDate).to.equal('2026-08-19T09:00:00.000+0000');
+      expect(result).to.not.have.property('EstablishedDate');
+      expect(result).to.not.have.property('RevokedDate');
+    });
+
+    it('surfaces a Revoked link with its revoked timestamp', async () => {
+      const autoFetchQuery = sinon.stub().resolves({
+        records: [
+          {
+            Id: trustLinkId,
+            VerifiedOrg: verifiedOrgId15,
+            Status: 'Revoked',
+            EstablishedDate: '2026-08-20T10:00:00.000+0000',
+            RevokedDate: '2026-08-25T12:00:00.000+0000',
+            CreatedDate: '2026-08-19T09:00:00.000+0000',
+          },
+        ],
+      });
+      const connection = createConnection({ autoFetchQuery });
+
+      const result = await PackageTrustLink.status(connection);
+
+      expect(result.Status).to.equal('Revoked');
+      expect(result.RevokedDate).to.equal('2026-08-25T12:00:00.000+0000');
+    });
+
+    it('does not scope the query by verified org (an org holds at most one link)', async () => {
+      const autoFetchQuery = sinon.stub().resolves({ records: [] });
+      const connection = createConnection({ autoFetchQuery });
+
+      await PackageTrustLink.status(connection);
+
+      expect(autoFetchQuery.firstCall.args[0]).to.not.contain('WHERE');
+      expect(autoFetchQuery.firstCall.args[1]).to.deep.equal({ tooling: true });
+    });
+  });
+
   describe('list', () => {
     const verifiedOrg15 = '00D000000000001';
     const verifiedOrg18 = '00D000000000001EAA';
