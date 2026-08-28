@@ -260,6 +260,18 @@ export type PackageTrustLinkRecord = {
   RevokedDate: string | null;
 };
 
+export type PackageTrustLinkApproveOptions = {
+  requestId?: string;
+  authoringOrgId?: string;
+};
+
+export type PackageTrustLinkApproveResult = {
+  LinkRequestId: string;
+  AuthoringOrgId: string;
+  VerifiedOrgId: string;
+  Status: 'Accepted';
+};
+
 export type PackageTrustLinkUnlinkResult = {
   // Whether an existing trust link was found and removed. false when the org was already Not Linked.
   removed: boolean;

@@ -25,18 +25,23 @@ const trustLinkId = '2vtxx0000000001AAA';
 const createConnection = ({
   create = sinon.stub().resolves({ success: true, id: trustLinkId, errors: [] }),
   destroy = sinon.stub().resolves({ success: true, id: trustLinkId, errors: [] }),
+  update = sinon.stub().resolves({ success: true, id: trustLinkId, errors: [] }),
   autoFetchQuery = sinon.stub().resolves({ records: [] }),
   getApiVersion = sinon.stub().returns('64.0'),
+  orgId = verifiedOrgId18,
 }: {
   create?: sinon.SinonStub;
   destroy?: sinon.SinonStub;
+  update?: sinon.SinonStub;
   autoFetchQuery?: sinon.SinonStub;
   getApiVersion?: sinon.SinonStub;
+  orgId?: string;
 } = {}) =>
   ({
     autoFetchQuery,
     getApiVersion,
-    tooling: { create, sobject: sinon.stub().returns({ destroy }) },
+    getAuthInfoFields: sinon.stub().returns({ orgId }),
+    tooling: { create, update, sobject: sinon.stub().returns({ destroy }) },
   } as unknown as Connection);
 
 describe('PackageTrustLink', () => {
@@ -353,6 +358,179 @@ describe('PackageTrustLink', () => {
         expect.fail('Expected a missing org ID error');
       } catch (error) {
         expect((error as Error).message).to.contain('Unable to determine the target org ID');
+      }
+    });
+  });
+
+  describe('approve', () => {
+    const authoringOrgId15 = '00Dxx0000009zZZ';
+    const authoringOrgId18 = '00Dxx0000009zZZEAY';
+    const pendingRecord = {
+      Id: trustLinkId,
+      AuthoringOrg: authoringOrgId15,
+      VerifiedOrg: verifiedOrgId15,
+      Status: 'Pending',
+    };
+
+    it('approves a pending request selected by request ID', async () => {
+      const autoFetchQuery = sinon.stub().resolves({ records: [pendingRecord] });
+      const update = sinon.stub().resolves({ success: true, id: trustLinkId, errors: [] });
+      const connection = createConnection({
+        autoFetchQuery,
+        update,
+        getApiVersion: sinon.stub().returns('68.0'),
+      });
+
+      const result = await PackageTrustLink.approve(connection, { requestId: trustLinkId });
+
+      expect(result).to.deep.equal({
+        LinkRequestId: trustLinkId,
+        AuthoringOrgId: authoringOrgId15,
+        VerifiedOrgId: verifiedOrgId15,
+        Status: 'Accepted',
+      });
+      expect(autoFetchQuery.firstCall.args[0]).to.equal(
+        `SELECT Id, AuthoringOrg, VerifiedOrg, Status FROM PkgVrfyAuthOrgTrustRela WHERE VerifiedOrg = '${verifiedOrgId15}' AND OrganizationType = 'Verified' AND AuthoringOrg != '${verifiedOrgId15}' AND Status = 'Pending' AND Id = '${trustLinkId}' ORDER BY CreatedDate DESC LIMIT 1`
+      );
+      expect(autoFetchQuery.firstCall.args[1]).to.deep.equal({ tooling: true });
+      expect(update.calledOnceWithExactly('PkgVrfyAuthOrgTrustRela', { Id: trustLinkId, Status: 'Accepted' })).to.equal(
+        true
+      );
+    });
+
+    it('approves a pending request selected by authoring org', async () => {
+      const autoFetchQuery = sinon.stub().resolves({ records: [pendingRecord] });
+      const update = sinon.stub().resolves({ success: true, id: trustLinkId, errors: [] });
+      const connection = createConnection({
+        autoFetchQuery,
+        update,
+        getApiVersion: sinon.stub().returns('68.0'),
+      });
+
+      await PackageTrustLink.approve(connection, { authoringOrgId: authoringOrgId18 });
+
+      expect(autoFetchQuery.firstCall.args[0]).to.contain(`AND AuthoringOrg = '${authoringOrgId15}'`);
+      expect(update.calledOnce).to.equal(true);
+    });
+
+    it('rejects a request ID with the wrong entity prefix', async () => {
+      const connection = createConnection({ getApiVersion: sinon.stub().returns('68.0') });
+
+      try {
+        await PackageTrustLink.approve(connection, { requestId: verifiedOrgId18 });
+        expect.fail('expected request ID validation to fail');
+      } catch (error) {
+        expect((error as Error).message).to.contain("isn't valid");
+      }
+    });
+
+    it('rejects non-alphanumeric characters in a request ID', async () => {
+      const connection = createConnection({ getApiVersion: sinon.stub().returns('68.0') });
+
+      try {
+        await PackageTrustLink.approve(connection, { requestId: "2vtxx0000000001' '" });
+        expect.fail('expected request ID validation to fail');
+      } catch (error) {
+        expect((error as Error).message).to.contain("isn't valid");
+      }
+    });
+
+    it('rejects an invalid authoring org ID', async () => {
+      const connection = createConnection({ getApiVersion: sinon.stub().returns('68.0') });
+
+      try {
+        await PackageTrustLink.approve(connection, { authoringOrgId: '001xx0000009zZZ' });
+        expect.fail('expected authoring org ID validation to fail');
+      } catch (error) {
+        expect((error as Error).message).to.contain("isn't valid");
+      }
+    });
+
+    it('requires API version 68.0 or later', async () => {
+      const connection = createConnection({ getApiVersion: sinon.stub().returns('67.0') });
+
+      try {
+        await PackageTrustLink.approve(connection, { requestId: trustLinkId });
+        expect.fail('expected API version validation to fail');
+      } catch (error) {
+        expect((error as Error).message).to.contain('API version 68.0 or later');
+      }
+    });
+
+    it('requires the connected verified org ID', async () => {
+      const connection = createConnection({
+        getApiVersion: sinon.stub().returns('68.0'),
+        orgId: '',
+      });
+
+      try {
+        await PackageTrustLink.approve(connection, { requestId: trustLinkId });
+        expect.fail('expected missing org ID validation to fail');
+      } catch (error) {
+        expect((error as Error).message).to.contain('Unable to determine the target org ID');
+      }
+    });
+
+    it('rejects an empty selector', async () => {
+      const connection = createConnection({ getApiVersion: sinon.stub().returns('68.0') });
+
+      try {
+        await PackageTrustLink.approve(connection, {});
+        expect.fail('expected exactly-one selector validation to fail');
+      } catch (error) {
+        expect((error as Error).message).to.contain('exactly one');
+      }
+    });
+
+    it('rejects multiple selectors', async () => {
+      const connection = createConnection({ getApiVersion: sinon.stub().returns('68.0') });
+
+      try {
+        await PackageTrustLink.approve(connection, {
+          requestId: trustLinkId,
+          authoringOrgId: authoringOrgId15,
+        });
+        expect.fail('expected exactly-one selector validation to fail');
+      } catch (error) {
+        expect((error as Error).message).to.contain('exactly one');
+      }
+    });
+
+    it('does not update when no pending request matches the connected verified org', async () => {
+      const update = sinon.stub();
+      const connection = createConnection({
+        autoFetchQuery: sinon.stub().resolves({ records: [] }),
+        update,
+        getApiVersion: sinon.stub().returns('68.0'),
+      });
+
+      try {
+        await PackageTrustLink.approve(connection, { requestId: trustLinkId });
+        expect.fail('expected a not-found error');
+      } catch (error) {
+        expect((error as Error).message).to.contain('No pending trust link request');
+      }
+      expect(update.called).to.equal(false);
+    });
+
+    it('surfaces Tooling API update errors', async () => {
+      const update = sinon.stub().resolves({
+        success: false,
+        id: trustLinkId,
+        errors: [{ errorCode: 'INSUFFICIENT_ACCESS', message: 'approval denied', fields: [] }],
+      });
+      const connection = createConnection({
+        autoFetchQuery: sinon.stub().resolves({ records: [pendingRecord] }),
+        update,
+        getApiVersion: sinon.stub().returns('68.0'),
+      });
+
+      try {
+        await PackageTrustLink.approve(connection, { requestId: trustLinkId });
+        expect.fail('expected the Tooling API update error');
+      } catch (error) {
+        expect((error as Error).message).to.contain('INSUFFICIENT_ACCESS');
+        expect((error as Error).message).to.contain('approval denied');
       }
     });
   });
