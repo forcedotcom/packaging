@@ -24,17 +24,19 @@ const trustLinkId = '2vtxx0000000001AAA';
 
 const createConnection = ({
   create = sinon.stub().resolves({ success: true, id: trustLinkId, errors: [] }),
+  destroy = sinon.stub().resolves({ success: true, id: trustLinkId, errors: [] }),
   autoFetchQuery = sinon.stub().resolves({ records: [] }),
   getApiVersion = sinon.stub().returns('64.0'),
 }: {
   create?: sinon.SinonStub;
+  destroy?: sinon.SinonStub;
   autoFetchQuery?: sinon.SinonStub;
   getApiVersion?: sinon.SinonStub;
 } = {}) =>
   ({
     autoFetchQuery,
     getApiVersion,
-    tooling: { create },
+    tooling: { create, sobject: sinon.stub().returns({ destroy }) },
   } as unknown as Connection);
 
 describe('PackageTrustLink', () => {
@@ -258,6 +260,70 @@ describe('PackageTrustLink', () => {
         expect.fail('Expected a missing org ID error');
       } catch (error) {
         expect((error as Error).message).to.contain('Unable to determine the target org ID');
+      }
+    });
+  });
+
+  describe('unlink', () => {
+    it('removes the existing trust link and returns its details', async () => {
+      const autoFetchQuery = sinon
+        .stub()
+        .resolves({ records: [{ Id: trustLinkId, VerifiedOrg: verifiedOrgId15, Status: 'Pending' }] });
+      const destroy = sinon.stub().resolves({ success: true, id: trustLinkId, errors: [] });
+      const connection = createConnection({ autoFetchQuery, destroy });
+
+      const result = await PackageTrustLink.unlink(connection);
+
+      expect(result).to.deep.equal({
+        removed: true,
+        LinkRequestId: trustLinkId,
+        VerifiedOrgId: verifiedOrgId15,
+        Status: 'Pending',
+      });
+      expect(destroy.calledOnceWithExactly(trustLinkId)).to.equal(true);
+    });
+
+    it('removes a link in any status, e.g. Declined (retry-after-decline flow)', async () => {
+      const autoFetchQuery = sinon
+        .stub()
+        .resolves({ records: [{ Id: trustLinkId, VerifiedOrg: verifiedOrgId15, Status: 'Declined' }] });
+      const destroy = sinon.stub().resolves({ success: true, id: trustLinkId, errors: [] });
+      const connection = createConnection({ autoFetchQuery, destroy });
+
+      const result = await PackageTrustLink.unlink(connection);
+
+      expect(result.removed).to.equal(true);
+      expect(result.Status).to.equal('Declined');
+      expect(destroy.calledOnce).to.equal(true);
+    });
+
+    it('is idempotent: reports removed=false when the org is already Not Linked', async () => {
+      const autoFetchQuery = sinon.stub().resolves({ records: [] });
+      const destroy = sinon.stub();
+      const connection = createConnection({ autoFetchQuery, destroy });
+
+      const result = await PackageTrustLink.unlink(connection);
+
+      expect(result).to.deep.equal({ removed: false });
+      expect(destroy.called).to.equal(false);
+    });
+
+    it('surfaces Tooling API delete errors', async () => {
+      const autoFetchQuery = sinon
+        .stub()
+        .resolves({ records: [{ Id: trustLinkId, VerifiedOrg: verifiedOrgId15, Status: 'Pending' }] });
+      const destroy = sinon.stub().resolves({
+        success: false,
+        errors: [{ errorCode: 'INSUFFICIENT_ACCESS', message: 'no delete access', fields: [] }],
+      });
+      const connection = createConnection({ autoFetchQuery, destroy });
+
+      try {
+        await PackageTrustLink.unlink(connection);
+        expect.fail('expected the Tooling API delete error');
+      } catch (err) {
+        expect((err as Error).message).to.contain('INSUFFICIENT_ACCESS');
+        expect((err as Error).message).to.contain('no delete access');
       }
     });
   });

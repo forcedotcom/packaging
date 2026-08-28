@@ -17,3 +17,7 @@ Unable to determine the target org ID from the current connection.
 # invalidStatus
 
 The status %s is invalid. Valid values are: pending, approved, declined, revoked.
+
+# trustLinkNotFound
+
+This org has no trust link to remove; it's already in the Not Linked state.
