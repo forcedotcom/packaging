@@ -16,8 +16,11 @@
 import type { Schema } from '@jsforce/jsforce-node';
 import { Connection, Messages, trimTo15, validateSalesforceId } from '@salesforce/core';
 import {
+  PackageTrustLinkListStatusFilter,
+  PackageTrustLinkRecord,
   PackageTrustLinkRequestOptions,
   PackageTrustLinkRequestResult,
+  PackageTrustLinkStatus,
   PackageTrustLinkStatusResult,
   PackageTrustLinkUnlinkResult,
 } from '../interfaces';
@@ -29,6 +32,27 @@ const messages = Messages.loadMessages('@salesforce/packaging', 'package_trust_l
 // Tooling API SObject backing the VerifiedDev (Public Secure) org-level trust relationship
 // between the connected authoring org and a Verified PBO. See W-23970567 / SPI CLI design doc.
 const TRUST_LINK_SOBJECT = 'PkgVrfyAuthOrgTrustRela';
+const MINIMUM_API_VERSION = '68.0';
+const ORGANIZATION_TYPE_VERIFIED = 'Verified';
+
+const STATUS_FILTER_TO_API: Record<PackageTrustLinkListStatusFilter, PackageTrustLinkStatus> = {
+  pending: 'Pending',
+  approved: 'Accepted',
+  declined: 'Declined',
+  revoked: 'Revoked',
+};
+
+type PackageTrustLinkQueryRecord = PackageTrustLinkRecord & Schema;
+
+const isStatusFilter = (status: string): status is PackageTrustLinkListStatusFilter =>
+  Object.prototype.hasOwnProperty.call(STATUS_FILTER_TO_API, status);
+
+const toApiStatus = (status: PackageTrustLinkListStatusFilter): PackageTrustLinkStatus => {
+  if (!isStatusFilter(status)) {
+    throw messages.createError('invalidStatus', [status]);
+  }
+  return STATUS_FILTER_TO_API[status];
+};
 
 // The absence of a trust link record is a valid state the CLI reports; the SObject Status
 // picklist itself only covers the states an existing link can be in.
@@ -125,6 +149,48 @@ export class PackageTrustLink {
       ...(existing.EstablishedDate ? { EstablishedDate: existing.EstablishedDate } : {}),
       ...(existing.RevokedDate ? { RevokedDate: existing.RevokedDate } : {}),
     };
+  }
+
+  /**
+   * List inbound Public Secure trust-link requests for the connected Verified PBO.
+   *
+   * Queries `PkgVrfyAuthOrgTrustRela` rows where this org is the Verified org, excluding the
+   * self-trust record (`AuthoringOrg != VerifiedOrg`). Optional `--status` CLI values map to
+   * Tooling statuses (`approved` → `Accepted`). Matches `sf package trust link list`.
+   */
+  public static async list(
+    connection: Connection,
+    status?: PackageTrustLinkListStatusFilter
+  ): Promise<PackageTrustLinkRecord[]> {
+    if (Number(connection.getApiVersion()) < Number(MINIMUM_API_VERSION)) {
+      throw messages.createError('apiVersionTooLow', [MINIMUM_API_VERSION]);
+    }
+    const orgId = connection.getAuthInfoFields()?.orgId;
+    if (!orgId) {
+      throw messages.createError('missingOrgId');
+    }
+
+    const verifiedOrgId = trimTo15(orgId);
+    const statusFilter = status ? toApiStatus(status) : undefined;
+    const statusClause = statusFilter ? ` AND Status = '${statusFilter}'` : '';
+    const query =
+      'SELECT Id, AuthoringOrg, VerifiedOrg, Status, RequestedBy, CreatedDate, EstablishedDate, RevokedDate FROM ' +
+      `${TRUST_LINK_SOBJECT} WHERE VerifiedOrg = '${verifiedOrgId}' AND OrganizationType = '${ORGANIZATION_TYPE_VERIFIED}' ` +
+      `AND AuthoringOrg != '${verifiedOrgId}'${statusClause} ORDER BY CreatedDate DESC`;
+
+    const result = await connection.autoFetchQuery<PackageTrustLinkQueryRecord>(query, { tooling: true });
+    return (result.records ?? []).map(
+      ({ Id, AuthoringOrg, VerifiedOrg, Status, RequestedBy, CreatedDate, EstablishedDate, RevokedDate }) => ({
+        Id,
+        AuthoringOrg,
+        VerifiedOrg,
+        Status,
+        RequestedBy: RequestedBy ?? null,
+        CreatedDate,
+        EstablishedDate: EstablishedDate ?? null,
+        RevokedDate: RevokedDate ?? null,
+      })
+    );
   }
 
   /**
