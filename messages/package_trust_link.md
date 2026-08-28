@@ -34,6 +34,10 @@ The Authoring Org ID %s isn't valid. Specify a valid organization ID (starts wit
 
 No pending trust link request matching %s was found for this Verified Org. Run "sf package trust link list --status pending" to review pending requests.
 
+# acceptedTrustLinkNotFound
+
+No accepted trust link matching %s was found for this Verified Org. Run "sf package trust link list --status approved" to review approved links.
+
 # trustLinkNotFound
 
 This org has no trust link to remove; it's already in the Not Linked state.
