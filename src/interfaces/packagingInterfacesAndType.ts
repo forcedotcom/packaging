@@ -225,6 +225,24 @@ export type PackageTrustLinkRequestResult = {
   Status: string;
 };
 
+export type PackageTrustLinkStatusResult = {
+  // Current state of the authoring org's trust link: 'Not Linked' when no link exists, otherwise one
+  // of the trust-link statuses (Pending, Accepted, Declined, Revoked, Failed).
+  Status: string;
+  // Whether a trust link record exists for the authoring org. false for the 'Not Linked' state.
+  linked: boolean;
+  // Id of the trust link record, when one exists.
+  LinkRequestId?: string;
+  // Org ID of the Verified PBO the trust link points to, when one exists.
+  VerifiedOrgId?: string;
+  // When the link was requested (record created), when one exists.
+  RequestedDate?: string;
+  // When the link was accepted/established, when set.
+  EstablishedDate?: string;
+  // When the link was revoked, when set.
+  RevokedDate?: string;
+};
+
 /** CLI --status values for `sf package trust link list` (PBO-admin). */
 export type PackageTrustLinkListStatusFilter = 'pending' | 'approved' | 'declined' | 'revoked';
 

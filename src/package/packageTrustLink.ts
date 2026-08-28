@@ -21,6 +21,7 @@ import {
   PackageTrustLinkRequestOptions,
   PackageTrustLinkRequestResult,
   PackageTrustLinkStatus,
+  PackageTrustLinkStatusResult,
   PackageTrustLinkUnlinkResult,
 } from '../interfaces';
 import { combineSaveErrors } from '../utils/packageUtils';
@@ -53,10 +54,17 @@ const toApiStatus = (status: PackageTrustLinkListStatusFilter): PackageTrustLink
   return STATUS_FILTER_TO_API[status];
 };
 
+// The absence of a trust link record is a valid state the CLI reports; the SObject Status
+// picklist itself only covers the states an existing link can be in.
+const NOT_LINKED = 'Not Linked';
+
 type TrustLinkRecord = {
   Id: string;
   VerifiedOrg: string;
   Status: string;
+  EstablishedDate: string | null;
+  RevokedDate: string | null;
+  CreatedDate: string | null;
 };
 
 export class PackageTrustLink {
@@ -108,6 +116,38 @@ export class PackageTrustLink {
       LinkRequestId: createResult.id,
       VerifiedOrgId: verifiedOrgId,
       Status: 'Pending',
+    };
+  }
+
+  /**
+   * Report the connected authoring org's Public Secure (VerifiedDev) trust link state.
+   *
+   * Read-only developer/authoring-org side operation. An authoring org holds at most one trust
+   * relationship, so this returns that org's link if one exists — its status (`Pending`, `Accepted`,
+   * `Declined`, `Revoked`, or `Failed`) and the relevant timestamps — or the synthetic `Not Linked`
+   * state when the org has no link at all. It never mutates anything.
+   *
+   * @param connection - Connection to the authoring org (the 1GP namespace org or 2GP Dev Hub).
+   * @returns the current link state and, when a link exists, its Id, verified org ID, and timestamps.
+   */
+  public static async status(connection: Connection): Promise<PackageTrustLinkStatusResult> {
+    // The Tooling API query runs against the connected authoring org (AuthoringOrg is server-set),
+    // so this returns that org's own link if any. No record means the org was never linked.
+    const existing = await queryExistingTrustLink(connection);
+    if (!existing) {
+      return { Status: NOT_LINKED, linked: false };
+    }
+
+    // Only surface timestamps that are actually set — a Pending link has no EstablishedDate, and
+    // only a Revoked link has a RevokedDate. Emitting undefined keys would leak nulls into --json.
+    return {
+      Status: existing.Status,
+      linked: true,
+      LinkRequestId: existing.Id,
+      VerifiedOrgId: existing.VerifiedOrg,
+      ...(existing.CreatedDate ? { RequestedDate: existing.CreatedDate } : {}),
+      ...(existing.EstablishedDate ? { EstablishedDate: existing.EstablishedDate } : {}),
+      ...(existing.RevokedDate ? { RevokedDate: existing.RevokedDate } : {}),
     };
   }
 
@@ -188,7 +228,7 @@ export class PackageTrustLink {
 }
 
 async function queryExistingTrustLink(connection: Connection): Promise<TrustLinkRecord | undefined> {
-  const query = `SELECT Id, VerifiedOrg, Status FROM ${TRUST_LINK_SOBJECT} LIMIT 1`;
+  const query = `SELECT Id, VerifiedOrg, Status, EstablishedDate, RevokedDate, CreatedDate FROM ${TRUST_LINK_SOBJECT} LIMIT 1`;
   const result = await connection.autoFetchQuery<TrustLinkRecord & Schema>(query, { tooling: true });
   return result.records?.[0];
 }
