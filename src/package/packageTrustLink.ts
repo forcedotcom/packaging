@@ -15,7 +15,11 @@
  */
 import type { Schema } from '@jsforce/jsforce-node';
 import { Connection, Messages, trimTo15, validateSalesforceId } from '@salesforce/core';
-import { PackageTrustLinkRequestOptions, PackageTrustLinkRequestResult } from '../interfaces';
+import {
+  PackageTrustLinkRequestOptions,
+  PackageTrustLinkRequestResult,
+  PackageTrustLinkUnlinkResult,
+} from '../interfaces';
 import { combineSaveErrors } from '../utils/packageUtils';
 
 Messages.importMessagesDirectory(__dirname);
@@ -80,6 +84,39 @@ export class PackageTrustLink {
       LinkRequestId: createResult.id,
       VerifiedOrgId: verifiedOrgId,
       Status: 'Pending',
+    };
+  }
+
+  /**
+   * Clear the connected authoring org's Public Secure (VerifiedDev) trust link, returning it to the
+   * `Not Linked` state.
+   *
+   * Deletes the authoring org's single trust relationship regardless of its current status. This is
+   * the developer/authoring-org side operation used both to abandon a request and to retry after a
+   * decline (unlink, then request again). It is idempotent: if the org has no trust link, it reports
+   * `removed: false` rather than erroring.
+   *
+   * @param connection - Connection to the authoring org (the 1GP namespace org or 2GP Dev Hub).
+   * @returns whether a link was removed and, when one existed, its Id, verified org ID, and status.
+   */
+  public static async unlink(connection: Connection): Promise<PackageTrustLinkUnlinkResult> {
+    // An authoring org holds at most one trust relationship, and the Tooling API query runs against
+    // the connected org (AuthoringOrg is server-set), so this returns that org's own link if any.
+    const existing = await queryExistingTrustLink(connection);
+    if (!existing) {
+      return { removed: false };
+    }
+
+    const deleteResult = await connection.tooling.sobject(TRUST_LINK_SOBJECT).destroy(existing.Id);
+    if (!deleteResult.success) {
+      throw combineSaveErrors(TRUST_LINK_SOBJECT, 'delete', deleteResult.errors);
+    }
+
+    return {
+      removed: true,
+      LinkRequestId: existing.Id,
+      VerifiedOrgId: existing.VerifiedOrg,
+      Status: existing.Status,
     };
   }
 }
