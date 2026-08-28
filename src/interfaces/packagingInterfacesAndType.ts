@@ -225,6 +225,23 @@ export type PackageTrustLinkRequestResult = {
   Status: string;
 };
 
+/** CLI --status values for `sf package trust link list` (PBO-admin). */
+export type PackageTrustLinkListStatusFilter = 'pending' | 'approved' | 'declined' | 'revoked';
+
+/** Tooling API values for PkgVrfyAuthOrgTrustRela.Status */
+export type PackageTrustLinkStatus = 'Pending' | 'Accepted' | 'Declined' | 'Revoked' | 'Failed';
+
+export type PackageTrustLinkRecord = {
+  Id: string;
+  AuthoringOrg: string;
+  VerifiedOrg: string;
+  Status: PackageTrustLinkStatus;
+  RequestedBy: string | null;
+  CreatedDate: string;
+  EstablishedDate: string | null;
+  RevokedDate: string | null;
+};
+
 export type PackageTrustLinkUnlinkResult = {
   // Whether an existing trust link was found and removed. false when the org was already Not Linked.
   removed: boolean;
