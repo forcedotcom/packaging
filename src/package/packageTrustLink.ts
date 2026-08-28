@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import type { Schema } from '@jsforce/jsforce-node';
-import { Connection, Messages, trimTo15 } from '@salesforce/core';
+import { Connection, Messages, trimTo15, validateSalesforceId } from '@salesforce/core';
 import {
   PackageTrustLinkApproveOptions,
   PackageTrustLinkApproveResult,
@@ -47,12 +47,6 @@ const STATUS_FILTER_TO_API: Record<PackageTrustLinkListStatusFilter, PackageTrus
 type PackageTrustLinkQueryRecord = PackageTrustLinkRecord & Schema;
 type PackageTrustLinkApproveRecord = Pick<PackageTrustLinkRecord, 'Id' | 'AuthoringOrg' | 'VerifiedOrg' | 'Status'> &
   Schema;
-
-// @salesforce/core's validateSalesforceId is unanchored (`/[a-zA-Z0-9]{15}/`) and only
-// checks length 15 or 18, so an 18-char value like `2vtxx0000000001' '` still passes.
-// Selectors are interpolated into Tooling SOQL, so the whole string must be a 15/18-char id.
-// packageUtils.validateId only checks prefix + length, not character set.
-const isExactSalesforceId = (value: string): boolean => /^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/.test(value);
 
 const isStatusFilter = (status: string): status is PackageTrustLinkListStatusFilter =>
   Object.prototype.hasOwnProperty.call(STATUS_FILTER_TO_API, status);
@@ -95,7 +89,7 @@ export class PackageTrustLink {
     connection: Connection,
     options: PackageTrustLinkRequestOptions
   ): Promise<PackageTrustLinkRequestResult> {
-    if (!options.verifiedOrgId.startsWith('00D') || !isExactSalesforceId(options.verifiedOrgId)) {
+    if (!options.verifiedOrgId.startsWith('00D') || !validateSalesforceId(options.verifiedOrgId)) {
       throw messages.createError('invalidVerifiedOrgId', [options.verifiedOrgId]);
     }
     // VerifiedOrg is a TEXT field that core stores as a 15-char ID, so normalize before
@@ -230,14 +224,14 @@ export class PackageTrustLink {
     let selector: string;
     let selectorValue: string;
     if (options.requestId) {
-      if (!options.requestId.startsWith('2vt') || !isExactSalesforceId(options.requestId)) {
+      if (!options.requestId.startsWith('2vt') || !validateSalesforceId(options.requestId)) {
         throw messages.createError('invalidTrustLinkRequestId', [options.requestId]);
       }
       selector = `Id = '${options.requestId}'`;
       selectorValue = options.requestId;
     } else {
       const authoringOrgId = options.authoringOrgId as string;
-      if (!authoringOrgId.startsWith('00D') || !isExactSalesforceId(authoringOrgId)) {
+      if (!authoringOrgId.startsWith('00D') || !validateSalesforceId(authoringOrgId)) {
         throw messages.createError('invalidAuthoringOrgId', [authoringOrgId]);
       }
       selector = `AuthoringOrg = '${trimTo15(authoringOrgId)}'`;

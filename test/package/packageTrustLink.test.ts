@@ -424,11 +424,11 @@ describe('PackageTrustLink', () => {
       }
     });
 
-    it('rejects non-alphanumeric characters in a request ID', async () => {
+    it('rejects a request ID that is not a Salesforce Id', async () => {
       const connection = createConnection({ getApiVersion: sinon.stub().returns('68.0') });
 
       try {
-        await PackageTrustLink.approve(connection, { requestId: "2vtxx0000000001' '" });
+        await PackageTrustLink.approve(connection, { requestId: '2vtxx000000000' });
         expect.fail('expected request ID validation to fail');
       } catch (error) {
         expect((error as Error).message).to.contain("isn't valid");
