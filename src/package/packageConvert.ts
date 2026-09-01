@@ -252,6 +252,8 @@ export async function createPackageVersionCreateRequest(
   );
 
   if (context.codecoverage) {
+    assertPackagePropertiesAreResolvable(project);
+
     const unpackagedMetadataPath = packageDescriptorJson.unpackagedMetadata?.path;
     const hasUnpackaged = await new MetadataResolver().resolveMetadata(
       unpackagedMetadataPath,
@@ -326,6 +328,24 @@ function buildPackageDescriptorJson(args: {
     }
   }
   return descriptor;
+}
+
+// These properties only resolve when their packageDirectories entry has a `package` that maps to a
+// packageAliases key; otherwise they're silently dropped, so fail fast here instead.
+function assertPackagePropertiesAreResolvable(project?: SfProject): void {
+  const packageScopedProperties = ['unpackagedMetadata', 'apexTestAccess'] as const;
+  for (const dir of project?.getPackageDirectories() ?? []) {
+    const declared = packageScopedProperties.find((property) => property in dir);
+    if (!declared) continue;
+    if (!isPackagingDirectory(dir)) {
+      throw messages.createError('missingPackagePropertyForDirectory');
+    }
+    // Package directory entries support either an alias or a literal 0Ho ID for backward compatibility.
+    const resolvedPackageId = project?.getPackageIdFromAlias(dir.package) ?? dir.package;
+    if (!pkgUtils.validateIdNoThrow(pkgUtils.BY_LABEL.PACKAGE_ID, resolvedPackageId)) {
+      throw messages.createError('unresolvedPackageAliasForDirectory', [dir.package]);
+    }
+  }
 }
 
 async function createRequestObject(
@@ -403,7 +423,6 @@ async function pollForStatusWithInterval(
             // for multiple errors, display one per line prefixed with (x)
             if (results[0].Error.length > 1) {
               results[0].Error.forEach((error) => {
-                 
                 errors.push(`(${errors.length + 1}) ${error}`);
               });
               errors.unshift(messages.getMessage('versionCreateFailedWithMultipleErrors'));
