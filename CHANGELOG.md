@@ -1,3 +1,12 @@
+## [5.0.9](https://github.com/forcedotcom/packaging/compare/5.0.8...5.0.9) (2026-09-01)
+
+
+### Bug Fixes
+
+* bump core, jsforce and sdr lib ([8a4780f](https://github.com/forcedotcom/packaging/commit/8a4780fb43a9240459df1001081f1d8d735f7106))
+
+
+
 ## [5.0.8](https://github.com/forcedotcom/packaging/compare/5.0.7...5.0.8) (2026-08-21)
 
 
