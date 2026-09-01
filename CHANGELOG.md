@@ -1,3 +1,17 @@
+## [5.0.11](https://github.com/forcedotcom/packaging/compare/5.0.10...5.0.11) (2026-09-01)
+
+
+### Bug Fixes
+
+* @W-23737446 Fail fast for unresolved conversion package properties ([b68d10b](https://github.com/forcedotcom/packaging/commit/b68d10b429ff660983c337e1dd79a0070d231684))
+* @W-23737446 Keep conversion fix focused ([a7e1974](https://github.com/forcedotcom/packaging/commit/a7e19741226401dd884399e85a5c692c64b653bc))
+* @W-23737446 Move conversion error messages to package_convert bundle ([3daad3a](https://github.com/forcedotcom/packaging/commit/3daad3a191ff3d56d3f099a45b8ab9067c74c93c))
+* @W-23737446 Normalize lockfile registry URLs ([3872524](https://github.com/forcedotcom/packaging/commit/387252470eab54401f95e772dd0f7dc84cf37670))
+* @W-23737446 Revert conversion messages to package_version_create bundle ([eaedc07](https://github.com/forcedotcom/packaging/commit/eaedc07de80c1602cbbd74dc1ee8ac302627b289))
+* @W-23737446 Update conversion package property error messages ([81985d3](https://github.com/forcedotcom/packaging/commit/81985d33d6fdf39d83b4a2f1d2db353f47ff9e20))
+
+
+
 ## [5.0.10](https://github.com/forcedotcom/packaging/compare/5.0.9...5.0.10) (2026-09-01)
 
 
