@@ -131,14 +131,6 @@ Could not find a package in sfdx-project.json file using "path" %s. Add it to th
 
 Couldn't find a package directory for package using %s %s. Add it to the packageDirectories section and add the alias to packageAliases with its 0Ho ID.
 
-# missingPackagePropertyForDirectory
-
-Can't convert package. Your project configuration file (sfdx-project.json) specifies unpackagedMetadata or apexTestAccess, but the attribute can't be resolved because the packageDirectories entry doesn't specify the package parameter. Specify a valid 0Ho package ID or a package alias.
-
-# unresolvedPackageAliasForDirectory
-
-Can't convert package. Your project configuration file (sfdx-project.json) specifies unpackagedMetadata or apexTestAccess, but the attribute can't be resolved because the package specified as "%s" isn't a valid package ID or package alias. Specify a valid 0Ho package ID or a package alias that resolves to a valid 0Ho package ID.
-
 # noSourceInRootDirectory
 
 No matching source was found within the package root directory: %s
