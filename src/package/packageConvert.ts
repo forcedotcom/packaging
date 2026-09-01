@@ -56,7 +56,6 @@ import Package2VersionStatus = PackagingSObjects.Package2VersionStatus;
 
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('@salesforce/packaging', 'package_version_create');
-const convertMessages = Messages.loadMessages('@salesforce/packaging', 'package_convert');
 
 const POLL_INTERVAL_SECONDS = 30;
 
@@ -339,12 +338,12 @@ function assertPackagePropertiesAreResolvable(project?: SfProject): void {
     const declared = packageScopedProperties.find((property) => property in dir);
     if (!declared) continue;
     if (!isPackagingDirectory(dir)) {
-      throw convertMessages.createError('missingPackagePropertyForDirectory');
+      throw messages.createError('missingPackagePropertyForDirectory');
     }
     // Package directory entries support either an alias or a literal 0Ho ID for backward compatibility.
     const resolvedPackageId = project?.getPackageIdFromAlias(dir.package) ?? dir.package;
     if (!pkgUtils.validateIdNoThrow(pkgUtils.BY_LABEL.PACKAGE_ID, resolvedPackageId)) {
-      throw convertMessages.createError('unresolvedPackageAliasForDirectory', [dir.package]);
+      throw messages.createError('unresolvedPackageAliasForDirectory', [dir.package]);
     }
   }
 }
