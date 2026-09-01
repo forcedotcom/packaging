@@ -1,3 +1,12 @@
+## [5.0.10](https://github.com/forcedotcom/packaging/compare/5.0.9...5.0.10) (2026-09-01)
+
+
+### Reverts
+
+* Revert "fix: bump core, jsforce and sdr lib" ([748eac0](https://github.com/forcedotcom/packaging/commit/748eac0effee45905dd5f7e24246bae79e2a183f))
+
+
+
 ## [5.0.9](https://github.com/forcedotcom/packaging/compare/5.0.8...5.0.9) (2026-09-01)
 
 
