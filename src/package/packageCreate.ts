@@ -14,17 +14,32 @@
  * limitations under the License.
  */
 
-import { Connection, SfError, SfProject } from '@salesforce/core';
+import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
 import { env } from '@salesforce/kit';
 import { PackagePackageDir, PackageDir } from '@salesforce/schemas';
 import { isPackagingDirectory } from '@salesforce/core/project';
 import * as pkgUtils from '../utils/packageUtils';
 import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
-import { PackageCreateOptions, PackagingSObjects } from '../interfaces';
+import {
+  DISTRIBUTION_TYPE_MIN_API_VERSION,
+  PackageCreateOptions,
+  PackagingSObjects,
+  SETTABLE_DISTRIBUTION_TYPES,
+  SettableDistributionType,
+} from '../interfaces';
+
+Messages.importMessagesDirectory(__dirname);
+const messages = Messages.loadMessages('@salesforce/packaging', 'package');
 
 type Package2Request = Pick<
   PackagingSObjects.Package2,
-  'Name' | 'Description' | 'NamespacePrefix' | 'ContainerOptions' | 'IsOrgDependent' | 'PackageErrorUsername'
+  | 'Name'
+  | 'Description'
+  | 'NamespacePrefix'
+  | 'ContainerOptions'
+  | 'IsOrgDependent'
+  | 'PackageErrorUsername'
+  | 'DistributionType'
 >;
 
 export function createPackageRequestFromContext(project: SfProject, options: PackageCreateOptions): Package2Request {
@@ -36,6 +51,9 @@ export function createPackageRequestFromContext(project: SfProject, options: Pac
     ContainerOptions: options.packageType,
     IsOrgDependent: options.orgDependent,
     PackageErrorUsername: options.errorNotificationUsername,
+    // Only send DistributionType when the user provided one; otherwise the backend defaults it
+    // based on the package type (Managed -> PublicSecure, Unlocked -> Limited).
+    ...(options.distributionType ? { DistributionType: options.distributionType } : {}),
   };
 }
 
@@ -64,11 +82,34 @@ export function createPackageDirEntry(project: SfProject, options: PackageCreate
   };
 }
 
+/**
+ * Validate a user-supplied distribution type: it requires a minimum API version and must be one of
+ * the CLI-settable values (`PublicSecure` or `Limited`). `Public` and `Private` are backend-only.
+ * A no-op when `distributionType` is undefined (the backend then defaults it by package type).
+ *
+ * Shared by both create and update so the CLI surfaces the same errors before hitting the API.
+ */
+export function validateDistributionType(
+  connection: Connection,
+  distributionType: SettableDistributionType | undefined
+): void {
+  if (distributionType === undefined) {
+    return;
+  }
+  if (connection.getApiVersion() < DISTRIBUTION_TYPE_MIN_API_VERSION) {
+    throw messages.createError('distributionTypeApiPriorTo68Error');
+  }
+  if (!SETTABLE_DISTRIBUTION_TYPES.includes(distributionType)) {
+    throw messages.createError('invalidDistributionTypeError', [distributionType]);
+  }
+}
+
 export async function createPackage(
   connection: Connection,
   project: SfProject,
   options: PackageCreateOptions
 ): Promise<{ Id: string }> {
+  validateDistributionType(connection, options.distributionType);
   const cleanOptions = sanitizePackageCreateOptions(options);
   const request = createPackageRequestFromContext(project, cleanOptions);
   const createResult = await connection.tooling
