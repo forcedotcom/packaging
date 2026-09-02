@@ -260,16 +260,34 @@ export type PackageTrustLinkRecord = {
   RevokedDate: string | null;
 };
 
-export type PackageTrustLinkApproveOptions = {
+export type PackageTrustLinkSelectorOptions = {
   requestId?: string;
   authoringOrgId?: string;
 };
+
+export type PackageTrustLinkApproveOptions = PackageTrustLinkSelectorOptions;
+export type PackageTrustLinkDenyOptions = PackageTrustLinkSelectorOptions;
+export type PackageTrustLinkRevokeOptions = PackageTrustLinkSelectorOptions;
 
 export type PackageTrustLinkApproveResult = {
   LinkRequestId: string;
   AuthoringOrgId: string;
   VerifiedOrgId: string;
   Status: 'Accepted';
+};
+
+export type PackageTrustLinkDenyResult = {
+  LinkRequestId: string;
+  AuthoringOrgId: string;
+  VerifiedOrgId: string;
+  Status: 'Declined';
+};
+
+export type PackageTrustLinkRevokeResult = {
+  LinkRequestId: string;
+  AuthoringOrgId: string;
+  VerifiedOrgId: string;
+  Status: 'Revoked';
 };
 
 export type PackageTrustLinkUnlinkResult = {
