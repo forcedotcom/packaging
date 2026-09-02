@@ -18,10 +18,15 @@ import { Connection, Messages, trimTo15, validateSalesforceId } from '@salesforc
 import {
   PackageTrustLinkApproveOptions,
   PackageTrustLinkApproveResult,
+  PackageTrustLinkDenyOptions,
+  PackageTrustLinkDenyResult,
   PackageTrustLinkListStatusFilter,
   PackageTrustLinkRecord,
   PackageTrustLinkRequestOptions,
   PackageTrustLinkRequestResult,
+  PackageTrustLinkRevokeOptions,
+  PackageTrustLinkRevokeResult,
+  PackageTrustLinkSelectorOptions,
   PackageTrustLinkStatus,
   PackageTrustLinkStatusResult,
   PackageTrustLinkUnlinkResult,
@@ -45,10 +50,16 @@ const STATUS_FILTER_TO_API: Record<PackageTrustLinkListStatusFilter, PackageTrus
 };
 
 type PackageTrustLinkQueryRecord = PackageTrustLinkRecord & Schema;
-type PackageTrustLinkApproveRecord = Pick<PackageTrustLinkRecord, 'Id' | 'AuthoringOrg' | 'VerifiedOrg' | 'Status'> &
+type PackageTrustLinkMutationRecord = Pick<PackageTrustLinkRecord, 'Id' | 'AuthoringOrg' | 'VerifiedOrg' | 'Status'> &
   Schema;
 
-const SALESFORCE_ID_PATTERN = /^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/;
+type InboundTrustMutationStatus = 'Accepted' | 'Declined' | 'Revoked';
+type InboundTrustMutationResult<S extends InboundTrustMutationStatus> = {
+  LinkRequestId: string;
+  AuthoringOrgId: string;
+  VerifiedOrgId: string;
+  Status: S;
+};
 
 const isStatusFilter = (status: string): status is PackageTrustLinkListStatusFilter =>
   Object.prototype.hasOwnProperty.call(STATUS_FILTER_TO_API, status);
@@ -210,68 +221,41 @@ export class PackageTrustLink {
     connection: Connection,
     options: PackageTrustLinkApproveOptions
   ): Promise<PackageTrustLinkApproveResult> {
-    if (Number(connection.getApiVersion()) < Number(MINIMUM_API_VERSION)) {
-      throw messages.createError('apiVersionTooLow', [MINIMUM_API_VERSION]);
-    }
-    if (Boolean(options.requestId) === Boolean(options.authoringOrgId)) {
-      throw messages.createError('exactlyOneApproveSelector');
-    }
+    return updateInboundTrustLink(connection, options, 'Pending', 'Accepted', 'pendingTrustLinkNotFound');
+  }
 
-    const orgId = connection.getAuthInfoFields()?.orgId;
-    if (!orgId) {
-      throw messages.createError('missingOrgId');
-    }
-    const verifiedOrgId = trimTo15(orgId);
+  /**
+   * Deny a pending Public Secure (VerifiedDev) trust-link request for the connected Verified PBO.
+   *
+   * Core only allows Pending → Declined on the verified-org copy. This does not delete the
+   * relationship; the authoring org can unlink and request again.
+   *
+   * @param connection - Connection to the Verified Partner Business Org (PBO).
+   * @param options - Exactly one request ID or authoring org ID identifying the pending request.
+   * @returns the declined trust relationship details.
+   */
+  public static async deny(
+    connection: Connection,
+    options: PackageTrustLinkDenyOptions
+  ): Promise<PackageTrustLinkDenyResult> {
+    return updateInboundTrustLink(connection, options, 'Pending', 'Declined', 'pendingTrustLinkNotFound');
+  }
 
-    let selector: string;
-    let selectorValue: string;
-    if (options.requestId) {
-      if (
-        !options.requestId.startsWith('2vt') ||
-        !SALESFORCE_ID_PATTERN.test(options.requestId) ||
-        !validateSalesforceId(options.requestId)
-      ) {
-        throw messages.createError('invalidTrustLinkRequestId', [options.requestId]);
-      }
-      selector = `Id = '${options.requestId}'`;
-      selectorValue = options.requestId;
-    } else {
-      const authoringOrgId = options.authoringOrgId as string;
-      if (
-        !authoringOrgId.startsWith('00D') ||
-        !SALESFORCE_ID_PATTERN.test(authoringOrgId) ||
-        !validateSalesforceId(authoringOrgId)
-      ) {
-        throw messages.createError('invalidAuthoringOrgId', [authoringOrgId]);
-      }
-      selector = `AuthoringOrg = '${trimTo15(authoringOrgId)}'`;
-      selectorValue = authoringOrgId;
-    }
-
-    const query =
-      `SELECT Id, AuthoringOrg, VerifiedOrg, Status FROM ${TRUST_LINK_SOBJECT} ` +
-      `WHERE VerifiedOrg = '${verifiedOrgId}' AND OrganizationType = '${ORGANIZATION_TYPE_VERIFIED}' ` +
-      `AND AuthoringOrg != '${verifiedOrgId}' AND Status = 'Pending' AND ${selector} ORDER BY CreatedDate DESC LIMIT 1`;
-    const queryResult = await connection.autoFetchQuery<PackageTrustLinkApproveRecord>(query, { tooling: true });
-    const pendingRequest = queryResult.records?.[0];
-    if (!pendingRequest) {
-      throw messages.createError('pendingTrustLinkNotFound', [selectorValue]);
-    }
-
-    const updateResult = await connection.tooling.update(TRUST_LINK_SOBJECT, {
-      Id: pendingRequest.Id,
-      Status: 'Accepted',
-    });
-    if (!updateResult.success) {
-      throw combineSaveErrors(TRUST_LINK_SOBJECT, 'update', updateResult.errors);
-    }
-
-    return {
-      LinkRequestId: pendingRequest.Id,
-      AuthoringOrgId: pendingRequest.AuthoringOrg,
-      VerifiedOrgId: pendingRequest.VerifiedOrg,
-      Status: 'Accepted',
-    };
+  /**
+   * Revoke an accepted Public Secure (VerifiedDev) trust link for the connected Verified PBO.
+   *
+   * Core only allows Accepted → Revoked on the verified-org copy. Pending requests must be
+   * denied instead; already-declined or already-revoked links cannot be revoked again.
+   *
+   * @param connection - Connection to the Verified Partner Business Org (PBO).
+   * @param options - Exactly one request ID or authoring org ID identifying the accepted link.
+   * @returns the revoked trust relationship details.
+   */
+  public static async revoke(
+    connection: Connection,
+    options: PackageTrustLinkRevokeOptions
+  ): Promise<PackageTrustLinkRevokeResult> {
+    return updateInboundTrustLink(connection, options, 'Accepted', 'Revoked', 'acceptedTrustLinkNotFound');
   }
 
   /**
@@ -306,6 +290,69 @@ export class PackageTrustLink {
       Status: existing.Status,
     };
   }
+}
+
+async function updateInboundTrustLink<S extends InboundTrustMutationStatus>(
+  connection: Connection,
+  options: PackageTrustLinkSelectorOptions,
+  requiredStatus: PackageTrustLinkStatus,
+  nextStatus: S,
+  notFoundMessage: 'pendingTrustLinkNotFound' | 'acceptedTrustLinkNotFound'
+): Promise<InboundTrustMutationResult<S>> {
+  if (Number(connection.getApiVersion()) < Number(MINIMUM_API_VERSION)) {
+    throw messages.createError('apiVersionTooLow', [MINIMUM_API_VERSION]);
+  }
+  if (Boolean(options.requestId) === Boolean(options.authoringOrgId)) {
+    throw messages.createError('exactlyOneApproveSelector');
+  }
+
+  const orgId = connection.getAuthInfoFields()?.orgId;
+  if (!orgId) {
+    throw messages.createError('missingOrgId');
+  }
+  const verifiedOrgId = trimTo15(orgId);
+
+  let selector: string;
+  let selectorValue: string;
+  if (options.requestId) {
+    if (!options.requestId.startsWith('2vt') || !validateSalesforceId(options.requestId)) {
+      throw messages.createError('invalidTrustLinkRequestId', [options.requestId]);
+    }
+    selector = `Id = '${options.requestId}'`;
+    selectorValue = options.requestId;
+  } else {
+    const authoringOrgId = options.authoringOrgId as string;
+    if (!authoringOrgId.startsWith('00D') || !validateSalesforceId(authoringOrgId)) {
+      throw messages.createError('invalidAuthoringOrgId', [authoringOrgId]);
+    }
+    selector = `AuthoringOrg = '${trimTo15(authoringOrgId)}'`;
+    selectorValue = authoringOrgId;
+  }
+
+  const query =
+    `SELECT Id, AuthoringOrg, VerifiedOrg, Status FROM ${TRUST_LINK_SOBJECT} ` +
+    `WHERE VerifiedOrg = '${verifiedOrgId}' AND OrganizationType = '${ORGANIZATION_TYPE_VERIFIED}' ` +
+    `AND AuthoringOrg != '${verifiedOrgId}' AND Status = '${requiredStatus}' AND ${selector} ORDER BY CreatedDate DESC LIMIT 1`;
+  const queryResult = await connection.autoFetchQuery<PackageTrustLinkMutationRecord>(query, { tooling: true });
+  const matchingRequest = queryResult.records?.[0];
+  if (!matchingRequest) {
+    throw messages.createError(notFoundMessage, [selectorValue]);
+  }
+
+  const updateResult = await connection.tooling.update(TRUST_LINK_SOBJECT, {
+    Id: matchingRequest.Id,
+    Status: nextStatus,
+  });
+  if (!updateResult.success) {
+    throw combineSaveErrors(TRUST_LINK_SOBJECT, 'update', updateResult.errors);
+  }
+
+  return {
+    LinkRequestId: matchingRequest.Id,
+    AuthoringOrgId: matchingRequest.AuthoringOrg,
+    VerifiedOrgId: matchingRequest.VerifiedOrg,
+    Status: nextStatus,
+  };
 }
 
 async function queryExistingTrustLink(connection: Connection): Promise<TrustLinkRecord | undefined> {

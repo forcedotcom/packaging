@@ -424,11 +424,11 @@ describe('PackageTrustLink', () => {
       }
     });
 
-    it('rejects non-alphanumeric characters in a request ID', async () => {
+    it('rejects a request ID that is not a Salesforce Id', async () => {
       const connection = createConnection({ getApiVersion: sinon.stub().returns('68.0') });
 
       try {
-        await PackageTrustLink.approve(connection, { requestId: "2vtxx0000000001' '" });
+        await PackageTrustLink.approve(connection, { requestId: '2vtxx000000000' });
         expect.fail('expected request ID validation to fail');
       } catch (error) {
         expect((error as Error).message).to.contain("isn't valid");
@@ -531,6 +531,153 @@ describe('PackageTrustLink', () => {
       } catch (error) {
         expect((error as Error).message).to.contain('INSUFFICIENT_ACCESS');
         expect((error as Error).message).to.contain('approval denied');
+      }
+    });
+  });
+
+  describe('deny', () => {
+    const authoringOrgId15 = '00Dxx0000009zZZ';
+    const pendingRecord = {
+      Id: trustLinkId,
+      AuthoringOrg: authoringOrgId15,
+      VerifiedOrg: verifiedOrgId15,
+      Status: 'Pending',
+    };
+
+    it('denies a pending request selected by request ID', async () => {
+      const autoFetchQuery = sinon.stub().resolves({ records: [pendingRecord] });
+      const update = sinon.stub().resolves({ success: true, id: trustLinkId, errors: [] });
+      const connection = createConnection({
+        autoFetchQuery,
+        update,
+        getApiVersion: sinon.stub().returns('68.0'),
+      });
+
+      const result = await PackageTrustLink.deny(connection, { requestId: trustLinkId });
+
+      expect(result).to.deep.equal({
+        LinkRequestId: trustLinkId,
+        AuthoringOrgId: authoringOrgId15,
+        VerifiedOrgId: verifiedOrgId15,
+        Status: 'Declined',
+      });
+      expect(autoFetchQuery.firstCall.args[0]).to.contain("AND Status = 'Pending'");
+      expect(autoFetchQuery.firstCall.args[0]).to.contain(`AND Id = '${trustLinkId}'`);
+      expect(update.calledOnceWithExactly('PkgVrfyAuthOrgTrustRela', { Id: trustLinkId, Status: 'Declined' })).to.equal(
+        true
+      );
+    });
+
+    it('denies a pending request selected by authoring org', async () => {
+      const autoFetchQuery = sinon.stub().resolves({ records: [pendingRecord] });
+      const update = sinon.stub().resolves({ success: true, id: trustLinkId, errors: [] });
+      const connection = createConnection({
+        autoFetchQuery,
+        update,
+        getApiVersion: sinon.stub().returns('68.0'),
+      });
+
+      await PackageTrustLink.deny(connection, { authoringOrgId: '00Dxx0000009zZZEAY' });
+
+      expect(autoFetchQuery.firstCall.args[0]).to.contain(`AND AuthoringOrg = '${authoringOrgId15}'`);
+      expect(update.calledOnceWithExactly('PkgVrfyAuthOrgTrustRela', { Id: trustLinkId, Status: 'Declined' })).to.equal(
+        true
+      );
+    });
+
+    it('does not update when no pending request matches', async () => {
+      const update = sinon.stub();
+      const connection = createConnection({
+        autoFetchQuery: sinon.stub().resolves({ records: [] }),
+        update,
+        getApiVersion: sinon.stub().returns('68.0'),
+      });
+
+      try {
+        await PackageTrustLink.deny(connection, { requestId: trustLinkId });
+        expect.fail('expected a not-found error');
+      } catch (error) {
+        expect((error as Error).message).to.contain('No pending trust link request');
+      }
+      expect(update.called).to.equal(false);
+    });
+  });
+
+  describe('revoke', () => {
+    const authoringOrgId15 = '00Dxx0000009zZZ';
+    const acceptedRecord = {
+      Id: trustLinkId,
+      AuthoringOrg: authoringOrgId15,
+      VerifiedOrg: verifiedOrgId15,
+      Status: 'Accepted',
+    };
+
+    it('revokes an accepted link selected by request ID', async () => {
+      const autoFetchQuery = sinon.stub().resolves({ records: [acceptedRecord] });
+      const update = sinon.stub().resolves({ success: true, id: trustLinkId, errors: [] });
+      const connection = createConnection({
+        autoFetchQuery,
+        update,
+        getApiVersion: sinon.stub().returns('68.0'),
+      });
+
+      const result = await PackageTrustLink.revoke(connection, { requestId: trustLinkId });
+
+      expect(result).to.deep.equal({
+        LinkRequestId: trustLinkId,
+        AuthoringOrgId: authoringOrgId15,
+        VerifiedOrgId: verifiedOrgId15,
+        Status: 'Revoked',
+      });
+      expect(autoFetchQuery.firstCall.args[0]).to.contain("AND Status = 'Accepted'");
+      expect(autoFetchQuery.firstCall.args[0]).to.contain(`AND Id = '${trustLinkId}'`);
+      expect(update.calledOnceWithExactly('PkgVrfyAuthOrgTrustRela', { Id: trustLinkId, Status: 'Revoked' })).to.equal(
+        true
+      );
+    });
+
+    it('revokes an accepted link selected by authoring org', async () => {
+      const autoFetchQuery = sinon.stub().resolves({ records: [acceptedRecord] });
+      const update = sinon.stub().resolves({ success: true, id: trustLinkId, errors: [] });
+      const connection = createConnection({
+        autoFetchQuery,
+        update,
+        getApiVersion: sinon.stub().returns('68.0'),
+      });
+
+      await PackageTrustLink.revoke(connection, { authoringOrgId: '00Dxx0000009zZZEAY' });
+
+      expect(autoFetchQuery.firstCall.args[0]).to.contain(`AND AuthoringOrg = '${authoringOrgId15}'`);
+      expect(update.calledOnceWithExactly('PkgVrfyAuthOrgTrustRela', { Id: trustLinkId, Status: 'Revoked' })).to.equal(
+        true
+      );
+    });
+
+    it('does not update when no accepted link matches', async () => {
+      const update = sinon.stub();
+      const connection = createConnection({
+        autoFetchQuery: sinon.stub().resolves({ records: [] }),
+        update,
+        getApiVersion: sinon.stub().returns('68.0'),
+      });
+
+      try {
+        await PackageTrustLink.revoke(connection, { requestId: trustLinkId });
+        expect.fail('expected a not-found error');
+      } catch (error) {
+        expect((error as Error).message).to.contain('No accepted trust link');
+      }
+      expect(update.called).to.equal(false);
+    });
+
+    it('requires exactly one selector', async () => {
+      const connection = createConnection({ getApiVersion: sinon.stub().returns('68.0') });
+
+      try {
+        await PackageTrustLink.revoke(connection, {});
+        expect.fail('expected exactly-one selector validation to fail');
+      } catch (error) {
+        expect((error as Error).message).to.contain('exactly one');
       }
     });
   });
