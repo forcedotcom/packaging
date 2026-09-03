@@ -15,10 +15,14 @@
  */
 import path from 'node:path';
 import fs from 'node:fs';
-import { expect } from 'chai';
+import { assert, expect } from 'chai';
 import { instantiateContext, restoreContext, stubContext } from '@salesforce/core/testSetup';
-import { SfProject } from '@salesforce/core';
-import { createPackageRequestFromContext, createPackageDirEntry } from '../../src/package/packageCreate';
+import { Connection, SfProject } from '@salesforce/core';
+import {
+  createPackageRequestFromContext,
+  createPackageDirEntry,
+  validateDistributionType,
+} from '../../src/package/packageCreate';
 
 async function setupProject(setup: (project: SfProject) => void = () => {}) {
   const project = await SfProject.resolve();
@@ -123,6 +127,74 @@ describe('packageCreate', () => {
         Name: 'test',
         NamespacePrefix: '',
         PackageErrorUsername: 'foo@bar.org',
+      });
+    });
+    it('should include DistributionType when provided', async () => {
+      $$.inProject(true);
+      const project = await setupProject();
+      const request = createPackageRequestFromContext(project, {
+        name: 'test',
+        description: 'test description',
+        path: 'test/path',
+        packageType: 'Managed',
+        orgDependent: false,
+        errorNotificationUsername: 'foo@bar.org',
+        noNamespace: false,
+        distributionType: 'PublicSecure',
+      });
+      expect(request).to.deep.equal({
+        ContainerOptions: 'Managed',
+        Description: 'test description',
+        DistributionType: 'PublicSecure',
+        IsOrgDependent: false,
+        Name: 'test',
+        NamespacePrefix: '',
+        PackageErrorUsername: 'foo@bar.org',
+      });
+    });
+    it('should omit DistributionType when not provided so the backend can default it', async () => {
+      $$.inProject(true);
+      const project = await setupProject();
+      const request = createPackageRequestFromContext(project, {
+        name: 'test',
+        description: 'test description',
+        path: 'test/path',
+        packageType: 'Managed',
+        orgDependent: false,
+        errorNotificationUsername: 'foo@bar.org',
+        noNamespace: false,
+      });
+      expect(request).to.not.have.property('DistributionType');
+    });
+    describe('validateDistributionType', () => {
+      const connWithApi = (apiVersion: string): Connection =>
+        ({ getApiVersion: () => apiVersion } as unknown as Connection);
+
+      it('is a no-op when no distribution type is provided', () => {
+        expect(() => validateDistributionType(connWithApi('68.0'), undefined)).to.not.throw();
+      });
+      it('accepts CLI-settable values at API 68.0+', () => {
+        expect(() => validateDistributionType(connWithApi('68.0'), 'PublicSecure')).to.not.throw();
+        expect(() => validateDistributionType(connWithApi('68.0'), 'Limited')).to.not.throw();
+      });
+      it('throws for API version < 68.0', () => {
+        try {
+          validateDistributionType(connWithApi('67.0'), 'Limited');
+          expect.fail('validateDistributionType did not throw for api version < 68.0');
+        } catch (e) {
+          assert(e instanceof Error);
+          expect(e.message).to.include('distribution type').and.to.include('68.0');
+        }
+      });
+      it('throws for a non-CLI-settable value (Public/Private)', () => {
+        try {
+          // 'Public' is a backend-only value; the CLI must reject it.
+          validateDistributionType(connWithApi('68.0'), 'Public' as never);
+          expect.fail('validateDistributionType did not throw for a backend-only value');
+        } catch (e) {
+          assert(e instanceof Error);
+          expect(e.message).to.include('PublicSecure').and.to.include('Limited');
+        }
       });
     });
     describe('createPackageDirEntry', () => {

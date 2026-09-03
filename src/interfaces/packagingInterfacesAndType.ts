@@ -63,6 +63,7 @@ export type PackageUpdateOptions = {
   PackageErrorUsername?: string;
   AppAnalyticsEnabled?: boolean;
   RecommendedVersionId?: string;
+  DistributionType?: SettableDistributionType;
 };
 
 export type PackageAuthorizationOptions = {
@@ -335,6 +336,25 @@ export type Package1Display = {
 
 export type PackageType = 'Managed' | 'Unlocked';
 
+/**
+ * The distribution type of a package, controlling install-time security.
+ *
+ * The Tooling API `Package2.DistributionType` field can hold any of these values, but only
+ * `PublicSecure` and `Limited` may be set from the CLI on create/update — `Public` is a backend-only
+ * state (the legacy default the backend assigns). See {@link SettableDistributionType} for the
+ * CLI-settable subset.
+ */
+export type DistributionType = 'Public' | 'PublicSecure' | 'Limited';
+
+/** The subset of {@link DistributionType} values a user may set via the CLI on create and update. */
+export type SettableDistributionType = Extract<DistributionType, 'PublicSecure' | 'Limited'>;
+
+/** The distribution type values a user may set via the CLI on create and update. */
+export const SETTABLE_DISTRIBUTION_TYPES: readonly SettableDistributionType[] = ['PublicSecure', 'Limited'];
+
+/** Minimum Tooling API version that supports the `Package2.DistributionType` field. */
+export const DISTRIBUTION_TYPE_MIN_API_VERSION = '68.0';
+
 export type PackageCreateOptions = {
   name: string;
   description: string;
@@ -343,6 +363,7 @@ export type PackageCreateOptions = {
   packageType: PackageType;
   errorNotificationUsername: string;
   path: string;
+  distributionType?: SettableDistributionType;
 };
 
 export type PackageDescriptorJson = Partial<NamedPackagingDir> &

@@ -85,3 +85,11 @@ Provide a valid subscriber package version (04t) for the recommended version.
 # unassociatedRecommendedVersionError
 
 The provided recommended version isn't associated with this package.
+
+# distributionTypeApiPriorTo68Error
+
+Setting a distribution type is only possible with API version 68.0 or higher.
+
+# invalidDistributionTypeError
+
+Invalid distribution type "%s". When setting a distribution type from the CLI, the value must be either "PublicSecure" or "Limited".

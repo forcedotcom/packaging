@@ -275,6 +275,85 @@ describe('Package', () => {
         expect(e.message).to.include('recommended version').and.to.include('(04t)');
       }
     });
+
+    it('should update package DistributionType', async () => {
+      $$.inProject(true);
+      project = await setupProject((p) => {
+        p.getSfProjectJson().set('packageAliases', { mypkgalias: pkgId });
+      });
+
+      let objProvided = '';
+      let optsProvided: PackageUpdateOptions = { Id: '' };
+      const conn = {
+        tooling: {
+          update: (obj: string, opts: PackageUpdateOptions) => {
+            objProvided = obj;
+            optsProvided = opts;
+            return { success: true };
+          },
+        },
+        getApiVersion: () => '68.0',
+      } as unknown as Connection;
+
+      const pkg = new Package({ connection: conn, packageAliasOrId: pkgId, project });
+      const result = await pkg.update({
+        Id: pkgId,
+        DistributionType: 'Limited',
+      });
+      assert(result.success);
+      expect(objProvided).to.equal('Package2');
+      expect(optsProvided.Id).to.equal(pkgId);
+      expect(optsProvided.DistributionType).to.equal('Limited');
+    });
+
+    it('should error if DistributionType is defined for api version < 68.0', async () => {
+      $$.inProject(true);
+      project = await setupProject((p) => {
+        p.getSfProjectJson().set('packageAliases', { mypkgalias: pkgId });
+      });
+      const conn = {
+        tooling: {
+          update: () => {},
+        },
+        getApiVersion: () => '67.0',
+      } as unknown as Connection;
+      const pkg = new Package({ connection: conn, packageAliasOrId: pkgId, project });
+      try {
+        await pkg.update({
+          Id: pkgId,
+          DistributionType: 'PublicSecure',
+        });
+        expect.fail('The update did not throw an error when it should have');
+      } catch (e) {
+        assert(e instanceof Error);
+        expect(e.message).to.include('distribution type').and.to.include('68.0');
+      }
+    });
+
+    it('should error if DistributionType is not a CLI-settable value', async () => {
+      $$.inProject(true);
+      project = await setupProject((p) => {
+        p.getSfProjectJson().set('packageAliases', { mypkgalias: pkgId });
+      });
+      const conn = {
+        tooling: {
+          update: () => {},
+        },
+        getApiVersion: () => '68.0',
+      } as unknown as Connection;
+      const pkg = new Package({ connection: conn, packageAliasOrId: pkgId, project });
+      try {
+        await pkg.update({
+          Id: pkgId,
+          // 'Public' is a backend-only value and must be rejected by the CLI layer.
+          DistributionType: 'Public' as never,
+        });
+        expect.fail('The update did not throw an error when it should have');
+      } catch (e) {
+        assert(e instanceof Error);
+        expect(e.message).to.include('PublicSecure').and.to.include('Limited');
+      }
+    });
   });
 
   describe('lazy load package data', () => {

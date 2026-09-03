@@ -18,6 +18,7 @@ import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
 import { DirectedGraph } from 'graphology';
 import {
   ConvertPackageOptions,
+  DISTRIBUTION_TYPE_MIN_API_VERSION,
   PackageCreateOptions,
   PackageOptions,
   PackageSaveResult,
@@ -31,7 +32,7 @@ import {
   PackagingSObjects,
 } from '../interfaces';
 import { applyErrorAction, BY_LABEL, massageErrorMessage, validateId } from '../utils/packageUtils';
-import { createPackage } from './packageCreate';
+import { createPackage, validateDistributionType } from './packageCreate';
 import { convertPackage } from './packageConvert';
 import { retrievePackageVersionMetadata } from './packageVersionRetrieve';
 import { listPackageVersions } from './packageVersionList';
@@ -71,6 +72,7 @@ export const Package2Fields = [
   'PackageErrorUsername',
   'AppAnalyticsEnabled',
   'RecommendedVersionId',
+  'DistributionType',
 ];
 
 /**
@@ -252,9 +254,11 @@ export class Package {
 
   private static getPackage2Fields(connection: Connection): string[] {
     const apiVersion = connection.getApiVersion();
-    return Package2Fields.filter((field) => (apiVersion >= '59.0' ? true : field !== 'AppAnalyticsEnabled')).filter(
-      (field) => (apiVersion >= '66.0' ? true : field !== 'RecommendedVersionId')
-    );
+    return Package2Fields.filter((field) => (apiVersion >= '59.0' ? true : field !== 'AppAnalyticsEnabled'))
+      .filter((field) => (apiVersion >= '66.0' ? true : field !== 'RecommendedVersionId'))
+      .filter((field) =>
+        apiVersion >= DISTRIBUTION_TYPE_MIN_API_VERSION ? true : field !== 'DistributionType'
+      );
   }
 
   /**
@@ -342,6 +346,10 @@ export class Package {
       if (opts.RecommendedVersionId !== undefined && this.options.connection.getApiVersion() < '66.0') {
         throw messages.createError('recommendedVersionIdApiPriorTo66Error');
       }
+
+      // Validates the API version and that the value is CLI-settable (PublicSecure/Limited).
+      // The backend enforces the allowed state transitions between distribution types on update.
+      validateDistributionType(this.options.connection, opts.DistributionType);
 
       if (opts.RecommendedVersionId !== undefined) {
         const trimmedId = opts.RecommendedVersionId.trim();

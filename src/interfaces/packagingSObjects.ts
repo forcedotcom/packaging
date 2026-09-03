@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import { Nullable } from '@salesforce/ts-types';
-import { CodeCoverage, CodeCoveragePercentages, PackageType } from './packagingInterfacesAndType';
+import { CodeCoverage, CodeCoveragePercentages, DistributionType, PackageType } from './packagingInterfacesAndType';
 
 export namespace PackagingSObjects {
   export type Package2 = {
@@ -36,6 +36,7 @@ export namespace PackagingSObjects {
     PackageErrorUsername: string;
     AppAnalyticsEnabled?: boolean;
     RecommendedVersionId?: string;
+    DistributionType?: DistributionType;
   };
 
   export type Package2Version = {
