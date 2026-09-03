@@ -340,11 +340,11 @@ export type PackageType = 'Managed' | 'Unlocked';
  * The distribution type of a package, controlling install-time security.
  *
  * The Tooling API `Package2.DistributionType` field can hold any of these values, but only
- * `PublicSecure` and `Limited` may be set from the CLI on create/update — `Public` and `Private`
- * are backend-only states (`Public` is the legacy default the backend assigns; `Private` is not yet
- * selectable). See {@link SettableDistributionType} for the CLI-settable subset.
+ * `PublicSecure` and `Limited` may be set from the CLI on create/update — `Public` is a backend-only
+ * state (the legacy default the backend assigns). See {@link SettableDistributionType} for the
+ * CLI-settable subset.
  */
-export type DistributionType = 'Public' | 'PublicSecure' | 'Limited' | 'Private';
+export type DistributionType = 'Public' | 'PublicSecure' | 'Limited';
 
 /** The subset of {@link DistributionType} values a user may set via the CLI on create and update. */
 export type SettableDistributionType = Extract<DistributionType, 'PublicSecure' | 'Limited'>;
