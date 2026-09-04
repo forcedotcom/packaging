@@ -650,6 +650,87 @@ describe('packageConvert', () => {
         expect((e as Error).message).to.include('No subscriber package was found for seed id: 0Ho3i000000Gmj6CAC');
       }
     });
+
+    it('will throw an actionable error when the Dev Hub does not have 2GP enabled', async () => {
+      const notSupported = new Error(
+        "sObject type 'Package2' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names."
+      );
+      notSupported.name = 'INVALID_TYPE';
+      const conn = {
+        tooling: {
+          query: () => {
+            throw notSupported;
+          },
+        },
+      } as unknown as Connection;
+
+      try {
+        await findOrCreatePackage2('0Ho3i000000Gmj6CAC', conn);
+        expect.fail('should have thrown');
+      } catch (e) {
+        expect((e as Error).message).to.equal(
+          "Can't convert package. The org you specified doesn't have the required second-generation packaging permission enabled. Enable this permission on your Dev Hub org, and try again."
+        );
+        // the raw INVALID_TYPE text must not leak to the user
+        expect((e as Error).message).to.not.include('is not supported');
+        expect((e as Error).name).to.not.equal('INVALID_TYPE');
+      }
+    });
+
+    it('will throw an actionable error when the Package2 create reports 2GP not supported', async () => {
+      const conn = await testOrg.getConnection();
+
+      $$.SANDBOX.stub(conn.tooling, 'query')
+        .onFirstCall()
+        // @ts-ignore
+        .resolves({ records: [] })
+        .onSecondCall()
+        // @ts-ignore
+        .resolves({ records: [{ Name: 'pkg', Description: 'desc', NamespacePrefix: 'ns' }] });
+      $$.SANDBOX.stub(conn.tooling, 'create').resolves({
+        errors: [{ errorCode: 'INVALID_TYPE', message: "sObject type 'Package2' is not supported." }],
+        success: false,
+        id: undefined,
+      });
+
+      try {
+        await findOrCreatePackage2('0Ho3i000000Gmj6CAC', conn);
+        expect.fail('should have thrown');
+      } catch (e) {
+        expect((e as Error).message).to.equal(
+          "Can't convert package. The org you specified doesn't have the required second-generation packaging permission enabled. Enable this permission on your Dev Hub org, and try again."
+        );
+        expect((e as Error).message).to.not.include('is not supported');
+      }
+    });
+  });
+
+  it('convertPackage surfaces the actionable 2GP-not-enabled error', async () => {
+    const notSupported = new Error("sObject type 'Package2' is not supported.");
+    notSupported.name = 'INVALID_TYPE';
+    const conn = {
+      tooling: {
+        query: () => {
+          throw notSupported;
+        },
+      },
+    } as unknown as Connection;
+
+    try {
+      await convertPackage('0Ho3i000000Gmj6CAC', conn, {
+        buildInstance: '',
+        installationKey: '',
+        definitionfile: '',
+        installationKeyBypass: true,
+        wait: Duration.minutes(1),
+      });
+      expect.fail('should have thrown');
+    } catch (e) {
+      expect((e as Error).message).to.equal(
+        "Can't convert package. The org you specified doesn't have the required second-generation packaging permission enabled. Enable this permission on your Dev Hub org, and try again."
+      );
+      expect((e as Error).message).to.not.include('is not supported');
+    }
   });
   it('will throw correct error when create call fails', async () => {
     const conn = await testOrg.getConnection();
