@@ -115,6 +115,10 @@ No subscriber package was found for seed id: %s
 Only one package in a Dev Hub is allowed per converted from first-generation package, but the following were found:
 %s
 
+# convertPackagingNotEnabledOnOrg
+
+Can't convert package. The Dev Hub you specified doesn't have the Second-Generation Managed Packages setting enabled. Enable this setting on your Dev Hub, and try again.
+
 # errorMissingPackageIdOrPath
 
 You must specify either a package ID or a package path to create a new package version.

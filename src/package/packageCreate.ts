@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-import { Connection, SfError, SfProject } from '@salesforce/core';
+import { Connection, Messages, SfError, SfProject } from '@salesforce/core';
 import { env } from '@salesforce/kit';
 import { PackagePackageDir, PackageDir } from '@salesforce/schemas';
 import { isPackagingDirectory } from '@salesforce/core/project';
 import * as pkgUtils from '../utils/packageUtils';
 import { applyErrorAction, massageErrorMessage } from '../utils/packageUtils';
 import { PackageCreateOptions, PackagingSObjects } from '../interfaces';
+
+Messages.importMessagesDirectory(__dirname);
+const messages = Messages.loadMessages('@salesforce/packaging', 'package_create');
 
 type Package2Request = Pick<
   PackagingSObjects.Package2,
@@ -75,11 +78,17 @@ export async function createPackage(
     .sobject('Package2')
     .create(request)
     .catch((err) => {
+      if (isPackagingNotEnabledError(err)) {
+        throw messages.createError('createPackagingNotEnabledOnOrg');
+      }
       const error = err instanceof Error ? err : new Error(typeof err === 'string' ? err : 'Unknown error');
       throw SfError.wrap(applyErrorAction(massageErrorMessage(error)));
     });
 
   if (!createResult.success) {
+    if (createResult.errors?.some((error) => isPackagingNotEnabledError(error))) {
+      throw messages.createError('createPackagingNotEnabledOnOrg');
+    }
     throw pkgUtils.combineSaveErrors('Package2', 'create', createResult.errors);
   }
 
@@ -98,3 +107,32 @@ const sanitizePackageCreateOptions = (options: PackageCreateOptions): PackageCre
   ...options,
   path: options.path.replace(/\/$/, ''),
 });
+
+/**
+ * Detects the tooling-API error thrown when a Dev Hub does not have second-generation
+ * packaging enabled and the Package2 entity is therefore not accessible. The Package2
+ * create REST endpoint (connection.tooling.sobject('Package2').create) 404s with a
+ * NOT_FOUND / "The requested resource does not exist" error. (This differs from the SOQL
+ * path used by package convert, which instead reports "sObject type 'Package2' is not
+ * supported" -- but package create never issues a SOQL query, so that form cannot occur
+ * here.)
+ *
+ * @param err the error (or jsforce SaveError) thrown by a Package2 tooling call
+ * @returns true if the error indicates Package2 is not supported on the org
+ */
+const isPackagingNotEnabledError = (err: unknown): boolean => {
+  let name = '';
+  let msg: string;
+  if (err instanceof Error) {
+    name = err.name;
+    msg = err.message;
+  } else if (typeof err === 'object' && err !== null) {
+    // jsforce SaveError objects are plain objects that carry `errorCode`/`statusCode` and `message`.
+    const e = err as { errorCode?: string; statusCode?: string; message?: string };
+    name = String(e.errorCode ?? e.statusCode ?? '');
+    msg = typeof e.message === 'string' ? e.message : '';
+  } else {
+    msg = String(err);
+  }
+  return name === 'NOT_FOUND' && msg.includes('The requested resource does not exist');
+};

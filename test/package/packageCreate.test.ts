@@ -17,8 +17,22 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { expect } from 'chai';
 import { instantiateContext, restoreContext, stubContext } from '@salesforce/core/testSetup';
-import { SfProject } from '@salesforce/core';
-import { createPackageRequestFromContext, createPackageDirEntry } from '../../src/package/packageCreate';
+import { Connection, SfProject } from '@salesforce/core';
+import { env } from '@salesforce/kit';
+import { createPackage, createPackageRequestFromContext, createPackageDirEntry } from '../../src/package/packageCreate';
+
+const PACKAGING_NOT_ENABLED_MSG =
+  "Can't create package. The Dev Hub you specified doesn't have the Second-Generation Managed Packages setting enabled. Enable this setting on your Dev Hub, and try again.";
+
+const createOptions = {
+  name: 'TestPkg',
+  description: 'desc',
+  path: 'force-app',
+  packageType: 'Managed' as const,
+  orgDependent: false,
+  errorNotificationUsername: 'foo@bar.org',
+  noNamespace: false,
+};
 
 async function setupProject(setup: (project: SfProject) => void = () => {}) {
   const project = await SfProject.resolve();
@@ -196,6 +210,85 @@ describe('packageCreate', () => {
         expect(packageDirEntry).to.to.have.property('package', 'test-01');
         expect(packageDirEntry.package).to.not.be.true;
       });
+    });
+  });
+
+  describe('createPackage 2GP-not-enabled handling', () => {
+    // don't let a successful stub try to write to sfdx-project.json
+    beforeEach(() => {
+      env.setBoolean('SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE', true);
+    });
+    afterEach(() => {
+      env.unset('SF_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE');
+    });
+
+    it('throws an actionable error when the Package2 create endpoint 404s (NOT_FOUND)', async () => {
+      $$.inProject(true);
+      const project = await setupProject();
+      const notFound = new Error('The requested resource does not exist');
+      notFound.name = 'NOT_FOUND';
+      const conn = {
+        tooling: {
+          sobject: () => ({
+            create: () => Promise.reject(notFound),
+          }),
+        },
+      } as unknown as Connection;
+
+      try {
+        await createPackage(conn, project, createOptions);
+        expect.fail('should have thrown');
+      } catch (e) {
+        expect((e as Error).message).to.equal(PACKAGING_NOT_ENABLED_MSG);
+        // the raw NOT_FOUND text must not leak to the user
+        expect((e as Error).message).to.not.include('requested resource');
+      }
+    });
+
+    it('throws an actionable error when the create result reports NOT_FOUND', async () => {
+      $$.inProject(true);
+      const project = await setupProject();
+      const conn = {
+        tooling: {
+          sobject: () => ({
+            create: () =>
+              Promise.resolve({
+                success: false,
+                id: undefined,
+                errors: [{ errorCode: 'NOT_FOUND', message: 'The requested resource does not exist' }],
+              }),
+          }),
+        },
+      } as unknown as Connection;
+
+      try {
+        await createPackage(conn, project, createOptions);
+        expect.fail('should have thrown');
+      } catch (e) {
+        expect((e as Error).message).to.equal(PACKAGING_NOT_ENABLED_MSG);
+      }
+    });
+
+    it('rethrows unrelated create errors unchanged', async () => {
+      $$.inProject(true);
+      const project = await setupProject();
+      const other = new Error('some other failure');
+      other.name = 'INVALID_FIELD';
+      const conn = {
+        tooling: {
+          sobject: () => ({
+            create: () => Promise.reject(other),
+          }),
+        },
+      } as unknown as Connection;
+
+      try {
+        await createPackage(conn, project, createOptions);
+        expect.fail('should have thrown');
+      } catch (e) {
+        expect((e as Error).message).to.not.equal(PACKAGING_NOT_ENABLED_MSG);
+        expect((e as Error).message).to.include('some other failure');
+      }
     });
   });
 });
