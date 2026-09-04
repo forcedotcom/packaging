@@ -65,7 +65,15 @@ export async function findOrCreatePackage2(
   project?: SfProject
 ): Promise<string> {
   const query = `SELECT Id, Name FROM Package2 WHERE ConvertedFromPackageId = '${seedPackage}'`;
-  const queryResult = (await connection.tooling.query<PackagingSObjects.Package2>(query)).records;
+  let queryResult;
+  try {
+    queryResult = (await connection.tooling.query<PackagingSObjects.Package2>(query)).records;
+  } catch (e) {
+    if (isPackage2NotSupportedError(e)) {
+      throw messages.createError('convertPackagingNotEnabledOnOrg');
+    }
+    throw e;
+  }
   if (queryResult?.length > 1) {
     const ids = queryResult.map((r) => r.Id);
     throw messages.createError('errorMoreThanOnePackage2WithSeed', [ids.join(', ')]);
@@ -100,6 +108,9 @@ export async function findOrCreatePackage2(
 
   const createResult = await connection.tooling.create('Package2', request);
   if (!createResult.success) {
+    if (createResult.errors?.some((error) => isPackage2NotSupportedError(error))) {
+      throw messages.createError('convertPackagingNotEnabledOnOrg');
+    }
     throw pkgUtils.combineSaveErrors('Package2', 'create', createResult.errors);
   }
 
@@ -475,3 +486,25 @@ const isStatusEqualTo = (
   results: PackageVersionCreateRequestResult[],
   statuses: Package2VersionStatus[] = []
 ): boolean => (!results?.length ? false : statuses.some((status) => results[0].Status === status));
+
+/**
+ * Detects the tooling-API error thrown when a Dev Hub does not have second-generation
+ * packaging enabled and the Package2 entity is therefore not accessible. The full server
+ * message may append custom-object WSDL boilerplate, so match on a substring (consistent
+ * with the handling in packageVersionRetrieve.ts).
+ *
+ * @param err the error thrown by a Package2 tooling call
+ * @returns true if the error indicates Package2 is not supported on the org
+ */
+const isPackage2NotSupportedError = (err: unknown): boolean => {
+  let msg: string;
+  if (err instanceof Error) {
+    msg = err.message;
+  } else if (typeof err === 'object' && err !== null && 'message' in err) {
+    // jsforce SaveError objects are plain objects that carry a `message` field.
+    msg = String(err.message);
+  } else {
+    msg = String(err);
+  }
+  return msg.includes("sObject type 'Package2' is not supported.");
+};
