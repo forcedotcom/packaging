@@ -59,7 +59,7 @@
   },
   "devDependencies": {
     "@salesforce/cli-plugins-testkit": "^5.3.64",
-    "@salesforce/dev-scripts": "^13.0.2",
+    "@salesforce/dev-scripts": "^14.0.0",
     "@types/chai": "^4.3.17",
     "@types/globby": "^9.1.0",
     "@types/jszip": "^3.4.1",
@@ -70,7 +70,7 @@
     "eslint-config-salesforce-typescript": "^6.0.0",
     "eslint-plugin-sf-plugin": "^3.0.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.0"
   },
   "resolutions": {
     "@jsforce/jsforce-node/node-fetch/whatwg-url": "^14.0.0",
