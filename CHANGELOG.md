@@ -1,3 +1,12 @@
+## [5.0.13](https://github.com/forcedotcom/packaging/compare/5.0.12...5.0.13) (2026-09-28)
+
+
+### Bug Fixes
+
+* **deps:** bump fast-uri from 3.1.5 to 3.1.7 ([04d8be6](https://github.com/forcedotcom/packaging/commit/04d8be6f37e52e361f7072967377711cb72cb933))
+
+
+
 ## [5.0.12](https://github.com/forcedotcom/packaging/compare/5.0.11...5.0.12) (2026-09-01)
 
 
