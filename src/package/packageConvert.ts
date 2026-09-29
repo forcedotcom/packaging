@@ -337,6 +337,14 @@ function buildPackageDescriptorJson(args: {
         }
       }
     }
+
+    const packageMetadataPermissionSets = (packageObject as unknown as PackageDescriptorJson).packageMetadataAccess
+      ?.permissionSets;
+    if (packageMetadataPermissionSets) {
+      descriptor.packageMetadataAccess = {
+        permissionSets: packageMetadataPermissionSets,
+      } as PackageDescriptorJson['packageMetadataAccess'];
+    }
   }
   return descriptor;
 }
