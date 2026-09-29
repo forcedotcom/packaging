@@ -1,3 +1,12 @@
+## [5.0.14](https://github.com/forcedotcom/packaging/compare/5.0.13...5.0.14) (2026-09-29)
+
+
+### Bug Fixes
+
+* **package-convert:** @W-24017820 actionable error when Dev Hub lacks 2GP ([45ee002](https://github.com/forcedotcom/packaging/commit/45ee002dab9355b5a4d499be7100d8e800b15d6b))
+
+
+
 ## [5.0.13](https://github.com/forcedotcom/packaging/compare/5.0.12...5.0.13) (2026-09-28)
 
 
