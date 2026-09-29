@@ -406,6 +406,36 @@ describe('packageConvert', () => {
       expect(package2DescriptorJson).to.not.have.string('apexTestAccess');
     });
 
+    it('should include packageMetadataAccess permission sets in the conversion descriptor without code coverage', async () => {
+      $$.inProject(true);
+      const project = SfProject.getInstance();
+
+      await fs.promises.mkdir(path.join(project.getPath(), 'force-app'), { recursive: true });
+      project.getSfProjectJson().set('packageDirectories', [
+        {
+          path: 'force-app',
+          package: '0Ho3i000000Gmj6CAC',
+          packageMetadataAccess: {
+            permissionSets: ['Metadata_Access'],
+            permissionSetLicenses: ['Metadata_PSL'],
+          },
+        },
+      ]);
+      await project.getSfProjectJson().write();
+
+      const writeFileSpy = $$.SANDBOX.spy(fs.promises, 'writeFile');
+      await createPackageVersionCreateRequest({ codecoverage: false }, '0Ho3i000000Gmj6CAC', '61.0', project);
+
+      const descriptorWrite = writeFileSpy
+        .getCalls()
+        .find((call) => (call.args[0] as string).endsWith('package2-descriptor.json'));
+      expect(descriptorWrite).to.not.be.undefined;
+      const descriptor = JSON.parse(descriptorWrite!.args[1] as string) as Record<string, unknown>;
+      expect(descriptor.packageMetadataPermissionSetNames).to.deep.equal(['Metadata_Access']);
+      expect(descriptor).to.not.have.property('packageMetadataPermissionSetLicenseNames');
+      expect(descriptor).to.not.have.property('packageMetadataAccess');
+    });
+
     it('should use seedMetadata from project configuration when CLI option not provided', async () => {
       $$.inProject(true);
       const project = SfProject.getInstance();
