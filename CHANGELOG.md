@@ -1,3 +1,12 @@
+## [5.0.15](https://github.com/forcedotcom/packaging/compare/5.0.14...5.0.15) (2026-10-07)
+
+
+### Bug Fixes
+
+* **deps:** bump undici from 8.10.0 to 8.11.2 ([6adf8ae](https://github.com/forcedotcom/packaging/commit/6adf8aeec771e18831beca1fcf2af5074b86f6d9))
+
+
+
 ## [5.0.14](https://github.com/forcedotcom/packaging/compare/5.0.13...5.0.14) (2026-09-29)
 
 
