@@ -1,3 +1,12 @@
+## [5.0.17](https://github.com/forcedotcom/packaging/compare/5.0.16...5.0.17) (2026-10-09)
+
+
+### Bug Fixes
+
+* **deps:** bump source-map-js from 1.2.1 to 1.2.2 ([40d43a1](https://github.com/forcedotcom/packaging/commit/40d43a187b4118345e116b0c68c263f292e413af))
+
+
+
 ## [5.0.16](https://github.com/forcedotcom/packaging/compare/5.0.15...5.0.16) (2026-10-09)
 
 
