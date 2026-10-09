@@ -1,3 +1,12 @@
+## [5.0.16](https://github.com/forcedotcom/packaging/compare/5.0.15...5.0.16) (2026-10-09)
+
+
+### Bug Fixes
+
+* **deps:** bump fast-copy from 3.0.2 to 3.1.0 ([d4f28c9](https://github.com/forcedotcom/packaging/commit/d4f28c9b885c7d702151aa772443171108ff5dbf))
+
+
+
 ## [5.0.15](https://github.com/forcedotcom/packaging/compare/5.0.14...5.0.15) (2026-10-07)
 
 
