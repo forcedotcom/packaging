@@ -1,3 +1,12 @@
+## [5.0.20](https://github.com/forcedotcom/packaging/compare/5.0.19...5.0.20) (2026-10-10)
+
+
+### Bug Fixes
+
+* **deps:** bump fast-xml-parser from 5.10.1 to 5.11.2 ([c646b45](https://github.com/forcedotcom/packaging/commit/c646b45290e634e60e1c8f5367d5d60525b622ec))
+
+
+
 ## [5.0.19](https://github.com/forcedotcom/packaging/compare/5.0.18...5.0.19) (2026-10-09)
 
 
