@@ -30,6 +30,10 @@ docs
 # history for repl script
 .repl_history
 
+
+npm-shrinkwrap.json
+oclif.lock
+
 # -- CLEAN ALL
 *.tsbuildinfo
 node_modules
