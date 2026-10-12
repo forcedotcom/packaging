@@ -171,7 +171,6 @@ describe('subscriberPackageVersion', () => {
   });
   it('uninstallStatus reports a failed request with its errors, using valid SOQL', async () => {
     const id = '06y000000000001AAA';
-    // @ts-ignore
     const spvId = '04t000000000001AAA';
     $$.SANDBOX.stub(connection.tooling, 'retrieve').resolves({
       Id: id,
