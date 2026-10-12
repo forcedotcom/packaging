@@ -172,7 +172,12 @@ describe('subscriberPackageVersion', () => {
   it('uninstallStatus reports a failed request with its errors, using valid SOQL', async () => {
     const id = '06y000000000001AAA';
     // @ts-ignore
-    $$.SANDBOX.stub(connection.tooling, 'retrieve').resolves({ Id: id, Status: 'Error' });
+    const spvId = '04t000000000001AAA';
+    $$.SANDBOX.stub(connection.tooling, 'retrieve').resolves({
+      Id: id,
+      SubscriberPackageVersionId: spvId,
+      Status: 'Error',
+    });
     queryStub.resolves({ records: [{ Message: 'this is a server-side error message' }], done: true, totalSize: 1 });
 
     let error: Error | undefined;
@@ -183,6 +188,7 @@ describe('subscriberPackageVersion', () => {
     }
     expect(error).to.not.be.undefined;
     expect((error as SfError).name).to.equal('UNINSTALL_ERROR');
+    expect(error!.message).to.include(`Can't uninstall the package ${spvId} during uninstall request ${id}`);
     expect(error!.message).to.include('(1) this is a server-side error message');
     expect(queryStub.firstCall.args[0]).to.equal(
       `SELECT Message FROM PackageVersionUninstallRequestError WHERE ParentRequest.Id = '${id}' ORDER BY Message`

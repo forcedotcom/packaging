@@ -157,7 +157,7 @@ export class SubscriberPackageVersion {
   public static async installStatus(
     connection: Connection,
     packageInstallRequestOrId: string | PackagingSObjects.PackageInstallRequest,
-    installationKey?: string   | Nullable<string>,
+    installationKey?: string | Nullable<string>,
     options?: PackageInstallOptions
   ): Promise<PackagingSObjects.PackageInstallRequest> {
     const id = typeof packageInstallRequestOrId === 'string' ? packageInstallRequestOrId : packageInstallRequestOrId.Id;
@@ -216,7 +216,7 @@ export class SubscriberPackageVersion {
       const errorDetails = await getUninstallErrors(connection, id);
       const errors = errorDetails.map((record, index) => `(${index + 1}) ${record.Message}`);
       const errHeader = errors.length > 0 ? `\n=== Errors\n${errors.join('\n')}` : '';
-      const err = pkgMessages.getMessage('defaultErrorMessage', [id, result.Id]);
+      const err = pkgMessages.getMessage('defaultErrorMessage', [result.SubscriberPackageVersionId, result.Id]);
 
       throw new SfError(`${err}${errHeader}`, 'UNINSTALL_ERROR', [pkgMessages.getMessage('action')]);
     }

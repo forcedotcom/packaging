@@ -55,7 +55,10 @@ export async function pollUninstall(
         return { completed: false, payload: uninstallRequest };
       }
       default: {
-        const err = pkgMessages.getMessage('defaultErrorMessage', [id, uninstallRequest.Id]);
+        const err = pkgMessages.getMessage('defaultErrorMessage', [
+          uninstallRequest.SubscriberPackageVersionId,
+          uninstallRequest.Id,
+        ]);
         const errorMessages = await getUninstallErrors(conn, id);
 
         const errors = errorMessages.map((error, index) => `(${index + 1}) ${error.Message}${os.EOL}`);

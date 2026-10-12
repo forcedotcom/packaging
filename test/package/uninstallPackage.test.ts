@@ -86,6 +86,7 @@ describe('Package Uninstall', () => {
     sobjectStub.onSecondCall().returns({
       retrieve: async () => ({
         Id: '06y23000000002MXXX',
+        SubscriberPackageVersionId: '04t4p000002BaHYXXX',
         Status: 'ERROR',
         Errors: { errors: [new Error('message 1'), new Error('message 2')] },
       }),
@@ -101,7 +102,7 @@ describe('Package Uninstall', () => {
     } catch (e) {
       const error = e as SfError;
       expect(error.message).to.include(
-        "Can't uninstall the package 04t4p000002BaHYAA0 during uninstall request 06y23000000002MXXX."
+        "Can't uninstall the package 04t4p000002BaHYXXX during uninstall request 06y23000000002MXXX."
       );
       expect(error.message).to.include('=== Errors');
       expect(error.message).to.include('(1) this is a server-side error message');
@@ -117,6 +118,7 @@ describe('Package Uninstall', () => {
     sobjectStub.onSecondCall().returns({
       retrieve: async () => ({
         Id: '04t4p000002BaHYXXX',
+        SubscriberPackageVersionId: '04t4p000002BaHYZZZ',
         Status: 'ERROR',
         Errors: [],
       }),
@@ -133,7 +135,7 @@ describe('Package Uninstall', () => {
       assert.fail('the above should throw an error from polling');
     } catch (e) {
       expect((e as SfError).message).to.equal(
-        "Can't uninstall the package 04t4p000002BaHYAA0 during uninstall request 04t4p000002BaHYXXX."
+        "Can't uninstall the package 04t4p000002BaHYZZZ during uninstall request 04t4p000002BaHYXXX."
       );
       expect((e as SfError).actions).to.deep.equal(['Verify installed package ID and resolve errors, then try again.']);
     }
