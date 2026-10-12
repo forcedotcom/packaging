@@ -27,7 +27,7 @@ type UninstallResult = PackagingSObjects.SubscriberPackageVersionUninstallReques
 
 export async function getUninstallErrors(conn: Connection, id: string): Promise<Array<{ Message: string }>> {
   const errorQueryResult = await conn.tooling.query<{ Message: string }>(
-    `"SELECT Message FROM PackageVersionUninstallRequestError WHERE ParentRequest.Id = '${id}' ORDER BY Message"`
+    `SELECT Message FROM PackageVersionUninstallRequestError WHERE ParentRequest.Id = '${id}' ORDER BY Message`
   );
   return errorQueryResult?.records ?? [];
 }

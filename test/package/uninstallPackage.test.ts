@@ -91,7 +91,7 @@ describe('Package Uninstall', () => {
       }),
     });
     // @ts-ignore
-    $$.SANDBOX.stub(conn.tooling, 'query').resolves({
+    const queryStub = $$.SANDBOX.stub(conn.tooling, 'query').resolves({
       records: [{ Message: 'this is a server-side error message' }, { Message: 'this is a second error message' }],
     });
 
@@ -108,6 +108,9 @@ describe('Package Uninstall', () => {
       expect(error.message).to.include('(2) this is a second error message');
       expect(error.actions).to.deep.equal(['Verify installed package ID and resolve errors, then try again.']);
     }
+    expect(queryStub.firstCall.args[0]).to.equal(
+      "SELECT Message FROM PackageVersionUninstallRequestError WHERE ParentRequest.Id = '04t4p000002BaHYAA0' ORDER BY Message"
+    );
   });
 
   it('should send the uninstall request, and handle errors appropriately (0 error messages)', async () => {
