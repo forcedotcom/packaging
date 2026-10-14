@@ -15,7 +15,7 @@
  */
 import path from 'node:path';
 import fs from 'node:fs';
-import { Connection, SfProject } from '@salesforce/core';
+import { Connection, SfError, SfProject } from '@salesforce/core';
 import { expect } from 'chai';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/testSetup';
 import { SubscriberPackageVersion } from '../../src/package';
@@ -85,7 +85,6 @@ describe('subscriberPackageVersion', () => {
   const password: string | undefined = undefined;
   let connection: Connection;
 
-   
   // @ts-ignore
   let queryStub: sinon.SinonStub;
   const $$ = instantiateContext();
@@ -169,6 +168,30 @@ describe('subscriberPackageVersion', () => {
       );
       expect(queryStub.called).to.be.true;
     }
+  });
+  it('uninstallStatus reports a failed request with its errors, using valid SOQL', async () => {
+    const id = '06y000000000001AAA';
+    const spvId = '04t000000000001AAA';
+    $$.SANDBOX.stub(connection.tooling, 'retrieve').resolves({
+      Id: id,
+      SubscriberPackageVersionId: spvId,
+      Status: 'Error',
+    });
+    queryStub.resolves({ records: [{ Message: 'this is a server-side error message' }], done: true, totalSize: 1 });
+
+    let error: Error | undefined;
+    try {
+      await SubscriberPackageVersion.uninstallStatus(id, connection);
+    } catch (e) {
+      error = e as Error;
+    }
+    expect(error).to.not.be.undefined;
+    expect((error as SfError).name).to.equal('UNINSTALL_ERROR');
+    expect(error!.message).to.include(`Can't uninstall the package ${spvId} during uninstall request ${id}`);
+    expect(error!.message).to.include('(1) this is a server-side error message');
+    expect(queryStub.firstCall.args[0]).to.equal(
+      `SELECT Message FROM PackageVersionUninstallRequestError WHERE ParentRequest.Id = '${id}' ORDER BY Message`
+    );
   });
   it('should propagate the same error from the SPV query', async () => {
     connection = await testOrg.getConnection();

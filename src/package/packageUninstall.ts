@@ -27,7 +27,7 @@ type UninstallResult = PackagingSObjects.SubscriberPackageVersionUninstallReques
 
 export async function getUninstallErrors(conn: Connection, id: string): Promise<Array<{ Message: string }>> {
   const errorQueryResult = await conn.tooling.query<{ Message: string }>(
-    `"SELECT Message FROM PackageVersionUninstallRequestError WHERE ParentRequest.Id = '${id}' ORDER BY Message"`
+    `SELECT Message FROM PackageVersionUninstallRequestError WHERE ParentRequest.Id = '${id}' ORDER BY Message`
   );
   return errorQueryResult?.records ?? [];
 }
@@ -55,7 +55,10 @@ export async function pollUninstall(
         return { completed: false, payload: uninstallRequest };
       }
       default: {
-        const err = pkgMessages.getMessage('defaultErrorMessage', [id, uninstallRequest.Id]);
+        const err = pkgMessages.getMessage('defaultErrorMessage', [
+          uninstallRequest.SubscriberPackageVersionId,
+          uninstallRequest.Id,
+        ]);
         const errorMessages = await getUninstallErrors(conn, id);
 
         const errors = errorMessages.map((error, index) => `(${index + 1}) ${error.Message}${os.EOL}`);
