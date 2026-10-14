@@ -1,3 +1,14 @@
+## [5.0.21](https://github.com/forcedotcom/packaging/compare/5.0.20...5.0.21) (2026-10-14)
+
+
+### Bug Fixes
+
+* remove literal quotes & update test ([f03de21](https://github.com/forcedotcom/packaging/commit/f03de21ffeac7ac7be240222a10d5937a57c419d))
+* remove unused ts-ignore ([9982136](https://github.com/forcedotcom/packaging/commit/9982136b6aa39b4d3b467129b01fd290cd561908))
+* update id message ([0ccf9e7](https://github.com/forcedotcom/packaging/commit/0ccf9e73f96fc266e68676d14fb8105575b41b5b))
+
+
+
 ## [5.0.20](https://github.com/forcedotcom/packaging/compare/5.0.19...5.0.20) (2026-10-10)
 
 
