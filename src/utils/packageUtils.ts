@@ -225,7 +225,7 @@ export function escapeInstallationKey(key: string): string {
  * @param packageIds The list of package IDs
  * @param connection For tooling query
  */
- 
+
 export async function getContainerOptions(
   packageIds: string | undefined | Array<string | undefined>,
   connection: Connection
@@ -256,7 +256,7 @@ export async function getContainerOptions(
  * @param subscriberPackageVersionIds
  * @param connection For tooling query
  */
- 
+
 export async function getPackageVersionStrings(
   subscriberPackageVersionIds: string[],
   connection: Connection
@@ -466,10 +466,9 @@ export async function zipDir(dir: string, zipfile: string): Promise<void> {
   for (const file of globbyResult) {
     zip.file(file, fs.readFileSync(join(dir, file)));
   }
-  // write zip to file
+  // Use the default streamFiles: false so empty STORED entries have no data descriptors.
   const zipStream = zip.generateNodeStream({
     type: 'nodebuffer',
-    streamFiles: true,
     compression: 'DEFLATE',
     compressionOptions: {
       level: 3,
