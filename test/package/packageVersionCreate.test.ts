@@ -18,7 +18,14 @@ import fs from 'node:fs';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/testSetup';
 import { assert, expect } from 'chai';
 import JSZip from 'jszip';
-import { Connection, Logger, SfProject } from '@salesforce/core';
+import {
+  ConfigAggregator,
+  Connection,
+  Lifecycle,
+  Logger,
+  ScratchOrgSettingsGenerator,
+  SfProject,
+} from '@salesforce/core';
 import { isPackagingDirectory } from '@salesforce/core/project';
 import { PackageDir, PackagePackageDir } from '@salesforce/schemas';
 import {
@@ -196,6 +203,34 @@ describe('Package Version Create', () => {
     ]);
   });
 
+  for (const [configValue, expectedValue] of [
+    ['true', true],
+    ['false', false],
+  ]) {
+    it(`should honor the configured record type capitalization setting when set to ${configValue}`, async () => {
+      const warningSpy = $$.SANDBOX.spy(Lifecycle.prototype, 'emitWarning');
+      const extractSpy = $$.SANDBOX.spy(ScratchOrgSettingsGenerator.prototype, 'extract');
+      const configAggregatorCreateStub = $$.SANDBOX.stub(ConfigAggregator, 'create').resolves({
+        getInfo: () => ({ value: configValue }),
+      } as unknown as ConfigAggregator);
+      const definitionfile = 'project-scratch-def.json';
+      stubConvert();
+      (fs.promises.readFile as unknown as sinon.SinonStub).withArgs(definitionfile).resolves('{}');
+      $$.SANDBOX.stub(fs.promises, 'copyFile').callsFake(async (_source: fs.PathLike, destination: fs.PathLike) => {
+        await fs.promises.writeFile(destination, '{}');
+      });
+      const pvc = new PackageVersionCreate({ connection, project, definitionfile, packageId });
+
+      await pvc.createPackageVersion();
+
+      expect(warningSpy.called).to.equal(false);
+      expect((extractSpy.firstCall.thisValue as { capitalizeRecordTypes: boolean }).capitalizeRecordTypes).to.equal(
+        expectedValue
+      );
+      expect(configAggregatorCreateStub.calledWith({ projectPath: project.getPath() })).to.equal(true);
+    });
+  }
+
   it('should create the package version create request with codecoverage=true', async () => {
     const pvc = new PackageVersionCreate({ connection, project, codecoverage: true, packageId });
     const hasUnpackagedMdSpy = $$.SANDBOX.spy(MetadataResolver.prototype, 'resolveMetadata');
@@ -203,7 +238,7 @@ describe('Package Version Create', () => {
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].CalculateCodeCoverage).to.equal(true);
     expect(result).to.have.all.keys(expectedKeys);
-     
+
     const unpackagedMD = hasUnpackagedMdSpy.secondCall.args[0];
     expect(unpackagedMD).to.equal('unpackaged');
   });
@@ -216,7 +251,7 @@ describe('Package Version Create', () => {
     const result = await pvc.createPackageVersion();
     expect(packageCreateStub.firstCall.args[1].CalculateCodeCoverage).to.equal(false);
     expect(result).to.have.all.keys(expectedKeys);
-     
+
     const hasSeedMd = hasSeedMdSpy.firstCall.args[0];
     expect(hasSeedMd).to.equal('seed');
   });
@@ -482,7 +517,6 @@ describe('Package Version Create', () => {
     const result = await pvc.createPackageVersion();
     expect(result).to.have.all.keys(expectedKeys);
 
-     
     const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // package2-descriptor.json contents
     expect(package2DescriptorJson).to.have.string('buildOrgLanguage');
   });
@@ -792,7 +826,7 @@ describe('Package Version Create', () => {
     stubConvert();
     const result = await pvc.createPackageVersion();
     expect(result).to.have.all.keys(expectedKeys);
-     
+
     const excludedDirsGenerate = profileSpyGenerate.firstCall.args[2];
     expect(excludedDirsGenerate?.length).to.equal(2);
     expect(excludedDirsGenerate).to.contain('unpackaged-pkg');
@@ -1073,7 +1107,6 @@ describe('Package Version Create', () => {
       const result = await pvc.createPackageVersion();
       expect(result).to.have.all.keys(expectedKeys);
 
-       
       const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // package2-descriptor.json contents
       expect(package2DescriptorJson).to.have.string('snapshot');
     });
@@ -1096,7 +1129,6 @@ describe('Package Version Create', () => {
       const result = await pvc.createPackageVersion();
       expect(result).to.have.all.keys(expectedKeys);
 
-       
       const package2DescriptorJson = writeFileSpy.firstCall.args[1]; // package2-descriptor.json contents
       expect(package2DescriptorJson).to.have.string('snapshot');
     });

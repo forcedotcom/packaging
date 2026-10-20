@@ -18,7 +18,14 @@ import os from 'node:os';
 import path from 'node:path';
 import { expect } from 'chai';
 import { instantiateContext, MockTestOrgData, restoreContext, stubContext } from '@salesforce/core/testSetup';
-import { Connection, Lifecycle, Messages, SfProject } from '@salesforce/core';
+import {
+  ConfigAggregator,
+  Connection,
+  Lifecycle,
+  Messages,
+  ScratchOrgSettingsGenerator,
+  SfProject,
+} from '@salesforce/core';
 import { Duration } from '@salesforce/kit';
 import {
   convertPackage,
@@ -107,6 +114,34 @@ describe('packageConvert', () => {
       // the most we can assert about VersionInfo because it is a zip file string representation, which changes with time
       expect(typeof request.VersionInfo).to.equal('string');
     });
+
+    for (const [configValue, expectedValue] of [
+      ['true', true],
+      ['false', false],
+    ]) {
+      it(`should honor the configured record type capitalization setting when set to ${configValue}`, async () => {
+        const warningSpy = $$.SANDBOX.spy(Lifecycle.prototype, 'emitWarning');
+        const extractSpy = $$.SANDBOX.spy(ScratchOrgSettingsGenerator.prototype, 'extract');
+        const configAggregatorCreateStub = $$.SANDBOX.stub(ConfigAggregator, 'create').resolves({
+          getInfo: () => ({ value: configValue }),
+        } as unknown as ConfigAggregator);
+        const scratchDefPath = path.join(os.tmpdir(), `scratch-${configValue}.json`);
+        await fs.promises.writeFile(scratchDefPath, '{}');
+
+        await createPackageVersionCreateRequest(
+          { definitionfile: scratchDefPath },
+          '0Ho3i000000Gmj6CAC',
+          '54.0',
+          undefined
+        );
+
+        expect(warningSpy.called).to.equal(false);
+        expect((extractSpy.firstCall.thisValue as { capitalizeRecordTypes: boolean }).capitalizeRecordTypes).to.equal(
+          expectedValue
+        );
+        expect(configAggregatorCreateStub.calledWith({ projectPath: undefined })).to.equal(true);
+      });
+    }
 
     it('should return a valid request including seed metadata', async () => {
       $$.inProject(true);

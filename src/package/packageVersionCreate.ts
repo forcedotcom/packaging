@@ -18,6 +18,7 @@ import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs';
 import {
+  ConfigAggregator,
   Connection,
   Lifecycle,
   Logger,
@@ -36,7 +37,7 @@ import {
   MetadataConverter,
 } from '@salesforce/source-deploy-retrieve';
 import { isNamedPackagingDirectory, isPackagingDirectory } from '@salesforce/core/project';
-import { ensureArray, env } from '@salesforce/kit';
+import { ensureArray, env, toBoolean } from '@salesforce/kit';
 import { XMLParser, XMLBuilder } from 'fast-xml-parser';
 import { isString } from '@salesforce/ts-types';
 import { PackagePackageDir, PackageDirDependency } from '@salesforce/schemas';
@@ -292,7 +293,7 @@ export class PackageVersionCreate {
         throw messages.createError('noReleaseVersionFoundForBranch', [packageId, branch, versionNumber.toString()]);
       }
     }
-     
+
     return `${results.records[0].expr0}`;
   }
 
@@ -392,7 +393,12 @@ export class PackageVersionCreate {
     };
 
     await fs.promises.mkdir(packageVersBlobDirectory, { recursive: true });
-    const settingsGenerator = new ScratchOrgSettingsGenerator({ asDirectory: true });
+    const configAggregator = await ConfigAggregator.create({ projectPath: this.project.getPath() });
+    const capitalizeRecordTypes = configAggregator.getInfo('org-capitalize-record-types').value as string | undefined;
+    const settingsGenerator = new ScratchOrgSettingsGenerator({
+      asDirectory: true,
+      capitalizeRecordTypes: capitalizeRecordTypes === undefined ? undefined : toBoolean(capitalizeRecordTypes),
+    });
     let packageDescriptorJson = structuredClone(this.packageObject) as PackageDescriptorJson;
     const apvLanguage = packageDescriptorJson.language;
 
@@ -1081,7 +1087,6 @@ export const packageXmlStringToPackageXmlJson = (rawXml: string): PackageXml => 
     isArray: (name: string) => ['types', 'members'].includes(name),
   });
 
-   
   return (parser.parse(rawXml) as { Package: PackageXml }).Package;
 };
 
