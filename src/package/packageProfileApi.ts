@@ -16,7 +16,7 @@
 import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs';
-import globby from 'globby';
+import { globSync } from 'tinyglobby';
 import { Logger, Messages, SfProject } from '@salesforce/core';
 import { AsyncCreatable } from '@salesforce/kit';
 import { PackageXml, ProfileApiOptions } from '../interfaces';
@@ -135,7 +135,13 @@ export class PackageProfileApi extends AsyncCreatable<ProfileApiOptions> {
           ? path.posix.join(...fullDir.split(path.sep), '**', '*.profile-meta.xml')
           : path.join(fullDir, '**', '*.profile-meta.xml')
       );
-    return globby.sync(patterns, { ignore });
+    // tinyglobby matches `ignore` relative to cwd, so use the filesystem root to match against full paths.
+    // Glob each package directory separately to keep results in package directory order.
+    const cwd = path.parse(this.project.getPath()).root;
+    const profiles = patterns.flatMap((pattern) =>
+      globSync(pattern, { ignore, absolute: true, expandDirectories: false, cwd })
+    );
+    return [...new Set(profiles)];
   }
 
   private getProfilesWithNamesAndPaths(excludedDirectories: string[]): Array<Required<ProfilePathWithName>> {
