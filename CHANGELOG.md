@@ -1,3 +1,12 @@
+## [5.0.23](https://github.com/forcedotcom/packaging/compare/5.0.22...5.0.23) (2026-10-22)
+
+
+### Bug Fixes
+
+* replace globby with tinyglobby ([5554658](https://github.com/forcedotcom/packaging/commit/5554658083593dba87514e732041bc6a86036a36))
+
+
+
 ## [5.0.22](https://github.com/forcedotcom/packaging/compare/5.0.21...5.0.22) (2026-10-22)
 
 
