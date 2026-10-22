@@ -1,3 +1,12 @@
+## [5.0.22](https://github.com/forcedotcom/packaging/compare/5.0.21...5.0.22) (2026-10-22)
+
+
+### Bug Fixes
+
+* **deps:** bump markdown-it from 14.3.1 to 14.3.3 ([da47ad5](https://github.com/forcedotcom/packaging/commit/da47ad52747e4a5470c2188c0056702b4973cfa6))
+
+
+
 ## [5.0.21](https://github.com/forcedotcom/packaging/compare/5.0.20...5.0.21) (2026-10-14)
 
 
