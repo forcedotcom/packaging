@@ -18,6 +18,7 @@ import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs';
 import {
+  ConfigAggregator,
   Connection,
   Lifecycle,
   Logger,
@@ -30,7 +31,7 @@ import {
   StatusResult,
   ScratchOrgSettingsGenerator,
 } from '@salesforce/core';
-import { camelCaseToTitleCase, Duration, env } from '@salesforce/kit';
+import { camelCaseToTitleCase, Duration, env, toBoolean } from '@salesforce/kit';
 import { isPackagingDirectory } from '@salesforce/core/project';
 import { Many, Optional } from '@salesforce/ts-types';
 import * as pkgUtils from '../utils/packageUtils';
@@ -229,7 +230,12 @@ export async function createPackageVersionCreateRequest(
     packageObject,
   });
 
-  const settingsGenerator = new ScratchOrgSettingsGenerator({ asDirectory: true });
+  const configAggregator = await ConfigAggregator.create({ projectPath: project?.getPath() });
+  const capitalizeRecordTypes = configAggregator.getInfo('org-capitalize-record-types').value as string | undefined;
+  const settingsGenerator = new ScratchOrgSettingsGenerator({
+    asDirectory: true,
+    capitalizeRecordTypes: capitalizeRecordTypes === undefined ? undefined : toBoolean(capitalizeRecordTypes),
+  });
   const definitionFile = context.definitionfile;
   let definitionFileJson: ScratchOrgInfo;
   if (definitionFile) {
