@@ -24,7 +24,7 @@ import { isPackagingDirectory, NamedPackageDir } from '@salesforce/core/project'
 import { isNumber, isString, Many, Optional } from '@salesforce/ts-types';
 import type { SaveError } from '@jsforce/jsforce-node';
 import { Duration, ensureArray } from '@salesforce/kit';
-import globby from 'globby';
+import { glob } from 'tinyglobby';
 import JSZIP from 'jszip';
 import { PackageDescriptorJson, PackageType, PackagingSObjects } from '../interfaces';
 
@@ -225,7 +225,7 @@ export function escapeInstallationKey(key: string): string {
  * @param packageIds The list of package IDs
  * @param connection For tooling query
  */
- 
+
 export async function getContainerOptions(
   packageIds: string | undefined | Array<string | undefined>,
   connection: Connection
@@ -256,7 +256,7 @@ export async function getContainerOptions(
  * @param subscriberPackageVersionIds
  * @param connection For tooling query
  */
- 
+
 export async function getPackageVersionStrings(
   subscriberPackageVersionIds: string[],
   connection: Connection
@@ -460,10 +460,10 @@ export async function zipDir(dir: string, zipfile: string): Promise<void> {
   const logger = Logger.childFromRoot('srcDevUtils#zipDir');
 
   const timer = process.hrtime();
-  const globbyResult: string[] = await globby('**/*', { expandDirectories: true, cwd: dir });
+  const globResult: string[] = await glob('**/*', { cwd: dir, expandDirectories: false });
   const zip = new JSZIP();
   // add files tp zip
-  for (const file of globbyResult) {
+  for (const file of globResult) {
     zip.file(file, fs.readFileSync(join(dir, file)));
   }
   // write zip to file

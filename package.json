@@ -50,12 +50,12 @@
     "@salesforce/ts-types": "^3.2.0",
     "@salesforce/types": "^1.8.0",
     "fast-xml-parser": "^5.11.2",
-    "globby": "^11",
     "graphology": "^0.26.0",
     "graphology-traversal": "^0.3.1",
     "graphology-types": "^0.24.7",
     "jszip": "^3.10.1",
-    "object-treeify": "^2"
+    "object-treeify": "^2",
+    "tinyglobby": "^0.2.17"
   },
   "devDependencies": {
     "@salesforce/cli-plugins-testkit": "^5.3.66",
@@ -65,6 +65,7 @@
     "@types/jszip": "^3.4.1",
     "@types/mocha": "^10.0.10",
     "@types/node": "^18",
+    "@types/picomatch": "^4.0.3",
     "@types/sinon": "^10.0.20",
     "eslint": "^10.12.0",
     "eslint-config-salesforce-typescript": "^7.0.0",
