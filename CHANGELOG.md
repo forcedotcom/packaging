@@ -1,3 +1,12 @@
+## [5.0.24](https://github.com/forcedotcom/packaging/compare/5.0.23...5.0.24) (2026-10-22)
+
+
+### Bug Fixes
+
+* honor record type config in package create @W-24454118@ ([1351334](https://github.com/forcedotcom/packaging/commit/13513346aa5841c0e1349d60bf64bb2d013e9a6e))
+
+
+
 ## [5.0.23](https://github.com/forcedotcom/packaging/compare/5.0.22...5.0.23) (2026-10-22)
 
 
