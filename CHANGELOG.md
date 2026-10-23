@@ -1,3 +1,12 @@
+## [5.0.26](https://github.com/forcedotcom/packaging/compare/5.0.25...5.0.26) (2026-10-23)
+
+
+### Bug Fixes
+
+* **deps:** bump ip-address from 10.7.2 to 10.7.4 ([a87894d](https://github.com/forcedotcom/packaging/commit/a87894d41e713cdaf3a7a68aa7757af5491a1bfd))
+
+
+
 ## [5.0.25](https://github.com/forcedotcom/packaging/compare/5.0.24...5.0.25) (2026-10-23)
 
 
