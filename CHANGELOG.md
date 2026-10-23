@@ -1,3 +1,12 @@
+## [5.0.25](https://github.com/forcedotcom/packaging/compare/5.0.24...5.0.25) (2026-10-23)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/types from 1.8.0 to 1.9.0 ([221e3a2](https://github.com/forcedotcom/packaging/commit/221e3a2d8aef3b5937548750710875d9e166021e))
+
+
+
 ## [5.0.24](https://github.com/forcedotcom/packaging/compare/5.0.23...5.0.24) (2026-10-22)
 
 
