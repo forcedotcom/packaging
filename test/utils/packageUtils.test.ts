@@ -391,6 +391,71 @@ describe('packageUtils', () => {
       fs.rmSync(tmpSrcDir, { recursive: true });
     });
 
+    // Locate local headers through the central directory; compressed payloads may contain ZIP signatures.
+    const expectDescriptorFreeEmptyEntry = (archive: Buffer, name: string): void => {
+      // zipDir does not set an archive comment, so the classic EOCD is the final 22 bytes.
+      let offset = archive.readUInt32LE(archive.length - 22 + 16);
+      while (archive.readUInt32LE(offset) === 0x02014b50) {
+        const nameLength = archive.readUInt16LE(offset + 28);
+        const entryName = archive.subarray(offset + 46, offset + 46 + nameLength).toString('utf8');
+        if (entryName === name) {
+          const localOffset = archive.readUInt32LE(offset + 42);
+          expect(archive.readUInt32LE(localOffset)).to.equal(0x04034b50);
+          expect(archive.readUInt16LE(localOffset + 8), `${name} uses STORED`).to.equal(0);
+          expect(archive.readUInt16LE(localOffset + 6) & 0x0008, `${name} local descriptor flag`).to.equal(0);
+          expect(archive.readUInt16LE(offset + 8) & 0x0008, `${name} central descriptor flag`).to.equal(0);
+          expect(archive.readUInt32LE(localOffset + 14), `${name} CRC`).to.equal(0);
+          expect(archive.readUInt32LE(localOffset + 18), `${name} compressed size`).to.equal(0);
+          expect(archive.readUInt32LE(localOffset + 22), `${name} uncompressed size`).to.equal(0);
+          return;
+        }
+        offset += 46 + nameLength + archive.readUInt16LE(offset + 30) + archive.readUInt16LE(offset + 32);
+      }
+      assert.fail(`Missing ZIP entry: ${name}`);
+    };
+
+    it('preserves a zero-byte resource with descriptor-free STORED headers', async () => {
+      fs.mkdirSync(path.join(tmpSrcDir, 'staticresources'));
+      const resourceName = 'staticresources/EmptyResource.resource';
+      fs.writeFileSync(path.join(tmpSrcDir, resourceName), Buffer.alloc(0));
+      const zipFile = path.join(tmpZipDir, 'empty-resource.zip');
+
+      await zipDir(tmpSrcDir, zipFile);
+
+      const archive = fs.readFileSync(zipFile);
+      expectDescriptorFreeEmptyEntry(archive, resourceName);
+      const zip = await JSZIP.loadAsync(archive, { checkCRC32: true });
+      expect(await zip.file(resourceName)?.async('nodebuffer')).to.deep.equal(Buffer.alloc(0));
+      expect(await zip.file('file1.txt')?.async('string')).to.equal('file contents');
+      expect(await zip.file('not-empty-dir/sub-dir/file4.txt')?.async('string')).to.equal('file contents');
+    });
+
+    it('preserves multiple empty files and nested ZIP resource contents', async () => {
+      const emptyNames = ['empty.txt', 'not-empty-dir/sub-dir/empty.txt'];
+      for (const name of emptyNames) {
+        fs.writeFileSync(path.join(tmpSrcDir, name), Buffer.alloc(0));
+      }
+      const resourceName = 'nested.resource';
+      const nestedZip = new JSZIP();
+      nestedZip.file('inside.txt', 'nested resource contents');
+      const nestedContents = await nestedZip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+      fs.writeFileSync(path.join(tmpSrcDir, resourceName), nestedContents);
+      const zipFile = path.join(tmpZipDir, 'multiple-empty.zip');
+
+      await zipDir(tmpSrcDir, zipFile);
+
+      const archive = fs.readFileSync(zipFile);
+      const zip = await JSZIP.loadAsync(archive, { checkCRC32: true });
+      await Promise.all(
+        emptyNames.map(async (name) => {
+          expectDescriptorFreeEmptyEntry(archive, name);
+          expect(await zip.file(name)?.async('nodebuffer')).to.deep.equal(Buffer.alloc(0));
+        })
+      );
+      expect(await zip.file(resourceName)?.async('nodebuffer')).to.deep.equal(nestedContents);
+      expect(await zip.file('file2.txt')?.async('string')).to.equal('file contents');
+    });
+
     it('should be defined', async () => {
       const entries = [
         'file1.txt',

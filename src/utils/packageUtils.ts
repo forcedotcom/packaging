@@ -466,10 +466,9 @@ export async function zipDir(dir: string, zipfile: string): Promise<void> {
   for (const file of globResult) {
     zip.file(file, fs.readFileSync(join(dir, file)));
   }
-  // write zip to file
+  // Use the default streamFiles: false so empty STORED entries have no data descriptors.
   const zipStream = zip.generateNodeStream({
     type: 'nodebuffer',
-    streamFiles: true,
     compression: 'DEFLATE',
     compressionOptions: {
       level: 3,
