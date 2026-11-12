@@ -1,3 +1,12 @@
+## [5.0.29](https://github.com/forcedotcom/packaging/compare/5.0.28...5.0.29) (2026-11-12)
+
+
+### Bug Fixes
+
+* **deps:** bump brace-expansion from 1.1.12 to 1.1.22 ([1bee5e6](https://github.com/forcedotcom/packaging/commit/1bee5e6678911a17fcb10edad2119ee7b49d3ce6))
+
+
+
 ## [5.0.28](https://github.com/forcedotcom/packaging/compare/5.0.27...5.0.28) (2026-11-12)
 
 
