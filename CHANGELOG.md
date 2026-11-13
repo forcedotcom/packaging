@@ -1,3 +1,12 @@
+## [5.0.32](https://github.com/forcedotcom/packaging/compare/5.0.31...5.0.32) (2026-11-13)
+
+
+### Bug Fixes
+
+* **deps:** bump @salesforce/ts-types from 3.2.0 to 3.2.4 ([1f8a1de](https://github.com/forcedotcom/packaging/commit/1f8a1def456551bec2435e125c2f0ee2ee8a9691))
+
+
+
 ## [5.0.31](https://github.com/forcedotcom/packaging/compare/5.0.30...5.0.31) (2026-11-13)
 
 
