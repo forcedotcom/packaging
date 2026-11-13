@@ -1,3 +1,12 @@
+## [5.0.30](https://github.com/forcedotcom/packaging/compare/5.0.29...5.0.30) (2026-11-13)
+
+
+### Bug Fixes
+
+* **deps:** bump js-yaml from 3.14.1 to 3.15.2 ([052bc1d](https://github.com/forcedotcom/packaging/commit/052bc1d363f75e514b3c72de172bc42bc443671a))
+
+
+
 ## [5.0.29](https://github.com/forcedotcom/packaging/compare/5.0.28...5.0.29) (2026-11-12)
 
 
