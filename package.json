@@ -59,7 +59,7 @@
   },
   "devDependencies": {
     "@salesforce/cli-plugins-testkit": "^5.3.66",
-    "@salesforce/dev-scripts": "^15.0.0",
+    "@salesforce/dev-scripts": "^15.0.1",
     "@types/chai": "^4.3.17",
     "@types/globby": "^9.1.0",
     "@types/jszip": "^3.4.1",
@@ -67,7 +67,7 @@
     "@types/node": "^18",
     "@types/picomatch": "^4.0.3",
     "@types/sinon": "^10.0.20",
-    "eslint": "^10.12.0",
+    "eslint": "^10.14.0",
     "eslint-config-salesforce-typescript": "^7.0.0",
     "eslint-plugin-sf-plugin": "^3.0.0",
     "ts-node": "^10.9.2",
