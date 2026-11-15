@@ -1,3 +1,12 @@
+## [5.0.33](https://github.com/forcedotcom/packaging/compare/5.0.32...5.0.33) (2026-11-15)
+
+
+### Bug Fixes
+
+* **deps:** bump zod from 4.1.13 to 4.6.7 ([3af4cae](https://github.com/forcedotcom/packaging/commit/3af4caeb4d5dfa59ed5b5f1d72760ae238fd57ba))
+
+
+
 ## [5.0.32](https://github.com/forcedotcom/packaging/compare/5.0.31...5.0.32) (2026-11-13)
 
 
