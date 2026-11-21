@@ -1,3 +1,12 @@
+## [5.0.34](https://github.com/forcedotcom/packaging/compare/5.0.33...5.0.34) (2026-11-21)
+
+
+### Bug Fixes
+
+* **deps:** bump @jsforce/jsforce-node from 3.10.25 to 3.13.1 ([14fb46e](https://github.com/forcedotcom/packaging/commit/14fb46e878df9fc95909143ade0f49ca19ea81e6))
+
+
+
 ## [5.0.33](https://github.com/forcedotcom/packaging/compare/5.0.32...5.0.33) (2026-11-15)
 
 
