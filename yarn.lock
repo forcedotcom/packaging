@@ -543,19 +543,20 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
-"@jsforce/jsforce-node@^3.10.17", "@jsforce/jsforce-node@^3.10.24", "@jsforce/jsforce-node@^3.10.25":
-  version "3.10.25"
-  resolved "https://registry.yarnpkg.com/@jsforce/jsforce-node/-/jsforce-node-3.10.25.tgz#19a457a8d0b5217188576507139134cfae836eef"
-  integrity sha512-L4GfTOzmGBypjG1O7aTxwbk4DTKitU7yvnnqQE7wypFyEyHH9VR6cVZxi4+Gfk7cmItHRHAV7MyBTFfrP5DaHA==
+"@jsforce/jsforce-node@^3.10.17", "@jsforce/jsforce-node@^3.10.24", "@jsforce/jsforce-node@^3.13.1":
+  version "3.13.1"
+  resolved "https://registry.yarnpkg.com/@jsforce/jsforce-node/-/jsforce-node-3.13.1.tgz#f7780c42d711a59ec33ba961279b37c15e7d0e44"
+  integrity sha512-vpHhwc+Wcufk9vARzL4oxYSzg8ndNButSn88D6pMImjns7/NTkwPZ9qQwD2F/P4c+A0lwTyDl4Alry0BMgFsTg==
   dependencies:
     "@sindresorhus/is" "^4"
     base64url "^3.0.1"
-    csv-parse "^5.5.2"
-    csv-stringify "^6.6.0"
-    faye "^1.4.0"
-    form-data "^4.0.4"
+    cross-spawn "^7.0.6"
+    csv-parse "^7.0.2"
+    csv-stringify "^6.8.3"
+    faye "^1.4.2"
+    form-data "^4.0.6"
     multistream "^3.1.0"
-    undici "^8.5.0"
+    undici "^8.11.0"
     xml2js "^0.6.2"
 
 "@jsonjoy.com/base64@^1.1.2":
@@ -1503,11 +1504,6 @@ arrify@^1.0.1:
   resolved "https://registry.yarnpkg.com/arrify/-/arrify-1.0.1.tgz#898508da2226f380df904728456849c1501a4b0d"
   integrity sha512-3CYzex9M9FGQjCGMGyi6/31c8GJbgb0qGyrx5HWxPd0aCwh4cB2YjMb2Xf9UuoogrMrlO9cTqnB5rI5GHZTcUA==
 
-asap@*:
-  version "2.0.6"
-  resolved "https://registry.yarnpkg.com/asap/-/asap-2.0.6.tgz#e50347611d7e690943208bbdafebcbc2fb866d46"
-  integrity sha512-BSHWgDSAiKs50o2Re8ppvp3seVHXSRM44cdSsT9FfNEUUZLOGWVCsiWaRPWM1Znn+mqZ1OfVZ3z3DWEzSp7hRA==
-
 assertion-error@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/assertion-error/-/assertion-error-1.1.0.tgz#e60b6b0e8f301bd97e5375215bda406c85118c0b"
@@ -1967,15 +1963,15 @@ csprng@*:
   dependencies:
     sequin "*"
 
-csv-parse@^5.5.2:
-  version "5.6.0"
-  resolved "https://registry.yarnpkg.com/csv-parse/-/csv-parse-5.6.0.tgz#219beace2a3e9f28929999d2aa417d3fb3071c7f"
-  integrity sha512-l3nz3euub2QMg5ouu5U09Ew9Wf6/wQ8I++ch1loQ0ljmzhmfZYrH9fflS22i/PQEvsPvxCwxgz5q7UB8K1JO4Q==
+csv-parse@^7.0.2:
+  version "7.0.3"
+  resolved "https://registry.yarnpkg.com/csv-parse/-/csv-parse-7.0.3.tgz#eece4221023f8f67029518af928a225a1ea3ccad"
+  integrity sha512-YFd3QM/yo17vH91L1IOZuvl09zM0zEEtdfTcOCKWcMdM++MNaQSyp09slXyFCLaPXvHstQFx/xC8myiFHSMUvw==
 
-csv-stringify@^6.6.0:
-  version "6.6.0"
-  resolved "https://registry.yarnpkg.com/csv-stringify/-/csv-stringify-6.6.0.tgz#d384859cfb71d0a4a73c5bcc36a4daf5440cb033"
-  integrity sha512-YW32lKOmIBgbxtu3g5SaiqWNwa/9ISQt2EcgOq0+RAIFufFp9is6tqNnKahqE5kuKvrnYAzs28r+s6pXJR8Vcw==
+csv-stringify@^6.8.3:
+  version "6.9.0"
+  resolved "https://registry.yarnpkg.com/csv-stringify/-/csv-stringify-6.9.0.tgz#e92dd2905f6d67f33ec9c413b02080362989e8ca"
+  integrity sha512-6b3e29CILFfSQ2nDRuZMRROzQOpPuJ+s8zPB5H7eK5ncXBbFOyVuRLU5Sx/zAUmVri3Ly49GyC8NEme4SVSAbA==
 
 dargs@^7.0.0:
   version "7.0.0"
@@ -2569,22 +2565,20 @@ fastq@^1.6.0:
   dependencies:
     reusify "^1.0.4"
 
-faye-websocket@>=0.9.1:
-  version "0.11.4"
-  resolved "https://registry.yarnpkg.com/faye-websocket/-/faye-websocket-0.11.4.tgz#7f0d9275cfdd86a1c963dc8b65fcc451edcbb1da"
-  integrity sha512-CzbClwlXAuiRQAlUyfqPgvPoNKTckTPGfwZV4ZdAhVcP2lh9KUxJg2b5GkE7XbjKQ3YJnQ9z6D9ntLAlB+tP8g==
+faye-websocket@>=0.12.0:
+  version "0.12.0"
+  resolved "https://registry.yarnpkg.com/faye-websocket/-/faye-websocket-0.12.0.tgz#d935ad27e3e0565420e44f5f6dc0bd966e221a57"
+  integrity sha512-k4SrrWTHgtilT0hPMzS/kbYx9OHs+ITVv3VGqEI45SOsveVyFSES4DA4Opi2UMrba2MZhQe9yjsVz7uwVKa1qQ==
   dependencies:
-    websocket-driver ">=0.5.1"
+    websocket-driver ">=0.8.0"
 
-faye@^1.4.0, faye@^1.4.1:
-  version "1.4.1"
-  resolved "https://registry.yarnpkg.com/faye/-/faye-1.4.1.tgz#fd2f84e21d62b1cced1bd34968925b466d44a381"
-  integrity sha512-Cg/khikhqlvumHO3efwx2tps2ZgQRjUMrO24G0quz7MMzRYYaEjU224YFXOeuPIvanRegIchVxj6pmHK1W0ikA==
+faye@^1.4.1, faye@^1.4.2:
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/faye/-/faye-1.5.1.tgz#1096a60e4c261c505d97f66918fdf6e903dbe7e5"
+  integrity sha512-2I62UFeZDfAgwm/GgfPlNmMTc5vG39L7fwe0U2mfRTu4nuLEd7WXtvdyi+N2a6OCu6mpcX9vLIvlu9E8GrZNKA==
   dependencies:
-    asap "*"
     csprng "*"
-    faye-websocket ">=0.9.1"
-    safe-buffer "*"
+    faye-websocket ">=0.12.0"
     tough-cookie "*"
     tunnel-agent "*"
 
@@ -2672,7 +2666,7 @@ foreground-child@^3.1.0, foreground-child@^3.3.0:
     cross-spawn "^7.0.6"
     signal-exit "^4.0.1"
 
-form-data@^4.0.4, form-data@^4.0.5:
+form-data@^4.0.5, form-data@^4.0.6:
   version "4.0.6"
   resolved "https://registry.yarnpkg.com/form-data/-/form-data-4.0.6.tgz#28e864e1b786dbebb68db1f452f9635278665827"
   integrity sha512-vKatAh4SlVfgbv+YtmhiRjhEMJsYpsG1Y2rMQtR+SVSbytsSD1YGzDIcrAJmdFec88u/+VoGmxnl+80gL1tRCQ==
@@ -4767,7 +4761,7 @@ run-parallel@^1.1.9:
   dependencies:
     queue-microtask "^1.2.2"
 
-safe-buffer@*, safe-buffer@>=5.1.0, safe-buffer@^5.0.1, safe-buffer@^5.1.0, safe-buffer@~5.2.0:
+safe-buffer@>=5.1.0, safe-buffer@^5.0.1, safe-buffer@^5.1.0, safe-buffer@~5.2.0:
   version "5.2.1"
   resolved "https://registry.yarnpkg.com/safe-buffer/-/safe-buffer-5.2.1.tgz#1eaf9fa9bdb1fdd4ec75f58f9cdb4e6b7827eec6"
   integrity sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==
@@ -5397,10 +5391,10 @@ undici-types@~7.12.0:
   resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-7.12.0.tgz#15c5c7475c2a3ba30659529f5cdb4674b622fafb"
   integrity sha512-goOacqME2GYyOZZfb5Lgtu+1IDmAlAEu5xnD3+xTzS10hT0vzpf0SPjkXwAw9Jm+4n/mQGDP3LO8CPbYROeBfQ==
 
-undici@^8.5.0:
-  version "8.12.3"
-  resolved "https://registry.yarnpkg.com/undici/-/undici-8.12.3.tgz#e76a91feee9c275ad0f43bfc0eb632b6124d3bb6"
-  integrity sha512-+fdndUTwBP86cVjihTp21hZHo7d6oj1c/47XPA3lL8mM0XHs+C4EkcjmgRsFnFk2f/UONGDy9ItBItmXsLOQHw==
+undici@^8.11.0:
+  version "8.13.1"
+  resolved "https://registry.yarnpkg.com/undici/-/undici-8.13.1.tgz#2bcd614161e93a4e33b25e792514a70c67d927cc"
+  integrity sha512-Kt7EaPjh0s93lJH/PmW3d5rhkcpUa6fS3jqZ7+YGxNd9L7Xy/i827xe4C2uhhq+pJebM4tQOl5AgHmW11G5Skg==
 
 unicorn-magic@^0.3.0:
   version "0.3.0"
@@ -5514,19 +5508,19 @@ webidl-conversions@^7.0.0:
   resolved "https://registry.yarnpkg.com/webidl-conversions/-/webidl-conversions-7.0.0.tgz#256b4e1882be7debbf01d05f0aa2039778ea080a"
   integrity sha512-VwddBukDzu71offAQR975unBIGqfKZpM+8ZX6ySk8nYhVoo5CYaZyzt3YBvYtRtO+aoGlqxPg/B87NGVZ/fu6g==
 
-websocket-driver@>=0.5.1:
-  version "0.7.5"
-  resolved "https://registry.yarnpkg.com/websocket-driver/-/websocket-driver-0.7.5.tgz#569d22764ab21f2de20af0e74b411e8ae5a0fa46"
-  integrity sha512-ZL2+3c7kMBdIRCMz6l8jQMHyGVxj+UL+xVk74Ombiciboca8rHa15L86B19E5oh1pL9Ii/uj54gtsIrZGMo6zA==
+websocket-driver@>=0.8.0:
+  version "0.8.0"
+  resolved "https://registry.yarnpkg.com/websocket-driver/-/websocket-driver-0.8.0.tgz#6701084cbf675d1d052bee12e5a7bdfa10dbb3f6"
+  integrity sha512-upjjWCo/1ZysdZ3rMvXXUDk9PmbYne+wSD1t78HAvIvjmR+avda0MsLWhtkn5PW8Ht34EXhhWF6OseWJ8nTGlg==
   dependencies:
     http-parser-js ">=0.5.1"
     safe-buffer ">=5.1.0"
-    websocket-extensions ">=0.1.1"
+    websocket-extensions ">=0.2.0"
 
-websocket-extensions@>=0.1.1:
-  version "0.1.4"
-  resolved "https://registry.yarnpkg.com/websocket-extensions/-/websocket-extensions-0.1.4.tgz#7f8473bc839dfd87608adb95d7eb075211578a42"
-  integrity sha512-OqedPIGOfsDlo31UNwYbCFMSaO9m9G/0faIHj5/dZFDMFqPTcx6UwqyOy3COEaEOg/9VsGIpdqn62W5KhoKSpg==
+websocket-extensions@>=0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/websocket-extensions/-/websocket-extensions-0.2.0.tgz#9b0dbdfd847e9dc2755854924d1c79025b800001"
+  integrity sha512-vQaTTgDDgwlrreIJAprknlnvEtZMMxfLqoxyQYnWO8dgcz2qIzQNysCpwOekz8kqLvzrZ0dcaL9hejZ+2AszCA==
 
 whatwg-url@^14.0.0:
   version "14.2.0"
