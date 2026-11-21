@@ -58,7 +58,7 @@
     "tinyglobby": "^0.2.17"
   },
   "devDependencies": {
-    "@salesforce/cli-plugins-testkit": "^5.3.66",
+    "@salesforce/cli-plugins-testkit": "^5.3.95",
     "@salesforce/dev-scripts": "^15.0.1",
     "@types/chai": "^4.3.17",
     "@types/globby": "^9.1.0",
